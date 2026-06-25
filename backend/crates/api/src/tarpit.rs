@@ -113,7 +113,7 @@ pub async fn handler(State(state): State<AppState>) -> Response {
                 .status(StatusCode::OK)
                 .header("content-type", "text/plain; charset=utf-8")
                 .body(Body::from_stream(stream))
-                .expect("valid tarpit response")
+                .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
         }
     }
 }

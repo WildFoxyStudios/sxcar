@@ -1,0 +1,16 @@
+# Rust
+/backend/target
+**/target
+# Node
+node_modules
+.pnpm-store
+.turbo
+dist
+.expo
+# Env / secretos
+.env
+.env.*
+!.env.example
+# OS / editores
+.DS_Store
+Thumbs.db

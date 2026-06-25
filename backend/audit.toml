@@ -1,0 +1,11 @@
+# cargo-audit configuration.
+#
+# RUSTSEC-2023-0071 — `rsa` "Marvin Attack" timing side-channel.
+# Justification for ignoring: the `rsa` crate is NOT in our build graph
+# (`cargo tree --target all -i rsa` prints nothing). It exists only as a
+# Cargo.lock entry via sqlx's OPTIONAL MySQL driver (`sqlx-mysql`), which we do
+# not enable (Postgres-only: `default-features = false`, features omit `mysql`).
+# It is therefore never compiled into any artifact and is not exploitable here.
+# No upstream fix is available yet; re-evaluate when sqlx/RustCrypto resolve it.
+[advisories]
+ignore = ["RUSTSEC-2023-0071"]

@@ -2,7 +2,7 @@ use db::{connect, ping};
 
 fn test_db_url() -> String {
     std::env::var("TEST_DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://dev:dev@localhost:5432/appdb".to_string())
+        .unwrap_or_else(|_| "postgres://dev:dev@localhost:5433/appdb".to_string())
 }
 
 #[tokio::test]

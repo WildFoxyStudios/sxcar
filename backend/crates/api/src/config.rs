@@ -10,10 +10,13 @@ impl Config {
     }
 
     pub fn from_getter(get: impl Fn(&str) -> Option<String>) -> anyhow::Result<Self> {
-        let database_url = get("DATABASE_URL")
-            .ok_or_else(|| anyhow::anyhow!("DATABASE_URL must be set"))?;
+        let database_url =
+            get("DATABASE_URL").ok_or_else(|| anyhow::anyhow!("DATABASE_URL must be set"))?;
         let bind_addr = get("BIND_ADDR").unwrap_or_else(|| "0.0.0.0:8080".to_string());
-        Ok(Self { database_url, bind_addr })
+        Ok(Self {
+            database_url,
+            bind_addr,
+        })
     }
 }
 

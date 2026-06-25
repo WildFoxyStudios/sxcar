@@ -7,6 +7,8 @@ fn test_db_url() -> String {
 
 #[tokio::test]
 async fn connect_and_ping_succeeds() {
-    let pool = connect(&test_db_url()).await.expect("should connect to postgres");
+    let pool = connect(&test_db_url())
+        .await
+        .expect("should connect to postgres");
     ping(&pool).await.expect("ping should succeed");
 }

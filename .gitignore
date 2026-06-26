@@ -11,6 +11,21 @@ dist
 .env
 .env.*
 !.env.example
+# Terraform / IaC (estado y secretos NUNCA a git)
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+# (.terraform.lock.hcl SÍ se commitea: pinea hashes de providers = builds reproducibles/seguros)
+# Vercel
+.vercel
 # OS / editores
 .DS_Store
 Thumbs.db

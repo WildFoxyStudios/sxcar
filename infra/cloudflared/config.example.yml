@@ -1,0 +1,17 @@
+# Plantilla del config de Cloudflare Tunnel (el real vive en ~/.cloudflared/config.yml).
+# El config real + el JSON de credenciales NO se commitean (son secretos).
+#
+# Setup (esta PC, dominio turnend.win, ya autenticado con cert.pem):
+#   cloudflared tunnel create proyectox
+#   # copia este archivo a ~/.cloudflared/config.yml y pon el UUID + ruta de credenciales
+#   cloudflared tunnel route dns proyectox api.turnend.win
+#   cloudflared tunnel ingress validate
+#   cloudflared tunnel run proyectox
+
+tunnel: <TUNNEL_UUID>
+credentials-file: C:/Users/<user>/.cloudflared/<TUNNEL_UUID>.json
+
+ingress:
+  - hostname: api.turnend.win
+    service: http://localhost:8081   # el API Rust local (8080 lo ocupa Apache/XAMPP)
+  - service: http_status:404

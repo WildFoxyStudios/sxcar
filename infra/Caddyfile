@@ -1,0 +1,14 @@
+# Staging temporal (sin dominio): Caddy sirve HTTP en :80 y hace reverse proxy al api.
+# Let's Encrypt NO emite cert para *.compute.amazonaws.com, así que en staging es HTTP.
+#
+# Al migrar a tu dominio, sustituye el bloque ":80" por:
+#   api.tudominio.com {
+#       encode gzip
+#       reverse_proxy api:8080
+#   }
+# y Caddy obtendrá HTTPS automáticamente (Let's Encrypt). Abre 443 en el SG (ya está).
+
+:80 {
+	encode gzip
+	reverse_proxy api:8080
+}

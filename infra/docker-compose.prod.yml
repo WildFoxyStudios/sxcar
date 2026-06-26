@@ -1,0 +1,46 @@
+# proyecto-X — despliegue de producción en el VPS (EC2 ARM).
+# Copia este archivo + Caddyfile + .env (relleno) a /opt/proyectox/ y:
+#   docker compose -f docker-compose.prod.yml up -d
+# Redis y Postgres(Neon) NUNCA se exponen a Internet; solo caddy publica 80/443.
+name: proyectox
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+  api:
+    image: ${API_IMAGE}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # El Config del api lee BIND_ADDR (def 0.0.0.0:8080). DATABASE_URL/JWT_SECRET vienen del .env.
+      - BIND_ADDR=0.0.0.0:${API_PORT:-8080}
+      - TARPIT_ENABLED=true
+    expose:
+      - "${API_PORT:-8080}"
+    depends_on:
+      - redis
+
+  # Redis self-hosted (presencia/geo/rate-limit). Aún no lo consume el api;
+  # listo para las features de tiempo real. Efímero (sin persistencia).
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    expose:
+      - "6379"
+
+volumes:
+  caddy_data:
+  caddy_config:

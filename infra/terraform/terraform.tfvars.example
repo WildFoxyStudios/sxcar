@@ -1,0 +1,9 @@
+# Copia a terraform.tfvars (gitignored) y rellena.
+# Las credenciales AWS NO van aquí: usa variables de entorno
+#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY  (o `aws configure`).
+
+aws_region          = "us-east-1"
+instance_type       = "t4g.small"
+admin_cidr          = "TU.IP.PUBLICA/32"        # curl ifconfig.me  ->  añade /32
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"   # tu clave PÚBLICA SSH
+root_volume_gb      = 20

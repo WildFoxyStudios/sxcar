@@ -141,3 +141,34 @@ async fn reset_request_always_200() {
     .0;
     assert_eq!(st, StatusCode::OK);
 }
+
+#[tokio::test]
+async fn oauth_find_or_create() {
+    let app = test_app().await;
+    let uid = format!("uid-{}", uuid::Uuid::new_v4().simple());
+    let token = format!("dev:{uid}:{uid}@oauth.com");
+    let (st, b1) = post(
+        &app,
+        "/auth/oauth/google",
+        serde_json::json!({"id_token": token}),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(b1["access"].is_string());
+    // segunda vez reusa el mismo usuario (no falla por email duplicado)
+    let (st, _) = post(
+        &app,
+        "/auth/oauth/google",
+        serde_json::json!({"id_token": token}),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    // token inválido → 401
+    let (st, _) = post(
+        &app,
+        "/auth/oauth/google",
+        serde_json::json!({"id_token": "garbage"}),
+    )
+    .await;
+    assert_eq!(st, StatusCode::UNAUTHORIZED);
+}

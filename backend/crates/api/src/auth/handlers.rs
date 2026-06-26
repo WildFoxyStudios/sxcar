@@ -1,4 +1,8 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
 use validator::Validate;
@@ -279,4 +283,97 @@ pub async fn reset_password(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+pub struct PhoneReq {
+    pub phone: String,
+}
+
+pub async fn send_phone_code(
+    State(state): State<AppState>,
+    user: crate::auth::AuthUser,
+    Json(req): Json<PhoneReq>,
+) -> Result<StatusCode, StatusCode> {
+    let code = auth::code::generate_code();
+    let cexp = OffsetDateTime::now_utc() + Duration::minutes(10);
+    db::users::issue_auth_code(
+        &state.pool,
+        user.0,
+        "phone_verify",
+        &auth::code::hash_code(&code),
+        cexp,
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let _ = state
+        .notifier
+        .send_sms(&req.phone, &format!("Código: {code}"))
+        .await;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn verify_phone(
+    State(state): State<AppState>,
+    user: crate::auth::AuthUser,
+    Json(req): Json<CodeReq>,
+) -> Result<StatusCode, StatusCode> {
+    let ok = db::users::consume_auth_code(
+        &state.pool,
+        user.0,
+        "phone_verify",
+        &auth::code::hash_code(&req.code),
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if !ok {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    db::users::set_phone_verified(&state.pool, user.0)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+pub struct OAuthReq {
+    pub id_token: String,
+}
+
+pub async fn oauth(
+    State(state): State<AppState>,
+    Path(provider): Path<String>,
+    Json(req): Json<OAuthReq>,
+) -> Result<Json<TokenPair>, StatusCode> {
+    if provider != "apple" && provider != "google" {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    let id = state
+        .oauth
+        .verify(&provider, &req.id_token)
+        .await
+        .map_err(|_| StatusCode::UNAUTHORIZED)?;
+    // find-or-create
+    let user_id = match db::users::find_auth_identity(&state.pool, &provider, &id.provider_uid)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    {
+        Some(uid) => uid,
+        None => {
+            // email del proveedor (o sintético) — único
+            let email = id
+                .email
+                .clone()
+                .unwrap_or_else(|| format!("{}+{}@oauth.local", id.provider_uid, provider));
+            let uid = db::users::create_user_full(&state.pool, &email, None, None, true)
+                .await
+                .map_err(|_| StatusCode::CONFLICT)?;
+            db::users::add_auth_identity(&state.pool, uid, &provider, &id.provider_uid)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            uid
+        }
+    };
+    let pair = issue_pair(&state, user_id).await?;
+    Ok(Json(pair))
 }

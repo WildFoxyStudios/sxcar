@@ -55,6 +55,9 @@ pub fn router() -> Router<AppState> {
             post(handlers::reset_request),
         )
         .route("/auth/password/reset", post(handlers::reset_password))
+        .route("/auth/send-phone-code", post(handlers::send_phone_code))
+        .route("/auth/verify-phone", post(handlers::verify_phone))
+        .route("/auth/oauth/:provider", post(handlers::oauth))
 }
 
 /// Dependencias de auth que viven en AppState.

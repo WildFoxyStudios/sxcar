@@ -16,3 +16,9 @@ pub async fn ping(pool: &Pool) -> anyhow::Result<()> {
     sqlx::query("SELECT 1").execute(pool).await?;
     Ok(())
 }
+
+/// Aplica todas las migraciones embebidas (carpeta backend/migrations).
+pub async fn migrate(pool: &Pool) -> anyhow::Result<()> {
+    sqlx::migrate!("../../migrations").run(pool).await?;
+    Ok(())
+}

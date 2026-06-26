@@ -10,8 +10,15 @@ async fn main() -> anyhow::Result<()> {
 
     let config = Config::from_env()?;
     let pool = db::connect(&config.database_url).await?;
-    let app = api::app(pool);
 
+    // Subcomando: `api migrate` aplica migraciones y termina.
+    if std::env::args().nth(1).as_deref() == Some("migrate") {
+        db::migrate(&pool).await?;
+        tracing::info!("migrations applied");
+        return Ok(());
+    }
+
+    let app = api::app(pool);
     let listener = tokio::net::TcpListener::bind(&config.bind_addr).await?;
     tracing::info!("api listening on {}", config.bind_addr);
     axum::serve(listener, app).await?;

@@ -9,3 +9,4 @@ anyhow.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
+uuid = { version = "1", features = ["v4"] }

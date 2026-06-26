@@ -38,3 +38,19 @@ async fn identity_tables_exist() {
     }
     teardown_test_db(pool, &name).await;
 }
+
+#[tokio::test]
+async fn profile_tables_exist() {
+    let (pool, name) = setup_test_db().await;
+    for table in ["profiles", "photos", "locations", "safety_zones"] {
+        let exists: bool = sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name=$1)",
+        )
+        .bind(table)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert!(exists, "table {table} should exist");
+    }
+    teardown_test_db(pool, &name).await;
+}

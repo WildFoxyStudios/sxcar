@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO auth_codes (user_id, kind, code_hash, expires_at) VALUES ($1,$2,$3,$4)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "69eb6f4b1c474adca40a7e0a743c397b69f9f21faaa5bfb9ec9f2d0f302d1529"
+}

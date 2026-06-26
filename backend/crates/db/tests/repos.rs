@@ -1,6 +1,11 @@
 mod common;
 use common::{setup_test_db, teardown_test_db};
-use db::users::{add_auth_identity, create_user, find_user_by_email, record_consent, NewUser};
+use db::users::{
+    add_auth_identity, consume_auth_code, create_user, create_user_full, find_refresh_token,
+    find_user_by_email, find_user_by_id, issue_auth_code, record_consent, revoke_refresh_token,
+    set_email_verified, store_refresh_token, NewUser,
+};
+use time::{Duration, OffsetDateTime};
 
 #[tokio::test]
 async fn postgis_location_within_distance() {
@@ -56,5 +61,42 @@ async fn user_create_find_roundtrip() {
     )
     .await;
     assert!(dup.is_err(), "duplicate email should fail");
+    teardown_test_db(pool, &name).await;
+}
+
+#[tokio::test]
+async fn auth_repos_roundtrip() {
+    let (pool, name) = setup_test_db().await;
+    let uid = create_user_full(&pool, "auth@test.com", Some("hash"), None, true)
+        .await
+        .unwrap();
+    assert!(find_user_by_id(&pool, uid).await.unwrap().is_some());
+    set_email_verified(&pool, uid).await.unwrap();
+
+    let exp = OffsetDateTime::now_utc() + Duration::days(30);
+    store_refresh_token(&pool, uid, "th1", exp).await.unwrap();
+    let r = find_refresh_token(&pool, "th1").await.unwrap().unwrap();
+    assert_eq!(r.user_id, uid);
+    assert!(!r.revoked && !r.expired);
+    revoke_refresh_token(&pool, "th1").await.unwrap();
+    assert!(
+        find_refresh_token(&pool, "th1")
+            .await
+            .unwrap()
+            .unwrap()
+            .revoked
+    );
+
+    let cexp = OffsetDateTime::now_utc() + Duration::minutes(15);
+    issue_auth_code(&pool, uid, "email_verify", "ch1", cexp)
+        .await
+        .unwrap();
+    assert!(consume_auth_code(&pool, uid, "email_verify", "ch1")
+        .await
+        .unwrap());
+    // segundo consumo falla (ya usado)
+    assert!(!consume_auth_code(&pool, uid, "email_verify", "ch1")
+        .await
+        .unwrap());
     teardown_test_db(pool, &name).await;
 }

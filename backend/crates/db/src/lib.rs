@@ -2,6 +2,8 @@ use sqlx::postgres::PgPoolOptions;
 
 pub type Pool = sqlx::PgPool;
 
+pub mod users;
+
 /// Crea un pool de conexiones a Postgres.
 pub async fn connect(database_url: &str) -> anyhow::Result<Pool> {
     let pool = PgPoolOptions::new()

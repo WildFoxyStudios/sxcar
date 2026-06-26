@@ -18,7 +18,6 @@ auth = { path = "../auth" }
 db = { path = "../db" }
 uuid = { version = "1", features = ["v4", "serde"] }
 time = { version = "0.3" }
-validator = { version = "0.18", features = ["derive"] }
 
 [dev-dependencies]
 tower.workspace = true

@@ -5,9 +5,22 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
-use validator::Validate;
 
 use crate::AppState;
+
+/// Validación de email mínima (la verificación real es por código de email).
+fn valid_email(s: &str) -> bool {
+    let mut parts = s.split('@');
+    match (parts.next(), parts.next(), parts.next()) {
+        (Some(local), Some(domain), None) => {
+            !local.is_empty()
+                && domain.contains('.')
+                && !domain.starts_with('.')
+                && !domain.ends_with('.')
+        }
+        _ => false,
+    }
+}
 
 #[derive(Serialize)]
 pub struct TokenPair {
@@ -35,11 +48,9 @@ pub(crate) async fn issue_pair(
     Ok(TokenPair { access, refresh })
 }
 
-#[derive(Deserialize, Validate)]
+#[derive(Deserialize)]
 pub struct RegisterReq {
-    #[validate(email)]
     pub email: String,
-    #[validate(length(min = 8))]
     pub password: String,
     /// fecha de nacimiento YYYY-MM-DD
     pub dob: String,
@@ -51,7 +62,9 @@ pub async fn register(
     State(state): State<AppState>,
     Json(req): Json<RegisterReq>,
 ) -> Result<(StatusCode, Json<TokenPair>), StatusCode> {
-    req.validate().map_err(|_| StatusCode::BAD_REQUEST)?;
+    if !valid_email(&req.email) || req.password.len() < 8 {
+        return Err(StatusCode::BAD_REQUEST);
+    }
     let dob = time::Date::parse(
         &req.dob,
         time::macros::format_description!("[year]-[month]-[day]"),
@@ -246,11 +259,10 @@ pub async fn reset_request(
     StatusCode::OK
 }
 
-#[derive(Deserialize, Validate)]
+#[derive(Deserialize)]
 pub struct ResetReq {
     pub email: String,
     pub code: String,
-    #[validate(length(min = 8))]
     pub new_password: String,
 }
 
@@ -258,7 +270,9 @@ pub async fn reset_password(
     State(state): State<AppState>,
     Json(req): Json<ResetReq>,
 ) -> Result<StatusCode, StatusCode> {
-    req.validate().map_err(|_| StatusCode::BAD_REQUEST)?;
+    if req.new_password.len() < 8 {
+        return Err(StatusCode::BAD_REQUEST);
+    }
     let u = db::users::find_user_by_email(&state.pool, &req.email)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?

@@ -20,4 +20,5 @@ CREATE TABLE safety_zones (
   action text NOT NULL CHECK (action IN ('hide_distance','hide_profile')),
   created_at timestamptz NOT NULL DEFAULT now()
 );
+CREATE INDEX idx_safety_zones_geog ON safety_zones USING GIST (geog);
 CREATE INDEX idx_safety_zones_user ON safety_zones(user_id);

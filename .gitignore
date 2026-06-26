@@ -14,3 +14,5 @@ dist
 # OS / editores
 .DS_Store
 Thumbs.db
+# Config local de herramientas (no es parte de la app)
+.mcp.json

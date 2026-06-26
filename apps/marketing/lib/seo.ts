@@ -19,9 +19,8 @@ export function buildMetadata(opts: {
       url,
       siteName: site.name,
       type: "website",
-      images: [{ url: "/og.png", width: 1200, height: 630, alt: site.name }],
     },
-    twitter: { card: "summary_large_image", title, description, images: ["/og.png"] },
+    twitter: { card: "summary_large_image", title, description },
     robots: { index: true, follow: true },
   };
 }

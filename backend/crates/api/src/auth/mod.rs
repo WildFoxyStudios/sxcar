@@ -46,6 +46,15 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/auth/register", post(handlers::register))
         .route("/auth/login", post(handlers::login))
+        .route("/auth/refresh", post(handlers::refresh))
+        .route("/auth/logout", post(handlers::logout))
+        .route("/auth/verify-email", post(handlers::verify_email))
+        .route("/auth/resend-email", post(handlers::resend_email))
+        .route(
+            "/auth/password/reset-request",
+            post(handlers::reset_request),
+        )
+        .route("/auth/password/reset", post(handlers::reset_password))
 }
 
 /// Dependencias de auth que viven en AppState.

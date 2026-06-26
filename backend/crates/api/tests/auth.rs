@@ -97,3 +97,47 @@ async fn register_under_18_rejected() {
     .await;
     assert_eq!(st, StatusCode::FORBIDDEN);
 }
+
+#[tokio::test]
+async fn refresh_rotates_and_old_is_invalid() {
+    let app = test_app().await;
+    let (_, body) = post(
+        &app,
+        "/auth/register",
+        serde_json::json!({
+            "email": unique_email(), "password": "supersecret", "dob": "1990-01-01"
+        }),
+    )
+    .await;
+    let refresh = body["refresh"].as_str().unwrap().to_string();
+    // refresh OK
+    let (st, body2) = post(
+        &app,
+        "/auth/refresh",
+        serde_json::json!({"refresh": refresh}),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(body2["refresh"].is_string());
+    // el viejo ya no vale
+    let (st, _) = post(
+        &app,
+        "/auth/refresh",
+        serde_json::json!({"refresh": refresh}),
+    )
+    .await;
+    assert_eq!(st, StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn reset_request_always_200() {
+    let app = test_app().await;
+    let st = post(
+        &app,
+        "/auth/password/reset-request",
+        serde_json::json!({"email": "nobody@nowhere.com"}),
+    )
+    .await
+    .0;
+    assert_eq!(st, StatusCode::OK);
+}

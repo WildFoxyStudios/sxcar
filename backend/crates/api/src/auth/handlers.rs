@@ -116,3 +116,167 @@ pub async fn login(
     let pair = issue_pair(&state, user.id).await?;
     Ok(Json(pair))
 }
+
+#[derive(Deserialize)]
+pub struct RefreshReq {
+    pub refresh: String,
+}
+
+pub async fn refresh(
+    State(state): State<AppState>,
+    Json(req): Json<RefreshReq>,
+) -> Result<Json<TokenPair>, StatusCode> {
+    let th = auth::tokens::hash_token(&req.refresh);
+    let row = db::users::find_refresh_token(&state.pool, &th)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::UNAUTHORIZED)?;
+    if row.revoked || row.expired {
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+    // rotación: revoca el viejo, emite par nuevo
+    db::users::revoke_refresh_token(&state.pool, &th)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let pair = issue_pair(&state, row.user_id).await?;
+    Ok(Json(pair))
+}
+
+pub async fn logout(
+    State(state): State<AppState>,
+    Json(req): Json<RefreshReq>,
+) -> Result<StatusCode, StatusCode> {
+    let th = auth::tokens::hash_token(&req.refresh);
+    db::users::revoke_refresh_token(&state.pool, &th)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+pub struct CodeReq {
+    pub code: String,
+}
+
+pub async fn verify_email(
+    State(state): State<AppState>,
+    user: crate::auth::AuthUser,
+    Json(req): Json<CodeReq>,
+) -> Result<StatusCode, StatusCode> {
+    let ok = db::users::consume_auth_code(
+        &state.pool,
+        user.0,
+        "email_verify",
+        &auth::code::hash_code(&req.code),
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if !ok {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    db::users::set_email_verified(&state.pool, user.0)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn resend_email(
+    State(state): State<AppState>,
+    user: crate::auth::AuthUser,
+) -> Result<StatusCode, StatusCode> {
+    let u = db::users::find_user_by_id(&state.pool, user.0)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::UNAUTHORIZED)?;
+    let code = auth::code::generate_code();
+    let cexp = OffsetDateTime::now_utc() + Duration::minutes(30);
+    db::users::issue_auth_code(
+        &state.pool,
+        user.0,
+        "email_verify",
+        &auth::code::hash_code(&code),
+        cexp,
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let _ = state
+        .notifier
+        .send_email(&u.email, "Verifica tu email", &format!("Código: {code}"))
+        .await;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+pub struct ResetRequestReq {
+    pub email: String,
+}
+
+pub async fn reset_request(
+    State(state): State<AppState>,
+    Json(req): Json<ResetRequestReq>,
+) -> StatusCode {
+    // Respuesta SIEMPRE 200 (sin enumeración). Si el usuario existe, emitimos y enviamos código.
+    if let Ok(Some(u)) = db::users::find_user_by_email(&state.pool, &req.email).await {
+        let code = auth::code::generate_code();
+        let cexp = OffsetDateTime::now_utc() + Duration::minutes(30);
+        if db::users::issue_auth_code(
+            &state.pool,
+            u.id,
+            "password_reset",
+            &auth::code::hash_code(&code),
+            cexp,
+        )
+        .await
+        .is_ok()
+        {
+            let _ = state
+                .notifier
+                .send_email(
+                    &req.email,
+                    "Restablecer contraseña",
+                    &format!("Código: {code}"),
+                )
+                .await;
+        }
+    }
+    StatusCode::OK
+}
+
+#[derive(Deserialize, Validate)]
+pub struct ResetReq {
+    pub email: String,
+    pub code: String,
+    #[validate(length(min = 8))]
+    pub new_password: String,
+}
+
+pub async fn reset_password(
+    State(state): State<AppState>,
+    Json(req): Json<ResetReq>,
+) -> Result<StatusCode, StatusCode> {
+    req.validate().map_err(|_| StatusCode::BAD_REQUEST)?;
+    let u = db::users::find_user_by_email(&state.pool, &req.email)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::BAD_REQUEST)?;
+    let ok = db::users::consume_auth_code(
+        &state.pool,
+        u.id,
+        "password_reset",
+        &auth::code::hash_code(&req.code),
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if !ok {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    let hash = auth::password::hash_password(&req.new_password)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    db::users::update_password(&state.pool, u.id, &hash)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    db::users::revoke_all_refresh(&state.pool, u.id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(StatusCode::NO_CONTENT)
+}

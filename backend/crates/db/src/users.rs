@@ -256,3 +256,11 @@ pub async fn consume_auth_code(
     .await?;
     Ok(res.rows_affected() == 1)
 }
+
+pub async fn password_hash_for(pool: &Pool, id: uuid::Uuid) -> anyhow::Result<Option<String>> {
+    let h = sqlx::query_scalar!("SELECT password_hash FROM users WHERE id = $1", id)
+        .fetch_optional(pool)
+        .await?
+        .flatten();
+    Ok(h)
+}

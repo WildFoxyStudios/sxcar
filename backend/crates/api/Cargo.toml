@@ -13,8 +13,16 @@ tracing-subscriber.workspace = true
 anyhow.workspace = true
 tower-http.workspace = true
 async-stream = "0.3"
+async-trait = "0.1"
+auth = { path = "../auth" }
 db = { path = "../db" }
+uuid = { version = "1", features = ["v4", "serde"] }
+time = { version = "0.3" }
+validator = { version = "0.18", features = ["derive"] }
 
 [dev-dependencies]
 tower.workspace = true
 http-body-util.workspace = true
+uuid = { version = "1", features = ["v4", "serde"] }
+serde_json.workspace = true
+tokio.workspace = true

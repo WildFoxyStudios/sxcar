@@ -1,4 +1,7 @@
 use api::config::Config;
+use api::{app, AppDeps};
+use auth::{jwt::JwtConfig, notify::DevNotifier, oauth::DevOAuthVerifier};
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -18,7 +21,17 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let app = api::app(pool);
+    let deps = AppDeps {
+        jwt: JwtConfig {
+            secret: config.jwt_secret.clone(),
+            access_ttl_secs: config.access_ttl_secs,
+        },
+        refresh_ttl_secs: config.refresh_ttl_secs,
+        notifier: Arc::new(DevNotifier),
+        oauth: Arc::new(DevOAuthVerifier),
+    };
+
+    let app = app(pool, deps);
     let listener = tokio::net::TcpListener::bind(&config.bind_addr).await?;
     tracing::info!("api listening on {}", config.bind_addr);
     axum::serve(listener, app).await?;

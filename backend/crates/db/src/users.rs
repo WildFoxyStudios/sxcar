@@ -27,6 +27,11 @@ pub async fn create_user(pool: &Pool, new: NewUser) -> anyhow::Result<uuid::Uuid
     Ok(id)
 }
 
+/// Busca un usuario por email (case-insensitive vía citext).
+///
+/// NOTA: no filtra `deleted_at`. La visibilidad de cuentas con soft-delete se
+/// decide en la capa de aplicación (F0.3+), caso por caso (p. ej. recuperación
+/// de cuenta vs. login); se añadirá un helper "solo activos" en su fase.
 pub async fn find_user_by_email(pool: &Pool, email: &str) -> anyhow::Result<Option<UserRow>> {
     let row = sqlx::query_as!(
         UserRow,

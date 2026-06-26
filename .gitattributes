@@ -1,0 +1,16 @@
+# Normalizar finales de línea a LF en TODO el repo.
+# En Windows, git (autocrlf) reescribía el working tree a CRLF, cambiando los
+# bytes de las migraciones y rompiendo los checksums de sqlx ("migration N was
+# previously applied but has been modified"). Forzar LF mantiene los bytes
+# estables entre Windows (dev) y Linux (CI).
+* text=auto eol=lf
+
+# Binarios: nunca tocar finales de línea.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

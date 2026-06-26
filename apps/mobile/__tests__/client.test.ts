@@ -33,3 +33,14 @@ test("on 401 it refreshes and retries once", async () => {
   expect(useAuth.getState().accessToken).toBe("new");
   expect(calls.some((c) => c.includes("/auth/refresh"))).toBe(true);
 });
+
+test("on refresh failure it signs out", async () => {
+  await useAuth.getState().signIn({ access: "old", refresh: "rbad" });
+  (globalThis as any).fetch = jest.fn(async (url: any) => {
+    // tanto el recurso protegido como el refresh devuelven 401
+    return jsonRes(401, {});
+  }) as any;
+  const res = await apiFetch("/me", { auth: true });
+  expect(res.status).toBe(401);
+  expect(useAuth.getState().status).toBe("signedOut");
+});

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen } from "../../ui/Screen";
 import { Text } from "../../ui/Text";

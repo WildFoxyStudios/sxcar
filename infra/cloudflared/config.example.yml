@@ -12,6 +12,8 @@ tunnel: <TUNNEL_UUID>
 credentials-file: C:/Users/<user>/.cloudflared/<TUNNEL_UUID>.json
 
 ingress:
+  # OJO: usa 127.0.0.1 (no "localhost"): cloudflared a veces resuelve localhost a IPv6 [::1],
+  # pero el API escucha en IPv4 (0.0.0.0) → 502 intermitente. 127.0.0.1 fuerza IPv4.
   - hostname: api.turnend.win
-    service: http://localhost:8081   # el API Rust local (8080 lo ocupa Apache/XAMPP)
+    service: http://127.0.0.1:8081   # el API Rust local (8080 lo ocupa Apache/XAMPP)
   - service: http_status:404

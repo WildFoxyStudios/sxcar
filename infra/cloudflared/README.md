@@ -12,8 +12,8 @@ Internet ──HTTPS──> Cloudflare edge (api.turnend.win)
 ## Estado actual
 - Túnel: `proyectox` (id `71025a02-45aa-414b-83c0-3dce38eeefcc`), remotely/locally-managed con `config.yml`.
 - DNS: CNAME `api.turnend.win` → `<uuid>.cfargotunnel.com` (proxied) — creado con `cloudflared tunnel route dns`.
-- Ingress: `api.turnend.win` → `http://localhost:8081`.
-- Verificado: `GET https://api.turnend.win/health` → `{"status":"ok","db":"up"}`.
+- Ingress: `api.turnend.win` → `http://127.0.0.1:8081` (IPv4 forzado; con `localhost` cloudflared a veces pega a `[::1]` y da 502 intermitente).
+- Verificado: `GET https://api.turnend.win/health` → `{"status":"ok","db":"up"}` (10/10 OK).
 
 ## Archivos (NO en git — son secretos)
 - `~/.cloudflared/cert.pem` — credencial de cuenta (de `cloudflared tunnel login`).

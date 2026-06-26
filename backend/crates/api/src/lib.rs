@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod config;
 pub mod health;
+pub mod ratelimit;
 pub mod tarpit;
 
 use std::sync::Arc;
@@ -21,6 +22,7 @@ pub struct AppState {
     pub refresh_ttl_secs: i64,
     pub notifier: Arc<dyn Notifier>,
     pub oauth: Arc<dyn OAuthVerifier>,
+    pub limiter: Arc<ratelimit::RateLimiter>,
 }
 
 pub struct AppDeps {
@@ -38,11 +40,17 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         refresh_ttl_secs: deps.refresh_ttl_secs,
         notifier: deps.notifier,
         oauth: deps.oauth,
+        limiter: Arc::new(ratelimit::RateLimiter::new(10.0, 1.0)),
     };
+
+    let auth_routes = auth::router().route_layer(axum::middleware::from_fn_with_state(
+        state.clone(),
+        ratelimit::auth_limiter,
+    ));
 
     let mut router = Router::new()
         .route("/health", get(health::health))
-        .merge(auth::router());
+        .merge(auth_routes);
     for path in tarpit::HONEYPOT_PATHS {
         router = router.route(path, any(tarpit::handler));
     }

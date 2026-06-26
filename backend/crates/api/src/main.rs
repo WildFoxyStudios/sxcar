@@ -34,6 +34,10 @@ async fn main() -> anyhow::Result<()> {
     let app = app(pool, deps);
     let listener = tokio::net::TcpListener::bind(&config.bind_addr).await?;
     tracing::info!("api listening on {}", config.bind_addr);
-    axum::serve(listener, app).await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .await?;
     Ok(())
 }

@@ -54,3 +54,43 @@ async fn profile_tables_exist() {
     }
     teardown_test_db(pool, &name).await;
 }
+
+#[tokio::test]
+async fn social_messaging_tables_exist() {
+    let (pool, name) = setup_test_db().await;
+    for table in [
+        "taps",
+        "favorites",
+        "blocks",
+        "profile_views",
+        "conversations",
+        "conversation_members",
+        "messages",
+    ] {
+        let exists: bool = sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name=$1)",
+        )
+        .bind(table)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert!(exists, "table {table} should exist");
+    }
+    teardown_test_db(pool, &name).await;
+}
+
+#[tokio::test]
+async fn albums_tables_exist() {
+    let (pool, name) = setup_test_db().await;
+    for table in ["albums", "album_photos", "album_shares"] {
+        let exists: bool = sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name=$1)",
+        )
+        .bind(table)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert!(exists, "table {table} should exist");
+    }
+    teardown_test_db(pool, &name).await;
+}

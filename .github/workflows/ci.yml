@@ -27,6 +27,7 @@ jobs:
           --health-retries 10
     env:
       TEST_DATABASE_URL: postgres://dev:dev@localhost:5432/appdb
+      SQLX_OFFLINE: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -39,6 +40,17 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings
+      - name: Run migrations (compila offline desde .sqlx; migra la DB del service)
+        env:
+          DATABASE_URL: postgres://dev:dev@localhost:5432/appdb
+        run: cargo run --bin api migrate
+      - name: Verify sqlx cache is up to date
+        env:
+          DATABASE_URL: postgres://dev:dev@localhost:5432/appdb
+          SQLX_OFFLINE: "false"
+        run: |
+          cargo install sqlx-cli --no-default-features --features rustls,postgres --locked
+          cargo sqlx prepare --workspace --check
       - name: Tests
         run: cargo test --all
       - name: Security audit

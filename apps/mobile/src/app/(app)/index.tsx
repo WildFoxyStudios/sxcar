@@ -8,8 +8,11 @@ export default function Home() {
   const { refreshToken, signOut } = useAuth();
 
   async function onLogout() {
-    if (refreshToken) await auth.logout(refreshToken);
-    await signOut();
+    try {
+      if (refreshToken) await auth.logout(refreshToken);
+    } finally {
+      await signOut();
+    }
   }
 
   return (

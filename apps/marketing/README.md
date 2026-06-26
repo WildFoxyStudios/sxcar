@@ -5,7 +5,12 @@ Sitio público de marketing (SEO) en Next.js App Router. Separado de la app de p
 ## Desarrollo
 - `npm install`
 - `npm run dev` (http://localhost:3000)
-- `npm run build` · `npm test` · `npm run lint`
+- `npm run build` · `npm test` · `npm run lint` · `npm run typecheck`
+
+> `npm run typecheck` corre `tsc` real sobre el código (vía `tsconfig.typecheck.json`).
+> `next build` lleva `typescript.ignoreBuildErrors: true` solo para tolerar un bug de
+> Next 16 en su archivo generado `.next/types/validator.ts`; el type-check de nuestro
+> código se hace con `typecheck` (debe correr en CI).
 
 ## SEO
 - Metadata API por página (title/description/canonical/OpenGraph/Twitter) vía `lib/seo.ts` (`buildMetadata`).

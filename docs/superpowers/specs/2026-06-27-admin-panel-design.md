@@ -24,6 +24,12 @@ Un panel **potente, versátil y "altamente intrusivo"** en **Flutter web** (`app
 - **Trust & Safety** (`csam_hits`,`blocks`,`safety_zones`): **hits CSAM** del escaneo automático (cola prioritaria + flujo de reporte legal); señales de abuso, inteligencia device/IP, velocity; gestión de bloqueos/zonas.
 - **Soporte** (`subscriptions`,`entitlements`): estado de cuenta; suscripciones/entitlements (RevenueCat); **reembolsos**; plantillas de respuesta; sesiones de soporte.
 - **GDPR/CCPA** (`data_requests`,`consent_records`): gestionar **export/borrado** de datos (derecho de acceso/olvido); ver consentimientos. Acciones sensibles → audit + (opcional) doble aprobación.
+- **Respuesta a Fuerzas del Orden (LER) / divulgación legal** — capacidad dedicada y muy restringida para cooperar con la policía cuando ocurre un incidente:
+  - **Export legal por-usuario** con TODO lo que el servidor almacena: identidad y datos de registro, **historial de login/IP/dispositivos**, ubicación (geo declarada/última conocida), media de perfil, reportes y acciones de moderación, suscripciones/pagos (referencias, **no** datos de tarjeta), consentimientos, y metadatos de actividad. Empaqueta un dossier descargable + hash de integridad.
+  - **Permiso `legal.export`** restringido a `superadmin`/equipo legal; **MFA**; toda exportación al `audit_log` con **base legal obligatoria** (referencia del requerimiento, agencia, instrumento: orden/citación/solicitud de emergencia).
+  - **Base de divulgación (cumplimiento):** solo ante (a) **proceso legal válido** (orden judicial/citación), (b) **emergencia** (amenaza inminente a la vida), o (c) **reporte obligatorio CSAM** a la autoridad (NCMEC en EE.UU. / equivalente). Recomendado: revisión por asesoría legal antes de entregar.
+  - **Techo E2E:** el contenido de chat E2E **no es descifrable** → no se puede entregar su texto; sí los **metadatos** disponibles (quién/cuándo) y todo lo no-E2E.
+  - Esto es "intrusivo" al máximo de lo **lícito**: maximiza lo que se puede entregar, con base legal + auditoría que te protegen de responsabilidad.
 - **Analítica:** dashboards (DAU/MAU, embudos registro→activación, ingresos, métricas de moderación, cohortes). Lectura agregada; evitar PII innecesaria.
 - **Operación:** **feature flags / remote config** (`feature_flags`); **broadcast/notificaciones** (push vía FCM / email); **visor de audit log** (solo lectura, con filtros).
 
@@ -34,6 +40,7 @@ Un panel **potente, versátil y "altamente intrusivo"** en **Flutter web** (`app
 - **PII acotada por propósito** (GDPR): el acceso a datos personales se registra; vistas mínimas necesarias.
 - **Rate-limit** de acciones admin; **doble aprobación ("cuatro ojos")** opcional para destructivas (borrado masivo, ban masivo).
 - **Acciones destructivas reversibles** donde sea posible (soft-delete, suspensión vs borrado).
+- **Divulgación legal (LER):** solo con `legal.export` + **base legal registrada** + auditoría; nunca entrega ad-hoc sin proceso legal/emergencia/CSAM (te protege de responsabilidad). Ver §3.
 
 ## 5. Techo técnico + legal de "intrusivo"
 - Si el **chat es E2E**, los admins **no** leen mensajes privados en silencio (rompería E2E + GDPR + confianza). Moderación de chat = **basada en reportes** (el reportante divulga) + **CSAM automático** por hash (sobre bytes, edge/server). 
@@ -55,7 +62,9 @@ Un panel **potente, versátil y "altamente intrusivo"** en **Flutter web** (`app
   - `staff_roles` + `permissions` (o `role` enum + tabla `role_permissions` para granularidad).
   - `staff_sessions` (sesiones revocables).
   - `feature_flags` (key, value/jsonb, audiencia/rollout, updated_by…).
-  - (Verificar campos de `audit_log` existente; ampliar si falta `actor_staff_id`/`justification`.)
+  - `access_events` (user_id, ip, user_agent, device_id, evento login/refresh, timestamp) — **historial de acceso/IP** para responder a fuerzas del orden; **retención acotada** (p.ej. 90–180 días) por minimización GDPR.
+  - `legal_holds` (opcional): marcar cuentas bajo requerimiento legal para **suspender el borrado** mientras dure el proceso.
+  - (Verificar campos de `audit_log` existente; ampliar si falta `actor_staff_id`/`justification`/`legal_basis`.)
 
 ## 8. Despliegue (Flutter web)
 - `apps/admin` (Flutter web) → estático; hosting en Vercel (proyecto separado, `noindex`, password/SSO) o servido tras el túnel. Comparte `core`; opcionalmente `native` para validación.

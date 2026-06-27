@@ -71,6 +71,8 @@ Un panel **potente, versátil y "altamente intrusivo"** en **Flutter web** (`app
   - `country_config` (country_code, features habilitadas, plan/precio override, flags legales/edad, geo-restricción, **safety_override** [modo discreto forzado], staff_scope…) — **administración por país**.
   - `experiments` (A-B/rollout), `translations` (i18n gestionable), `announcements`/`cms_content` (banners/anuncios/versiones legales) — catálogo enterprise (por fases).
   - `user_notes` (notas/tags internos por usuario), `linked_accounts`/`fingerprints` (evasión de bans), `promo_codes` + `referrals` (crecimiento/monetización), `app_versions` (min-version/force-update + modo mantenimiento), `retention_policies` (retención/purga), `legal_doc_versions` (+ aceptación). DSAR reutiliza `data_requests`.
+  - **Taxonomía de perfil (§13):** `profile_attribute_types` (orientación/género/tribu/…; flags `sensitive`, `multi_select`, `required`), `profile_attribute_options` (option×tipo, orden, activo), `profile_attribute_option_i18n` (traducciones), `attribute_country_availability`. Los `profile_*` existentes se enlazan a este catálogo.
+  - **Más dominios (§14):** `report_reasons`, `word_blocklist`/`link_blocklist`/`image_hash_blocklist`, `notification_types`/`notification_templates`, `badges`/`badge_rules`, `matching_config`/`ranking_weights`, `support_tickets`/`canned_responses`, `api_keys`/`webhook_subscriptions`, `safety_resources` (por país), `config_versions` (versionado+rollback de TODA la config editable).
   - `access_events` (user_id, ip, user_agent, device_id, evento login/refresh, timestamp) — **historial de acceso/IP** para responder a fuerzas del orden; **retención acotada** (p.ej. 90–180 días) por minimización GDPR.
   - `legal_holds` (opcional): marcar cuentas bajo requerimiento legal para **suspender el borrado** mientras dure el proceso.
   - (Verificar campos de `audit_log` existente; ampliar si falta `actor_staff_id`/`justification`/`legal_basis`.)
@@ -108,3 +110,27 @@ Cada ítem es full-stack (UI + API admin RBAC+audit + esquema + aplicación real
 - **Cumplimiento / legal:** **gestión de retención** + purga automática, **consentimientos** (versiones + re-consent), **DSAR** (acceso/borrado GDPR/CCPA) workflow, **legal holds**, **LER**, **reporte de transparencia** (estadísticas de requerimientos legales).
 - **Seguridad / staff:** **recertificación periódica de accesos**, **break-glass** auditado, **alertas de anomalías** en acciones admin, allowlist IP, rotación de claves.
 - **Analítica / BI:** **dashboards a medida** (solo lectura), **segmentos guardados**, **reportes/exports programados**, export a **data warehouse**, métricas **en tiempo real** (online, matches/min, mensajes/min).
+
+## 13. Gestión de taxonomía de perfil (orientación sexual, identidad de género, etc.)
+El staff edita los **catálogos de opciones** que el usuario elige en su perfil, **sin deploy** y de forma **inclusiva/evolutiva**. Reemplaza enums hardcodeados por **datos administrables**; la app los **lee del backend** (config-driven) → el módulo de perfiles pasa a ser data-driven (modifica app + backend + migraciones, no solo el panel).
+- **Catálogos administrables (CRUD):** **orientación sexual**, **identidad de género**, **pronombres**, **tribus**, "looking for", meet-at/relación, **etnia**, tipo de cuerpo, **posición/rol**, idiomas, intereses/tags, **estatus VIH + última prueba** y prevención (PrEP) [dato de salud sensible], unidades (altura/peso), etc.
+- **Por opción:** label + **traducciones i18n**, icono/emoji, **orden**, activo/deprecado, **disponibilidad por país** (varían por región), y **analítica de uso**.
+- **Config de campos de perfil:** qué campos existen, requerido/opcional, visibilidad por defecto, **single/multi-select**, validación; campos custom.
+- **⚠️ Datos de categoría especial (GDPR Art. 9):** salud (VIH/PrEP), **orientación sexual** e **identidad de género** son **datos especiales** → consentimiento explícito, controles de acceso reforzados, **nunca** compartidos con ads/terceros, y **seguridad regional** (ocultar/forzar discreción donde sea peligroso). El catálogo marca qué campos son sensibles para aplicarlo automáticamente.
+- (Tablas: `profile_attribute_types` + `profile_attribute_options` + `*_i18n` + disponibilidad por país; los `profile_tribes`/`profile_looking_for`/`profile_meet_at`/`profile_ethnicities`/`profile_tags` existentes se mapean a este catálogo administrable.)
+
+## 14. Más dominios (para que sea completo)
+- **Matching / descubrimiento:** config del **ranking del grid**, filtros disponibles, reglas de **boost/spotlight** (features monetizadas), distancia/geo, "travel mode" — todo server-authoritative.
+- **Taxonomía de reportes:** **motivos de reporte** administrables + **auto-acción** por motivo; categorías de moderación.
+- **Blocklists / contenido prohibido:** palabras/links/dominios prohibidos, **hash blocklist** de imágenes (spam/scam, además de CSAM).
+- **Notificaciones:** **tipos y plantillas** (push/email/in-app), preferencias por defecto, **quiet hours**/throttling.
+- **Onboarding:** pasos, campos requeridos, gating de registro, tutoriales.
+- **Centro de seguridad:** tips, **recursos de crisis por país**, config de pánico/modo discreto/desbloqueo de emergencia.
+- **Verificación & badges:** reglas de **verificado**, verificación de foto/edad/ID (config de proveedor), tipos de badge.
+- **Geofencing / eventos:** zonas/explore, eventos por ubicación, "Right Now".
+- **Soporte:** integración de **tickets** (tipo Zendesk), respuestas predefinidas, escalado, CSAT.
+- **Observabilidad de producto:** adopción de features, embudos, crash reports, tasas de error.
+- **Región/moneda:** monedas, formatos, idiomas **RTL**, **residencia de datos** por región.
+- **Abuso/spam:** reglas de rate-limit, **captcha**, umbrales de bots/velocity.
+- **API/partners:** **API keys**, tiers de rate-limit, suscripciones de **webhook**.
+- **Config audit & rollback:** **versionado de TODA la config** (quién/cuándo) con **rollback** — porque "editable sin deploy" exige poder revertir un cambio malo al instante.

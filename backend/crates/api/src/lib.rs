@@ -2,6 +2,7 @@ pub mod auth;
 pub mod config;
 pub mod cors;
 pub mod health;
+pub mod media;
 pub mod ratelimit;
 pub mod tarpit;
 
@@ -24,6 +25,7 @@ pub struct AppState {
     pub notifier: Arc<dyn Notifier>,
     pub oauth: Arc<dyn OAuthVerifier>,
     pub limiter: Arc<ratelimit::RateLimiter>,
+    pub r2: Option<Arc<media::R2Config>>,
 }
 
 pub struct AppDeps {
@@ -42,6 +44,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         notifier: deps.notifier,
         oauth: deps.oauth,
         limiter: Arc::new(ratelimit::RateLimiter::new(10.0, 1.0)),
+        r2: media::R2Config::from_env().map(Arc::new),
     };
 
     let auth_routes = auth::router().route_layer(axum::middleware::from_fn_with_state(
@@ -51,7 +54,8 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
 
     let mut router = Router::new()
         .route("/health", get(health::health))
-        .merge(auth_routes);
+        .merge(auth_routes)
+        .merge(media::router());
     for path in tarpit::HONEYPOT_PATHS {
         router = router.route(path, any(tarpit::handler));
     }

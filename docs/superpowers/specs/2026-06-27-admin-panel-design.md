@@ -32,6 +32,9 @@ Un panel **potente, versátil y "altamente intrusivo"** en **Flutter web** (`app
   - Esto es "intrusivo" al máximo de lo **lícito**: maximiza lo que se puede entregar, con base legal + auditoría que te protegen de responsabilidad.
 - **Analítica:** dashboards (DAU/MAU, embudos registro→activación, ingresos, métricas de moderación, cohortes). Lectura agregada; evitar PII innecesaria.
 - **Operación:** **feature flags / remote config** (`feature_flags`); **broadcast/notificaciones** (push vía FCM / email); **visor de audit log** (solo lectura, con filtros).
+- **Planes & entitlements (free/premium) — configurables SIN deploy:** catálogo de **planes** (free, premium/tiers), **matriz feature↔plan** (qué desbloquea cada plan), **precios por plan**, todo editable desde el panel; el gating se lee **server-authoritative** (el backend consulta esta config, no se confía en el cliente). Mapea a productos/entitlements de **RevenueCat**. "Cambiar qué es free vs premium" = editar config, no recompilar. (Tablas nuevas `plans`/`plan_features`.)
+- **Administración por países/regiones:** config **por país** — disponibilidad de features, **precios/planes** por país, requisitos **legales/cumplimiento** (edad de consentimiento, GDPR/CCPA, age-verification), **geo-restricciones** (bloquear/limitar features por país), colas de moderación y **analítica por país**, y **seguridad regional**: en países donde ser LGBTQ+ es ilegal/peligroso → **modo discreto forzado**, ocultar datos sensibles, avisos a viajeros (función real y crítica de este nicho). **Staff con scope geográfico** (un moderador limitado a su región). (Tabla `country_config`.)
+- **Catálogo enterprise (objetivo, por fases):** experimentos/**A-B testing** + rollout gradual; **i18n/traducciones** gestionables; **CMS** in-app (banners, anuncios, versiones de documentos legales); **campañas** push/email con **segmentación**; **motor de reglas** antifraude/abuso; **centro de cumplimiento** (GDPR/CCPA, retención, consentimientos, LER); **SSO/SAML** para staff; **webhooks/integraciones**; reportes de auditoría/compliance; salud del sistema y uso de features.
 
 ## 4. Guardarraíles (OBLIGATORIOS)
 - **RBAC mínimo privilegio** + permisos por acción.
@@ -62,6 +65,9 @@ Un panel **potente, versátil y "altamente intrusivo"** en **Flutter web** (`app
   - `staff_roles` + `permissions` (o `role` enum + tabla `role_permissions` para granularidad).
   - `staff_sessions` (sesiones revocables).
   - `feature_flags` (key, value/jsonb, audiencia/rollout, updated_by…).
+  - `plans` (code, nombre, tier, activo…) + `plan_features` (plan→feature→límite/booleano) + `plan_prices` (plan×país/moneda) — **planes free/premium y matriz de features configurables**; el backend lee esto para el gating (server-authoritative) y mapea a entitlements/RevenueCat.
+  - `country_config` (country_code, features habilitadas, plan/precio override, flags legales/edad, geo-restricción, **safety_override** [modo discreto forzado], staff_scope…) — **administración por país**.
+  - `experiments` (A-B/rollout), `translations` (i18n gestionable), `announcements`/`cms_content` (banners/anuncios/versiones legales) — catálogo enterprise (por fases).
   - `access_events` (user_id, ip, user_agent, device_id, evento login/refresh, timestamp) — **historial de acceso/IP** para responder a fuerzas del orden; **retención acotada** (p.ej. 90–180 días) por minimización GDPR.
   - `legal_holds` (opcional): marcar cuentas bajo requerimiento legal para **suspender el borrado** mientras dure el proceso.
   - (Verificar campos de `audit_log` existente; ampliar si falta `actor_staff_id`/`justification`/`legal_basis`.)
@@ -80,8 +86,10 @@ Un panel **potente, versátil y "altamente intrusivo"** en **Flutter web** (`app
 - **AD1:** identidad staff + RBAC + 2FA + audit middleware + `/admin/auth`.
 - **AD2:** usuarios (ver/buscar/ban/suspend/force-logout) + visor de audit.
 - **AD3:** moderación (reportes + NSFW queue + takedown) + CSAM queue.
-- **AD4:** soporte (entitlements/RevenueCat/refunds) + GDPR (export/borrado).
+- **AD4:** soporte (entitlements/RevenueCat/refunds) + GDPR (export/borrado) + **LER/divulgación legal** (`legal.export`, `access_events`, `legal_holds`).
 - **AD5:** analítica + feature flags + broadcast.
+- **AD6:** **planes free/premium + matriz de features configurables** (`plans`/`plan_features`/`plan_prices`) + **administración por país** (`country_config`, geo-restricción, safety_override, staff con scope geográfico).
+- **AD7:** catálogo enterprise por fases (A-B/experiments, i18n, CMS/anuncios, campañas+segmentación, motor antifraude, SSO/SAML, webhooks).
 
 ## 11. Fuera de alcance
 - Lectura de chats E2E (imposible por diseño). Reglas de moderación automática avanzada (ML server-side). BI/warehouse externo. Todo se especifica/prioriza aparte.

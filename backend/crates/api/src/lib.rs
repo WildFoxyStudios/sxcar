@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod config;
+pub mod cors;
 pub mod health;
 pub mod ratelimit;
 pub mod tarpit;
@@ -54,5 +55,6 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
     for path in tarpit::HONEYPOT_PATHS {
         router = router.route(path, any(tarpit::handler));
     }
-    router.with_state(state)
+    // CORS como capa externa: resuelve el preflight OPTIONS antes del rate-limiter.
+    router.layer(cors::cors_layer()).with_state(state)
 }

@@ -93,18 +93,20 @@ Dart en release es **AOT a ARM nativo** (no JS interpretado): rápido para lógi
 ## 9. Estructura del repo
 ```
 apps/
-  app/                  # Flutter (producto, móvil+web)  [reemplaza apps/mobile]
+  app/                  # Flutter (producto, móvil+web)
     lib/ … (UI Dart)
     native/             # crate Rust del puente FRB (cdylib/staticlib), dep path → core
     assets/models/      # modelo ONNX NSFW
+  admin/                # Flutter web (panel de staff)  [ver §17]
+    native/             # (opcional) puente FRB del admin, dep path → core
   marketing/            # Next.js (SEO) — sin cambios
 backend/
   crates/
     core/               # NUEVO: lógica pura compartida (modelos+validación)
     api/ db/ auth/      # backend; api/auth pasan a depender de core
 ```
-- `apps/mobile` (RN/Expo de F0.4) queda **deprecado**; se elimina cuando el slice de auth en Flutter esté verde (no antes, para no perder referencia).
-- `core` vive en el workspace del backend; `apps/app/native` es un crate independiente con dep `path` a `../../backend/crates/core` (no se fuerza un workspace raíz, menos invasivo).
+- `apps/mobile` (RN/Expo de F0.4) **ELIMINADO** (commit del pivot) — queda en el historial git.
+- `core` vive en el workspace del backend; `apps/app/native` y `apps/admin/native` son crates independientes con dep `path` a `../../backend/crates/core` (no se fuerza un workspace raíz, menos invasivo).
 
 ## 10. Primer slice vertical (valida TODO el toolchain antes de features)
 **Auth en Flutter contra el backend en vivo, en iOS+Android+Web:**
@@ -142,12 +144,49 @@ Esto **prueba el camino más arriesgado (FRB v2 + WASM + cross-compile) con la f
 - Renditions blur/clear server-side (fase media-server), hash-match CSAM, features de producto (grid/geo/perfiles/chat), notificaciones FCM. Se especifican aparte.
 
 ## 15. Decisiones que tomé (confírmalas en revisión)
-- App Flutter en `apps/app` (deprecando `apps/mobile`). Estado: **Riverpod** + **go_router**.
+- App Flutter en `apps/app`; **`apps/mobile` (RN) ELIMINADO**. Estado: **Riverpod** + **go_router**.
 - `core` en el workspace del backend; `native` como crate independiente con dep path.
 - NSFW: `tract`+ONNX, arranque con modelo linaje GantMan/open_nsfw (pequeño, wasm-friendly).
 - WASM **single-thread** (sin COOP/COEP) para simplificar el deploy web.
 - Codegen FRB **en build** (script), no commiteado.
 - Slice inicial = **auth en los 3 targets**.
+- **Carga al cliente** maximizada; servidor solo retiene autoridad/seguridad/legal (§16).
+- **Panel admin** = `apps/admin` (Flutter web) con RBAC + audit + 2FA; merece spec propio (§17).
+- **Deeplinks** = Universal/App Links nativos + go_router (no Firebase Dynamic Links) (§18).
+- **Ads** = AdMob native solo móvil, entitlement-gated — **sujeto a verificar política adult/dating** (§19).
+- **Protocolo** = MessagePack + content-negotiation (JSON fallback), por fases en hot paths (§20).
+
+## 16. Principio: máxima carga al cliente (backend delgado)
+Delegar al cliente **todo el CÓMPUTO** que no requiera autoridad del servidor → backend más barato (pilar coste) y app más reactiva. Lo hace Rust (`app_native`) fuera del isolate de UI.
+- **Al cliente (Rust):** redimensionar/recomprimir/reencode de imagen antes de subir, thumbnails, **detección NSFW**, blur de previsualización, strip de EXIF, hashing perceptual (dedupe local), cálculo de distancia/geo, filtrado/orden/búsqueda de listas cacheadas, cripto E2E.
+- **Queda en el servidor (NO delegable — autoridad/seguridad/legal):** authN/authZ, **gating de entitlements** (quién ve clear vs blur), rate-limiting, decisiones de abuso/trust, **hash-match CSAM** (legal: server/edge), validación de pagos (webhooks RevenueCat), integridad y fuente de verdad.
+- **Límite de confianza (clave):** el servidor **nunca confía** en afirmaciones del cliente para seguridad. El veredicto NSFW del cliente es UX; el servidor sigue tratando toda subida como no confiable (sirve renditions gated + corre el hash CSAM). "Delegar cómputo" ≠ "delegar confianza".
+
+## 17. Panel de administración (`apps/admin`, Flutter web)
+App **Flutter web** separada, solo-staff, tras auth fuerte. Potente y versátil, **con guardarraíles no negociables** (protegen al usuario y al negocio de abuso interno y de responsabilidad legal).
+- **Capacidades:** gestión de usuarios (buscar, ver perfil completo, estado, ban/suspensión/shadowban, force-logout, reset, *impersonación-para-soporte* auditada), **moderación** (cola de reportes, cola NSFW, hits CSAM del escaneo automático, aprobar/rechazar/takedown de media de perfil), **trust&safety** (señales de abuso, inteligencia device/IP), **soporte** (estado de cuenta, suscripciones/entitlements de RevenueCat, reembolsos, plantillas), **analítica** (DAU/MAU, embudos, ingresos, métricas de moderación), **feature flags/remote config**, **broadcast/notificaciones**, **visor de audit log**.
+- **Guardarraíles (obligatorios):** RBAC con **mínimo privilegio** (support < moderator < admin < superadmin), permisos por acción; **audit log inmutable** (quién, qué, a quién, cuándo, por qué) de toda acción intrusiva; **2FA obligatorio** para staff + (opcional) allowlist de IP + sesiones cortas; acceso a PII **acotado por propósito** y registrado (GDPR).
+- **Techo técnico+legal de "intrusivo":** si el chat es **E2E**, los admins **no** pueden leer mensajes privados en silencio (rompería E2E + GDPR + confianza). La moderación de chat es **basada en reportes** (el reportante divulga el contenido) + **CSAM automático** por hash. La intrusividad llega hasta donde es **lícita y técnicamente sólida**; todo lo demás (todo lo que el servidor almacena: perfiles, media, metadatos) sí es accesible por staff con scope+auditoría.
+- **Backend:** APIs admin RBAC-gated y auditadas (autoridad de servidor legítima; no contradice §16). 
+- Por tamaño, el admin merece **su propio spec detallado**; aquí queda el marco y los guardarraíles.
+
+## 18. Deeplinks web → app móvil
+- **iOS Universal Links + Android App Links:** publicar `apple-app-site-association` (AASA) y `assetlinks.json` en el dominio (`turnend.win` y/o `app.turnend.win`), servidos por el sitio Vercel y/o el API.
+- **`go_router`** maneja las rutas in-app; la misma estructura de URL sirve en Flutter web y hace deep-link a la app nativa si está instalada (CTAs de marketing, links de perfil compartidos, share sheet).
+- Deferred deep-linking (instalar→ruta) opcional; Firebase Dynamic Links está descontinuado → usar Universal/App Links nativos (+ solución propia de diferido si se necesita, no FDL).
+
+## 19. Publicidad de Google (free, no intrusiva, integrada)
+- **Móvil (iOS/Android):** **AdMob** (`google_mobile_ads`) con **native ads** integrados en la cascada/grid (cada N tiles) y placements patrocinados — **no** interstitials molestos. **Entitlement-gated:** los suscriptores ven **cero** anuncios.
+- **⚠️ RIESGO DE POLÍTICA (importante):** AdMob/AdSense tienen **políticas estrictas sobre contenido sexual/adulto y citas**. Una app LGBTQ+ 18+ tipo ligue puede quedar **restringida o rechazada**, con fill/eCPM bajos o riesgo de suspensión de cuenta. **Decisión pendiente del usuario** (ver preguntas): (a) verificar política AdMob + rating de contenido, (b) usar redes de anuncios **dating/adult-friendly** o mediación que filtre inventario, (c) limitar anuncios a superficies "seguras". No comprometer monetización a AdMob sin validar esto.
+- **Web:** `google_mobile_ads` es **solo móvil**; Flutter web no tiene AdMob → web sin anuncios al inicio (o AdSense/GAM aparte, con las mismas restricciones de contenido).
+
+## 20. Protocolo binario (eliminar JSON innecesario) — respuesta a "¿qué crees?"
+**Sí, vale la pena y encaja**, porque ambos extremos son Rust+serde compartiendo `core`: adoptar binario es casi gratis y da payloads más pequeños (menos datos móviles/batería) + encode/decode más rápido en hot paths.
+- **Recomendado: MessagePack (`rmp-serde`) como formato principal app↔backend, con content-negotiation HTTP (`Accept`/`Content-Type`) y JSON como fallback siempre disponible** (debug, tooling web, terceros: webhooks, RevenueCat, marketing).
+- **NO `bincode`/`postcard` para la API pública:** acoplados al esquema y frágiles entre versiones de la app (cliente viejo + server nuevo → corrupción silenciosa). Para una app móvil con muchas versiones en producción hace falta un formato **auto-descriptivo/evolucionable** → MessagePack (como JSON pero binario) o Protobuf. MessagePack+serde es lo de menor fricción dados los DTOs serde de `core`.
+- **Dónde más rinde:** tráfico alto/frecuente — grid de cercanos, presencia/typing, updates de geo, mensajes de chat (frames binarios por websocket). En endpoints de baja frecuencia (auth) JSON está bien (debugabilidad).
+- **Disciplina de versionado:** evolucionar DTOs **aditivamente** (`#[serde(default)]`, campos opcionales), nunca reppropósito de campos; versionar la API; ambos extremos comparten `core` (lockstep por release) pero **las versiones viejas persisten** → mantener compat hacia atrás siempre.
+- **Fases:** ya enviamos JSON (funciona); introducir MessagePack vía content-negotiation cuando lleguen los hot paths (feed/chat). No arrancar JSON de auth prematuramente (poca ganancia, pierdes debug). La media ya es binaria (presigned PUT) — ahí no hay "impuesto JSON".
 
 ## Fuentes (verificación 2026-06-27)
 - nsfw_detector_flutter (TFLite/open_nsfw, móvil): https://pub.dev/packages/nsfw_detector_flutter

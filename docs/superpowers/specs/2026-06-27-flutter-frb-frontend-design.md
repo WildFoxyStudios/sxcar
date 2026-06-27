@@ -177,7 +177,8 @@ App **Flutter web** separada, solo-staff, tras auth fuerte. Potente y versátil,
 
 ## 19. Publicidad de Google (free, no intrusiva, integrada)
 - **Móvil (iOS/Android):** **AdMob** (`google_mobile_ads`) con **native ads** integrados en la cascada/grid (cada N tiles) y placements patrocinados — **no** interstitials molestos. **Entitlement-gated:** los suscriptores ven **cero** anuncios.
-- **⚠️ RIESGO DE POLÍTICA (importante):** AdMob/AdSense tienen **políticas estrictas sobre contenido sexual/adulto y citas**. Una app LGBTQ+ 18+ tipo ligue puede quedar **restringida o rechazada**, con fill/eCPM bajos o riesgo de suspensión de cuenta. **Decisión pendiente del usuario** (ver preguntas): (a) verificar política AdMob + rating de contenido, (b) usar redes de anuncios **dating/adult-friendly** o mediación que filtre inventario, (c) limitar anuncios a superficies "seguras". No comprometer monetización a AdMob sin validar esto.
+- **⚠️ RIESGO DE POLÍTICA (importante):** AdMob/AdSense tienen **políticas estrictas sobre contenido sexual/adulto y citas**. Una app LGBTQ+ 18+ tipo ligue puede quedar **restringida o rechazada**, con fill/eCPM bajos o riesgo de suspensión de cuenta.
+- **DECISIÓN (usuario, 2026-06-27):** ir con **AdMob native, verificando la política/rating ANTES de comprometer monetización**, con la capa de ads diseñada **agnóstica** (interfaz `AdProvider`) para poder cambiar de red/mediación si AdMob rechaza el nicho. **Fallback** previsto. La verificación de política AdMob es un paso explícito del plan (no asumir aprobación).
 - **Web:** `google_mobile_ads` es **solo móvil**; Flutter web no tiene AdMob → web sin anuncios al inicio (o AdSense/GAM aparte, con las mismas restricciones de contenido).
 
 ## 20. Protocolo binario (eliminar JSON innecesario) — respuesta a "¿qué crees?"

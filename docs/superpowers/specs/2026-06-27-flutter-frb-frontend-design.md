@@ -153,7 +153,7 @@ Esto **prueba el camino más arriesgado (FRB v2 + WASM + cross-compile) con la f
 - **Carga al cliente** maximizada; servidor solo retiene autoridad/seguridad/legal (§16).
 - **Panel admin** = `apps/admin` (Flutter web) con RBAC + audit + 2FA; merece spec propio (§17).
 - **Deeplinks** = Universal/App Links nativos + go_router (no Firebase Dynamic Links) (§18).
-- **Ads** = AdMob native solo móvil, entitlement-gated — **sujeto a verificar política adult/dating** (§19).
+- **Ads** = Google ads (AdMob/Ad Manager) native solo móvil, entitlement-gated; **viable** (precedente Grindr) con prácticas de cumplimiento: anuncios solo en superficies no explícitas (blur/gating ya ayuda), rating 18+, Ad Manager + categorías sensibles, capa `AdProvider` agnóstica (§19).
 - **Protocolo** = MessagePack + content-negotiation (JSON fallback), por fases en hot paths (§20).
 
 ## 16. Principio: máxima carga al cliente (backend delgado)
@@ -177,8 +177,13 @@ App **Flutter web** separada, solo-staff, tras auth fuerte. Potente y versátil,
 
 ## 19. Publicidad de Google (free, no intrusiva, integrada)
 - **Móvil (iOS/Android):** **AdMob** (`google_mobile_ads`) con **native ads** integrados en la cascada/grid (cada N tiles) y placements patrocinados — **no** interstitials molestos. **Entitlement-gated:** los suscriptores ven **cero** anuncios.
-- **⚠️ RIESGO DE POLÍTICA (importante):** AdMob/AdSense tienen **políticas estrictas sobre contenido sexual/adulto y citas**. Una app LGBTQ+ 18+ tipo ligue puede quedar **restringida o rechazada**, con fill/eCPM bajos o riesgo de suspensión de cuenta.
-- **DECISIÓN (usuario, 2026-06-27):** ir con **AdMob native, verificando la política/rating ANTES de comprometer monetización**, con la capa de ads diseñada **agnóstica** (interfaz `AdProvider`) para poder cambiar de red/mediación si AdMob rechaza el nicho. **Fallback** previsto. La verificación de política AdMob es un paso explícito del plan (no asumir aprobación).
+- **Viabilidad (precedente real: Grindr y otras apps 18+ de citas monetizan con anuncios de Google).** Google **permite las apps de *citas***; la línea dura es el **contenido sexualmente explícito** y **mostrar anuncios adyacentes a él**, no el nicho dating en sí.
+- **DECISIÓN (usuario, 2026-06-27): ir con anuncios de Google** siguiendo **prácticas de cumplimiento** (no es un bloqueo):
+  1. **Anuncios solo en superficies NO explícitas** — el grid ya muestra NSFW **blur por defecto + gated por entitlement**, así que los native ads nunca quedan pegados a contenido explícito (la arquitectura ya lo favorece).
+  2. **Rating de contenido correcto** (18+) en las tiendas y en la consola de ads.
+  3. Preferir **Google Ad Manager** (grado publisher, con **controles de categorías sensibles**) sobre el AdMob básico; activar mediación.
+  4. Capa **`AdProvider` agnóstica** como buena práctica de ingeniería (cambiar de red/mediación sin tocar la UI) — **no** porque se espere rechazo.
+  - **Entitlement-gated:** suscriptores ven **cero** anuncios.
 - **Web:** `google_mobile_ads` es **solo móvil**; Flutter web no tiene AdMob → web sin anuncios al inicio (o AdSense/GAM aparte, con las mismas restricciones de contenido).
 
 ## 20. Protocolo binario (eliminar JSON innecesario) — respuesta a "¿qué crees?"

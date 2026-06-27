@@ -71,7 +71,7 @@ AASA (`apple-app-site-association`) + `assetlinks.json` servidos en `turnend.win
 Capa **`AdProvider`** agnóstica; impl **Google ads** (`google_mobile_ads` / Ad Manager) con **native ads** en la cascada, **entitlement-gated** (cero ads para pago). Viable (precedente Grindr) con **prácticas de cumplimiento**: anuncios **solo en superficies no explícitas** (el grid ya va blur+gated), **rating 18+**, **Ad Manager + controles de categorías sensibles**, mediación. Web sin ads. Acept.: free ve native ads no intrusivos en móvil; pago no ve ninguno; gating server-authoritative; sin anuncios adyacentes a contenido explícito.
 
 ## F2.x — Panel admin (outline; ver spec dedicado)
-AD1 identidad staff+RBAC+2FA+audit → AD2 usuarios+audit viewer → AD3 moderación+CSAM → AD4 soporte+GDPR → AD5 analítica+flags+broadcast. `apps/admin` Flutter web; APIs `/admin/*` (RBAC+audit); migraciones nuevas (`staff`/roles/`feature_flags`/`staff_sessions`). Guardarraíles obligatorios.
+AD1 identidad staff+RBAC+2FA+audit → AD2 usuarios+audit viewer+LER → AD3 moderación+CSAM → AD4 soporte+GDPR → AD5 analítica+flags+broadcast → **AD6 planes free/premium + admin por país** → **AD7 catálogo enterprise** (ver spec admin §12). `apps/admin` Flutter web; APIs `/admin/*` (RBAC+audit); migraciones nuevas (`staff`/roles/`feature_flags`/`plans`/`country_config`/`access_events`/…). **Real y end-to-end:** cada capacidad modifica el resto del proyecto (backend, migraciones, app cliente) para tener efecto real — nada de UI de adorno. Guardarraíles obligatorios.
 
 ## Gates / riesgos
 - **F1.1 es gate de viabilidad** del toolchain (FRB v2 + WASM + cross-compile). Si algo del WASM no cuadra, se decide ahí (single-thread ya elegido para evitar COOP/COEP).

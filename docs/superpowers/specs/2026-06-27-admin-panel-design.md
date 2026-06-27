@@ -7,6 +7,8 @@
 ## 0. Objetivo
 Un panel **potente, versátil y "altamente intrusivo"** en **Flutter web** (`apps/admin`) para que administradores y staff (soporte, moderación, T&S) trabajen — **con guardarraíles obligatorios** (RBAC mínimo-privilegio, **audit log inmutable**, 2FA) que protegen al usuario y al negocio de abuso interno y de responsabilidad legal (GDPR). Construido sobre el backend y esquema existentes; reutiliza tablas de trust/safety ya presentes.
 
+**PRINCIPIO: real y end-to-end (no maquetas).** Cada capacidad del panel es **full-stack y 100% funcional**: UI Flutter → **API admin** (`/admin/*`, RBAC+audit) → **esquema/datos reales** → **punto de aplicación** en la app/backend (gating de entitlements, feature flags, geo/país, versión de app, etc.). Implementar el panel **implica modificar el resto del proyecto** (backend, migraciones, la app cliente) para que cada acción tenga efecto real. Es un objetivo grande → se construye **por fases** (AD1…AD7+), pero **cada fase queda funcional de punta a punta** (nada de botones falsos).
+
 ## 1. Decisiones
 - **Flutter web** (`apps/admin`), solo-staff, `noindex`, comparte el crate `core`. SEO irrelevante.
 - **Identidad de staff SEPARADA** de los usuarios finales (tabla `staff`, no `users`); JWT con *audience* distinto; **2FA obligatorio (TOTP)**.
@@ -68,6 +70,7 @@ Un panel **potente, versátil y "altamente intrusivo"** en **Flutter web** (`app
   - `plans` (code, nombre, tier, activo…) + `plan_features` (plan→feature→límite/booleano) + `plan_prices` (plan×país/moneda) — **planes free/premium y matriz de features configurables**; el backend lee esto para el gating (server-authoritative) y mapea a entitlements/RevenueCat.
   - `country_config` (country_code, features habilitadas, plan/precio override, flags legales/edad, geo-restricción, **safety_override** [modo discreto forzado], staff_scope…) — **administración por país**.
   - `experiments` (A-B/rollout), `translations` (i18n gestionable), `announcements`/`cms_content` (banners/anuncios/versiones legales) — catálogo enterprise (por fases).
+  - `user_notes` (notas/tags internos por usuario), `linked_accounts`/`fingerprints` (evasión de bans), `promo_codes` + `referrals` (crecimiento/monetización), `app_versions` (min-version/force-update + modo mantenimiento), `retention_policies` (retención/purga), `legal_doc_versions` (+ aceptación). DSAR reutiliza `data_requests`.
   - `access_events` (user_id, ip, user_agent, device_id, evento login/refresh, timestamp) — **historial de acceso/IP** para responder a fuerzas del orden; **retención acotada** (p.ej. 90–180 días) por minimización GDPR.
   - `legal_holds` (opcional): marcar cuentas bajo requerimiento legal para **suspender el borrado** mientras dure el proceso.
   - (Verificar campos de `audit_log` existente; ampliar si falta `actor_staff_id`/`justification`/`legal_basis`.)
@@ -93,3 +96,15 @@ Un panel **potente, versátil y "altamente intrusivo"** en **Flutter web** (`app
 
 ## 11. Fuera de alcance
 - Lectura de chats E2E (imposible por diseño). Reglas de moderación automática avanzada (ML server-side). BI/warehouse externo. Todo se especifica/prioriza aparte.
+
+## 12. Catálogo completo (nivel de las grandes empresas) — adicionales recomendadas
+Cada ítem es full-stack (UI + API admin RBAC+audit + esquema + aplicación real).
+- **Operación de la app / incidentes:** **modo mantenimiento** global, **kill switches** (desactivar una feature al instante ante incidente), **gestión de versiones** (min-version / force-update gate; la app consulta y obliga a actualizar), banner de incidente; monitor de **jobs/colas** (media, CSAM) y **salud del sistema** (API/errores/latencia).
+- **Trust & Safety avanzada:** detección de **evasión de bans / cuentas vinculadas** (fingerprint device/IP/pago), **reverse-image/dedup** de fotos (anti-catfishing/robo), **watchlists** keyword/regex en perfiles + auto-flag, **cola de apelaciones**, **revisión de verificación de edad/identidad** (ID/selfie), métricas/SLA de moderadores, **acciones masivas** con salvaguardas (cuatro ojos).
+- **Usuarios / CRM:** **notas y tags internos** por usuario, **timeline de actividad** consolidado, **gestión de sesiones/dispositivos** (ver/revocar), **grants manuales de entitlement** (comp premium a testers/influencers), cambio asistido de email/teléfono, merge de cuentas.
+- **Monetización / finanzas:** dashboards de **ingresos** (MRR/ARPU/LTV/churn/conversión) por plan/país/cohorte, **promo codes / cupones / regalos / referidos**, **reembolsos/chargebacks** + reconciliación con stores/RevenueCat, **A-B de precios**, dashboard de **ingresos por ads** (fill/eCPM).
+- **Crecimiento:** **campañas** push/email/in-app con **segmentación**, scheduling y A-B; programa de **referidos/invitaciones**; **eventos/promos** programados; embudos/retención/cohortes.
+- **Contenido / config:** **CMS** (banners/onboarding/anuncios), **versionado de documentos legales** + tracking de aceptación, **remote config/flags** + kill switches, **i18n/traducciones**.
+- **Cumplimiento / legal:** **gestión de retención** + purga automática, **consentimientos** (versiones + re-consent), **DSAR** (acceso/borrado GDPR/CCPA) workflow, **legal holds**, **LER**, **reporte de transparencia** (estadísticas de requerimientos legales).
+- **Seguridad / staff:** **recertificación periódica de accesos**, **break-glass** auditado, **alertas de anomalías** en acciones admin, allowlist IP, rotación de claves.
+- **Analítica / BI:** **dashboards a medida** (solo lectura), **segmentos guardados**, **reportes/exports programados**, export a **data warehouse**, métricas **en tiempo real** (online, matches/min, mensajes/min).

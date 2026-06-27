@@ -1,0 +1,34 @@
+# Override "servidor por ahora": añade el API Rust + el túnel cloudflared al stack
+# de infra/docker-compose.yml (postgres+redis), todo con restart automático.
+#
+# Levantar (reusa el volumen pgdata YA migrado, proyecto "infra"):
+#   docker compose -f infra/docker-compose.yml -f infra/docker-compose.server.yml \
+#     -p infra --env-file infra/.env.local up -d --build
+#
+# Con Docker Desktop "iniciar al iniciar sesión", todo vuelve solo tras reiniciar.
+services:
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: proyectox-api:local
+    restart: unless-stopped
+    environment:
+      # DB interna del compose (no localhost:5433): el servicio se llama "postgres".
+      DATABASE_URL: postgres://dev:dev@postgres:5432/appdb
+      BIND_ADDR: 0.0.0.0:8080
+      JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET en infra/.env.local}
+      TARPIT_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --config /etc/cloudflared/config.yml --no-autoupdate run
+    volumes:
+      - ./cloudflared/config.docker.yml:/etc/cloudflared/config.yml:ro
+      - C:/Users/echev/.cloudflared/71025a02-45aa-414b-83c0-3dce38eeefcc.json:/etc/cloudflared/71025a02-45aa-414b-83c0-3dce38eeefcc.json:ro
+    depends_on:
+      - api

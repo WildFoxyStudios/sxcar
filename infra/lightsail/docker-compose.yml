@@ -1,0 +1,26 @@
+# Despliegue en el VPS Lightsail (Debian 13 x86_64): API + túnel cloudflared.
+# DB = Neon (en .env, gitignored). Redis se añade cuando las features lo usen.
+# En el box:  cd ~/proyectox && docker compose up -d
+name: proyectox
+
+services:
+  api:
+    image: proyectox-api:local
+    restart: unless-stopped
+    env_file:
+      - .env # DATABASE_URL (Neon) + JWT_SECRET — creado en el box, NO en git
+    environment:
+      BIND_ADDR: 0.0.0.0:8080
+      TARPIT_ENABLED: "true"
+    expose:
+      - "8080"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --config /etc/cloudflared/config.yml --no-autoupdate run
+    volumes:
+      - ./cloudflared-config.yml:/etc/cloudflared/config.yml:ro
+      - ./71025a02-45aa-414b-83c0-3dce38eeefcc.json:/etc/cloudflared/71025a02-45aa-414b-83c0-3dce38eeefcc.json:ro
+    depends_on:
+      - api

@@ -26,6 +26,12 @@ override.tf.json
 # (.terraform.lock.hcl SÍ se commitea: pinea hashes de providers = builds reproducibles/seguros)
 # Vercel
 .vercel
+# Claves / VPS (NUNCA a git)
+*.pem
+*.key
+/ssh/
+id_rsa
+id_ed25519
 # OS / editores
 .DS_Store
 Thumbs.db

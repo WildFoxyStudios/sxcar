@@ -1,0 +1,9 @@
+# Config del túnel para el contenedor cloudflared (red de docker compose).
+# Aquí el origen es el servicio "api" del compose (no 127.0.0.1).
+tunnel: 71025a02-45aa-414b-83c0-3dce38eeefcc
+credentials-file: /etc/cloudflared/71025a02-45aa-414b-83c0-3dce38eeefcc.json
+
+ingress:
+  - hostname: api.turnend.win
+    service: http://api:8080
+  - service: http_status:404

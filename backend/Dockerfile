@@ -1,5 +1,10 @@
 FROM rust:1-slim@sha256:6abf73f05806f36362d0ff2722f2250c6153398831edd0455e0e0baa1f78ecc7 AS builder
 WORKDIR /app
+# Compila contra la cache .sqlx (sin DB en build) de forma explícita y reproducible.
+ENV SQLX_OFFLINE=true
+# Usa el toolchain ya instalado en la imagen (1.96.0) e IGNORA rust-toolchain.toml,
+# que pide componentes rustfmt/clippy innecesarios para `build` (evita descargas frágiles).
+ENV RUSTUP_TOOLCHAIN=1.96.0
 COPY . .
 RUN cargo build --release --bin api
 

@@ -9,7 +9,7 @@ description = "Auth primitives for the admin panel (staff identity, 2FA, audit)"
 # Hashing de passwords (argon2id m=64MB t=3 p=1).
 argon2 = "0.5"
 # TOTP RFC 6238 (compatible con Google Authenticator / 1Password / Authy).
-totp-rs = { version = "5", default-features = false, features = ["otpauth"] }
+totp-rs = { version = "5", default-features = false, features = ["otpauth", "gen_secret"] }
 # JWT HS256 con aud=admin.
 jsonwebtoken = "9"
 # Cifrado del TOTP secret en reposo (AES-256-GCM).

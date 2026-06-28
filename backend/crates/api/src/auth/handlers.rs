@@ -3,30 +3,12 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use time::{Duration, OffsetDateTime};
 
 use crate::AppState;
-
-/// Validación de email mínima (la verificación real es por código de email).
-fn valid_email(s: &str) -> bool {
-    let mut parts = s.split('@');
-    match (parts.next(), parts.next(), parts.next()) {
-        (Some(local), Some(domain), None) => {
-            !local.is_empty()
-                && domain.contains('.')
-                && !domain.starts_with('.')
-                && !domain.ends_with('.')
-        }
-        _ => false,
-    }
-}
-
-#[derive(Serialize)]
-pub struct TokenPair {
-    pub access: String,
-    pub refresh: String,
-}
+use px_core::dto::{TokenPair, RegisterReq, LoginReq, RefreshReq, CodeReq};
+use px_core::validation::{valid_email, is_adult, valid_password};
 
 /// Emite par access+refresh y persiste el refresh hasheado.
 pub(crate) async fn issue_pair(
@@ -48,21 +30,11 @@ pub(crate) async fn issue_pair(
     Ok(TokenPair { access, refresh })
 }
 
-#[derive(Deserialize)]
-pub struct RegisterReq {
-    pub email: String,
-    pub password: String,
-    /// fecha de nacimiento YYYY-MM-DD
-    pub dob: String,
-    #[serde(default)]
-    pub consents: Vec<String>,
-}
-
 pub async fn register(
     State(state): State<AppState>,
     Json(req): Json<RegisterReq>,
 ) -> Result<(StatusCode, Json<TokenPair>), StatusCode> {
-    if !valid_email(&req.email) || req.password.len() < 8 {
+    if !valid_email(&req.email) || !valid_password(&req.password) {
         return Err(StatusCode::BAD_REQUEST);
     }
     let dob = time::Date::parse(
@@ -71,7 +43,7 @@ pub async fn register(
     )
     .map_err(|_| StatusCode::BAD_REQUEST)?;
     let today = OffsetDateTime::now_utc().date();
-    if !auth::age::is_adult(dob, today) {
+    if !is_adult(dob, today) {
         return Err(StatusCode::FORBIDDEN); // age-gate
     }
     let hash = auth::password::hash_password(&req.password)
@@ -106,12 +78,6 @@ pub async fn register(
     Ok((StatusCode::CREATED, Json(pair)))
 }
 
-#[derive(Deserialize)]
-pub struct LoginReq {
-    pub email: String,
-    pub password: String,
-}
-
 pub async fn login(
     State(state): State<AppState>,
     Json(req): Json<LoginReq>,
@@ -132,11 +98,6 @@ pub async fn login(
     }
     let pair = issue_pair(&state, user.id).await?;
     Ok(Json(pair))
-}
-
-#[derive(Deserialize)]
-pub struct RefreshReq {
-    pub refresh: String,
 }
 
 pub async fn refresh(
@@ -168,11 +129,6 @@ pub async fn logout(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(StatusCode::NO_CONTENT)
-}
-
-#[derive(Deserialize)]
-pub struct CodeReq {
-    pub code: String,
 }
 
 pub async fn verify_email(

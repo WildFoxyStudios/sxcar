@@ -16,6 +16,7 @@ async-stream = "0.3"
 async-trait = "0.1"
 auth = { path = "../auth" }
 db = { path = "../db" }
+px_core = { path = "../px_core" }
 uuid = { version = "1", features = ["v4", "serde"] }
 time = { version = "0.3" }
 sha2 = "0.10"

@@ -17,6 +17,7 @@ async-trait = "0.1"
 auth = { path = "../auth" }
 auth_admin = { path = "../auth_admin" }
 db = { path = "../db" }
+sqlx.workspace = true
 px_core = { path = "../px_core" }
 uuid = { version = "1", features = ["v4", "serde"] }
 time = { version = "0.3" }

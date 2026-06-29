@@ -59,7 +59,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
     let mut router = Router::new()
         .route("/health", get(health::health))
         .merge(auth_routes)
-        .merge(admin::router())
+        .merge(admin::router(state.clone()))
         .merge(media::router());
     for path in tarpit::HONEYPOT_PATHS {
         router = router.route(path, any(tarpit::handler));

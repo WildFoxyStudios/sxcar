@@ -11,6 +11,7 @@ pub mod msgpack;
 pub mod notifications;
 pub mod profile;
 pub mod ratelimit;
+pub mod social;
 pub mod tarpit;
 pub mod well_known;
 
@@ -90,6 +91,13 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/albums/:id/share/:user_id", delete(albums::unshare))
         .route("/notifications/register", post(notifications::register_device))
         .route("/notifications/preferences", get(notifications::get_preferences).put(notifications::update_preferences))
+        .route("/taps", post(social::create_tap))
+        .route("/taps/received", get(social::list_taps_received))
+        .route("/taps/sent", get(social::list_taps_sent))
+        .route("/favorites", get(social::list_favorites).post(social::add_favorite))
+        .route("/favorites/:user_id", delete(social::remove_favorite))
+        .route("/blocks", get(social::list_blocks).post(social::block_user))
+        .route("/blocks/:user_id", delete(social::unblock_user))
         .merge(auth_routes)
         .merge(admin::router(state.clone()))
         .merge(media::router());

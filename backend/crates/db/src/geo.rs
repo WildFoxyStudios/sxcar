@@ -39,6 +39,8 @@ pub async fn find_nearby_users(
         WHERE u.status = 'active'
           AND ST_DWithin(l.geog, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3::float8)
           AND u.id != $4
+          AND u.id NOT IN (SELECT target_id FROM blocks WHERE user_id = $4)
+          AND u.id NOT IN (SELECT user_id FROM blocks WHERE target_id = $4)
         ORDER BY distance_m ASC
         LIMIT $5
         "#,

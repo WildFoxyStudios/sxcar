@@ -2,6 +2,7 @@ use sqlx::postgres::PgPoolOptions;
 
 pub type Pool = sqlx::PgPool;
 
+pub mod albums;
 pub mod chat;
 pub mod config;
 pub mod enterprise;

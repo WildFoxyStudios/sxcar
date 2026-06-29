@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'src/rust/frb_generated.dart';
 import 'src/auth/auth_provider.dart';
+import 'src/features/albums_screen.dart';
+import 'src/features/album_detail_screen.dart';
 import 'src/features/home_screen.dart';
 import 'src/features/login_screen.dart';
 import 'src/features/chat_list_screen.dart';
@@ -75,6 +77,18 @@ final _router = GoRouter(
       builder: (context, state) => ProfileScreen(
         userId: state.pathParameters['userId'],
       ),
+    ),
+    GoRoute(
+      path: '/albums',
+      builder: (context, state) => const AlbumsScreen(),
+      routes: [
+        GoRoute(
+          path: ':albumId',
+          builder: (context, state) => AlbumDetailScreen(
+            albumId: state.pathParameters['albumId']!,
+          ),
+        ),
+      ],
     ),
     GoRoute(
       path: '/chat',

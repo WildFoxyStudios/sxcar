@@ -1,4 +1,5 @@
 pub mod admin;
+pub mod albums;
 pub mod auth;
 pub mod chat;
 pub mod config;
@@ -16,7 +17,7 @@ use std::sync::Arc;
 
 use ::auth::{jwt::JwtConfig, notify::Notifier, oauth::OAuthVerifier};
 use axum::{
-    routing::{any, get, post},
+    routing::{any, delete, get, post},
     Router,
 };
 use db::Pool;
@@ -76,6 +77,16 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/chat/conversations/:id/messages", get(chat::list_messages).post(chat::send_message))
         .route("/chat/conversations/:id/read", post(chat::mark_read))
         .route("/ws/chat", get(chat::ws_handler))
+        .route("/albums", get(albums::list).post(albums::create))
+        .route("/albums/shared", get(albums::shared))
+        .route(
+            "/albums/:id",
+            get(albums::get).put(albums::update).delete(albums::delete),
+        )
+        .route("/albums/:id/photos", post(albums::add_photos))
+        .route("/albums/:id/photos/:photo_id", delete(albums::remove_photo))
+        .route("/albums/:id/share", post(albums::share))
+        .route("/albums/:id/share/:user_id", delete(albums::unshare))
         .merge(auth_routes)
         .merge(admin::router(state.clone()))
         .merge(media::router());

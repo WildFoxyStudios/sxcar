@@ -33,6 +33,11 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             FilledButton(
+              onPressed: () => context.go('/albums'),
+              child: const Text('Albums'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
               onPressed: () => context.go('/grid'),
               child: const Text('Nearby'),
             ),

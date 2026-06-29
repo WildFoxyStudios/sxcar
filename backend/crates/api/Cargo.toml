@@ -20,12 +20,13 @@ db = { path = "../db" }
 sqlx.workspace = true
 px_core = { path = "../px_core" }
 uuid = { version = "1", features = ["v4", "serde"] }
-time = { version = "0.3" }
+time = { version = "0.3", features = ["serde"] }
 sha2 = "0.10"
 hmac = "0.12"
 rand = "0.8"
 base64 = "0.22"
 rmp-serde = "1"
+futures-util = "0.3"
 
 [dev-dependencies]
 tower.workspace = true

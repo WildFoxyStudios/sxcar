@@ -5,6 +5,8 @@ import 'src/rust/frb_generated.dart';
 import 'src/auth/auth_provider.dart';
 import 'src/features/home_screen.dart';
 import 'src/features/login_screen.dart';
+import 'src/features/chat_list_screen.dart';
+import 'src/features/chat_screen.dart';
 import 'src/features/nearby_screen.dart';
 import 'src/features/profile_screen.dart';
 import 'src/features/register_screen.dart';
@@ -75,31 +77,19 @@ final _router = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/chat/:conversationId',
-      builder: (context, state) => _PlaceholderScreen(
-        title: 'Chat',
-        message: 'Conversation ID: ${state.pathParameters['conversationId']}',
-      ),
+      path: '/chat',
+      builder: (context, state) => const ChatListScreen(),
+      routes: [
+        GoRoute(
+          path: ':conversationId',
+          builder: (context, state) => ChatScreen(
+            conversationId: state.pathParameters['conversationId']!,
+          ),
+        ),
+      ],
     ),
   ],
 );
-
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen({required this.title, required this.message});
-
-  final String title;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Text(message, style: Theme.of(context).textTheme.headlineSmall),
-      ),
-    );
-  }
-}
 
 class ProyectoXApp extends ConsumerStatefulWidget {
   const ProyectoXApp({super.key});

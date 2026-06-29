@@ -1,5 +1,6 @@
 pub mod admin;
 pub mod auth;
+pub mod chat;
 pub mod config;
 pub mod cors;
 pub mod grid;
@@ -15,11 +16,12 @@ use std::sync::Arc;
 
 use ::auth::{jwt::JwtConfig, notify::Notifier, oauth::OAuthVerifier};
 use axum::{
-    routing::{any, get},
+    routing::{any, get, post},
     Router,
 };
 use db::Pool;
 use tarpit::{Tarpit, TarpitConfig};
+use tokio::sync::broadcast;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -32,6 +34,7 @@ pub struct AppState {
     pub oauth: Arc<dyn OAuthVerifier>,
     pub limiter: Arc<ratelimit::RateLimiter>,
     pub r2: Option<Arc<media::R2Config>>,
+    pub chat_tx: broadcast::Sender<String>,
 }
 
 pub struct AppDeps {
@@ -43,6 +46,7 @@ pub struct AppDeps {
 
 pub fn app(pool: Pool, deps: AppDeps) -> Router {
     let admin_jwt_secret = deps.jwt.secret.clone();
+    let (chat_tx, _) = broadcast::channel(256);
     let state = AppState {
         pool,
         tarpit: Tarpit::new(TarpitConfig::from_env()),
@@ -53,6 +57,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         oauth: deps.oauth,
         limiter: Arc::new(ratelimit::RateLimiter::new(10.0, 1.0)),
         r2: media::R2Config::from_env().map(Arc::new),
+        chat_tx,
     };
 
     let auth_routes = auth::router().route_layer(axum::middleware::from_fn_with_state(
@@ -67,6 +72,10 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/grid/nearby", get(grid::nearby))
         .route("/profile", get(profile::get_own).put(profile::update_own))
         .route("/profile/:id", get(profile::get_by_id))
+        .route("/chat/conversations", get(chat::list_conversations).post(chat::create_conversation))
+        .route("/chat/conversations/:id/messages", get(chat::list_messages).post(chat::send_message))
+        .route("/chat/conversations/:id/read", post(chat::mark_read))
+        .route("/ws/chat", get(chat::ws_handler))
         .merge(auth_routes)
         .merge(admin::router(state.clone()))
         .merge(media::router());

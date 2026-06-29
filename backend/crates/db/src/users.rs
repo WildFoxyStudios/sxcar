@@ -279,6 +279,15 @@ pub struct UserFullRow {
     pub created_at: time::OffsetDateTime,
     pub display_name: Option<String>,
     pub bio: Option<String>,
+    pub birthdate: Option<time::Date>,
+    pub height_cm: Option<i32>,
+    pub weight_kg: Option<i32>,
+    pub body_type: Option<String>,
+    pub relationship_status: Option<String>,
+    pub position: Option<String>,
+    pub ethnicity: Option<String>,
+    pub pronouns: Option<String>,
+    pub profile_photo_id: Option<uuid::Uuid>,
     pub profile_photo_url: Option<String>,
 }
 
@@ -350,6 +359,9 @@ pub async fn find_user_full(
         r#"SELECT u.id, u.email::text as "email!",
                   u.email_verified, u.status, u.role, u.created_at,
                   p.display_name, p.about as "bio",
+                  p.birthdate, p.height_cm, p.weight_kg,
+                  p.body_type, p.relationship_status, p.position,
+                  p.ethnicity, p.pronouns, p.profile_photo_id,
                   (SELECT r2_key FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1)
                     as "profile_photo_url"
            FROM users u

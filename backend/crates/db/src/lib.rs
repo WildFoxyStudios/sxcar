@@ -7,6 +7,7 @@ pub mod enterprise;
 pub mod geo;
 pub mod moderation;
 pub mod plans;
+pub mod profiles;
 pub mod staff;
 pub mod support;
 pub mod users;

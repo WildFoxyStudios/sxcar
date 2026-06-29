@@ -6,6 +6,7 @@ pub mod grid;
 pub mod health;
 pub mod media;
 pub mod msgpack;
+pub mod profile;
 pub mod ratelimit;
 pub mod tarpit;
 pub mod well_known;
@@ -64,6 +65,8 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/.well-known/apple-app-site-association", get(well_known::apple_site_association))
         .route("/.well-known/assetlinks.json", get(well_known::assetlinks))
         .route("/grid/nearby", get(grid::nearby))
+        .route("/profile", get(profile::get_own).put(profile::update_own))
+        .route("/profile/:id", get(profile::get_by_id))
         .merge(auth_routes)
         .merge(admin::router(state.clone()))
         .merge(media::router());

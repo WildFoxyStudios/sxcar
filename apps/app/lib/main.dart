@@ -6,6 +6,7 @@ import 'src/auth/auth_provider.dart';
 import 'src/features/home_screen.dart';
 import 'src/features/login_screen.dart';
 import 'src/features/nearby_screen.dart';
+import 'src/features/profile_screen.dart';
 import 'src/features/register_screen.dart';
 import 'src/features/verify_email_screen.dart';
 
@@ -64,10 +65,13 @@ final _router = GoRouter(
       builder: (context, state) => const NearbyScreen(),
     ),
     GoRoute(
+      path: '/profile',
+      builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
       path: '/profile/:userId',
-      builder: (context, state) => _PlaceholderScreen(
-        title: 'Profile',
-        message: 'User ID: ${state.pathParameters['userId']}',
+      builder: (context, state) => ProfileScreen(
+        userId: state.pathParameters['userId'],
       ),
     ),
     GoRoute(

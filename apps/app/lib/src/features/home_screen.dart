@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -26,6 +27,16 @@ class HomeScreen extends ConsumerWidget {
               style: const TextStyle(fontSize: 18),
             ),
             const SizedBox(height: 32),
+            FilledButton(
+              onPressed: () => context.go('/profile'),
+              child: const Text('My Profile'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () => context.go('/grid'),
+              child: const Text('Nearby'),
+            ),
+            const SizedBox(height: 12),
             FilledButton(
               onPressed: () async {
                 await ref.read(authStateProvider.notifier).logout();

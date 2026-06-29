@@ -264,3 +264,111 @@ pub async fn password_hash_for(pool: &Pool, id: uuid::Uuid) -> anyhow::Result<Op
         .flatten();
     Ok(h)
 }
+
+// ---------------------------------------------------------------------------
+// AD2 — Administración de usuarios
+// ---------------------------------------------------------------------------
+
+#[derive(Debug)]
+pub struct UserFullRow {
+    pub id: uuid::Uuid,
+    pub email: String,
+    pub email_verified: bool,
+    pub status: String,
+    pub role: String,
+    pub created_at: time::OffsetDateTime,
+    pub display_name: Option<String>,
+    pub bio: Option<String>,
+    pub profile_photo_url: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct StatusCount {
+    pub status: String,
+    pub count: i64,
+}
+
+/// Busca usuarios por email o display_name (ILIKE). Paginado.
+///
+/// Retorna (rows, total_count). El total se calcula solo sobre email
+/// (sin JOIN, más rápido) — puede diferir ligeramente del número real
+/// de resultados cuando la coincidencia es solo por display_name.
+pub async fn search_users(
+    pool: &Pool,
+    query: &str,
+    limit: i64,
+    offset: i64,
+) -> anyhow::Result<(Vec<UserRow>, i64)> {
+    let rows = sqlx::query_as!(
+        UserRow,
+        r#"SELECT u.id, u.email::text as "email!",
+                  u.email_verified, u.status, u.role, u.created_at
+           FROM users u
+           LEFT JOIN profiles p ON p.user_id = u.id
+           WHERE u.email ILIKE '%' || $1 || '%' OR p.display_name ILIKE '%' || $1 || '%'
+           ORDER BY u.created_at DESC
+           LIMIT $2 OFFSET $3"#,
+        query,
+        limit,
+        offset
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let total = sqlx::query_scalar!(
+        r#"SELECT COUNT(*) as "count!" FROM users WHERE email ILIKE '%' || $1 || '%'"#,
+        query
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok((rows, total))
+}
+
+/// Actualiza el status de un usuario. Confía en el CHECK constraint de la DB
+/// para validar el valor (active, banned, suspended, deleted, shadowbanned).
+pub async fn update_user_status(pool: &Pool, id: uuid::Uuid, status: &str) -> anyhow::Result<()> {
+    sqlx::query!(
+        "UPDATE users SET status = $2 WHERE id = $1",
+        id,
+        status
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// Obtiene un usuario con datos combinados de perfil (display_name, bio,
+/// profile_photo_url). JOIN users + profiles + photos. Si no tiene perfil
+/// o foto, los campos opcionales son NULL.
+pub async fn find_user_full(
+    pool: &Pool,
+    id: uuid::Uuid,
+) -> anyhow::Result<Option<UserFullRow>> {
+    let row = sqlx::query_as!(
+        UserFullRow,
+        r#"SELECT u.id, u.email::text as "email!",
+                  u.email_verified, u.status, u.role, u.created_at,
+                  p.display_name, p.about as "bio",
+                  (SELECT r2_key FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1)
+                    as "profile_photo_url"
+           FROM users u
+           LEFT JOIN profiles p ON p.user_id = u.id
+           WHERE u.id = $1"#,
+        id
+    )
+    .fetch_optional(pool)
+    .await?;
+    Ok(row)
+}
+
+/// Cuenta usuarios agrupados por status (active, banned, suspended, etc.).
+pub async fn count_users_by_status(pool: &Pool) -> anyhow::Result<Vec<StatusCount>> {
+    let rows = sqlx::query_as!(
+        StatusCount,
+        r#"SELECT status, COUNT(*) as "count!" FROM users GROUP BY status"#
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}

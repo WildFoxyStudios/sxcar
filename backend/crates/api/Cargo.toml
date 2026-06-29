@@ -25,6 +25,7 @@ sha2 = "0.10"
 hmac = "0.12"
 rand = "0.8"
 base64 = "0.22"
+rmp-serde = "1"
 
 [dev-dependencies]
 tower.workspace = true

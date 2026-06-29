@@ -4,6 +4,7 @@ pub mod config;
 pub mod cors;
 pub mod health;
 pub mod media;
+pub mod msgpack;
 pub mod ratelimit;
 pub mod tarpit;
 

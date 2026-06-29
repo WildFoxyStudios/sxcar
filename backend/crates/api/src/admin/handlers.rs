@@ -1414,6 +1414,364 @@ pub async fn place_legal_hold(
     ))
 }
 
+// ---------------------------------------------------------------------------
+// AD6 — Plans request types
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct UpsertPlanRequest {
+    pub code: String,
+    pub name: String,
+    pub tier: i32,
+    pub active: bool,
+    pub description: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct UpsertFeatureRequest {
+    pub feature: String,
+    pub enabled: bool,
+    pub limit_value: Option<i32>,
+}
+
+#[derive(Deserialize)]
+pub struct UpsertPriceRequest {
+    pub country_code: String,
+    pub currency: String,
+    pub price_monthly: Option<String>,
+    pub price_yearly: Option<String>,
+    pub revenuecat_product_id: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// AD6 — Country config request types
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct UpsertCountryRequest {
+    pub name: String,
+    pub enabled: bool,
+    pub disabled_features: Vec<String>,
+    pub min_age: i32,
+    pub requires_explicit_consent: bool,
+    pub data_retention_days: Option<i32>,
+    pub force_discreet_mode: bool,
+    pub hide_sensitive_fields: bool,
+    pub hide_distance: bool,
+    pub geo_restricted: bool,
+    pub restricted_features: Vec<String>,
+    pub travel_warning: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// AD6 — Plans handlers
+// ---------------------------------------------------------------------------
+
+/// GET /admin/plans
+///
+/// RBAC: plans.read (checked inline).
+/// Retorna todos los planes.
+pub async fn list_plans(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "plans.read") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let plans = db::plans::list_plans(&state.pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let plans_json: Vec<Value> = plans
+        .into_iter()
+        .map(|p| {
+            json!({
+                "code": p.code,
+                "name": p.name,
+                "tier": p.tier,
+                "active": p.active,
+                "description": p.description,
+            })
+        })
+        .collect();
+
+    Ok(Json(json!({ "plans": plans_json })))
+}
+
+/// POST /admin/plans
+///
+/// RBAC: plans.write (checked inline, audit).
+/// Body: { code, name, tier, active, description? }.
+/// Crea o actualiza un plan.
+pub async fn upsert_plan(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Json(body): Json<UpsertPlanRequest>,
+) -> Result<(AuditTarget, AuditJustification, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "plans.write") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::plans::upsert_plan(
+        &state.pool,
+        &body.code,
+        &body.name,
+        body.tier,
+        body.active,
+        body.description.as_deref(),
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(body.code.clone()),
+        AuditJustification(body.code.clone()),
+        Json(json!({ "code": body.code, "name": body.name, "tier": body.tier })),
+    ))
+}
+
+/// GET /admin/plans/:code/features
+///
+/// RBAC: plans.read (checked inline).
+/// Retorna las features de un plan.
+pub async fn list_plan_features(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(code): Path<String>,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "plans.read") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let features = db::plans::list_plan_features(&state.pool, &code)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let features_json: Vec<Value> = features
+        .into_iter()
+        .map(|f| {
+            json!({
+                "plan_code": f.plan_code,
+                "feature": f.feature,
+                "enabled": f.enabled,
+                "limit_value": f.limit_value,
+            })
+        })
+        .collect();
+
+    Ok(Json(json!({ "features": features_json })))
+}
+
+/// POST /admin/plans/:code/features
+///
+/// RBAC: plans.write (checked inline, audit).
+/// Body: { feature, enabled, limit_value? }.
+/// Crea o actualiza una feature de plan.
+pub async fn upsert_plan_feature(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(code): Path<String>,
+    Json(body): Json<UpsertFeatureRequest>,
+) -> Result<(AuditTarget, AuditJustification, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "plans.write") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::plans::upsert_plan_feature(
+        &state.pool,
+        &code,
+        &body.feature,
+        body.enabled,
+        body.limit_value,
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(format!("{}/{}", code, body.feature)),
+        AuditJustification(format!("{}:{}", code, body.feature)),
+        Json(json!({ "plan_code": code, "feature": body.feature, "enabled": body.enabled })),
+    ))
+}
+
+/// DELETE /admin/plans/:code/features/:feature
+///
+/// RBAC: plans.write (checked inline, audit).
+/// Elimina una feature de plan. 204 No Content.
+pub async fn delete_plan_feature(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path((code, feature)): Path<(String, String)>,
+) -> Result<(AuditTarget, StatusCode), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "plans.write") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::plans::delete_plan_feature(&state.pool, &code, &feature)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(format!("{}/{}", code, feature)),
+        StatusCode::NO_CONTENT,
+    ))
+}
+
+/// POST /admin/plans/:code/prices
+///
+/// RBAC: plans.write (checked inline, audit).
+/// Body: { country_code, currency, price_monthly?, price_yearly?, revenuecat_product_id? }.
+/// Crea o actualiza un precio de plan.
+pub async fn upsert_plan_price(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(code): Path<String>,
+    Json(body): Json<UpsertPriceRequest>,
+) -> Result<(AuditTarget, AuditJustification, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "plans.write") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::plans::upsert_plan_price(
+        &state.pool,
+        &code,
+        &body.country_code,
+        &body.currency,
+        body.price_monthly.as_deref(),
+        body.price_yearly.as_deref(),
+        body.revenuecat_product_id.as_deref(),
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(format!("{}/{}", code, body.country_code)),
+        AuditJustification(format!("{}:{}", code, body.country_code)),
+        Json(json!({ "plan_code": code, "country_code": body.country_code })),
+    ))
+}
+
+// ---------------------------------------------------------------------------
+// AD6 — Country config handlers
+// ---------------------------------------------------------------------------
+
+/// GET /admin/countries
+///
+/// RBAC: countries.read (checked inline).
+/// Retorna todas las configuraciones de pais.
+pub async fn list_country_configs(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "countries.read") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let configs = db::plans::list_country_configs(&state.pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let configs_json: Vec<Value> = configs
+        .into_iter()
+        .map(|c| {
+            json!({
+                "country_code": c.country_code,
+                "name": c.name,
+                "enabled": c.enabled,
+                "disabled_features": c.disabled_features,
+                "min_age": c.min_age,
+                "requires_explicit_consent": c.requires_explicit_consent,
+                "data_retention_days": c.data_retention_days,
+                "force_discreet_mode": c.force_discreet_mode,
+                "hide_sensitive_fields": c.hide_sensitive_fields,
+                "hide_distance": c.hide_distance,
+                "geo_restricted": c.geo_restricted,
+                "restricted_features": c.restricted_features,
+                "travel_warning": c.travel_warning,
+            })
+        })
+        .collect();
+
+    Ok(Json(json!({ "countries": configs_json })))
+}
+
+/// GET /admin/countries/:code
+///
+/// RBAC: countries.read (checked inline).
+/// Retorna un pais individual.
+pub async fn get_country_config(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(code): Path<String>,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "countries.read") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let config = db::plans::get_country_config(&state.pool, &code)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    Ok(Json(json!({
+        "country_code": config.country_code,
+        "name": config.name,
+        "enabled": config.enabled,
+        "disabled_features": config.disabled_features,
+        "min_age": config.min_age,
+        "requires_explicit_consent": config.requires_explicit_consent,
+        "data_retention_days": config.data_retention_days,
+        "force_discreet_mode": config.force_discreet_mode,
+        "hide_sensitive_fields": config.hide_sensitive_fields,
+        "hide_distance": config.hide_distance,
+        "geo_restricted": config.geo_restricted,
+        "restricted_features": config.restricted_features,
+        "travel_warning": config.travel_warning,
+    })))
+}
+
+/// POST /admin/countries
+///
+/// RBAC: countries.write (checked inline, audit).
+/// Body: flat struct con todos los campos de CountryConfigRow.
+/// Crea o actualiza una configuracion de pais.
+pub async fn upsert_country_config(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(code): Path<String>,
+    Json(body): Json<UpsertCountryRequest>,
+) -> Result<(AuditTarget, AuditJustification, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "countries.write") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::plans::upsert_country_config(
+        &state.pool,
+        &code,
+        &body.name,
+        body.enabled,
+        &body.disabled_features,
+        body.min_age,
+        body.requires_explicit_consent,
+        body.data_retention_days,
+        body.force_discreet_mode,
+        body.hide_sensitive_fields,
+        body.hide_distance,
+        body.geo_restricted,
+        &body.restricted_features,
+        body.travel_warning.as_deref(),
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(code.clone()),
+        AuditJustification(code.clone()),
+        Json(json!({ "country_code": code })),
+    ))
+}
+
 /// POST /admin/legal/hold/:id/release
 ///
 /// RBAC: legal.hold (checked inline).

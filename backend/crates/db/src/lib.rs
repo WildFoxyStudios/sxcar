@@ -4,6 +4,7 @@ pub type Pool = sqlx::PgPool;
 
 pub mod config;
 pub mod moderation;
+pub mod plans;
 pub mod staff;
 pub mod support;
 pub mod users;

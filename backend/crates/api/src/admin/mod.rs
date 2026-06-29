@@ -161,6 +161,40 @@ pub fn router(state: AppState) -> Router<AppState> {
             "/admin/analytics/overview",
             get(handlers::analytics_overview),
         )
+        // AD6 — Plans (GET = read-only, POST = mutation)
+        .route("/admin/plans", get(handlers::list_plans))
+        .route(
+            "/admin/plans",
+            post(handlers::upsert_plan)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/plans/:code/features",
+            get(handlers::list_plan_features),
+        )
+        .route(
+            "/admin/plans/:code/features",
+            post(handlers::upsert_plan_feature)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/plans/:code/features/:feature",
+            delete(handlers::delete_plan_feature)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/plans/:code/prices",
+            post(handlers::upsert_plan_price)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD6 — Countries (GET = read-only, POST = mutation)
+        .route("/admin/countries", get(handlers::list_country_configs))
+        .route("/admin/countries/:code", get(handlers::get_country_config))
+        .route(
+            "/admin/countries/:code",
+            post(handlers::upsert_country_config)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
         // Test-only routes (harmless — require valid staff auth).
         .route(
             "/admin/_test_protected",

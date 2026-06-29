@@ -2,6 +2,7 @@ pub mod admin;
 pub mod auth;
 pub mod config;
 pub mod cors;
+pub mod grid;
 pub mod health;
 pub mod media;
 pub mod msgpack;
@@ -62,6 +63,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/health", get(health::health))
         .route("/.well-known/apple-app-site-association", get(well_known::apple_site_association))
         .route("/.well-known/assetlinks.json", get(well_known::assetlinks))
+        .route("/grid/nearby", get(grid::nearby))
         .merge(auth_routes)
         .merge(admin::router(state.clone()))
         .merge(media::router());

@@ -5,6 +5,7 @@ import 'src/rust/frb_generated.dart';
 import 'src/auth/auth_provider.dart';
 import 'src/features/home_screen.dart';
 import 'src/features/login_screen.dart';
+import 'src/features/nearby_screen.dart';
 import 'src/features/register_screen.dart';
 import 'src/features/verify_email_screen.dart';
 
@@ -57,6 +58,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/',
       builder: (context, state) => const HomeScreen(),
+    ),
+    GoRoute(
+      path: '/grid',
+      builder: (context, state) => const NearbyScreen(),
     ),
     GoRoute(
       path: '/profile/:userId',

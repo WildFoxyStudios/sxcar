@@ -190,7 +190,7 @@ async fn nearby_returns_other_user_with_distance() {
     // ---------- Call /grid/nearby as user A ----------
     let (st, body) = get(
         &app,
-        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=50",
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999",
         &token_a,
     )
     .await;
@@ -223,7 +223,7 @@ async fn nearby_returns_other_user_with_distance() {
     // ---------- Call /grid/nearby without auth -> 401 ----------
     let (st, _) = get(
         &app,
-        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=50",
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999",
         "",
     )
     .await;

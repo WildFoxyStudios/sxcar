@@ -55,6 +55,48 @@ pub async fn find_staff_by_email(
     Ok(row)
 }
 
+/// Busca un miembro del staff por ID.
+pub async fn find_staff_by_id(
+    pool: &Pool,
+    staff_id: uuid::Uuid,
+) -> anyhow::Result<Option<StaffRow>> {
+    let row = sqlx::query_as!(
+        StaffRow,
+        r#"SELECT id,
+                  email::text as "email!",
+                  password_hash,
+                  totp_secret_enc,
+                  recovery_codes_hash,
+                  role,
+                  status,
+                  failed_login_count,
+                  locked_until,
+                  last_login_at,
+                  last_login_ip::text as "last_login_ip?",
+                  created_at
+           FROM staff
+           WHERE id = $1"#,
+        staff_id
+    )
+    .fetch_optional(pool)
+    .await?;
+    Ok(row)
+}
+
+/// Retorna todos los permisos asignados a un rol (tabla `role_permissions`).
+pub async fn get_role_permissions(
+    pool: &Pool,
+    role: &str,
+) -> anyhow::Result<Vec<String>> {
+    let rows = sqlx::query_scalar!(
+        r#"SELECT permission FROM role_permissions WHERE role = $1"#,
+        role
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
 /// Actualiza `last_login_at`, `last_login_ip` y resetea `failed_login_count` a 0.
 ///
 /// Nota: usa `sqlx::query` (no macro) porque `$2::inet` requiere el feature

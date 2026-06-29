@@ -26,11 +26,13 @@ pub struct StaffClaims {
     pub iat: usize,
     /// Expiration (Unix timestamp, default 8h).
     pub exp: usize,
-    /// UUID v4 unico por token.
+    /// UUID v4 unico por token (session_id para tokens de staff).
     pub jti: String,
 }
 
 /// Emite un JWT de staff. Retorna el token firmado (String).
+///
+/// `jti` es el token ID, usado como session_id para staff tokens.
 ///
 /// # Errors
 ///
@@ -42,6 +44,7 @@ pub fn issue(
     role: &str,
     permissions: &[String],
     ttl_secs: i64,
+    jti: &str,
 ) -> Result<String, AuthError> {
     let now = OffsetDateTime::now_utc();
     let exp = now + time::Duration::seconds(ttl_secs);
@@ -53,7 +56,7 @@ pub fn issue(
         permissions: permissions.to_vec(),
         iat: now.unix_timestamp() as usize,
         exp: exp.unix_timestamp() as usize,
-        jti: Uuid::new_v4().to_string(),
+        jti: jti.to_string(),
     };
 
     let key = EncodingKey::from_secret(secret.as_bytes());
@@ -95,14 +98,15 @@ mod unit {
 
     #[test]
     fn issue_returns_ok_with_valid_input() {
-        let token = issue(secret(), Uuid::new_v4(), "moderator", &perms(), 3600);
+        let token = issue(secret(), Uuid::new_v4(), "moderator", &perms(), 3600, &Uuid::new_v4().to_string());
         assert!(token.is_ok());
         assert!(!token.unwrap().is_empty());
     }
 
     #[test]
     fn issue_sets_correct_aud() {
-        let token = issue(secret(), Uuid::new_v4(), "admin", &perms(), 3600).unwrap();
+        let jti = Uuid::new_v4().to_string();
+        let token = issue(secret(), Uuid::new_v4(), "admin", &perms(), 3600, &jti).unwrap();
         let claims = verify(secret(), &token).unwrap();
         assert_eq!(claims.aud, "admin");
     }

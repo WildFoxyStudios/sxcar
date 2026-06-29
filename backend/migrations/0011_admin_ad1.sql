@@ -14,7 +14,7 @@
 -- ---------------------------------------------------------------------------
 -- staff — identidad staff SEPARADA de users.
 -- ---------------------------------------------------------------------------
-CREATE TABLE staff (
+CREATE TABLE IF NOT EXISTS staff (
   id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email               citext UNIQUE NOT NULL,
   password_hash       text NOT NULL,                  -- argon2id (m=64MB,t=3,p=1)
@@ -34,19 +34,20 @@ CREATE TABLE staff (
 );
 
 -- Reusa la funcion set_updated_at() que ya existe (0001_extensions.sql).
+DROP TRIGGER IF EXISTS trg_staff_updated_at ON staff;
 CREATE TRIGGER trg_staff_updated_at
   BEFORE UPDATE ON staff
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- Busquedas tipicas: por email (login) y por status (listado de staff no-activos).
-CREATE INDEX idx_staff_email_lower ON staff (lower(email));
-CREATE INDEX idx_staff_status_nonactive ON staff (status) WHERE status <> 'active';
+CREATE INDEX IF NOT EXISTS idx_staff_email_lower ON staff (lower(email));
+CREATE INDEX IF NOT EXISTS idx_staff_status_nonactive ON staff (status) WHERE status <> 'active';
 
 -- ---------------------------------------------------------------------------
 -- role_permissions — matriz rol → permisos (RBAC minimo-privilegio).
 -- Una acción chequea permisos, NO roles. Mas granular, mas testeable.
 -- ---------------------------------------------------------------------------
-CREATE TABLE role_permissions (
+CREATE TABLE IF NOT EXISTS role_permissions (
   role                  text NOT NULL,
   permission            text NOT NULL,
   requires_justification boolean NOT NULL DEFAULT false,
@@ -75,13 +76,14 @@ INSERT INTO role_permissions (role, permission, requires_justification) VALUES
   ('superadmin',  'admin.auth.2fa',   false),
   ('superadmin',  'user.view',        false),
   ('superadmin',  'staff.manage',     true),
-  ('superadmin',  'audit.read',       false);
+  ('superadmin',  'audit.read',       false)
+ON CONFLICT (role, permission) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
 -- staff_sessions — sesiones revocables, separadas de refresh_tokens de users.
 -- Vida corta (8h vs 30d de users) porque el panel es superficie de ataque.
 -- ---------------------------------------------------------------------------
-CREATE TABLE staff_sessions (
+CREATE TABLE IF NOT EXISTS staff_sessions (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   staff_id        uuid NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
   issued_at       timestamptz NOT NULL DEFAULT now(),
@@ -94,17 +96,17 @@ CREATE TABLE staff_sessions (
 );
 
 -- Lookup rapido de sesiones activas por staff_id (chequeo en cada request).
-CREATE INDEX idx_staff_sessions_active
+CREATE INDEX IF NOT EXISTS idx_staff_sessions_active
   ON staff_sessions (staff_id) WHERE revoked_at IS NULL;
 
 -- ---------------------------------------------------------------------------
 -- audit_log (existente, F0.2 0008_trust_safety.sql) — añadir columnas staff.
 -- ---------------------------------------------------------------------------
 ALTER TABLE audit_log
-  ADD COLUMN actor_staff_id     uuid REFERENCES staff(id),
-  ADD COLUMN staff_session_id   uuid REFERENCES staff_sessions(id),
-  ADD COLUMN justification      text,                 -- obligatorio en permisos requires_justification
-  ADD COLUMN legal_basis        text;                 -- solo para legal.export (futuro AD4)
+  ADD COLUMN IF NOT EXISTS actor_staff_id     uuid REFERENCES staff(id),
+  ADD COLUMN IF NOT EXISTS staff_session_id   uuid REFERENCES staff_sessions(id),
+  ADD COLUMN IF NOT EXISTS justification      text,                 -- obligatorio en permisos requires_justification
+  ADD COLUMN IF NOT EXISTS legal_basis        text;                 -- solo para legal.export (futuro AD4)
 
 -- ---------------------------------------------------------------------------
 -- audit_log append-only via triggers PG.
@@ -117,16 +119,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_audit_log_no_update ON audit_log;
 CREATE TRIGGER trg_audit_log_no_update
   BEFORE UPDATE ON audit_log
   FOR EACH ROW EXECUTE FUNCTION audit_log_immutable();
 
+DROP TRIGGER IF EXISTS trg_audit_log_no_delete ON audit_log;
 CREATE TRIGGER trg_audit_log_no_delete
   BEFORE DELETE ON audit_log
   FOR EACH ROW EXECUTE FUNCTION audit_log_immutable();
 
 -- TRUNCATE tiene su propio evento (no cubierto por UPDATE/DELETE triggers).
 -- STATEMENT-level porque TRUNCATE opera por tabla, no por fila.
+DROP TRIGGER IF EXISTS trg_audit_log_no_truncate ON audit_log;
 CREATE TRIGGER trg_audit_log_no_truncate
   BEFORE TRUNCATE ON audit_log
   FOR EACH STATEMENT EXECUTE FUNCTION audit_log_immutable();

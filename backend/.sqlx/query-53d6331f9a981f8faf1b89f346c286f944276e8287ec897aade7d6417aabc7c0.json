@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE staff\n           SET failed_login_count = failed_login_count + 1,\n               locked_until = CASE\n                 WHEN failed_login_count + 1 >= 5 THEN now() + interval '15 minutes'\n                 ELSE locked_until\n               END\n           WHERE id = $1\n           RETURNING locked_until",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "locked_until",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "53d6331f9a981f8faf1b89f346c286f944276e8287ec897aade7d6417aabc7c0"
+}

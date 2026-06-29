@@ -131,6 +131,39 @@ fn build_totp(secret_b32: &str) -> Result<TOTP, AuthError> {
     .map_err(|e| AuthError::TotpFormat(format!("TOTP::new: {e}")))
 }
 
+/// Codifica bytes crudos a RFC 4648 base32 sin padding.
+///
+/// Es la inversa de [`decode_base32`]. Util para convertir el resultado de
+/// [`decrypt_secret`] (bytes crudos) a base32 para verificar un codigo TOTP.
+pub fn raw_to_b32(raw: &[u8]) -> String {
+    const ALPHABET: &[u8; 32] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+    if raw.is_empty() {
+        return String::new();
+    }
+
+    let mut out = String::with_capacity(raw.len().div_ceil(5) * 8);
+    let mut buffer: u64 = 0;
+    let mut bits: u32 = 0;
+
+    for &byte in raw {
+        buffer = (buffer << 8) | byte as u64;
+        bits += 8;
+        while bits >= 5 {
+            bits -= 5;
+            let idx = (buffer >> bits) as usize & 0x1f;
+            out.push(ALPHABET[idx] as char);
+        }
+    }
+
+    if bits > 0 {
+        let idx = (buffer << (5 - bits)) as usize & 0x1f;
+        out.push(ALPHABET[idx] as char);
+    }
+
+    out
+}
+
 /// Decodifica RFC 4648 base32 sin padding. Devuelve error si el input
 /// contiene chars fuera del alphabet o longitud incompatible con un
 /// multiplo de 8 chars (5 bytes).

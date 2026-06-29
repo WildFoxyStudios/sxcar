@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE entitlements SET enabled = false\n           WHERE user_id = $1 AND feature = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0f54822bef05d64f3309d929314b4eefff7d718854e2d383b89c0ec84ea6e801"
+}

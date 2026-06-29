@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id,\n                  reporter_id,\n                  target_user_id,\n                  target_kind,\n                  target_id,\n                  reason,\n                  status,\n                  created_at,\n                  resolved_at\n           FROM reports\n           WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "reporter_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "target_user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "target_kind",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "target_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "reason",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "resolved_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "a3790b6b9902d42b661bba8c39684a6a2819c85f880e3efaadabdf34d409dcb4"
+}

@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT u.id, u.email::text as \"email!\",\n                  u.email_verified, u.status, u.role, u.created_at,\n                  p.display_name, p.about as \"bio\",\n                  (SELECT r2_key FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1)\n                    as \"profile_photo_url\"\n           FROM users u\n           LEFT JOIN profiles p ON p.user_id = u.id\n           WHERE u.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "email!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "email_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "role",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "bio",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "profile_photo_url",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "9bc7f1bff22fd42e94f8d3fc7eb583ad59ba1ff7bba8e5d2a71d71ba4be5305e"
+}

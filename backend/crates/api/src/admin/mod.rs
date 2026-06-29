@@ -14,7 +14,11 @@ pub mod extractors;
 pub mod handlers;
 pub mod rbac;
 
-use axum::{middleware::from_fn_with_state, routing::{get, post}, Router};
+use axum::{
+    middleware::from_fn_with_state,
+    routing::{delete, get, post},
+    Router,
+};
 
 use crate::AppState;
 
@@ -132,6 +136,30 @@ pub fn router(state: AppState) -> Router<AppState> {
             "/admin/legal/hold/:id/release",
             post(handlers::release_legal_hold)
                 .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD5 — Feature flags (GET = read-only, POST = mutation)
+        .route("/admin/flags", get(handlers::list_flags))
+        .route(
+            "/admin/flags",
+            post(handlers::upsert_flag)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/flags/:key",
+            delete(handlers::delete_flag)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD5 — App config (GET = read-only, POST = mutation)
+        .route("/admin/config", get(handlers::list_config))
+        .route(
+            "/admin/config",
+            post(handlers::upsert_config)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD5 — Analytics (GET = read-only, sin audit)
+        .route(
+            "/admin/analytics/overview",
+            get(handlers::analytics_overview),
         )
         // Test-only routes (harmless — require valid staff auth).
         .route(

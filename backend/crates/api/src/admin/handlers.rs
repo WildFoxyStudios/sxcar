@@ -846,6 +846,208 @@ pub async fn list_audit(
 }
 
 // ---------------------------------------------------------------------------
+// AD5 — Feature flags / config / analytics types
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct UpsertFlagRequest {
+    pub key: String,
+    pub value: serde_json::Value,
+    pub description: Option<String>,
+    pub enabled: bool,
+}
+
+#[derive(Deserialize)]
+pub struct UpsertConfigRequest {
+    pub key: String,
+    pub value: serde_json::Value,
+}
+
+// ---------------------------------------------------------------------------
+// AD5 — Feature flags handlers
+// ---------------------------------------------------------------------------
+
+/// GET /admin/flags
+///
+/// RBAC: flags.read (checked inline).
+/// Retorna lista de feature flags.
+pub async fn list_flags(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "flags.read") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let flags = db::config::list_feature_flags(&state.pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let flags_json: Vec<Value> = flags
+        .into_iter()
+        .map(|f| {
+            json!({
+                "key": f.key,
+                "value": f.value,
+                "description": f.description,
+                "enabled": f.enabled,
+                "created_at": f.created_at.to_string(),
+                "updated_at": f.updated_at.to_string(),
+                "updated_by": f.updated_by,
+            })
+        })
+        .collect();
+
+    Ok(Json(json!({ "flags": flags_json })))
+}
+
+/// POST /admin/flags
+///
+/// RBAC: flags.write (checked inline).
+/// Body: { key, value, description?, enabled }.
+/// Crea o actualiza un feature flag.
+pub async fn upsert_flag(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Json(body): Json<UpsertFlagRequest>,
+) -> Result<(AuditTarget, AuditJustification, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "flags.write") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::config::upsert_feature_flag(
+        &state.pool,
+        &body.key,
+        &body.value,
+        body.description.as_deref(),
+        body.enabled,
+        staff.0.id,
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(body.key.clone()),
+        AuditJustification(body.key.clone()),
+        Json(json!({
+            "key": body.key,
+            "enabled": body.enabled,
+        })),
+    ))
+}
+
+/// DELETE /admin/flags/:key
+///
+/// RBAC: flags.write (checked inline).
+/// Elimina un feature flag. 204 No Content.
+pub async fn delete_flag(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(key): Path<String>,
+) -> Result<(AuditTarget, StatusCode), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "flags.write") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::config::delete_feature_flag(&state.pool, &key)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((AuditTarget(key), StatusCode::NO_CONTENT))
+}
+
+// ---------------------------------------------------------------------------
+// AD5 — App config handlers
+// ---------------------------------------------------------------------------
+
+/// GET /admin/config
+///
+/// RBAC: config.read (checked inline).
+/// Retorna la configuracion global de la app.
+pub async fn list_config(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "config.read") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let configs = db::config::list_app_config(&state.pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let config_json: Vec<Value> = configs
+        .into_iter()
+        .map(|c| {
+            json!({
+                "key": c.key,
+                "value": c.value,
+                "description": c.description,
+                "updated_at": c.updated_at.to_string(),
+                "updated_by": c.updated_by,
+            })
+        })
+        .collect();
+
+    Ok(Json(json!({ "config": config_json })))
+}
+
+/// POST /admin/config
+///
+/// RBAC: config.write (checked inline).
+/// Body: { key, value }.
+/// Crea o actualiza una entrada de configuracion.
+pub async fn upsert_config(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Json(body): Json<UpsertConfigRequest>,
+) -> Result<(AuditTarget, AuditJustification, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "config.write") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::config::upsert_app_config(&state.pool, &body.key, &body.value, staff.0.id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(body.key.clone()),
+        AuditJustification(body.key.clone()),
+        Json(json!({ "key": body.key })),
+    ))
+}
+
+// ---------------------------------------------------------------------------
+// AD5 — Analytics handlers
+// ---------------------------------------------------------------------------
+
+/// GET /admin/analytics/overview
+///
+/// RBAC: config.read (checked inline, read-only endpoint).
+/// Retorna metricas agregadas del panel de administracion.
+pub async fn analytics_overview(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "config.read") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let analytics = db::config::get_analytics_overview(&state.pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(json!({
+        "total_users": analytics.total_users,
+        "active_today": analytics.active_today,
+        "banned_users": analytics.banned_users,
+        "suspended_users": analytics.suspended_users,
+        "premium_users": analytics.premium_users,
+        "new_users_today": analytics.new_users_today,
+    })))
+}
+
+// ---------------------------------------------------------------------------
 // AD4 — Support types
 // ---------------------------------------------------------------------------
 

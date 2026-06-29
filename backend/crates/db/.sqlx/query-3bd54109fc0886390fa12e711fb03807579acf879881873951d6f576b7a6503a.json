@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, user_id, reason, reference, placed_by, placed_at, released_at\n           FROM legal_holds\n           WHERE user_id = $1\n           ORDER BY placed_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "reason",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "reference",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "placed_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "placed_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "released_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "3bd54109fc0886390fa12e711fb03807579acf879881873951d6f576b7a6503a"
+}

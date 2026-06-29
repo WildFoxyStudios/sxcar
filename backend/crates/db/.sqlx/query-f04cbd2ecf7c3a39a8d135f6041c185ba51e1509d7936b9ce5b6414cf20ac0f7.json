@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id,\n                  user_id,\n                  r2_key,\n                  is_nsfw,\n                  moderation_status,\n                  created_at\n           FROM photos\n           WHERE moderation_status = 'pending'\n           ORDER BY created_at ASC\n           LIMIT $1 OFFSET $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "r2_key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_nsfw",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "moderation_status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f04cbd2ecf7c3a39a8d135f6041c185ba51e1509d7936b9ce5b6414cf20ac0f7"
+}

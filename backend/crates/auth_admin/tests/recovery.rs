@@ -58,7 +58,7 @@ fn hash_and_verify_roundtrip() {
 fn verify_wrong_code_returns_false_not_error() {
     let h = rec_hash("ABCDEFGHJK").expect("hash");
     // Codigo distinto pero con formato valido (10 chars del alphabet).
-    assert!(!rec_verify("QRSTVWXYZ23", &h).expect("verify wrong"));
+    assert!(!rec_verify("QRSTVWXYZ2", &h).expect("verify wrong"));
 }
 
 #[test]

@@ -8,6 +8,7 @@ pub mod config;
 pub mod enterprise;
 pub mod geo;
 pub mod moderation;
+pub mod notifications;
 pub mod plans;
 pub mod profiles;
 pub mod staff;

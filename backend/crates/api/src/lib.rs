@@ -8,6 +8,7 @@ pub mod grid;
 pub mod health;
 pub mod media;
 pub mod msgpack;
+pub mod notifications;
 pub mod profile;
 pub mod ratelimit;
 pub mod tarpit;
@@ -87,6 +88,8 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/albums/:id/photos/:photo_id", delete(albums::remove_photo))
         .route("/albums/:id/share", post(albums::share))
         .route("/albums/:id/share/:user_id", delete(albums::unshare))
+        .route("/notifications/register", post(notifications::register_device))
+        .route("/notifications/preferences", get(notifications::get_preferences).put(notifications::update_preferences))
         .merge(auth_routes)
         .merge(admin::router(state.clone()))
         .merge(media::router());

@@ -2,6 +2,7 @@ use sqlx::postgres::PgPoolOptions;
 
 pub type Pool = sqlx::PgPool;
 
+pub mod staff;
 pub mod users;
 
 /// Crea un pool de conexiones a Postgres.

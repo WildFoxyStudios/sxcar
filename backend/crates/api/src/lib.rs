@@ -7,6 +7,7 @@ pub mod media;
 pub mod msgpack;
 pub mod ratelimit;
 pub mod tarpit;
+pub mod well_known;
 
 use std::sync::Arc;
 
@@ -59,6 +60,8 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
 
     let mut router = Router::new()
         .route("/health", get(health::health))
+        .route("/.well-known/apple-app-site-association", get(well_known::apple_site_association))
+        .route("/.well-known/assetlinks.json", get(well_known::assetlinks))
         .merge(auth_routes)
         .merge(admin::router(state.clone()))
         .merge(media::router());

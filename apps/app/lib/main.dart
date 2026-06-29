@@ -58,8 +58,39 @@ final _router = GoRouter(
       path: '/',
       builder: (context, state) => const HomeScreen(),
     ),
+    GoRoute(
+      path: '/profile/:userId',
+      builder: (context, state) => _PlaceholderScreen(
+        title: 'Profile',
+        message: 'User ID: ${state.pathParameters['userId']}',
+      ),
+    ),
+    GoRoute(
+      path: '/chat/:conversationId',
+      builder: (context, state) => _PlaceholderScreen(
+        title: 'Chat',
+        message: 'Conversation ID: ${state.pathParameters['conversationId']}',
+      ),
+    ),
   ],
 );
+
+class _PlaceholderScreen extends StatelessWidget {
+  const _PlaceholderScreen({required this.title, required this.message});
+
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Text(message, style: Theme.of(context).textTheme.headlineSmall),
+      ),
+    );
+  }
+}
 
 class ProyectoXApp extends ConsumerStatefulWidget {
   const ProyectoXApp({super.key});

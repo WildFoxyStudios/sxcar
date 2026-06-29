@@ -844,3 +844,395 @@ pub async fn list_audit(
         "total": total,
     })))
 }
+
+// ---------------------------------------------------------------------------
+// AD4 — Support types
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct ManageEntitlementRequest {
+    pub feature: String,
+    pub action: String,
+}
+
+#[derive(Deserialize)]
+pub struct ListDataRequestsQuery {
+    pub status: Option<String>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+#[derive(Deserialize)]
+pub struct ProcessDataRequest {
+    pub status: String,
+    pub notes: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct LegalExportRequest {
+    pub justification: String,
+    pub legal_basis: String,
+}
+
+#[derive(Deserialize)]
+pub struct PlaceLegalHoldRequest {
+    pub user_id: Uuid,
+    pub reason: String,
+    pub reference: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct ReleaseLegalHoldRequest {
+    pub reason: String,
+}
+
+// ---------------------------------------------------------------------------
+// AD4 — Support handlers
+// ---------------------------------------------------------------------------
+
+/// GET /admin/support/users/:id/entitlements
+///
+/// RBAC: entitlements.view (checked inline).
+/// Retorna subscriptions + entitlements del usuario.
+pub async fn list_entitlements(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(id): Path<Uuid>,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "entitlements.view") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let subscriptions = db::support::list_subscriptions(&state.pool, id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let entitlements = db::support::list_entitlements(&state.pool, id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let subs_json: Vec<Value> = subscriptions
+        .into_iter()
+        .map(|s| {
+            json!({
+                "id": s.id,
+                "user_id": s.user_id,
+                "tier": s.tier,
+                "store": s.store,
+                "revenuecat_id": s.revenuecat_id,
+                "status": s.status,
+                "current_period_end": s.current_period_end.map(|t| t.to_string()),
+            })
+        })
+        .collect();
+
+    let ents_json: Vec<Value> = entitlements
+        .into_iter()
+        .map(|e| {
+            json!({
+                "user_id": e.user_id,
+                "feature": e.feature,
+                "enabled": e.enabled,
+            })
+        })
+        .collect();
+
+    Ok(Json(json!({
+        "subscriptions": subs_json,
+        "entitlements": ents_json,
+    })))
+}
+
+/// POST /admin/support/users/:id/entitlements
+///
+/// RBAC: entitlements.manage (requires_justification, checked inline).
+/// Body: { feature: String, action: "grant" | "revoke" }.
+pub async fn manage_entitlement(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(id): Path<Uuid>,
+    Json(body): Json<ManageEntitlementRequest>,
+) -> Result<(AuditTarget, AuditJustification, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "entitlements.manage") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    match body.action.as_str() {
+        "grant" => {
+            db::support::grant_entitlement(&state.pool, id, &body.feature)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        }
+        "revoke" => {
+            db::support::revoke_entitlement(&state.pool, id, &body.feature)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        }
+        _ => return Err(StatusCode::BAD_REQUEST),
+    }
+
+    Ok((
+        AuditTarget(id.to_string()),
+        AuditJustification(format!("{} {}", body.action, body.feature)),
+        Json(json!({"status": body.action})),
+    ))
+}
+
+// ---------------------------------------------------------------------------
+// AD4 — GDPR (DSAR) handlers
+// ---------------------------------------------------------------------------
+
+/// GET /admin/gdpr/data-requests?status=pending&limit=20
+///
+/// RBAC: dsar.view (checked inline).
+/// Retorna lista paginada de solicitudes de datos.
+pub async fn list_data_requests(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Query(query): Query<ListDataRequestsQuery>,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "dsar.view") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let status = query.status.as_deref();
+    let limit = query.limit.unwrap_or(20).clamp(1, 100);
+    let offset = query.offset.unwrap_or(0).max(0);
+
+    let (requests, total) = db::support::list_data_requests(&state.pool, status, limit, offset)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let requests_json: Vec<Value> = requests
+        .into_iter()
+        .map(|r| {
+            json!({
+                "id": r.id,
+                "user_id": r.user_id,
+                "kind": r.kind,
+                "status": r.status,
+                "requested_at": r.requested_at.to_string(),
+                "completed_at": r.completed_at.map(|t| t.to_string()),
+            })
+        })
+        .collect();
+
+    Ok(Json(json!({
+        "requests": requests_json,
+        "total": total,
+    })))
+}
+
+/// POST /admin/gdpr/data-requests/:id/process
+///
+/// RBAC: dsar.process (requires_justification, checked inline).
+/// Body: { status: "processing"|"completed"|"rejected", notes?: String }.
+pub async fn process_data_request(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(id): Path<Uuid>,
+    Json(body): Json<ProcessDataRequest>,
+) -> Result<(AuditTarget, AuditJustification, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "dsar.process") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    match body.status.as_str() {
+        "processing" | "completed" | "rejected" => {}
+        _ => return Err(StatusCode::BAD_REQUEST),
+    }
+
+    db::support::update_data_request(&state.pool, id, &body.status)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(id.to_string()),
+        AuditJustification(body.notes.unwrap_or_default()),
+        Json(json!({"status": body.status})),
+    ))
+}
+
+// ---------------------------------------------------------------------------
+// AD4 — Legal handlers (LER)
+// ---------------------------------------------------------------------------
+
+/// GET /admin/legal/export/:user_id
+///
+/// RBAC: legal.export (requires_justification, checked inline).
+/// Body: { justification: String, legal_basis: String }.
+/// Construye el dossier legal y audita manualmente (GET no pasa por audit_mutation).
+pub async fn legal_export(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(user_id): Path<Uuid>,
+    Json(body): Json<LegalExportRequest>,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "legal.export") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let dossier = db::support::build_legal_dossier(&state.pool, user_id)
+        .await
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    // Audit manual (GET no pasa por audit_mutation middleware)
+    let action = format!("GET:/admin/legal/export/{user_id}");
+    let _ = sqlx::query(
+        "INSERT INTO audit_log (actor_staff_id, staff_session_id, action, target, justification, legal_basis) \
+         VALUES ($1, $2, $3, $4, $5, $6)",
+    )
+    .bind(staff.0.id)
+    .bind(staff.0.session_id)
+    .bind(&action)
+    .bind(user_id.to_string())
+    .bind(&body.justification)
+    .bind(&body.legal_basis)
+    .execute(&state.pool)
+    .await;
+
+    Ok(Json(dossier_to_json(dossier)))
+}
+
+fn dossier_to_json(d: db::support::LegalDossier) -> Value {
+    json!({
+        "user": {
+            "id": d.user.id,
+            "email": d.user.email,
+            "email_verified": d.user.email_verified,
+            "status": d.user.status,
+            "role": d.user.role,
+            "created_at": d.user.created_at.to_string(),
+        },
+        "profile": d.profile.map(|p| json!({
+            "user_id": p.user_id,
+            "display_name": p.display_name,
+            "about": p.about,
+            "gender_identity": p.gender_identity,
+            "relationship_status": p.relationship_status,
+            "created_at": p.created_at.to_string(),
+        })),
+        "devices": d.devices.into_iter().map(|dev| json!({
+            "id": dev.id,
+            "platform": dev.platform,
+            "last_seen_at": dev.last_seen_at.map(|t| t.to_string()),
+            "created_at": dev.created_at.to_string(),
+        })).collect::<Vec<_>>(),
+        "access_events": d.access_events.into_iter().map(|e| json!({
+            "id": e.id,
+            "event": e.event,
+            "ip": e.ip,
+            "user_agent": e.user_agent,
+            "created_at": e.created_at.to_string(),
+        })).collect::<Vec<_>>(),
+        "photos": d.photos.into_iter().map(|p| json!({
+            "id": p.id,
+            "r2_key": p.r2_key,
+            "is_primary": p.is_primary,
+            "is_nsfw": p.is_nsfw,
+            "moderation_status": p.moderation_status,
+            "created_at": p.created_at.to_string(),
+        })).collect::<Vec<_>>(),
+        "subscriptions": d.subscriptions.into_iter().map(|s| json!({
+            "id": s.id,
+            "tier": s.tier,
+            "store": s.store,
+            "revenuecat_id": s.revenuecat_id,
+            "status": s.status,
+            "current_period_end": s.current_period_end.map(|t| t.to_string()),
+        })).collect::<Vec<_>>(),
+        "reports_against": d.reports_against.into_iter().map(|r| json!({
+            "id": r.id,
+            "reporter_id": r.reporter_id,
+            "target_user_id": r.target_user_id,
+            "target_kind": r.target_kind,
+            "reason": r.reason,
+            "status": r.status,
+            "created_at": r.created_at.to_string(),
+            "resolved_at": r.resolved_at.map(|t| t.to_string()),
+        })).collect::<Vec<_>>(),
+        "reports_by": d.reports_by.into_iter().map(|r| json!({
+            "id": r.id,
+            "reporter_id": r.reporter_id,
+            "target_user_id": r.target_user_id,
+            "target_kind": r.target_kind,
+            "reason": r.reason,
+            "status": r.status,
+            "created_at": r.created_at.to_string(),
+            "resolved_at": r.resolved_at.map(|t| t.to_string()),
+        })).collect::<Vec<_>>(),
+        "consent_records": d.consent_records.into_iter().map(|c| json!({
+            "id": c.id,
+            "kind": c.kind,
+            "version": c.version,
+            "granted_at": c.granted_at.to_string(),
+        })).collect::<Vec<_>>(),
+        "legal_holds": d.legal_holds.into_iter().map(|h| json!({
+            "id": h.id,
+            "user_id": h.user_id,
+            "reason": h.reason,
+            "reference": h.reference,
+            "placed_by": h.placed_by,
+            "placed_at": h.placed_at.to_string(),
+            "released_at": h.released_at.map(|t| t.to_string()),
+        })).collect::<Vec<_>>(),
+    })
+}
+
+/// POST /admin/legal/hold
+///
+/// RBAC: legal.hold (requires_justification, checked inline).
+/// Body: { user_id: Uuid, reason: String, reference?: String }.
+pub async fn place_legal_hold(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Json(body): Json<PlaceLegalHoldRequest>,
+) -> Result<
+    (AuditTarget, AuditJustification, (StatusCode, Json<Value>)),
+    StatusCode,
+> {
+    if !staff.0.permissions.iter().any(|p| p == "legal.hold") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let hold_id = db::support::place_legal_hold(
+        &state.pool,
+        body.user_id,
+        staff.0.id,
+        &body.reason,
+        body.reference.as_deref(),
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(body.user_id.to_string()),
+        AuditJustification(body.reason),
+        (StatusCode::CREATED, Json(json!({"id": hold_id}))),
+    ))
+}
+
+/// POST /admin/legal/hold/:id/release
+///
+/// RBAC: legal.hold (checked inline).
+/// Body: { reason: String }.
+pub async fn release_legal_hold(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(id): Path<Uuid>,
+    Json(body): Json<ReleaseLegalHoldRequest>,
+) -> Result<(AuditTarget, AuditJustification, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "legal.hold") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::support::release_legal_hold(&state.pool, id, staff.0.id, &body.reason)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(id.to_string()),
+        AuditJustification(body.reason),
+        Json(json!({"status": "released"})),
+    ))
+}

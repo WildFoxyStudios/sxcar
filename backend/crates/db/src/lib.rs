@@ -4,6 +4,7 @@ pub type Pool = sqlx::PgPool;
 
 pub mod moderation;
 pub mod staff;
+pub mod support;
 pub mod users;
 
 /// Crea un pool de conexiones a Postgres.

@@ -104,6 +104,35 @@ pub fn router(state: AppState) -> Router<AppState> {
             post(handlers::report_csam_hit)
                 .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
         )
+        // AD4 — Support (entitlements)
+        .route(
+            "/admin/support/users/:id/entitlements",
+            get(handlers::list_entitlements),
+        )
+        .route(
+            "/admin/support/users/:id/entitlements",
+            post(handlers::manage_entitlement)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD4 — GDPR (data requests)
+        .route("/admin/gdpr/data-requests", get(handlers::list_data_requests))
+        .route(
+            "/admin/gdpr/data-requests/:id/process",
+            post(handlers::process_data_request)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD4 — Legal (LER)
+        .route("/admin/legal/export/:user_id", get(handlers::legal_export))
+        .route(
+            "/admin/legal/hold",
+            post(handlers::place_legal_hold)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/legal/hold/:id/release",
+            post(handlers::release_legal_hold)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
         // Test-only routes (harmless — require valid staff auth).
         .route(
             "/admin/_test_protected",

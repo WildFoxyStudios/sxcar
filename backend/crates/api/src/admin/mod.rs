@@ -67,6 +67,43 @@ pub fn router(state: AppState) -> Router<AppState> {
         )
         // AD2 — Audit viewer (GET, RBAC inline)
         .route("/admin/audit", get(handlers::list_audit))
+        // AD3 — Reports (GET, RBAC inline en handler)
+        .route("/admin/reports", get(handlers::list_reports))
+        // AD3 — Report mutations (POST, RBAC inline + audit)
+        .route(
+            "/admin/reports/:id/review",
+            post(handlers::review_report)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/reports/:id/resolve",
+            post(handlers::resolve_report)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD3 — Photo moderation (GET, RBAC inline)
+        .route(
+            "/admin/moderation/photos",
+            get(handlers::list_pending_photos),
+        )
+        // AD3 — Photo mutations (POST, RBAC inline + audit)
+        .route(
+            "/admin/moderation/photos/:id/approve",
+            post(handlers::approve_photo)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/moderation/photos/:id/reject",
+            post(handlers::reject_photo)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD3 — CSAM (GET, RBAC inline)
+        .route("/admin/csam", get(handlers::list_csam_hits))
+        // AD3 — CSAM mutations (POST, RBAC inline + audit)
+        .route(
+            "/admin/csam/:id/report",
+            post(handlers::report_csam_hit)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
         // Test-only routes (harmless — require valid staff auth).
         .route(
             "/admin/_test_protected",

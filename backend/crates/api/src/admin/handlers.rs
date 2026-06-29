@@ -51,6 +51,362 @@ fn user_full_to_json(u: db::users::UserFullRow) -> Value {
     })
 }
 
+// ---------------------------------------------------------------------------
+// AD3 — Moderation request / response types
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct ListReportsQuery {
+    pub status: Option<String>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+#[derive(Deserialize)]
+pub struct ListPhotosQuery {
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+#[derive(Deserialize)]
+pub struct ListCsamQuery {
+    pub status: Option<String>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+#[derive(Deserialize)]
+pub struct ResolveReportRequest {
+    pub resolution: String,
+    pub action: String,
+    pub note: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct ReportCsamRequest {
+    pub notes: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// AD3 — Moderation handlers
+// ---------------------------------------------------------------------------
+
+/// GET /admin/reports?status=open&limit=20&offset=0
+///
+/// RBAC: reports.view (checked inline).
+/// Retorna lista paginada de reportes.
+pub async fn list_reports(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Query(query): Query<ListReportsQuery>,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "reports.view") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let status = query.status.as_deref();
+    let limit = query.limit.unwrap_or(20).clamp(1, 100);
+    let offset = query.offset.unwrap_or(0).max(0);
+
+    let (reports, total) = db::moderation::list_reports(&state.pool, status, limit, offset)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let reports_json: Vec<Value> = reports
+        .into_iter()
+        .map(|r| {
+            json!({
+                "id": r.id,
+                "reporter_id": r.reporter_id,
+                "target_user_id": r.target_user_id,
+                "target_kind": r.target_kind,
+                "target_id": r.target_id,
+                "reason": r.reason,
+                "status": r.status,
+                "created_at": r.created_at.to_string(),
+                "resolved_at": r.resolved_at.map(|t| t.to_string()),
+            })
+        })
+        .collect();
+
+    Ok(Json(json!({
+        "reports": reports_json,
+        "total": total,
+    })))
+}
+
+/// POST /admin/reports/:id/review
+///
+/// RBAC: reports.resolve (checked inline).
+/// Cambia status a "reviewing".
+pub async fn review_report(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(id): Path<Uuid>,
+) -> Result<(AuditTarget, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "reports.resolve") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    // Verificar que el reporte existe
+    let report = db::moderation::find_report_by_id(&state.pool, id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    db::moderation::update_report_status(&state.pool, report.id, "reviewing")
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(id.to_string()),
+        Json(json!({"status": "reviewing"})),
+    ))
+}
+
+/// POST /admin/reports/:id/resolve
+///
+/// RBAC: reports.resolve (checked inline).
+/// Body: { resolution: "actioned"|"dismissed", action: "warn"|"suspend"|"ban"|"clear", note: String? }
+///
+/// Si resolution=actioned, crea moderation_action con staff_id.
+/// Si action es warn/suspend/ban, actualiza el status del usuario.
+pub async fn resolve_report(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(id): Path<Uuid>,
+    Json(body): Json<ResolveReportRequest>,
+) -> Result<
+    (AuditTarget, AuditJustification, Json<Value>),
+    StatusCode,
+> {
+    if !staff.0.permissions.iter().any(|p| p == "reports.resolve") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let report = db::moderation::find_report_by_id(&state.pool, id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    let resolution = &body.resolution;
+    let action = &body.action;
+    let note = body.note.as_deref();
+
+    // Validar resolution
+    if resolution != "actioned" && resolution != "dismissed" {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let mut moderation_action_id: Option<Uuid> = None;
+
+    if resolution == "actioned" {
+        // Crear moderation_action
+        let ma_id = db::moderation::create_moderation_action(
+            &state.pool,
+            staff.0.id,
+            report.target_user_id,
+            action,
+            note,
+        )
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        moderation_action_id = Some(ma_id);
+
+        // Si action es warn/suspend/ban, actualizar status del usuario
+        if action == "warn" || action == "suspend" || action == "ban" {
+            let user_status = match action.as_str() {
+                "warn" => "active",     // warn no cambia status, solo registra
+                "suspend" => "suspended",
+                "ban" => "banned",
+                _ => unreachable!(),
+            };
+            // Solo suspend/ban realmente cambian status
+            if action == "suspend" || action == "ban" {
+                db::users::update_user_status(&state.pool, report.target_user_id, user_status)
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            }
+        }
+    }
+
+    // Resolver el reporte (status + resolved_at)
+    db::moderation::resolve_report(&state.pool, id, resolution)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let mut resp = json!({
+        "report_status": resolution,
+    });
+    if let Some(ma_id) = moderation_action_id {
+        resp["moderation_action_id"] = json!(ma_id);
+    }
+
+    Ok((
+        AuditTarget(id.to_string()),
+        AuditJustification(note.unwrap_or_default().to_string()),
+        Json(resp),
+    ))
+}
+
+/// GET /admin/moderation/photos?limit=20&offset=0
+///
+/// RBAC: photos.moderate (checked inline).
+/// Retorna fotos pendientes de moderacion, ordenadas ASC por created_at.
+pub async fn list_pending_photos(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Query(query): Query<ListPhotosQuery>,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "photos.moderate") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let limit = query.limit.unwrap_or(20).clamp(1, 100);
+    let offset = query.offset.unwrap_or(0).max(0);
+
+    let (photos, total) = db::moderation::list_pending_photos(&state.pool, limit, offset)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let photos_json: Vec<Value> = photos
+        .into_iter()
+        .map(|p| {
+            json!({
+                "id": p.id,
+                "user_id": p.user_id,
+                "r2_key": p.r2_key,
+                "is_nsfw": p.is_nsfw,
+                "moderation_status": p.moderation_status,
+                "created_at": p.created_at.to_string(),
+            })
+        })
+        .collect();
+
+    Ok(Json(json!({
+        "photos": photos_json,
+        "total": total,
+    })))
+}
+
+/// POST /admin/moderation/photos/:id/approve
+///
+/// RBAC: photos.moderate (checked inline).
+/// Cambia moderation_status a "approved".
+pub async fn approve_photo(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(id): Path<Uuid>,
+) -> Result<(AuditTarget, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "photos.moderate") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::moderation::update_photo_moderation(&state.pool, id, "approved")
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(id.to_string()),
+        Json(json!({"status": "approved"})),
+    ))
+}
+
+/// POST /admin/moderation/photos/:id/reject
+///
+/// RBAC: photos.moderate (checked inline).
+/// Cambia moderation_status a "rejected".
+pub async fn reject_photo(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(id): Path<Uuid>,
+) -> Result<(AuditTarget, Json<Value>), StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "photos.moderate") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::moderation::update_photo_moderation(&state.pool, id, "rejected")
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(id.to_string()),
+        Json(json!({"status": "rejected"})),
+    ))
+}
+
+/// GET /admin/csam?status=pending&limit=20&offset=0
+///
+/// RBAC: csam.view (checked inline).
+/// Retorna hits de CSAM paginados.
+pub async fn list_csam_hits(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Query(query): Query<ListCsamQuery>,
+) -> Result<Json<Value>, StatusCode> {
+    if !staff.0.permissions.iter().any(|p| p == "csam.view") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let status = query.status.as_deref();
+    let limit = query.limit.unwrap_or(20).clamp(1, 100);
+    let offset = query.offset.unwrap_or(0).max(0);
+
+    let (hits, total) = db::moderation::list_csam_hits(&state.pool, status, limit, offset)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let hits_json: Vec<Value> = hits
+        .into_iter()
+        .map(|h| {
+            json!({
+                "id": h.id,
+                "photo_id": h.photo_id,
+                "hash": h.hash,
+                "source": h.source,
+                "status": h.status,
+                "matched_at": h.matched_at.to_string(),
+                "reported_to_authority_at": h.reported_to_authority_at.map(|t| t.to_string()),
+                "notes": h.notes,
+            })
+        })
+        .collect();
+
+    Ok(Json(json!({
+        "hits": hits_json,
+        "total": total,
+    })))
+}
+
+/// POST /admin/csam/:id/report
+///
+/// RBAC: csam.report (requires_justification).
+/// Body: { notes: String? }.
+/// Cambia status a "reported", setea reported_to_authority_at = now().
+pub async fn report_csam_hit(
+    State(state): State<AppState>,
+    staff: StaffAuth,
+    Path(id): Path<Uuid>,
+    Json(body): Json<ReportCsamRequest>,
+) -> Result<
+    (AuditTarget, AuditJustification, Json<Value>),
+    StatusCode,
+> {
+    if !staff.0.permissions.iter().any(|p| p == "csam.report") {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::moderation::report_csam_hit(&state.pool, id, body.notes.as_deref())
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        AuditTarget(id.to_string()),
+        AuditJustification(body.notes.clone().unwrap_or_default()),
+        Json(json!({"status": "reported"})),
+    ))
+}
+
 /// Extrae la direccion IP del cliente desde headers (X-Forwarded-For o X-Real-IP).
 fn client_ip(headers: &HeaderMap) -> Option<String> {
     headers

@@ -3,6 +3,7 @@ use sqlx::postgres::PgPoolOptions;
 pub type Pool = sqlx::PgPool;
 
 pub mod config;
+pub mod enterprise;
 pub mod moderation;
 pub mod plans;
 pub mod staff;

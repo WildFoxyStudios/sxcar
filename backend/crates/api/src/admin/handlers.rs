@@ -17,6 +17,7 @@ use uuid::Uuid;
 
 use crate::admin::audit::{AuditJustification, AuditTarget};
 use crate::admin::extractors::StaffAuth;
+pub use crate::admin::handlers_enterprise::*;
 use crate::AppState;
 
 // ---------------------------------------------------------------------------

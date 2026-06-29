@@ -12,6 +12,7 @@
 pub mod audit;
 pub mod extractors;
 pub mod handlers;
+pub mod handlers_enterprise;
 pub mod rbac;
 
 use axum::{
@@ -193,6 +194,109 @@ pub fn router(state: AppState) -> Router<AppState> {
         .route(
             "/admin/countries/:code",
             post(handlers::upsert_country_config)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD7 — Experiments (GET = read-only, POST = mutation, DELETE = mutation)
+        .route("/admin/experiments", get(handlers::list_experiments))
+        .route(
+            "/admin/experiments",
+            post(handlers::upsert_experiment)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/experiments/:key",
+            delete(handlers::delete_experiment)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD7 — i18n / translations (GET = read-only, POST = mutation)
+        .route("/admin/i18n", get(handlers::list_translations))
+        .route(
+            "/admin/i18n",
+            post(handlers::upsert_translation)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD7 — CMS (GET = read-only, POST = mutation, DELETE = mutation)
+        .route("/admin/cms", get(handlers::list_cms_content))
+        .route(
+            "/admin/cms/:key",
+            post(handlers::upsert_cms_content)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/cms/:key",
+            delete(handlers::delete_cms_content)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD7 — Legal docs (GET = read-only, POST = mutation)
+        .route("/admin/legal-docs", get(handlers::list_legal_docs))
+        .route(
+            "/admin/legal-docs",
+            post(handlers::create_legal_doc)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD7 — Campaigns (GET = read-only, POST = mutation)
+        .route("/admin/campaigns", get(handlers::list_campaigns))
+        .route(
+            "/admin/campaigns",
+            post(handlers::create_campaign)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/campaigns/:id/send",
+            post(handlers::send_campaign)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD7 — Notification templates (GET = read-only, POST = mutation)
+        .route("/admin/templates", get(handlers::list_notification_templates))
+        .route(
+            "/admin/templates",
+            post(handlers::upsert_notification_template)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD7 — Abuse rules (GET = read-only, POST = mutation, DELETE = mutation)
+        .route("/admin/abuse/rules", get(handlers::list_abuse_rules))
+        .route(
+            "/admin/abuse/rules",
+            post(handlers::upsert_abuse_rule)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/abuse/rules/:id",
+            delete(handlers::delete_abuse_rule)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD7 — API keys (GET = read-only, POST = mutation, revoke = mutation)
+        .route("/admin/api-keys", get(handlers::list_api_keys))
+        .route(
+            "/admin/api-keys",
+            post(handlers::create_api_key)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/api-keys/:id/revoke",
+            post(handlers::revoke_api_key)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD7 — Webhooks (GET = read-only, POST = mutation, DELETE = mutation)
+        .route("/admin/webhooks", get(handlers::list_webhooks))
+        .route(
+            "/admin/webhooks",
+            post(handlers::create_webhook)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/webhooks/:id",
+            delete(handlers::delete_webhook)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD7 — Config history / rollback (GET = read-only, POST = mutation)
+        .route(
+            "/admin/config/history",
+            get(handlers::list_config_versions),
+        )
+        .route(
+            "/admin/config/history/:version_id/rollback",
+            post(handlers::rollback_config_version)
                 .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
         )
         // Test-only routes (harmless — require valid staff auth).

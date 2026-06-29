@@ -39,7 +39,8 @@ fn issue_and_verify_roundtrip() {
     let perms = test_permissions();
     let ttl = 28800;
 
-    let token = issue(secret, staff_id, role, &perms, ttl).expect("issue");
+    let jti = Uuid::new_v4().to_string();
+    let token = issue(secret, staff_id, role, &perms, ttl, &jti).expect("issue");
     let claims = verify(secret, &token).expect("verify");
 
     assert_eq!(claims.sub, staff_id.to_string(), "sub debe ser staff_id");
@@ -105,7 +106,8 @@ fn verify_rejects_expired_token() {
     let staff_id = Uuid::new_v4();
     // TTL negativo => token expira en el pasado (1 h atras).
     // Leeway en verify es 30 s, asi que 3600 s en el pasado es seguro.
-    let token = issue(secret, staff_id, "admin", &test_permissions(), -3600)
+    let jti = Uuid::new_v4().to_string();
+    let token = issue(secret, staff_id, "admin", &test_permissions(), -3600, &jti)
         .expect("issue con TTL negativo");
 
     let result = verify(secret, &token);
@@ -123,7 +125,8 @@ fn verify_rejects_expired_token() {
 fn verify_rejects_tampered_signature() {
     let secret = test_secret();
     let staff_id = Uuid::new_v4();
-    let token = issue(secret, staff_id, "admin", &test_permissions(), 28800)
+    let jti = Uuid::new_v4().to_string();
+    let token = issue(secret, staff_id, "admin", &test_permissions(), 28800, &jti)
         .expect("issue");
 
     // Alteramos el ultimo caracter de la firma.
@@ -169,7 +172,8 @@ fn claims_include_jti_and_permissions() {
         "read:reports".into(),
     ];
 
-    let token = issue(secret, staff_id, "superadmin", &perms, 3600).expect("issue");
+    let jti = Uuid::new_v4().to_string();
+    let token = issue(secret, staff_id, "superadmin", &perms, 3600, &jti).expect("issue");
     let claims = verify(secret, &token).expect("verify");
 
     // jti es UUID unico
@@ -191,7 +195,8 @@ fn claims_include_jti_and_permissions() {
     );
 
     // jti es diferente entre emisiones
-    let token2 = issue(secret, staff_id, "superadmin", &perms, 3600).expect("issue second");
+    let jti2 = Uuid::new_v4().to_string();
+    let token2 = issue(secret, staff_id, "superadmin", &perms, 3600, &jti2).expect("issue second");
     let claims2 = verify(secret, &token2).expect("verify second");
     assert_ne!(
         claims.jti, claims2.jti,

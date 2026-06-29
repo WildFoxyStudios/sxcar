@@ -35,22 +35,50 @@ mod test_routes {
 }
 
 pub fn router(state: AppState) -> Router<AppState> {
+    let s = state.clone();
     Router::new()
+        // Auth (sin RBAC, sin audit)
         .route("/admin/auth/login", post(handlers::login))
         .route("/admin/auth/2fa", post(handlers::two_factor))
         .route("/admin/auth/logout", post(handlers::logout))
+        // AD2 — Users list & detail (GET, RBAC inline en handler)
+        .route("/admin/users", get(handlers::list_users))
+        .route("/admin/users/:id", get(handlers::get_user))
+        // AD2 — User mutations (POST, RBAC inline + audit)
+        .route(
+            "/admin/users/:id/ban",
+            post(handlers::ban_user)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/users/:id/suspend",
+            post(handlers::suspend_user)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/users/:id/activate",
+            post(handlers::activate_user)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        .route(
+            "/admin/users/:id/force-logout",
+            post(handlers::force_logout_user)
+                .route_layer(from_fn_with_state(s.clone(), audit::audit_mutation)),
+        )
+        // AD2 — Audit viewer (GET, RBAC inline)
+        .route("/admin/audit", get(handlers::list_audit))
         // Test-only routes (harmless — require valid staff auth).
         .route(
             "/admin/_test_protected",
             post(test_routes::protected).route_layer(from_fn_with_state(
-                state.clone(),
+                s.clone(),
                 rbac::require_perm("user.delete"),
             )),
         )
         .route(
             "/admin/_test_auth",
             get(test_routes::authenticated).route_layer(from_fn_with_state(
-                state,
+                s,
                 audit::audit_mutation,
             )),
         )

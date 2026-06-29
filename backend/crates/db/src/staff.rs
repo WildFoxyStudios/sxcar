@@ -212,6 +212,78 @@ pub async fn revoke_session(
     Ok(())
 }
 
+/// AD2 — Row para consultar audit_log.
+///
+/// Nota: no derivea `sqlx::FromRow` porque `serde_json::Value` para jsonb
+/// requiere el feature `json` en sqlx. Hacemos mapping manual en el query.
+#[derive(Debug)]
+pub struct AuditRow {
+    pub id: i64,
+    pub actor_staff_id: Option<uuid::Uuid>,
+    pub action: String,
+    pub target: Option<String>,
+    pub metadata: Option<serde_json::Value>,
+    pub created_at: time::OffsetDateTime,
+}
+
+/// AD2 — Busca en audit_log con filtros opcionales.
+///
+/// Retorna (rows, total_count).
+pub async fn search_audit_log(
+    pool: &Pool,
+    staff_id: Option<uuid::Uuid>,
+    action: Option<&str>,
+    limit: i64,
+    offset: i64,
+) -> anyhow::Result<(Vec<AuditRow>, i64)> {
+    use sqlx::Row;
+
+    let raw = sqlx::query(
+        r#"SELECT id,
+                  actor_staff_id,
+                  action,
+                  target,
+                  metadata,
+                  created_at
+           FROM audit_log
+           WHERE ($1::uuid IS NULL OR actor_staff_id = $1)
+             AND ($2::text IS NULL OR action ILIKE '%' || $2 || '%')
+           ORDER BY created_at DESC
+           LIMIT $3 OFFSET $4"#,
+    )
+    .bind(staff_id)
+    .bind(action)
+    .bind(limit)
+    .bind(offset)
+    .fetch_all(pool)
+    .await?;
+
+    let rows: Vec<AuditRow> = raw
+        .iter()
+        .map(|r| AuditRow {
+            id: r.get("id"),
+            actor_staff_id: r.get("actor_staff_id"),
+            action: r.get("action"),
+            target: r.get("target"),
+            metadata: r.get("metadata"),
+            created_at: r.get("created_at"),
+        })
+        .collect();
+
+    let total = sqlx::query_scalar::<_, i64>(
+        r#"SELECT COUNT(*) as "count!"
+           FROM audit_log
+           WHERE ($1::uuid IS NULL OR actor_staff_id = $1)
+             AND ($2::text IS NULL OR action ILIKE '%' || $2 || '%')"#,
+    )
+    .bind(staff_id)
+    .bind(action)
+    .fetch_one(pool)
+    .await?;
+
+    Ok((rows, total))
+}
+
 /// Actualiza `last_seen_at` de una sesión de staff a `now()`.
 pub async fn update_session_last_seen(
     pool: &Pool,

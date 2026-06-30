@@ -1,6 +1,6 @@
 use api::config::Config;
 use api::{app, AppDeps};
-use auth::{jwt::JwtConfig, notify::DevNotifier, notify::SmtpNotifier, oauth::DevOAuthVerifier};
+use auth::{jwt::JwtConfig, notify::DevNotifier, notify::SmtpNotifier, oauth::DevOAuthVerifier, oauth::RealOAuthVerifier};
 use std::sync::Arc;
 
 #[tokio::main]
@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
         },
         refresh_ttl_secs: config.refresh_ttl_secs,
         notifier: SmtpNotifier::from_env().map(Arc::new).unwrap_or_else(|| Arc::new(DevNotifier)),
-        oauth: Arc::new(DevOAuthVerifier),
+        oauth: RealOAuthVerifier::from_env().map(Arc::new).unwrap_or_else(|| Arc::new(DevOAuthVerifier)),
     };
 
     let app = app(pool, deps);

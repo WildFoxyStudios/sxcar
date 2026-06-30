@@ -10,11 +10,13 @@ sha2 = "0.10"
 time = { version = "0.3", features = ["macros"] }
 jsonwebtoken = "9"
 serde = { workspace = true }
+serde_json = { workspace = true }
 thiserror = { workspace = true }
 async-trait = "0.1"
 anyhow = { workspace = true }
 tracing = { workspace = true }
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+base64 = "0.22"
 
 [dev-dependencies]
 tokio = { workspace = true }

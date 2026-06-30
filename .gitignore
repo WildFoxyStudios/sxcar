@@ -1,6 +1,7 @@
 # Rust
 /backend/target
 **/target
+vendor
 # Node
 node_modules
 .pnpm-store

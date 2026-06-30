@@ -10,8 +10,12 @@ use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use time::OffsetDateTime;
+use uuid::Uuid;
 
+use crate::auth::AuthUser;
 use crate::AppState;
+
+pub mod renditions;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -177,6 +181,122 @@ fn sanitize_ext(ext: Option<&str>) -> String {
     }
 }
 
+// ---------------------------------------------------------------------------
+// POST /media/photos — create photo record + generate blur rendition
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct CreatePhotoReq {
+    /// R2 key of the originally uploaded image (e.g. "profile/uuid/uuid.jpg").
+    pub r2_key: String,
+    /// Whether the image was flagged as NSFW by the client.
+    pub is_nsfw: bool,
+}
+
+#[derive(Serialize)]
+pub struct CreatePhotoRes {
+    pub id: Uuid,
+    pub r2_key: String,
+    pub blur_key: String,
+    pub is_nsfw: bool,
+}
+
+/// After the client uploads the original to R2 via the presigned PUT URL from
+/// `upload_url`, this endpoint downloads the image, generates a blurred
+/// rendition, uploads it to R2, and creates the `photos` row.
+pub async fn create_photo(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+    Json(req): Json<CreatePhotoReq>,
+) -> Result<(StatusCode, Json<CreatePhotoRes>), StatusCode> {
+    let cfg = state.r2.as_ref().ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
+
+    // Extract kind from key prefix (e.g. "profile/uuid/uuid.jpg" -> "profile")
+    let kind = req.r2_key.split('/').next().unwrap_or("");
+    let bucket = match kind {
+        "profile" => &cfg.bucket_media,
+        "album" => &cfg.bucket_private,
+        "verification" => &cfg.bucket_verification,
+        _ => return Err(StatusCode::BAD_REQUEST),
+    };
+
+    let now = OffsetDateTime::now_utc();
+
+    // 1. Download original from R2 via presigned GET URL
+    let get_url = presign(cfg, "GET", bucket, &req.r2_key, 300, now);
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(60))
+        .build()
+        .map_err(|e| {
+            tracing::error!("build reqwest client: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    let response = client.get(&get_url).send().await.map_err(|e| {
+        tracing::error!("download from R2 failed: {e}");
+        StatusCode::BAD_GATEWAY
+    })?;
+    let status = response.status();
+    if !status.is_success() {
+        tracing::error!("R2 GET returned {status} for key {}", req.r2_key);
+        return Err(StatusCode::BAD_GATEWAY);
+    }
+    let image_bytes = response.bytes().await.map_err(|e| {
+        tracing::error!("read R2 response body failed: {e}");
+        StatusCode::BAD_GATEWAY
+    })?;
+
+    // 2. Generate blur rendition
+    let blur_bytes =
+        renditions::generate_blur_rendition(&image_bytes).map_err(|e| {
+            tracing::error!("generate blur rendition: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    // 3. Upload blur to R2 via presigned PUT URL
+    let blur_key = format!("{}.blur.jpg", req.r2_key);
+    let put_url = presign(cfg, "PUT", bucket, &blur_key, 300, now);
+    let put_response = client
+        .put(&put_url)
+        .header("Content-Type", "image/jpeg")
+        .body(blur_bytes.clone())
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("upload blur to R2 failed: {e}");
+            StatusCode::BAD_GATEWAY
+        })?;
+    let put_status = put_response.status();
+    if !put_status.is_success() {
+        tracing::error!("R2 PUT returned {put_status} for key {blur_key}");
+        return Err(StatusCode::BAD_GATEWAY);
+    }
+
+    // 4. Insert photo record
+    let photo_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO photos (user_id, r2_key, blur_key, is_nsfw) VALUES ($1, $2, $3, $4) RETURNING id",
+    )
+    .bind(user_id)
+    .bind(&req.r2_key)
+    .bind(&blur_key)
+    .bind(req.is_nsfw)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("insert photo failed: {e}");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(CreatePhotoRes {
+            id: photo_id,
+            r2_key: req.r2_key,
+            blur_key,
+            is_nsfw: req.is_nsfw,
+        }),
+    ))
+}
+
 /// Devuelve una URL presignada PUT (subida directa) + GET (lectura) para el
 /// usuario autenticado. El objeto se enruta al bucket según `kind`.
 pub async fn upload_url(
@@ -207,7 +327,9 @@ pub async fn upload_url(
 }
 
 pub fn router() -> Router<AppState> {
-    Router::new().route("/media/upload-url", post(upload_url))
+    Router::new()
+        .route("/media/upload-url", post(upload_url))
+        .route("/media/photos", post(create_photo))
 }
 
 #[cfg(test)]

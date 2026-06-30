@@ -10,16 +10,11 @@ class GoogleSignInService {
   bool _initialized = false;
 
   /// Initialize the Google Sign-In SDK. Must be called once before [signIn].
-  /// [serverClientId] is the web OAuth client ID — set via build env.
   Future<void> initialize() async {
     if (_initialized) return;
+    const serverClientId = '619557571626-6jmhkf95t4vh5cpsnek7vhnu55l7cnnf.apps.googleusercontent.com';
     await GoogleSignIn.instance.initialize(
-      serverClientId: const String.fromEnvironment(
-        'GOOGLE_SIGN_IN_SERVER_CLIENT_ID',
-      ),
-      hostedDomain: const String.fromEnvironment(
-        'GOOGLE_SIGN_IN_HOSTED_DOMAIN',
-      ),
+      serverClientId: serverClientId,
     );
     _initialized = true;
   }
@@ -31,6 +26,8 @@ class GoogleSignInService {
   ///
   /// The returned [idToken] is a JWT signed by Google that the backend
   /// verifies via Google's tokeninfo endpoint.
+  ///
+  /// Falls back with a clear error if [serverClientId] is not configured.
   Future<GoogleSignInResult> signIn() async {
     try {
       await initialize();

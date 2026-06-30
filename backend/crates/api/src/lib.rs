@@ -36,7 +36,7 @@ pub struct AppState {
     pub refresh_ttl_secs: i64,
     pub notifier: Arc<dyn Notifier>,
     pub oauth: Arc<dyn OAuthVerifier>,
-    pub limiter: Arc<ratelimit::RateLimiter>,
+    pub limiter: Arc<ratelimit::Limiter>,
     pub r2: Option<Arc<media::R2Config>>,
     pub chat_tx: broadcast::Sender<String>,
 }
@@ -59,7 +59,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         refresh_ttl_secs: deps.refresh_ttl_secs,
         notifier: deps.notifier,
         oauth: deps.oauth,
-        limiter: Arc::new(ratelimit::RateLimiter::new(10.0, 1.0)),
+        limiter: Arc::new(ratelimit::Limiter::from_env_or(10.0, 1.0)),
         r2: media::R2Config::from_env().map(Arc::new),
         chat_tx,
     };

@@ -17,16 +17,11 @@ abstract class AdProvider {
 ///
 /// See: https://developers.google.com/admob/flutter/test-ads
 class AdMobAdProvider implements AdProvider {
-  static const _androidTestAppId = 'ca-app-pub-3940256099942544~3347511713';
-  static const _iosTestAppId = 'ca-app-pub-3940256099942544~1458002511';
   static const _testNativeAdUnitId =
       'ca-app-pub-3940256099942544/2247696110'; // Official test native ad
 
-  static const _androidAppId =
-      String.fromEnvironment('ADMOB_ANDROID_APP_ID',
-          defaultValue: _androidTestAppId);
-  static const _iosAppId = String.fromEnvironment('ADMOB_IOS_APP_ID',
-      defaultValue: _iosTestAppId);
+  // App IDs are set in platform config (AndroidManifest / Info.plist).
+  // These env overrides let you swap production IDs without recompiling.
   static const _nativeAdUnitId = String.fromEnvironment('ADMOB_NATIVE_UNIT_ID',
       defaultValue: _testNativeAdUnitId);
 
@@ -60,7 +55,7 @@ class AdMobAdProvider implements AdProvider {
           adUnitId: _nativeAdUnitId,
           factoryId: 'listTile',
           request: const AdRequest(),
-          listener: const NativeAdListener(),
+          listener: NativeAdListener(),
         )..load(),
       ),
     );

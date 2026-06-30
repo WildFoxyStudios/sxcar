@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 
 class NearbyUser {
@@ -78,10 +79,41 @@ class _NearbyScreenState extends ConsumerState<NearbyScreen> {
         .toList();
   }
 
+  void _refresh() {
+    setState(() {
+      _nearbyUsersFuture = _fetchNearbyUsers();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Nearby')),
+      appBar: AppBar(
+        title: const Text(
+          'Vibra',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            color: Color(0xFFFF6B00),
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Search coming soon')),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () => _showFilterSheet(context),
+          ),
+        ],
+      ),
       body: FutureBuilder<List<NearbyUser>>(
         future: _nearbyUsersFuture,
         builder: (context, snapshot) {
@@ -98,15 +130,11 @@ class _NearbyScreenState extends ConsumerState<NearbyScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'Failed to load nearby users',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 16),
                   FilledButton(
-                    onPressed: () {
-                      setState(() {
-                        _nearbyUsersFuture = _fetchNearbyUsers();
-                      });
-                    },
+                    onPressed: _refresh,
                     child: const Text('Retry'),
                   ),
                 ],
@@ -121,44 +149,151 @@ class _NearbyScreenState extends ConsumerState<NearbyScreen> {
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: users.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final user = users[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  child: Text(
-                    (user.displayName ?? user.email)[0].toUpperCase(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
+          return RefreshIndicator(
+            onRefresh: () async => _refresh(),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
+                return GridView.builder(
+                  padding: const EdgeInsets.all(8),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
                   ),
-                ),
-                title: Text(user.displayName ?? user.email),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (user.bio != null && user.bio!.isNotEmpty)
-                      Text(
-                        user.bio!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    Text(
-                      user.distanceText,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                    ),
-                  ],
-                ),
-              );
-            },
+                  itemCount: users.length,
+                  itemBuilder: (context, index) {
+                    final user = users[index];
+                    return _NearbyUserCard(user: user);
+                  },
+                );
+              },
+            ),
           );
         },
+      ),
+    );
+  }
+
+  void _showFilterSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Filters',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            const Text('Age range and tribe filters coming soon.'),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Apply'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NearbyUserCard extends StatelessWidget {
+  final NearbyUser user;
+
+  const _NearbyUserCard({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.push('/profile/${user.id}'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Photo area
+            Expanded(
+              child: Container(
+                color: theme.colorScheme.primaryContainer
+                    .withValues(alpha: 0.3),
+                child: _buildAvatar(theme),
+              ),
+            ),
+            // Info area
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.displayName ?? user.email,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on,
+                          size: 12, color: Colors.grey),
+                      const SizedBox(width: 2),
+                      Text(
+                        user.distanceText,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const Spacer(),
+                      // Online indicator dot
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.green,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar(ThemeData theme) {
+    // TODO: Show profile photo when URL is available
+    // Use: Image.network('$apiUrl/photos/${user.profilePhotoId}', fit: BoxFit.cover)
+    return Center(
+      child: Text(
+        (user.displayName ?? user.email)[0].toUpperCase(),
+        style: TextStyle(
+          fontSize: 32,
+          color: theme.colorScheme.onPrimaryContainer,
+        ),
       ),
     );
   }

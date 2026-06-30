@@ -22,7 +22,7 @@ void main() {
       expect(find.text('Register'), findsWidgets);
       expect(find.text('Email'), findsOneWidget);
       expect(find.text('Password (min 8 characters)'), findsOneWidget);
-      expect(find.text('Date of Birth (YYYY-MM-DD)'), findsOneWidget);
+      expect(find.text('Date of Birth'), findsOneWidget);
       expect(
         find.text('I accept the terms and privacy policy (I am 18+)'),
         findsOneWidget,

@@ -17,43 +17,53 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _dobController = TextEditingController();
+  DateTime? _birthDate;
   bool _consentChecked = false;
   bool _isLoading = false;
   String? _error;
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _dobController.dispose();
-    super.dispose();
+  /// 18 years ago today — latest date a user can be born to be an adult.
+  static DateTime get _maxBirthDate =>
+      DateTime(DateTime.now().year - 18, DateTime.now().month, DateTime.now().day);
+
+  /// Reasonable oldest birth date (100 years ago).
+  static final DateTime _minBirthDate =
+      DateTime(DateTime.now().year - 100, DateTime.now().month, DateTime.now().day);
+
+  bool _isAtLeast18(DateTime birthDate) {
+    final now = DateTime.now();
+    var age = now.year - birthDate.year;
+    if (now.month < birthDate.month ||
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      age--;
+    }
+    return age >= 18;
   }
 
-  bool _isAtLeast18(String dob) {
-    try {
-      final parts = dob.split('-');
-      if (parts.length != 3) return false;
-      final year = int.tryParse(parts[0]);
-      final month = int.tryParse(parts[1]);
-      final day = int.tryParse(parts[2]);
-      if (year == null || month == null || day == null) return false;
-
-      final birthDate = DateTime(year, month, day);
-      final now = DateTime.now();
-      var age = now.year - birthDate.year;
-      if (now.month < birthDate.month ||
-          (now.month == birthDate.month && now.day < birthDate.day)) {
-        age--;
-      }
-      return age >= 18;
-    } catch (_) {
-      return false;
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _birthDate ?? _maxBirthDate,
+      firstDate: _minBirthDate,
+      lastDate: _maxBirthDate,
+      helpText: 'Select your date of birth',
+      fieldLabelText: 'Date of Birth',
+    );
+    if (picked != null) {
+      setState(() => _birthDate = picked);
     }
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_birthDate == null) {
+      setState(() => _error = 'Please select your date of birth');
+      return;
+    }
+    if (!_isAtLeast18(_birthDate!)) {
+      setState(() => _error = 'You must be at least 18 years old');
+      return;
+    }
     if (!_consentChecked) {
       setState(() => _error = 'You must accept the terms and privacy policy');
       return;
@@ -64,11 +74,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _error = null;
     });
 
+    final dob = '${_birthDate!.year}-'
+        '${_birthDate!.month.toString().padLeft(2, '0')}-'
+        '${_birthDate!.day.toString().padLeft(2, '0')}';
+
     try {
       await ref.read(authStateProvider.notifier).register(
             email: _emailController.text.trim(),
             password: _passwordController.text,
-            dob: _dobController.text.trim(),
+            dob: dob,
             consents: ['tos', 'privacy', 'age'],
           );
       if (mounted) context.go('/verify-email');
@@ -137,22 +151,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _dobController,
-                decoration: const InputDecoration(
-                  labelText: 'Date of Birth (YYYY-MM-DD)',
-                  border: OutlineInputBorder(),
+              GestureDetector(
+                onTap: _pickDate,
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'Date of Birth',
+                      hintText: 'Tap to select',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.calendar_today),
+                        onPressed: _pickDate,
+                      ),
+                    ),
+                    controller: TextEditingController(
+                      text: _birthDate == null
+                          ? ''
+                          : '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}',
+                    ),
+                    validator: (_) {
+                      if (_birthDate == null) return 'Please select your date of birth';
+                      if (!_isAtLeast18(_birthDate!)) {
+                        return 'You must be at least 18 years old';
+                      }
+                      return null;
+                    },
+                  ),
                 ),
-                keyboardType: TextInputType.datetime,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your date of birth';
-                  }
-                  if (!_isAtLeast18(value.trim())) {
-                    return 'You must be at least 18 years old';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
               CheckboxListTile(

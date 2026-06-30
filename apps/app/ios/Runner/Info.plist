@@ -10,8 +10,34 @@
 	<string>proyecto-X</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<!-- Privacy descriptions (required for App Store) -->
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Your data is used to show relevant ads and improve your experience.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>proyecto-X shows you nearby people based on your location.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>proyecto-X uses your location to show nearby people even when the app is in the background.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>proyecto-X needs camera access to take profile photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>proyecto-X needs photo library access to upload profile photos and album images.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>proyecto-X needs permission to save photos to your library.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>proyecto-X needs microphone access for voice messages.</string>
+	<!-- Background modes -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+		<string>location</string>
+	</array>
+	<!-- App Transport Security (allow localhost for dev) -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

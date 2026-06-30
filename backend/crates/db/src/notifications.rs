@@ -113,26 +113,6 @@ pub async fn update_notification_prefs(
     Ok(())
 }
 
-// ---------------------------------------------------------------------------
-// FCM push sending stub
-// ---------------------------------------------------------------------------
-
-use std::collections::HashMap;
-
-/// Send a push notification to a user's devices.
-///
-/// TODO: Implement real FCM HTTP v1 API call using Firebase Admin credentials.
-/// 1. Load service account from firebase/ directory or FIREBASE_SERVICE_ACCOUNT env var
-/// 2. Get OAuth2 token
-/// 3. POST to https://fcm.googleapis.com/v1/projects/foxy-85ecb/messages:send
-///
-/// For now, logs the notification via tracing::info!.
-pub async fn send_push_notification(
-    user_id: Uuid,
-    title: &str,
-    body: &str,
-    data: Option<HashMap<String, String>>,
-) {
-    let _ = (user_id, title, body, data);
-    tracing::info!(%user_id, %title, %body, "push notification (stub)");
-}
+// FCM push delivery is handled by `api::fcm::FcmClient` in the API layer
+// (real Firebase HTTP v1 API with OAuth2). This module stores device tokens
+// and notification preferences; the API handlers wire them together.

@@ -4,6 +4,7 @@ pub mod auth;
 pub mod chat;
 pub mod config;
 pub mod cors;
+pub mod fcm;
 pub mod grid;
 pub mod health;
 pub mod media;

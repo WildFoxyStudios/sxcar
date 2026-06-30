@@ -1,5 +1,8 @@
 use image::GenericImageView;
 use std::sync::OnceLock;
+
+// tract-onnx requires native clang for Android/WASM; platform-gate the FFI.
+#[cfg(not(any(target_os = "android", target_family = "wasm")))]
 use tract_onnx::prelude::*;
 
 /// NSFW classification result.
@@ -13,7 +16,8 @@ pub struct NsfwResult {
 /// Threshold above which an image is considered NSFW.
 const NSFW_THRESHOLD: f32 = 0.7;
 
-/// Cached ONNX model (lazy-loaded once).
+/// Cached ONNX model (lazy-loaded once). Only on native desktop.
+#[cfg(not(any(target_os = "android", target_family = "wasm")))]
 #[allow(dead_code)]
 static MODEL: OnceLock<
     SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
@@ -43,8 +47,8 @@ pub fn load_nsfw_model(path: String) -> Result<(), String> {
 /// instructing the caller to use the platform's JS-based NSFW detection instead.
 #[flutter_rust_bridge::frb]
 pub fn nsfw_classify(image_bytes: Vec<u8>) -> Result<NsfwResult, String> {
-    // WASM guard: tract-onnx does not compile to WASM.
-    #[cfg(target_family = "wasm")]
+    // Android/WASM: tract-onnx needs native clang — return clear error.
+    #[cfg(any(target_os = "android", target_family = "wasm"))]
     {
         let _ = image_bytes;
         return Err(
@@ -54,8 +58,8 @@ pub fn nsfw_classify(image_bytes: Vec<u8>) -> Result<NsfwResult, String> {
         );
     }
 
-    // Native path below.
-    #[cfg(not(target_family = "wasm"))]
+    // Native path below (desktop only — tract-onnx needs clang, not on Android/WASM).
+    #[cfg(not(any(target_os = "android", target_family = "wasm")))]
     {
         // 1. Decode image
         let img = image::load_from_memory(&image_bytes)
@@ -106,28 +110,31 @@ pub fn nsfw_classify(image_bytes: Vec<u8>) -> Result<NsfwResult, String> {
 /// file is not yet bundled, so this function returns a clear error.
 ///
 /// The actual file‑based loading will be wired in a follow‑up task.
+#[cfg(not(any(target_os = "android", target_family = "wasm")))]
 fn load_model(
 ) -> Result<
     &'static SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
     String,
 > {
-    MODEL.get_or_try_init(|| {
-        let path = MODEL_PATH
-            .get()
-            .ok_or_else(|| "NSFW model path not set — call load_nsfw_model(path) first. Download the ONNX model from https://github.com/Fyko/nsfw/releases".to_string())?;
-        let model_bytes =
-            std::fs::read(path).map_err(|e| format!("Failed to read model file '{path}': {e}; download from https://github.com/Fyko/nsfw/releases"))?;
-        tract_onnx::tract_onnx()
-            .model_for_read(&mut &*model_bytes)
-            .map_err(|e| format!("Failed to parse ONNX model: {e}"))?
-            .with_input_fact(0, InferenceFact::dt_shape(f32::datum_type(), tvec!(1, 224, 224, 3)))
-            .map_err(|e| format!("Failed to set input shape: {e}"))?
-            .into_optimized()
-            .map_err(|e| format!("Failed to optimize model: {e}"))?
-            .into_runnable()
-            .map_err(|e| format!("Failed to create runnable model: {e}"))
-    })
-    .map_err(|e| e.clone())
+    if let Some(model) = MODEL.get() {
+        return Ok(model);
+    }
+    let path = MODEL_PATH
+        .get()
+        .ok_or_else(|| "NSFW model path not set — call load_nsfw_model(path) first. Download the ONNX model from https://github.com/Fyko/nsfw/releases".to_string())?;
+    let model_bytes =
+        std::fs::read(path).map_err(|e| format!("Failed to read model file '{path}': {e}; download from https://github.com/Fyko/nsfw/releases"))?;
+    let model = tract_onnx::tract_onnx()
+        .model_for_read(&mut &*model_bytes)
+        .map_err(|e| format!("Failed to parse ONNX model: {e}"))?
+        .with_input_fact(0, InferenceFact::dt_shape(f32::datum_type(), tvec!(1, 224, 224, 3)))
+        .map_err(|e| format!("Failed to set input shape: {e}"))?
+        .into_optimized()
+        .map_err(|e| format!("Failed to optimize model: {e}"))?
+        .into_runnable()
+        .map_err(|e| format!("Failed to create runnable model: {e}"))?;
+    let _ = MODEL.set(model);
+    Ok(MODEL.get().unwrap())
 }
 
 // ---------------------------------------------------------------------------

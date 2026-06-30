@@ -1,6 +1,8 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'firebase_options.dart';
 import 'src/rust/frb_generated.dart';
 import 'src/auth/auth_provider.dart';
 import 'src/features/albums_screen.dart';
@@ -16,6 +18,7 @@ import 'src/features/verify_email_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await RustLib.init();
   runApp(const ProviderScope(child: ProyectoXApp()));
 }
@@ -23,9 +26,12 @@ Future<void> main() async {
 final _router = GoRouter(
   initialLocation: '/login',
   redirect: (context, state) {
-    final authState = ProviderScope.containerOf(context).read(authStateProvider);
+    final authState = ProviderScope.containerOf(
+      context,
+    ).read(authStateProvider);
 
-    final isAuthRoute = state.matchedLocation == '/login' ||
+    final isAuthRoute =
+        state.matchedLocation == '/login' ||
         state.matchedLocation == '/register';
 
     if (authState.status == AuthStatus.loading) {
@@ -48,10 +54,7 @@ final _router = GoRouter(
     return null;
   },
   routes: [
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),
@@ -60,23 +63,16 @@ final _router = GoRouter(
       path: '/verify-email',
       builder: (context, state) => const VerifyEmailScreen(),
     ),
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const HomeScreen(),
-    ),
-    GoRoute(
-      path: '/grid',
-      builder: (context, state) => const NearbyScreen(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+    GoRoute(path: '/grid', builder: (context, state) => const NearbyScreen()),
     GoRoute(
       path: '/profile',
       builder: (context, state) => const ProfileScreen(),
     ),
     GoRoute(
       path: '/profile/:userId',
-      builder: (context, state) => ProfileScreen(
-        userId: state.pathParameters['userId'],
-      ),
+      builder: (context, state) =>
+          ProfileScreen(userId: state.pathParameters['userId']),
     ),
     GoRoute(
       path: '/albums',
@@ -84,9 +80,8 @@ final _router = GoRouter(
       routes: [
         GoRoute(
           path: ':albumId',
-          builder: (context, state) => AlbumDetailScreen(
-            albumId: state.pathParameters['albumId']!,
-          ),
+          builder: (context, state) =>
+              AlbumDetailScreen(albumId: state.pathParameters['albumId']!),
         ),
       ],
     ),

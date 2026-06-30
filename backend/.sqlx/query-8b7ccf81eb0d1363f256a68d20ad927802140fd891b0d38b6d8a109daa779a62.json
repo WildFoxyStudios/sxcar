@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT place FROM profile_meet_at WHERE user_id = $1 ORDER BY place",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "place",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "8b7ccf81eb0d1363f256a68d20ad927802140fd891b0d38b6d8a109daa779a62"
+}

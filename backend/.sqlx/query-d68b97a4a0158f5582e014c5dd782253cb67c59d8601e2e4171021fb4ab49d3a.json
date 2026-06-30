@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT intent FROM profile_looking_for WHERE user_id = $1 ORDER BY intent",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "intent",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d68b97a4a0158f5582e014c5dd782253cb67c59d8601e2e4171021fb4ab49d3a"
+}

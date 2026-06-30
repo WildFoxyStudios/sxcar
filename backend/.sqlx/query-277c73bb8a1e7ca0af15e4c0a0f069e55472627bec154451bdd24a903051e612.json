@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT tag::text as \"tag!\" FROM profile_tags WHERE user_id = $1 ORDER BY tag",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "tag!",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "277c73bb8a1e7ca0af15e4c0a0f069e55472627bec154451bdd24a903051e612"
+}

@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT tribe FROM profile_tribes WHERE user_id = $1 ORDER BY tribe",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "tribe",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "8f0d2b9408be568fe8d0c67dfb63b7a13802b8e5768d86afe519487c3ef798ca"
+}

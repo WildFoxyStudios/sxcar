@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE csam_hits\n           SET status = 'reported',\n               reported_to_authority_at = now(),\n               notes = COALESCE($2, notes)\n           WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9298b7d071836d8690b7a6f738b4137d3a553b126afa56543abdc2927cacc214"
+}

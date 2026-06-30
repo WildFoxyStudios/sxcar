@@ -11,6 +11,7 @@ pub mod media;
 pub mod msgpack;
 pub mod notifications;
 pub mod profile;
+pub mod chat_broker;
 pub mod ratelimit;
 pub mod social;
 pub mod tarpit;
@@ -25,7 +26,6 @@ use axum::{
 };
 use db::Pool;
 use tarpit::{Tarpit, TarpitConfig};
-use tokio::sync::broadcast;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -38,7 +38,7 @@ pub struct AppState {
     pub oauth: Arc<dyn OAuthVerifier>,
     pub limiter: Arc<ratelimit::Limiter>,
     pub r2: Option<Arc<media::R2Config>>,
-    pub chat_tx: broadcast::Sender<String>,
+    pub chat_broker: chat_broker::ChatBroker,
 }
 
 pub struct AppDeps {
@@ -50,7 +50,7 @@ pub struct AppDeps {
 
 pub fn app(pool: Pool, deps: AppDeps) -> Router {
     let admin_jwt_secret = deps.jwt.secret.clone();
-    let (chat_tx, _) = broadcast::channel(256);
+    let chat_broker = chat_broker::ChatBroker::from_env_or(256);
     let state = AppState {
         pool,
         tarpit: Tarpit::new(TarpitConfig::from_env()),
@@ -61,7 +61,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         oauth: deps.oauth,
         limiter: Arc::new(ratelimit::Limiter::from_env_or(10.0, 1.0)),
         r2: media::R2Config::from_env().map(Arc::new),
-        chat_tx,
+        chat_broker,
     };
 
     let auth_routes = auth::router().route_layer(axum::middleware::from_fn_with_state(

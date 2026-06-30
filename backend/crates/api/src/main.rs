@@ -27,8 +27,12 @@ async fn main() -> anyhow::Result<()> {
             access_ttl_secs: config.access_ttl_secs,
         },
         refresh_ttl_secs: config.refresh_ttl_secs,
-        notifier: SmtpNotifier::from_env().map(Arc::new).unwrap_or_else(|| Arc::new(DevNotifier)),
-        oauth: RealOAuthVerifier::from_env().map(Arc::new).unwrap_or_else(|| Arc::new(DevOAuthVerifier)),
+        notifier: SmtpNotifier::from_env()
+            .map(|n| Arc::new(n) as Arc<dyn auth::notify::Notifier>)
+            .unwrap_or_else(|| Arc::new(DevNotifier)),
+        oauth: RealOAuthVerifier::from_env()
+            .map(|o| Arc::new(o) as Arc<dyn auth::oauth::OAuthVerifier>)
+            .unwrap_or_else(|| Arc::new(DevOAuthVerifier)),
     };
 
     let app = app(pool, deps);

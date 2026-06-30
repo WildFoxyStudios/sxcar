@@ -49,11 +49,11 @@ async fn handle_socket(socket: WebSocket, state: AppState, user_id: Uuid) {
     let (mut sender, mut receiver) = socket.split();
 
     // Subscribe to broadcast channel
-    let mut rx = state.chat_tx.subscribe();
+    let mut rx = state.chat_broker.subscribe().await;
 
     // Spawn a task to forward broadcast messages to this client
     let send_task = tokio::spawn(async move {
-        while let Ok(msg) = rx.recv().await {
+        while let Some(msg) = rx.next().await {
             if sender.send(Message::Text(msg)).await.is_err() {
                 break;
             }
@@ -119,7 +119,7 @@ async fn handle_incoming(
                 sent_at: row.created_at,
             };
             let payload = serde_json::to_string(&outgoing)?;
-            let _ = state.chat_tx.send(payload);
+            let _ = state.chat_broker.publish("chat", &payload);
         }
         IncomingMessage::Typing { conversation_id } => {
             let typing = serde_json::json!({
@@ -127,7 +127,8 @@ async fn handle_incoming(
                 "conversation_id": conversation_id,
                 "user_id": sender_id.to_string(),
             });
-            let _ = state.chat_tx.send(typing.to_string());
+            let typing_str = typing.to_string();
+            state.chat_broker.publish("chat", &typing_str);
         }
     }
     Ok(())
@@ -294,7 +295,7 @@ pub async fn send_message(
         sent_at: row.created_at,
     };
     if let Ok(payload) = serde_json::to_string(&outgoing) {
-        let _ = state.chat_tx.send(payload);
+        state.chat_broker.publish("chat", &payload);
     }
 
     Ok((

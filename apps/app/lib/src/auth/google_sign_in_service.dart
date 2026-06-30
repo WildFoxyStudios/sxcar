@@ -1,53 +1,72 @@
 import 'package:firebase_auth/firebase_auth.dart'
     show FirebaseAuth, FirebaseAuthException, GoogleAuthProvider, OAuthCredential;
+import 'package:google_sign_in/google_sign_in.dart';
 
-/// Wraps Firebase Auth for Google Sign-In. Uses the already-configured
-/// Firebase project (foxy-85ecb) from [firebase_options.dart].
+/// Native Google Sign-In via Google Play Services (no browser on Android).
+///
+/// Flow: GoogleSignIn (native dialog) → Google ID token →
+/// FirebaseAuth credential → OAuthCredential.idToken (for backend verification).
 class GoogleSignInService {
   final FirebaseAuth _auth;
 
   GoogleSignInService() : _auth = FirebaseAuth.instance;
 
-  /// Returns `true` if Google Sign-In is available on this platform.
   bool get isSupported => !const bool.fromEnvironment('dart.library.js');
 
-  /// Initiates the Google Sign-In flow via Firebase Auth and returns the ID token.
-  ///
-  /// The returned [idToken] is a JWT signed by Google that the backend
-  /// verifies via Google's tokeninfo endpoint (RealOAuthVerifier).
+  Future<void> initialize() async {
+    await GoogleSignIn.instance.initialize();
+  }
+
+  /// Opens the native Google Sign-In dialog and returns the ID token for
+  /// backend verification via POST /auth/oauth/google.
   Future<GoogleSignInResult> signIn() async {
     try {
-      final provider = GoogleAuthProvider();
-      // Force account selection even if already signed in
-      provider.setCustomParameters({'prompt': 'select_account'});
-      final credential = await _auth.signInWithProvider(provider);
-      // Get the Google ID token from the OAuthCredential for backend verification.
-      // Fall back to Firebase ID token if the underlying Google token isn't exposed.
-      String? idToken = credential.credential is OAuthCredential
-          ? (credential.credential as OAuthCredential).idToken
-          : null;
-      idToken ??= await credential.user?.getIdToken();
-      if (idToken == null) {
-        return const GoogleSignInResult.error('No ID token returned from Firebase Auth');
+      await initialize();
+
+      // Step 1: Native Google Sign-In dialog (Google Play Services, no browser)
+      final googleAccount = await GoogleSignIn.instance.authenticate();
+      final googleAuth = googleAccount.authentication;
+      final googleIdToken = googleAuth.idToken;
+      if (googleIdToken == null) {
+        return const GoogleSignInResult.error('No Google ID token returned');
       }
+
+      // Step 2: Sign in to Firebase with the Google credential (idToken only, v7)
+      final googleCredential = GoogleAuthProvider.credential(
+        idToken: googleIdToken,
+      );
+      final userCredential = await _auth.signInWithCredential(googleCredential);
+
+      // Step 3: Get the underlying Google OAuth ID token for backend verification
+      final oauthCred = userCredential.credential;
+      final backendIdToken = (oauthCred is OAuthCredential)
+          ? (oauthCred.idToken ?? googleIdToken)
+          : googleIdToken;
+
       return GoogleSignInResult.success(
-        idToken: idToken,
-        email: credential.user?.email,
-        displayName: credential.user?.displayName,
-        photoUrl: credential.user?.photoURL,
+        idToken: backendIdToken,
+        email: googleAccount.email,
+        displayName: googleAccount.displayName,
+        photoUrl: googleAccount.photoUrl,
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'canceled' || e.code == 'user-cancelled') {
         return const GoogleSignInResult.cancelled();
       }
-      return GoogleSignInResult.error(e.message ?? 'Firebase Auth error: ${e.code}');
-    } catch (e) {
-      return GoogleSignInResult.error(e.toString());
+      return GoogleSignInResult.error(e.message ?? 'Auth error: ${e.code}');
+    } on Exception catch (e) {
+      final msg = e.toString();
+      if (msg.contains('kSignInCanceledError') || msg.contains('canceled')) {
+        return const GoogleSignInResult.cancelled();
+      }
+      return GoogleSignInResult.error(msg);
     }
   }
 
-  /// Sign out from Firebase Auth.
-  Future<void> signOut() => _auth.signOut();
+  Future<void> signOut() async {
+    await GoogleSignIn.instance.signOut();
+    await _auth.signOut();
+  }
 }
 
 class GoogleSignInResult {

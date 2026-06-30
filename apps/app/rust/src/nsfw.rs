@@ -111,9 +111,23 @@ fn load_model(
     &'static SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
     String,
 > {
-    // Stub: return a clear error until the ONNX model is bundled.
-    let _ = MODEL_PATH.get();
-    Err("NSFW model not yet bundled — add model.onnx to assets/models/ and call load_nsfw_model(path)".to_string())
+    MODEL.get_or_try_init(|| {
+        let path = MODEL_PATH
+            .get()
+            .ok_or_else(|| "NSFW model path not set — call load_nsfw_model(path) first. Download the ONNX model from https://github.com/Fyko/nsfw/releases".to_string())?;
+        let model_bytes =
+            std::fs::read(path).map_err(|e| format!("Failed to read model file '{path}': {e}; download from https://github.com/Fyko/nsfw/releases"))?;
+        tract_onnx::tract_onnx()
+            .model_for_read(&mut &*model_bytes)
+            .map_err(|e| format!("Failed to parse ONNX model: {e}"))?
+            .with_input_fact(0, InferenceFact::dt_shape(f32::datum_type(), tvec!(1, 224, 224, 3)))
+            .map_err(|e| format!("Failed to set input shape: {e}"))?
+            .into_optimized()
+            .map_err(|e| format!("Failed to optimize model: {e}"))?
+            .into_runnable()
+            .map_err(|e| format!("Failed to create runnable model: {e}"))
+    })
+    .map_err(|e| e.clone())
 }
 
 // ---------------------------------------------------------------------------

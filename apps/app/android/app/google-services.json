@@ -1,0 +1,278 @@
+{
+  "project_info": {
+    "project_number": "802311791858",
+    "project_id": "foxy-85ecb",
+    "storage_bucket": "foxy-85ecb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802311791858:android:b6ccd7dbd9121013b5dc6b",
+        "android_client_info": {
+          "package_name": "com.exampl.parleylive"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcfSjPtsZ9dlevCskqf1eYSwpLWdvg7Zk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "802311791858-covqnnjfvo8vou386l2s3j4i8e632it7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wildfoxy.jungle"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802311791858:android:cba3c91d7bb1627eb5dc6b",
+        "android_client_info": {
+          "package_name": "com.exampl.parleylivee"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcfSjPtsZ9dlevCskqf1eYSwpLWdvg7Zk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "802311791858-covqnnjfvo8vou386l2s3j4i8e632it7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wildfoxy.jungle"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802311791858:android:9fa7345febf7f193b5dc6b",
+        "android_client_info": {
+          "package_name": "com.example.gomeet"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802311791858-akfti88ttacmd9t5e0thqrtl67vm332s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.gomeet",
+            "certificate_hash": "c73f5fabdf7fde5750e591ef968bce93ecf35669"
+          }
+        },
+        {
+          "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcfSjPtsZ9dlevCskqf1eYSwpLWdvg7Zk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "802311791858-covqnnjfvo8vou386l2s3j4i8e632it7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wildfoxy.jungle"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802311791858:android:8b727d544ec32cf4b5dc6b",
+        "android_client_info": {
+          "package_name": "com.example.parleylive"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802311791858-3e7rs6bgbcr588e10m4k2r1unmc06stv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.parleylive",
+            "certificate_hash": "c73f5fabdf7fde5750e591ef968bce93ecf35669"
+          }
+        },
+        {
+          "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcfSjPtsZ9dlevCskqf1eYSwpLWdvg7Zk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "802311791858-covqnnjfvo8vou386l2s3j4i8e632it7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wildfoxy.jungle"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802311791858:android:b67bb829ab5505f7b5dc6b",
+        "android_client_info": {
+          "package_name": "com.proyectox.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcfSjPtsZ9dlevCskqf1eYSwpLWdvg7Zk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "802311791858-covqnnjfvo8vou386l2s3j4i8e632it7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wildfoxy.jungle"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802311791858:android:1086795f7e4f2950b5dc6b",
+        "android_client_info": {
+          "package_name": "com.rayzifake.live"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcfSjPtsZ9dlevCskqf1eYSwpLWdvg7Zk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "802311791858-covqnnjfvo8vou386l2s3j4i8e632it7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wildfoxy.jungle"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802311791858:android:78c2c727ae2255a6b5dc6b",
+        "android_client_info": {
+          "package_name": "com.wildfoxy.jungle"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcfSjPtsZ9dlevCskqf1eYSwpLWdvg7Zk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802311791858-1t38k53ecqole95q937pbqk7m4pnrv3i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "802311791858-covqnnjfvo8vou386l2s3j4i8e632it7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wildfoxy.jungle"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

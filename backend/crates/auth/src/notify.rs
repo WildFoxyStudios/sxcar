@@ -28,11 +28,12 @@ impl Notifier for DevNotifier {
 /// Reads configuration from environment variables:
 /// - `SMTP_API_KEY` — Mailgun API key or SMTP password
 /// - `SMTP_FROM` — sender address (default: `noreply@turnend.win`)
-/// - `SMTP_ENDPOINT` — API endpoint URL (default: `https://api.mailgun.net/v3`)
+/// - `SMTP_ENDPOINT` — API base URL (default: `https://api.mailgun.net/v3`)
+/// - `SMTP_DOMAIN` — Mailgun domain / SendGrid subdomain
 pub struct SmtpNotifier {
     api_key: String,
     from: String,
-    endpoint: String,
+    url: String,
 }
 
 impl SmtpNotifier {
@@ -41,10 +42,12 @@ impl SmtpNotifier {
         let from = std::env::var("SMTP_FROM").unwrap_or_else(|_| "noreply@turnend.win".into());
         let endpoint =
             std::env::var("SMTP_ENDPOINT").unwrap_or_else(|_| "https://api.mailgun.net/v3".into());
+        let domain =
+            std::env::var("SMTP_DOMAIN").unwrap_or_else(|_| "sandbox.mailgun.org".into());
         Some(Self {
             api_key,
             from,
-            endpoint,
+            url: format!("{endpoint}/{domain}/messages"),
         })
     }
 }
@@ -54,7 +57,7 @@ impl Notifier for SmtpNotifier {
     async fn send_email(&self, to: &str, subject: &str, body: &str) -> Result<(), AuthError> {
         let client = reqwest::Client::new();
         let res = client
-            .post(format!("{}/messages", self.endpoint))
+            .post(&self.url)
             .basic_auth("api", Some(&self.api_key))
             .form(&[
                 ("from", self.from.as_str()),

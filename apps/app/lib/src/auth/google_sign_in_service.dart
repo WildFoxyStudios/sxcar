@@ -1,58 +1,53 @@
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart'
+    show FirebaseAuth, FirebaseAuthException, GoogleAuthProvider, OAuthCredential;
 
-/// Wraps the Google Sign-In SDK (v7+) to produce an ID token for the backend.
-///
-/// Uses the singleton [GoogleSignIn.instance] API. Call [initialize] before
-/// [signIn].
+/// Wraps Firebase Auth for Google Sign-In. Uses the already-configured
+/// Firebase project (foxy-85ecb) from [firebase_options.dart].
 class GoogleSignInService {
-  GoogleSignInService();
+  final FirebaseAuth _auth;
 
-  bool _initialized = false;
-
-  /// Initialize the Google Sign-In SDK. Must be called once before [signIn].
-  Future<void> initialize() async {
-    if (_initialized) return;
-    const serverClientId = '619557571626-6jmhkf95t4vh5cpsnek7vhnu55l7cnnf.apps.googleusercontent.com';
-    await GoogleSignIn.instance.initialize(
-      serverClientId: serverClientId,
-    );
-    _initialized = true;
-  }
+  GoogleSignInService() : _auth = FirebaseAuth.instance;
 
   /// Returns `true` if Google Sign-In is available on this platform.
   bool get isSupported => !const bool.fromEnvironment('dart.library.js');
 
-  /// Initiates the Google Sign-In flow and returns the ID token.
+  /// Initiates the Google Sign-In flow via Firebase Auth and returns the ID token.
   ///
   /// The returned [idToken] is a JWT signed by Google that the backend
-  /// verifies via Google's tokeninfo endpoint.
-  ///
-  /// Falls back with a clear error if [serverClientId] is not configured.
+  /// verifies via Google's tokeninfo endpoint (RealOAuthVerifier).
   Future<GoogleSignInResult> signIn() async {
     try {
-      await initialize();
-      final account = await GoogleSignIn.instance.authenticate();
-      final auth = account.authentication;
-      final idToken = auth.idToken;
+      final provider = GoogleAuthProvider();
+      // Force account selection even if already signed in
+      provider.setCustomParameters({'prompt': 'select_account'});
+      final credential = await _auth.signInWithProvider(provider);
+      // Get the Google ID token from the OAuthCredential for backend verification.
+      // Fall back to Firebase ID token if the underlying Google token isn't exposed.
+      String? idToken = credential.credential is OAuthCredential
+          ? (credential.credential as OAuthCredential).idToken
+          : null;
+      idToken ??= await credential.user?.getIdToken();
       if (idToken == null) {
-        return const GoogleSignInResult.error('No ID token returned');
+        return const GoogleSignInResult.error('No ID token returned from Firebase Auth');
       }
       return GoogleSignInResult.success(
         idToken: idToken,
-        email: account.email,
-        displayName: account.displayName,
-        photoUrl: account.photoUrl,
+        email: credential.user?.email,
+        displayName: credential.user?.displayName,
+        photoUrl: credential.user?.photoURL,
       );
-    } on Exception catch (e) {
-      if (e.toString().contains('kSignInCanceledError')) {
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'canceled' || e.code == 'user-cancelled') {
         return const GoogleSignInResult.cancelled();
       }
+      return GoogleSignInResult.error(e.message ?? 'Firebase Auth error: ${e.code}');
+    } catch (e) {
       return GoogleSignInResult.error(e.toString());
     }
   }
 
-  /// Sign out from Google (revokes app permission locally).
-  Future<void> signOut() => GoogleSignIn.instance.signOut();
+  /// Sign out from Firebase Auth.
+  Future<void> signOut() => _auth.signOut();
 }
 
 class GoogleSignInResult {

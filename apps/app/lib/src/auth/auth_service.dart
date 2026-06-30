@@ -22,6 +22,16 @@ class AuthService {
     return TokenPair.fromJson(response.data!);
   }
 
+  /// OAuth login with Google or Apple ID token.
+  /// Calls POST /auth/oauth/{provider} with the raw id_token from the platform SDK.
+  Future<TokenPair> oauthLogin(String provider, String idToken) async {
+    final response = await _client.post<Map<String, dynamic>>(
+      '/auth/oauth/$provider',
+      data: {'id_token': idToken},
+    );
+    return TokenPair.fromJson(response.data!);
+  }
+
   Future<void> verifyEmail(String code) async {
     await _client.post<void>(
       '/auth/verify-email',

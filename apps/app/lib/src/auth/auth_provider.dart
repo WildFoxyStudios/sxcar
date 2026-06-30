@@ -135,4 +135,22 @@ class AuthNotifier extends Notifier<AuthState> {
     _currentRefreshToken = null;
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
+
+  /// Sign in with Google. Gets the ID token from the Google Sign-In SDK,
+  /// sends it to the backend for verification, and stores the resulting
+  /// JWT pair. Falls back with [AuthException] on failure.
+  Future<TokenPair> signInWithGoogle(String idToken, {String? email}) async {
+    final authService = ref.read(authServiceProvider);
+    final tokenStorage = ref.read(tokenStorageProvider);
+
+    final pair = await authService.oauthLogin('google', idToken);
+    await tokenStorage.saveTokens(access: pair.access, refresh: pair.refresh);
+    _currentRefreshToken = pair.refresh;
+    state = AuthState(
+      status: AuthStatus.authenticated,
+      accessToken: pair.access,
+      email: email,
+    );
+    return pair;
+  }
 }

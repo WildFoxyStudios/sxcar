@@ -46,7 +46,7 @@ pub struct RealOAuthVerifier {
 impl RealOAuthVerifier {
     pub fn from_env() -> Option<Self> {
         let google = std::env::var("OAUTH_GOOGLE_CLIENT_ID").ok()?;
-        let apple = std::env::var("OAUTH_APPLE_CLIENT_ID").ok()?;
+        let apple = std::env::var("OAUTH_APPLE_CLIENT_ID").unwrap_or_default();
         Some(Self {
             google_client_id: google,
             apple_client_id: apple,

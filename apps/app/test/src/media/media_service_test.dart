@@ -57,6 +57,13 @@ void main() {
     });
 
     group('getUploadUrl', () {
+      // Allowed kinds enforced by the backend (`/media/upload-url`).
+      // See backend `POST /media/upload-url` handler — anything else returns
+      // HTTP 400 "invalid kind". This guards against regressions where
+      // callers (e.g. EditProfileScreen) send a different value such as
+      // 'profile_photo' or 'avatar'.
+      const allowedKinds = {'profile', 'album', 'verification'};
+
       test('returns UploadUrl on 200', () async {
         mockAdapter.enqueue(200, {
           'key': 'abc.jpg',
@@ -66,13 +73,40 @@ void main() {
           'expires_in': 1800,
         });
 
-        final result = await mediaService.getUploadUrl(kind: 'avatar');
+        final result = await mediaService.getUploadUrl(kind: 'profile');
 
         expect(result.key, equals('abc.jpg'));
         expect(result.bucket, equals('media-prod'));
         expect(result.putUrl, equals('https://r2.example.com/put/abc'));
         expect(result.getUrl, equals('https://r2.example.com/get/abc'));
         expect(result.expiresIn, equals(1800));
+      });
+
+      // Regression: callers used `kind: 'profile_photo'` in
+      // EditProfileScreen, which the backend rejected with 400. The fix
+      // is to send `kind: 'profile'`. This test asserts the request body
+      // shape that the upload-photo flow must produce.
+      test('profile photo upload request shape: kind=profile, POST /media/upload-url',
+          () async {
+        mockAdapter.enqueue(200, {
+          'key': 'p.jpg',
+          'bucket': 'b',
+          'put_url': 'https://put',
+          'get_url': 'https://get',
+          'expires_in': 600,
+        });
+
+        await mediaService.getUploadUrl(kind: 'profile');
+
+        final request = mockAdapter.lastRequest;
+        expect(request, isNotNull);
+        expect(request!.method, equals('POST'));
+        expect(request.path, equals('/media/upload-url'));
+
+        final body = request.data as Map<String, dynamic>;
+        expect(body['kind'], equals('profile'));
+        expect(allowedKinds.contains(body['kind']), isTrue,
+            reason: 'kind must be one of $allowedKinds');
       });
 
       test('sends kind and ext in the request body', () async {
@@ -84,7 +118,7 @@ void main() {
           'expires_in': 300,
         });
 
-        await mediaService.getUploadUrl(kind: 'photo', ext: 'png');
+        await mediaService.getUploadUrl(kind: 'album', ext: 'png');
 
         final request = mockAdapter.lastRequest;
         expect(request, isNotNull);
@@ -92,7 +126,7 @@ void main() {
         expect(request.path, equals('/media/upload-url'));
 
         final body = request.data as Map<String, dynamic>;
-        expect(body['kind'], equals('photo'));
+        expect(body['kind'], equals('album'));
         expect(body['ext'], equals('png'));
       });
 
@@ -105,11 +139,11 @@ void main() {
           'expires_in': 300,
         });
 
-        await mediaService.getUploadUrl(kind: 'avatar');
+        await mediaService.getUploadUrl(kind: 'profile');
 
         final request = mockAdapter.lastRequest;
         final body = request!.data as Map<String, dynamic>;
-        expect(body['kind'], equals('avatar'));
+        expect(body['kind'], equals('profile'));
         expect(body.containsKey('ext'), isFalse);
       });
 
@@ -117,7 +151,7 @@ void main() {
         mockAdapter.enqueue(500, {'error': 'Server error'});
 
         expect(
-          () => mediaService.getUploadUrl(kind: 'avatar'),
+          () => mediaService.getUploadUrl(kind: 'profile'),
           throwsA(isA<DioException>()),
         );
       });

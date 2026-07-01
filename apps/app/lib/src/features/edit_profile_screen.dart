@@ -219,7 +219,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final bytes = await picked.readAsBytes();
 
       final mediaService = MediaService(ref.read(dioProvider));
-      final uploadUrl = await mediaService.getUploadUrl(kind: 'profile_photo');
+      // Backend allows only kind ∈ {profile, album, verification}.
+      // 'profile_photo' was rejected with HTTP 400. Use 'profile' for
+      // primary profile pictures.
+      final uploadUrl = await mediaService.getUploadUrl(kind: 'profile');
       await mediaService.uploadToR2(uploadUrl.putUrl, bytes);
       // Update profile via API with the new photo key
       final dio = ref.read(dioProvider);

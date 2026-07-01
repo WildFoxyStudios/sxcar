@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
 import 'src/rust/frb_generated.dart';
 import 'src/auth/auth_provider.dart';
+import 'src/chat/unread_count_provider.dart';
 import 'src/presence/presence_service.dart';
 import 'src/features/album_detail_screen.dart';
 import 'src/features/albums_screen.dart';
@@ -187,13 +188,19 @@ final _router = GoRouter(
 );
 
 /// Shell widget that provides the Grindr-style bottom navigation bar.
-class MainShell extends StatelessWidget {
+class MainShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   const MainShell({super.key, required this.navigationShell});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unreadAsync = ref.watch(unreadCountProvider);
+    final unreadCount = unreadAsync.maybeWhen(
+      data: (n) => n,
+      orElse: () => 0,
+    );
+
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
@@ -203,29 +210,58 @@ class MainShell extends StatelessWidget {
         selectedItemColor: grindrYellow,
         unselectedItemColor: const Color(0xFF777777),
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.grid_view_rounded),
             label: 'Cascade',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.favorite_border),
             label: 'Interest',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
+            icon: _ChatTabIcon(
+              unreadCount: unreadCount,
+              isSelected: navigationShell.currentIndex == 2,
+            ),
             label: 'Chat',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.explore_outlined),
             label: 'Explore',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'You',
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Chat tab icon — wraps the standard chat icon in a [Badge] when there
+/// are unread messages. Hidden when count == 0.
+class _ChatTabIcon extends StatelessWidget {
+  final int unreadCount;
+  final bool isSelected;
+
+  const _ChatTabIcon({required this.unreadCount, required this.isSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = Icon(
+      isSelected ? Icons.chat_bubble : Icons.chat_bubble_outline,
+    );
+    if (unreadCount <= 0) return icon;
+
+    return Badge(
+      label: Text(
+        unreadCount > 99 ? '99+' : '$unreadCount',
+        style: const TextStyle(color: Colors.white, fontSize: 10),
+      ),
+      backgroundColor: Colors.red,
+      child: icon,
     );
   }
 }

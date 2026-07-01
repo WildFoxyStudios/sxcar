@@ -81,11 +81,15 @@ Dio createAuthClient(TokenStorage tokenStorage) {
         handler.resolve(retryResponse);
       } catch (e) {
         await tokenStorage.clearTokens();
+        // If refresh itself failed (any non-2xx), surface the ORIGINAL request
+        // error to the caller — not a generic "Session expired" message — so
+        // the UI can decide whether to re-prompt for login or show the actual
+        // server-side reason.
         handler.next(DioException(
           requestOptions: requestOptions,
-          error: AuthException('Session expired. Please login again.'),
-          response: null,
-          type: DioExceptionType.badResponse,
+          error: error.error ?? AuthException('Session expired. Please login again.'),
+          response: error.response,
+          type: error.type,
         ));
       }
     },

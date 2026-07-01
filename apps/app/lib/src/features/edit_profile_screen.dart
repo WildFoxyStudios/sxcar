@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../auth/auth_provider.dart';
+import '../health/health_service.dart';
 import '../media/media_service.dart';
 import 'profile_screen.dart' show UserProfile;
 
@@ -38,6 +41,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   // Multi-select values
   final Set<String> _selectedTribes = {};
   final Set<String> _selectedLookingFor = {};
+
+  // Health fields
+  String? _hivStatus;
+  DateTime? _lastTestedOn;
+  bool? _prep;
+  bool _isSavingHealth = false;
 
   static const List<String> _bodyTypes = [
     'Slim',
@@ -97,6 +106,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     'Open to Explore',
   ];
 
+  static const List<String> _hivStatusOptions = [
+    'Unknown',
+    'Negative',
+    'Positive',
+    'Prefer not to say',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -146,6 +162,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         // Pre-fill multi-select
         _selectedTribes.addAll(profile.tribes);
         _selectedLookingFor.addAll(profile.lookingFor);
+
+        // Load health fields separately; ignore failures so the main
+        // profile form still works if /profile/health is unreachable.
+        unawaited(_loadHealth());
       });
     } on DioException catch (e) {
       setState(() {
@@ -158,6 +178,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _isLoading = false;
         _error = 'Failed to load profile: $e';
       });
+    }
+  }
+
+  Future<void> _loadHealth() async {
+    try {
+      final service = ref.read(healthServiceProvider);
+      final info = await service.fetchHealth();
+      if (!mounted) return;
+      setState(() {
+        _hivStatus = info.hivStatus;
+        _prep = info.prep;
+        if (info.lastTestedOn != null) {
+          try {
+            _lastTestedOn = DateTime.parse(info.lastTestedOn!);
+          } catch (_) {
+            _lastTestedOn = null;
+          }
+        }
+      });
+    } catch (_) {
+      // Best-effort — leave fields null if endpoint fails.
     }
   }
 
@@ -264,6 +305,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final userJson = response.data!['user'] as Map<String, dynamic>;
       final updatedProfile = UserProfile.fromJson(userJson);
 
+      // Also save the health fields. If this fails, still consider the
+      // main profile save a success and surface a warning snackbar.
+      await _saveHealth(silent: true);
+
       setState(() {
         _profile = updatedProfile;
         _isSaving = false;
@@ -300,6 +345,73 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ),
         );
       }
+    }
+  }
+
+  /// PUT /profile/health with the current form values.
+  /// Returns true on success, false on failure. When [silent] is true, no
+  /// snackbar is shown — used by the main Save flow so the user only sees
+  /// one confirmation even if both requests succeed.
+  Future<bool> _saveHealth({bool silent = false}) async {
+    setState(() => _isSavingHealth = true);
+    try {
+      final service = ref.read(healthServiceProvider);
+      final lastTestedStr = _lastTestedOn == null
+          ? null
+          : '${_lastTestedOn!.year.toString().padLeft(4, '0')}-${_lastTestedOn!.month.toString().padLeft(2, '0')}-${_lastTestedOn!.day.toString().padLeft(2, '0')}';
+      await service.updateHealth(HealthInfo(
+        hivStatus: _hivStatus,
+        lastTestedOn: lastTestedStr,
+        prep: _prep,
+      ));
+      setState(() => _isSavingHealth = false);
+      if (!silent && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Health info saved!'),
+            backgroundColor: Color(0xFF2E7D32),
+          ),
+        );
+      }
+      return true;
+    } on DioException catch (e) {
+      setState(() => _isSavingHealth = false);
+      if (!silent && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to save health: ${e.response?.statusCode ?? e.message}',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return false;
+    } catch (e) {
+      setState(() => _isSavingHealth = false);
+      if (!silent && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save health: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<void> _pickLastTestedDate() async {
+    final now = DateTime.now();
+    final initial = _lastTestedOn ?? now;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1980),
+      lastDate: now,
+    );
+    if (picked != null) {
+      setState(() => _lastTestedOn = picked);
     }
   }
 
@@ -582,6 +694,95 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             );
           }).toList(),
         ),
+        const SizedBox(height: 32),
+
+        // Health section
+        _buildSectionHeader('Health'),
+        const SizedBox(height: 12),
+
+        // HIV status dropdown
+        _buildLabel('HIV Status'),
+        const SizedBox(height: 4),
+        DropdownButtonFormField<String>(
+          initialValue: _hivStatus,
+          dropdownColor: const Color(0xFF1A1A1A),
+          style: const TextStyle(color: Colors.white),
+          decoration: _inputDecoration('Select status'),
+          items: _hivStatusOptions
+              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+              .toList(),
+          onChanged: (val) => setState(() => _hivStatus = val),
+        ),
+        const SizedBox(height: 16),
+
+        // Last tested on date picker
+        _buildLabel('Last Tested On'),
+        const SizedBox(height: 4),
+        InkWell(
+          onTap: _pickLastTestedDate,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF333333)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _lastTestedOn == null
+                        ? 'Not set'
+                        : '${_lastTestedOn!.year.toString().padLeft(4, '0')}-${_lastTestedOn!.month.toString().padLeft(2, '0')}-${_lastTestedOn!.day.toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                      color: _lastTestedOn == null
+                          ? Colors.grey
+                          : Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.calendar_today, color: Colors.grey, size: 18),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // PrEP toggle
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF333333)),
+          ),
+          child: Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'On PrEP',
+                  style: TextStyle(color: Colors.white, fontSize: 14),
+                ),
+              ),
+              Switch(
+                value: _prep ?? false,
+                activeThumbColor: const Color(0xFFF4C542),
+                onChanged: (val) => setState(() => _prep = val),
+              ),
+            ],
+          ),
+        ),
+        if (_isSavingHealth)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: SizedBox(
+              height: 16,
+              width: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
         const SizedBox(height: 32),
 
         // Save button

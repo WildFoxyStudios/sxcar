@@ -13,15 +13,33 @@ pub struct ConversationRow {
     pub unread_count: i64,
 }
 
-/// Row returned by list_messages.
-#[derive(Debug, FromRow)]
+/// Row returned by list_messages and insert_message.
+#[derive(Debug, FromRow, serde::Serialize)]
 pub struct MessageRow {
     pub id: Uuid,
     pub conversation_id: Uuid,
     pub sender_id: Uuid,
     pub kind: String,
     pub body: Option<String>,
+    pub media_key: Option<String>,
+    pub media_type: Option<String>,
+    pub caption: Option<String>,
+    pub lat: Option<f64>,
+    pub lon: Option<f64>,
+    pub read_at: Option<time::OffsetDateTime>,
     pub created_at: time::OffsetDateTime,
+}
+
+/// Input for inserting a message (text or media).
+#[derive(Debug, Default)]
+pub struct InsertMessage<'a> {
+    pub kind: &'a str,
+    pub body: Option<&'a str>,
+    pub media_key: Option<&'a str>,
+    pub media_type: Option<&'a str>,
+    pub caption: Option<&'a str>,
+    pub lat: Option<f64>,
+    pub lon: Option<f64>,
 }
 
 /// List all conversations for a user, with last message preview and unread count.
@@ -110,10 +128,12 @@ pub async fn list_messages(
     before: Option<time::OffsetDateTime>,
     limit: i64,
 ) -> anyhow::Result<Vec<MessageRow>> {
-    let rows = if let Some(before_ts) = before {
+    let mut rows = if let Some(before_ts) = before {
         sqlx::query_as::<_, MessageRow>(
             r#"
-            SELECT id, conversation_id, sender_id, kind, body, created_at
+            SELECT id, conversation_id, sender_id, kind, body,
+                   media_key, media_type, caption, lat, lon,
+                   read_at, created_at
             FROM messages
             WHERE conversation_id = $1 AND created_at < $2
             ORDER BY created_at DESC
@@ -128,7 +148,9 @@ pub async fn list_messages(
     } else {
         sqlx::query_as::<_, MessageRow>(
             r#"
-            SELECT id, conversation_id, sender_id, kind, body, created_at
+            SELECT id, conversation_id, sender_id, kind, body,
+                   media_key, media_type, caption, lat, lon,
+                   read_at, created_at
             FROM messages
             WHERE conversation_id = $1
             ORDER BY created_at DESC
@@ -142,30 +164,38 @@ pub async fn list_messages(
     };
 
     // Return in chronological order
-    let mut rows = rows;
     rows.reverse();
     Ok(rows)
 }
 
-/// Insert a text message into a conversation.
+/// Insert a message (text or media) into a conversation.
 pub async fn insert_message(
     pool: &sqlx::PgPool,
     conversation_id: Uuid,
     sender_id: Uuid,
-    text: &str,
+    msg: InsertMessage<'_>,
 ) -> anyhow::Result<MessageRow> {
     let mut tx = pool.begin().await?;
 
-    let message = sqlx::query_as::<_, MessageRow>(
+    let row = sqlx::query_as::<_, MessageRow>(
         r#"
-        INSERT INTO messages (conversation_id, sender_id, kind, body)
-        VALUES ($1, $2, 'text', $3)
-        RETURNING id, conversation_id, sender_id, kind, body, created_at
+        INSERT INTO messages (conversation_id, sender_id, kind, body,
+                              media_key, media_type, caption, lat, lon)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id, conversation_id, sender_id, kind, body,
+                  media_key, media_type, caption, lat, lon,
+                  read_at, created_at
         "#,
     )
     .bind(conversation_id)
     .bind(sender_id)
-    .bind(text)
+    .bind(msg.kind)
+    .bind(msg.body)
+    .bind(msg.media_key)
+    .bind(msg.media_type)
+    .bind(msg.caption)
+    .bind(msg.lat)
+    .bind(msg.lon)
     .fetch_one(&mut *tx)
     .await?;
 
@@ -175,10 +205,31 @@ pub async fn insert_message(
         .await?;
 
     tx.commit().await?;
-    Ok(message)
+    Ok(row)
 }
 
-/// Mark all messages as read for a user in a conversation.
+/// Mark all unread messages from `other_user_id` as read for the calling user.
+/// Returns the count of messages newly marked read.
+pub async fn mark_messages_read(
+    pool: &sqlx::PgPool,
+    conversation_id: Uuid,
+    reader_id: Uuid,
+) -> anyhow::Result<u64> {
+    let res = sqlx::query(
+        r#"UPDATE messages
+           SET read_at = COALESCE(read_at, now())
+           WHERE conversation_id = $1
+             AND sender_id != $2
+             AND read_at IS NULL"#,
+    )
+    .bind(conversation_id)
+    .bind(reader_id)
+    .execute(pool)
+    .await?;
+    Ok(res.rows_affected())
+}
+
+/// Mark all messages as read for a user in a conversation (member-level).
 pub async fn mark_read(
     pool: &sqlx::PgPool,
     conversation_id: Uuid,

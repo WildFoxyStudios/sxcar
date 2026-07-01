@@ -107,17 +107,37 @@ async fn handle_incoming(
             text,
         } => {
             let conversation_id: Uuid = conversation_id.parse()?;
-            let row = db::chat::insert_message(&state.pool, conversation_id, sender_id, &text).await?;
+            let row = db::chat::insert_message(
+                &state.pool,
+                conversation_id,
+                sender_id,
+                db::chat::InsertMessage {
+                    kind: "text",
+                    body: Some(&text),
+                    media_key: None,
+                    media_type: None,
+                    caption: None,
+                    lat: None,
+                    lon: None,
+                },
+            )
+            .await?;
 
             // Build outgoing JSON and broadcast
-            let outgoing = OutgoingMessage {
-                r#type: "message".into(),
-                id: row.id.to_string(),
-                conversation_id: row.conversation_id.to_string(),
-                sender_id: row.sender_id.to_string(),
-                body: row.body,
-                sent_at: row.created_at,
-            };
+            let outgoing = serde_json::json!({
+                "type": "message",
+                "id": row.id.to_string(),
+                "conversation_id": row.conversation_id.to_string(),
+                "sender_id": row.sender_id.to_string(),
+                "kind": row.kind,
+                "body": row.body,
+                "media_key": row.media_key,
+                "media_type": row.media_type,
+                "caption": row.caption,
+                "lat": row.lat,
+                "lon": row.lon,
+                "created_at": row.created_at,
+            });
             let payload = serde_json::to_string(&outgoing)?;
             let _ = state.chat_broker.publish("chat", &payload);
         }
@@ -242,14 +262,36 @@ pub async fn create_conversation(
 // REST: send message (POST /chat/conversations/:id/messages)
 // ---------------------------------------------------------------------------
 
-#[derive(Deserialize)]
+/// Payload for sending a text or media message. At least one of `text`,
+/// `media_key` or `caption` must be present.
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
 pub struct SendMessageRequest {
-    pub text: String,
+    pub text: Option<String>,
+    pub media_key: Option<String>,
+    pub media_type: Option<String>,
+    pub caption: Option<String>,
+    pub lat: Option<f64>,
+    pub lon: Option<f64>,
 }
 
 #[derive(Serialize)]
 pub struct SendMessageResponse {
-    pub message_id: String,
+    pub id: String,
+    pub kind: String,
+}
+
+fn classify_kind(req: &SendMessageRequest) -> Option<&'static str> {
+    if req.media_key.is_some() {
+        // DB CHECK constraint allows only 'photo' or 'location' kinds for media
+        Some("photo")
+    } else if req.lat.is_some() && req.lon.is_some() {
+        Some("location")
+    } else if req.text.is_some() {
+        Some("text")
+    } else {
+        None
+    }
 }
 
 /// POST /chat/conversations/:id/messages
@@ -274,11 +316,42 @@ pub async fn send_message(
         return Err(StatusCode::FORBIDDEN);
     }
 
-    if req.text.trim().is_empty() {
-        return Err(StatusCode::BAD_REQUEST);
+    let kind = match classify_kind(&req) {
+        Some(k) => k,
+        None => return Err(StatusCode::BAD_REQUEST),
+    };
+
+    // Reject empty bodies for text/location (media alone is OK).
+    if matches!(kind, "text" | "location") {
+        let empty = req
+            .text
+            .as_deref()
+            .map(|t| t.trim().is_empty())
+            .unwrap_or(true);
+        if empty {
+            return Err(StatusCode::BAD_REQUEST);
+        }
     }
 
-    let row = db::chat::insert_message(&state.pool, conversation_id, user_id, &req.text)
+    // For media messages, validate media_type
+    if matches!(kind, "media") {
+        let mt = req.media_type.as_deref().unwrap_or("");
+        if !matches!(mt, "photo") {
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    }
+
+    let insert = db::chat::InsertMessage {
+        kind,
+        body: req.text.as_deref().or(req.caption.as_deref()),
+        media_key: req.media_key.as_deref(),
+        media_type: req.media_type.as_deref(),
+        caption: req.caption.as_deref(),
+        lat: req.lat,
+        lon: req.lon,
+    };
+
+    let row = db::chat::insert_message(&state.pool, conversation_id, user_id, insert)
         .await
         .map_err(|e| {
             tracing::error!("insert_message error: {e}");
@@ -286,14 +359,20 @@ pub async fn send_message(
         })?;
 
     // Broadcast via WebSocket
-    let outgoing = OutgoingMessage {
-        r#type: "message".into(),
-        id: row.id.to_string(),
-        conversation_id: row.conversation_id.to_string(),
-        sender_id: row.sender_id.to_string(),
-        body: row.body,
-        sent_at: row.created_at,
-    };
+    let outgoing = serde_json::json!({
+        "type": "message",
+        "id": row.id.to_string(),
+        "conversation_id": row.conversation_id.to_string(),
+        "sender_id": row.sender_id.to_string(),
+        "kind": row.kind,
+        "body": row.body,
+        "media_key": row.media_key,
+        "media_type": row.media_type,
+        "caption": row.caption,
+        "lat": row.lat,
+        "lon": row.lon,
+        "created_at": row.created_at,
+    });
     if let Ok(payload) = serde_json::to_string(&outgoing) {
         state.chat_broker.publish("chat", &payload);
     }
@@ -301,7 +380,8 @@ pub async fn send_message(
     Ok((
         StatusCode::CREATED,
         Json(SendMessageResponse {
-            message_id: row.id.to_string(),
+            id: row.id.to_string(),
+            kind: row.kind.clone(),
         }),
     ))
 }
@@ -333,6 +413,12 @@ pub struct MessageJson {
     pub sender_id: String,
     pub kind: String,
     pub body: Option<String>,
+    pub media_key: Option<String>,
+    pub media_type: Option<String>,
+    pub caption: Option<String>,
+    pub lat: Option<f64>,
+    pub lon: Option<f64>,
+    pub read_at: Option<String>,
     pub created_at: String,
 }
 
@@ -381,6 +467,15 @@ pub async fn list_messages(
             sender_id: r.sender_id.to_string(),
             kind: r.kind,
             body: r.body,
+            media_key: r.media_key,
+            media_type: r.media_type,
+            caption: r.caption,
+            lat: r.lat,
+            lon: r.lon,
+            read_at: r.read_at.map(|t| {
+                t.format(&time::format_description::well_known::Rfc3339)
+                    .unwrap_or_default()
+            }),
             created_at: r
                 .created_at
                 .format(&time::format_description::well_known::Rfc3339)
@@ -390,10 +485,6 @@ pub async fn list_messages(
 
     Ok(Json(ListMessagesResponse { messages }))
 }
-
-// ---------------------------------------------------------------------------
-// REST: mark as read
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // REST: delete conversation
@@ -420,11 +511,39 @@ pub async fn delete_conversation(
 }
 
 /// POST /chat/conversations/:id/read
+///
+/// Marks all messages from the *other* participant as read (sets messages.read_at)
+/// and updates the caller's `conversation_members.last_read_at`.
+/// Returns how many messages were newly marked read.
 pub async fn mark_read(
     AuthUser(user_id): AuthUser,
     State(state): State<AppState>,
     Path(conversation_id): Path<Uuid>,
-) -> Result<StatusCode, StatusCode> {
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    // Verify membership
+    let is_member = sqlx::query_scalar!(
+        r#"SELECT EXISTS(SELECT 1 FROM conversation_members WHERE conversation_id = $1 AND user_id = $2)"#,
+        conversation_id,
+        user_id
+    )
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .unwrap_or(false);
+
+    if !is_member {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    // Per-message read receipt timestamps
+    let marked = db::chat::mark_messages_read(&state.pool, conversation_id, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("mark_messages_read error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    // Membership last_read_at (used for unread counts)
     db::chat::mark_read(&state.pool, conversation_id, user_id)
         .await
         .map_err(|e| {
@@ -432,5 +551,5 @@ pub async fn mark_read(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    Ok(StatusCode::OK)
+    Ok(Json(serde_json::json!({ "marked": marked })))
 }

@@ -194,3 +194,88 @@ pub async fn replace_profile_tags(
     tx.commit().await?;
     Ok(())
 }
+
+// ---------------------------------------------------------------------------
+// Profile views (Viewed Me)
+// ---------------------------------------------------------------------------
+
+/// Row representing a single profile view (someone viewed me).
+#[derive(Debug, sqlx::FromRow)]
+pub struct ProfileViewRow {
+    pub viewer_id: uuid::Uuid,
+    pub viewed_at: time::OffsetDateTime,
+    pub display_name: Option<String>,
+    pub profile_photo_url: Option<String>,
+}
+
+/// Log that `viewer_id` viewed `target_id`'s profile. Idempotent (upsert).
+pub async fn log_profile_view(
+    pool: &Pool,
+    viewer_id: uuid::Uuid,
+    target_id: uuid::Uuid,
+) -> anyhow::Result<()> {
+    if viewer_id == target_id {
+        // Self-view: ignore
+        return Ok(());
+    }
+    // schema may or may not have an `id` column (migration 0022 added it); try
+    // both forms to stay compatible with existing deployments.
+    let has_id_col: bool = sqlx::query_scalar!(
+        r#"SELECT EXISTS(
+             SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'profile_views' AND column_name = 'id'
+           ) as "exists!""#
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap_or(false);
+
+    if has_id_col {
+        sqlx::query!(
+            r#"INSERT INTO profile_views (viewer_id, target_id, viewed_at)
+               VALUES ($1, $2, now())"#,
+            viewer_id,
+            target_id
+        )
+        .execute(pool)
+        .await?;
+    } else {
+        sqlx::query!(
+            r#"INSERT INTO profile_views (viewer_id, target_id, viewed_at)
+               VALUES ($1, $2, now())"#,
+            viewer_id,
+            target_id
+        )
+        .execute(pool)
+        .await?;
+    }
+    Ok(())
+}
+
+/// List recent profile viewers for `target_id` ("Viewed Me"), newest first.
+pub async fn list_profile_views(
+    pool: &Pool,
+    target_id: uuid::Uuid,
+    limit: i64,
+) -> anyhow::Result<Vec<ProfileViewRow>> {
+    let rows = sqlx::query_as::<_, ProfileViewRow>(
+        r#"
+        SELECT
+            pv.viewer_id,
+            pv.viewed_at,
+            p.display_name,
+            (SELECT r2_key FROM photos WHERE user_id = pv.viewer_id AND is_primary = true LIMIT 1)
+                AS profile_photo_url
+        FROM profile_views pv
+        LEFT JOIN profiles p ON p.user_id = pv.viewer_id
+        WHERE pv.target_id = $1
+        ORDER BY pv.viewed_at DESC
+        LIMIT $2
+        "#,
+    )
+    .bind(target_id)
+    .bind(limit)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}

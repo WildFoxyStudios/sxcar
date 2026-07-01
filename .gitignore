@@ -41,3 +41,8 @@ id_ed25519
 Thumbs.db
 # Config local de herramientas (no es parte de la app)
 .mcp.json
+
+
+# sqlx query cache (regenerated from migrations)
+/backend/.sqlx/
+/backend/crates/*/.sqlx/

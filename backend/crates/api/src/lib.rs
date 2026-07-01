@@ -7,6 +7,7 @@ pub mod cors;
 pub mod dev;
 pub mod fcm;
 pub mod grid;
+pub mod grindr_t1;
 pub mod health;
 pub mod media;
 pub mod msgpack;
@@ -98,6 +99,11 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/notifications/register", post(notifications::register_device))
         .route("/notifications/preferences", get(notifications::get_preferences).put(notifications::update_preferences))
         .route("/taps", post(social::create_tap))
+        // Grindr Tier 1 endpoints
+        .route("/heartbeat", post(grindr_t1::heartbeat))
+        .route("/users/:id/status", get(grindr_t1::user_status))
+        .route("/profile/views", get(grindr_t1::list_profile_views))
+        .route("/profile/health", get(grindr_t1::get_health).put(grindr_t1::update_health))
         .route("/taps/received", get(social::list_taps_received))
         .route("/taps/sent", get(social::list_taps_sent))
         .route("/favorites", get(social::list_favorites).post(social::add_favorite))

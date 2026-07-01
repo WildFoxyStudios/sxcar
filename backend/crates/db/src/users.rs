@@ -384,3 +384,84 @@ pub async fn count_users_by_status(pool: &Pool) -> anyhow::Result<Vec<StatusCoun
     .await?;
     Ok(rows)
 }
+
+// ---------------------------------------------------------------------------
+// Online indicator / last_seen
+// ---------------------------------------------------------------------------
+
+/// Update `users.last_seen_at` for a user to "now()". Idempotent.
+pub async fn touch_last_seen(pool: &Pool, user_id: uuid::Uuid) -> anyhow::Result<()> {
+    sqlx::query!(
+        "UPDATE users SET last_seen_at = now() WHERE id = $1",
+        user_id
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+#[derive(Debug, serde::Serialize)]
+pub struct UserStatusRow {
+    pub user_id: uuid::Uuid,
+    pub is_online: bool,
+    pub last_seen_at: Option<time::OffsetDateTime>,
+}
+
+/// Returns online/last_seen status for one user. `is_online` is true if
+/// `last_seen_at` is within the last 5 minutes.
+pub async fn get_user_status(
+    pool: &Pool,
+    user_id: uuid::Uuid,
+) -> anyhow::Result<Option<UserStatusRow>> {
+    let row = sqlx::query!(
+        r#"SELECT id as "user_id!", last_seen_at
+           FROM users WHERE id = $1"#,
+        user_id
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(row.map(|r| {
+        let is_online = r
+            .last_seen_at
+            .map(|t| (time::OffsetDateTime::now_utc() - t).whole_seconds() < 300)
+            .unwrap_or(false);
+        UserStatusRow {
+            user_id: r.user_id,
+            is_online,
+            last_seen_at: r.last_seen_at,
+        }
+    }))
+}
+
+/// Returns online/last_seen for many users in one query. Useful for grid.
+pub async fn get_user_statuses(
+    pool: &Pool,
+    user_ids: &[uuid::Uuid],
+) -> anyhow::Result<Vec<UserStatusRow>> {
+    if user_ids.is_empty() {
+        return Ok(vec![]);
+    }
+    let rows = sqlx::query!(
+        r#"SELECT id as "user_id!", last_seen_at
+           FROM users WHERE id = ANY($1)"#,
+        user_ids
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(|r| {
+            let is_online = r
+                .last_seen_at
+                .map(|t| (time::OffsetDateTime::now_utc() - t).whole_seconds() < 300)
+                .unwrap_or(false);
+            UserStatusRow {
+                user_id: r.user_id,
+                is_online,
+                last_seen_at: r.last_seen_at,
+            }
+        })
+        .collect())
+}

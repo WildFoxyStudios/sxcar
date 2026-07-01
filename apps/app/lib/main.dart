@@ -30,7 +30,7 @@ Future<void> main() async {
 }
 
 final _router = GoRouter(
-  initialLocation: '/login',
+  initialLocation: '/splash',
   redirect: (context, state) {
     final authState =
         ProviderScope.containerOf(context).read(authStateProvider);
@@ -38,14 +38,19 @@ final _router = GoRouter(
     final isAuthRoute = state.matchedLocation == '/login' ||
         state.matchedLocation == '/register';
     final isVerifyRoute = state.matchedLocation == '/verify-email';
+    final isSplash = state.matchedLocation == '/splash';
 
-    if (authState.status == AuthStatus.loading) return null;
+    // While checking stored tokens, show splash — don't redirect to login yet
+    if (authState.status == AuthStatus.loading) {
+      return isSplash ? null : '/splash';
+    }
 
     if (authState.status == AuthStatus.unauthenticated && !isAuthRoute) {
       return '/login';
     }
 
-    if (authState.status == AuthStatus.authenticated && isAuthRoute) {
+    if (authState.status == AuthStatus.authenticated &&
+        (isAuthRoute || isSplash)) {
       return '/cascade';
     }
 
@@ -56,6 +61,23 @@ final _router = GoRouter(
     return null;
   },
   routes: [
+    // Splash — shown while checking stored tokens
+    GoRoute(
+      path: '/splash',
+      builder: (_, _) => const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('V', style: TextStyle(color: grindrYellow, fontSize: 48, fontWeight: FontWeight.bold)),
+              SizedBox(height: 16),
+              CircularProgressIndicator(color: grindrYellow),
+            ],
+          ),
+        ),
+      ),
+    ),
     // Auth routes
     GoRoute(
       path: '/login',

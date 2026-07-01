@@ -46,6 +46,7 @@ dependencies:
   google_mobile_ads: ^9.0.0
   firebase_auth: ^6.5.4
   google_sign_in: ^7.2.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

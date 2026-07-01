@@ -5,16 +5,21 @@ import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
 import 'src/rust/frb_generated.dart';
 import 'src/auth/auth_provider.dart';
-import 'src/features/albums_screen.dart';
 import 'src/features/album_detail_screen.dart';
+import 'src/features/albums_screen.dart';
+import 'src/features/cascade_screen.dart';
 import 'src/features/chat_list_screen.dart';
 import 'src/features/chat_screen.dart';
+import 'src/features/explore_screen.dart';
+import 'src/features/interest_screen.dart';
 import 'src/features/login_screen.dart';
-import 'src/features/nearby_screen.dart';
+import 'src/features/profile_detail_screen.dart';
 import 'src/features/profile_screen.dart';
 import 'src/features/register_screen.dart';
-import 'src/features/settings_screen.dart';
 import 'src/features/verify_email_screen.dart';
+import 'src/features/you_screen.dart';
+
+const Color grindrYellow = Color(0xFFF4C542);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +45,7 @@ final _router = GoRouter(
     }
 
     if (authState.status == AuthStatus.authenticated && isAuthRoute) {
-      return '/';
+      return '/cascade';
     }
 
     if (authState.status == AuthStatus.emailUnverified && !isVerifyRoute) {
@@ -50,6 +55,7 @@ final _router = GoRouter(
     return null;
   },
   routes: [
+    // Auth routes
     GoRoute(
       path: '/login',
       builder: (_, _) => const LoginScreen(),
@@ -62,30 +68,41 @@ final _router = GoRouter(
       path: '/verify-email',
       builder: (_, _) => const VerifyEmailScreen(),
     ),
+    // Full-screen profile detail (no bottom nav)
     GoRoute(
       path: '/profile/:userId',
-      builder: (_, state) => ProfileScreen(
-        userId: state.pathParameters['userId'],
+      builder: (_, state) => ProfileDetailScreen(
+        userId: state.pathParameters['userId']!,
       ),
     ),
+    // Main shell with 5-tab bottom navigation
     StatefulShellRoute.indexedStack(
       builder: (_, _, navigationShell) =>
-          _VibraShell(navigationShell: navigationShell),
+          MainShell(navigationShell: navigationShell),
       branches: [
-        // Tab 0: Grid — main screen
+        // Tab 0: Cascade (home)
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/',
-              builder: (_, _) => const NearbyScreen(),
+              path: '/cascade',
+              builder: (_, _) => const CascadeScreen(),
             ),
           ],
         ),
-        // Tab 1: Chat
+        // Tab 1: Interest (taps + favorites)
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/chat',
+              path: '/interest',
+              builder: (_, _) => const InterestScreen(),
+            ),
+          ],
+        ),
+        // Tab 2: Chat (inbox + conversation)
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/inbox',
               builder: (_, _) => const ChatListScreen(),
               routes: [
                 GoRoute(
@@ -99,9 +116,26 @@ final _router = GoRouter(
             ),
           ],
         ),
-        // Tab 2: Albums
+        // Tab 3: Explore (global grid)
         StatefulShellBranch(
           routes: [
+            GoRoute(
+              path: '/explore',
+              builder: (_, _) => const ExploreScreen(),
+            ),
+          ],
+        ),
+        // Tab 4: You (profile + settings)
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/you',
+              builder: (_, _) => const YouScreen(),
+            ),
+            GoRoute(
+              path: '/edit-profile',
+              builder: (_, _) => const ProfileScreen(),
+            ),
             GoRoute(
               path: '/albums',
               builder: (_, _) => const AlbumsScreen(),
@@ -116,35 +150,16 @@ final _router = GoRouter(
             ),
           ],
         ),
-        // Tab 3: Profile
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/profile',
-              builder: (_, _) => const ProfileScreen(),
-            ),
-          ],
-        ),
-        // Tab 4: Settings
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/settings',
-              builder: (_, _) => const SettingsScreen(),
-            ),
-          ],
-        ),
       ],
     ),
   ],
 );
 
-/// Shell widget that provides the bottom navigation bar around the
-/// active tab content.
-class _VibraShell extends StatelessWidget {
+/// Shell widget that provides the Grindr-style bottom navigation bar.
+class MainShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
-  const _VibraShell({required this.navigationShell});
+  const MainShell({super.key, required this.navigationShell});
 
   @override
   Widget build(BuildContext context) {
@@ -153,30 +168,30 @@ class _VibraShell extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: navigationShell.currentIndex,
         onTap: (index) => navigationShell.goBranch(index),
-        backgroundColor: const Color(0xFF121212),
-        selectedItemColor: const Color(0xFFFF6B00),
-        unselectedItemColor: Colors.grey,
+        backgroundColor: const Color(0xFF0D0D0D),
+        selectedItemColor: grindrYellow,
+        unselectedItemColor: const Color(0xFF777777),
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view),
-            label: 'Grid',
+            icon: Icon(Icons.grid_view_rounded),
+            label: 'Cascade',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble),
+            icon: Icon(Icons.favorite_border),
+            label: 'Interest',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
             label: 'Chat',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.photo_library),
-            label: 'Albums',
+            icon: Icon(Icons.explore_outlined),
+            label: 'Explore',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.tune),
-            label: 'Settings',
+            icon: Icon(Icons.person_outline),
+            label: 'You',
           ),
         ],
       ),
@@ -210,18 +225,28 @@ class _VibraAppState extends ConsumerState<VibraApp> {
 
     return MaterialApp.router(
       title: 'Vibra',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0A0A0A),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFFF6B00),
-          brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF000000),
+        colorScheme: const ColorScheme.dark(
+          primary: grindrYellow,
+          secondary: grindrYellow,
+          surface: Color(0xFF1A1A1A),
+          onPrimary: Colors.black,
+          onSecondary: Colors.black,
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Color(0xFF0D0D0D),
+          selectedItemColor: grindrYellow,
+          unselectedItemColor: Color(0xFF777777),
+          type: BottomNavigationBarType.fixed,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF121212),
+          backgroundColor: Color(0xFF0D0D0D),
           elevation: 0,
         ),
         cardTheme: CardThemeData(
-          color: const Color(0xFF1E1E1E),
+          color: const Color(0xFF1A1A1A),
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

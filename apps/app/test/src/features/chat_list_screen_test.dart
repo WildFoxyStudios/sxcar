@@ -98,7 +98,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('No conversations yet'), findsOneWidget);
+      expect(find.text('No conversations yet. Tap on a profile to start chatting.'), findsOneWidget);
     });
   });
 }

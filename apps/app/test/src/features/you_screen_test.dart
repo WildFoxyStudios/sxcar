@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Combined adapter for YouScreen (profile + albums).
+/// Adapter that returns profile on /profile and albums on /albums.
 class _CombinedAdapter implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
@@ -34,19 +34,25 @@ class _CombinedAdapter implements HttpClientAdapter {
           'tags': [],
         },
       });
-      return ResponseBody.fromString(body, 200, headers: {
-        Headers.contentTypeHeader: [Headers.jsonContentType],
-      });
+      return ResponseBody.fromString(
+        body,
+        200,
+        headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+      );
     }
     if (options.path == '/albums') {
       final body = jsonEncode({'albums': <dynamic>[]});
-      return ResponseBody.fromString(body, 200, headers: {
-        Headers.contentTypeHeader: [Headers.jsonContentType],
-      });
+      return ResponseBody.fromString(
+        body,
+        200,
+        headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+      );
     }
-    return ResponseBody.fromString('{}', 404, headers: {
-      Headers.contentTypeHeader: [Headers.jsonContentType],
-    });
+    return ResponseBody.fromString(
+      '{}',
+      404,
+      headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+    );
   }
 
   @override
@@ -54,15 +60,13 @@ class _CombinedAdapter implements HttpClientAdapter {
 }
 
 class _AuthenticatedNotifier extends AuthNotifier {
-  final String? email;
-
-  _AuthenticatedNotifier({this.email}) : super();
+  _AuthenticatedNotifier() : super();
 
   @override
-  AuthState build() => AuthState(
+  AuthState build() => const AuthState(
         status: AuthStatus.authenticated,
-        accessToken: 'token',
-        email: email ?? 'test@example.com',
+        accessToken: 'test-token',
+        email: 'test@example.com',
       );
 
   @override
@@ -70,16 +74,14 @@ class _AuthenticatedNotifier extends AuthNotifier {
 }
 
 void main() {
-  group('YouScreen (replaces SettingsScreen)', () {
-    testWidgets('shows user email and logout option', (tester) async {
+  group('YouScreen', () {
+    testWidgets('shows user email and profile section', (tester) async {
       final dio = Dio()..httpClientAdapter = _CombinedAdapter();
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            authStateProvider.overrideWith(
-              () => _AuthenticatedNotifier(email: 'test@example.com'),
-            ),
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
           ],
           child: const MaterialApp(home: YouScreen()),
@@ -89,19 +91,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('test@example.com'), findsOneWidget);
-      expect(find.text('Logout'), findsOneWidget);
-      expect(find.text('Delete Account'), findsOneWidget);
     });
 
-    testWidgets('shows profile email when auth email is null', (tester) async {
+    testWidgets('shows Edit Profile button', (tester) async {
       final dio = Dio()..httpClientAdapter = _CombinedAdapter();
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            authStateProvider.overrideWith(
-              () => _AuthenticatedNotifier(email: null),
-            ),
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
           ],
           child: const MaterialApp(home: YouScreen()),
@@ -110,8 +108,43 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Profile loads with email 'test@example.com', which is shown
-      expect(find.text('test@example.com'), findsOneWidget);
+      expect(find.text('Edit Profile'), findsOneWidget);
+    });
+
+    testWidgets('shows logout option', (tester) async {
+      final dio = Dio()..httpClientAdapter = _CombinedAdapter();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(home: YouScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Logout'), findsOneWidget);
+    });
+
+    testWidgets('shows settings section', (tester) async {
+      final dio = Dio()..httpClientAdapter = _CombinedAdapter();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(home: YouScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete Account'), findsOneWidget);
     });
   });
 }

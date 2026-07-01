@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 
+/// Model for a user in the cascade grid.
 class NearbyUser {
   final String id;
   final String email;
@@ -39,14 +40,18 @@ class NearbyUser {
   }
 }
 
-class NearbyScreen extends ConsumerStatefulWidget {
-  const NearbyScreen({super.key});
+/// Cascade — the main screen showing nearby users in a 3-column grid.
+///
+/// Replaces the old NearbyScreen. Each card shows a photo placeholder,
+/// display name, distance, and a green online indicator dot.
+class CascadeScreen extends ConsumerStatefulWidget {
+  const CascadeScreen({super.key});
 
   @override
-  ConsumerState<NearbyScreen> createState() => _NearbyScreenState();
+  ConsumerState<CascadeScreen> createState() => _CascadeScreenState();
 }
 
-class _NearbyScreenState extends ConsumerState<NearbyScreen> {
+class _CascadeScreenState extends ConsumerState<CascadeScreen> {
   late Future<List<NearbyUser>> _nearbyUsersFuture;
 
   @override
@@ -57,7 +62,6 @@ class _NearbyScreenState extends ConsumerState<NearbyScreen> {
 
   Future<List<NearbyUser>> _fetchNearbyUsers() async {
     final dio = ref.read(dioProvider);
-    // Default location: Mexico City (same as test coordinates)
     const lat = 19.4326;
     const lon = -99.1332;
     const radiusM = 5000;
@@ -91,12 +95,12 @@ class _NearbyScreenState extends ConsumerState<NearbyScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Vibra',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 22,
-            color: Color(0xFFFF6B00),
+            color: theme.colorScheme.primary,
           ),
         ),
         actions: [
@@ -153,20 +157,31 @@ class _NearbyScreenState extends ConsumerState<NearbyScreen> {
             onRefresh: () async => _refresh(),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
-                return GridView.builder(
-                  padding: const EdgeInsets.all(8),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    childAspectRatio: 0.75,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: users.length,
-                  itemBuilder: (context, index) {
-                    final user = users[index];
-                    return _NearbyUserCard(user: user);
-                  },
+                return CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.all(8),
+                      sliver: SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 0.75,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final user = users[index];
+                            return _UserCard(
+                              user: user,
+                              onTap: () => context.push('/profile/${user.id}'),
+                            );
+                          },
+                          childCount: users.length,
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -179,7 +194,7 @@ class _NearbyScreenState extends ConsumerState<NearbyScreen> {
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: const Color(0xFF1A1A1A),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -213,10 +228,11 @@ class _NearbyScreenState extends ConsumerState<NearbyScreen> {
   }
 }
 
-class _NearbyUserCard extends StatelessWidget {
+class _UserCard extends StatelessWidget {
   final NearbyUser user;
+  final VoidCallback onTap;
 
-  const _NearbyUserCard({required this.user});
+  const _UserCard({required this.user, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -224,29 +240,58 @@ class _NearbyUserCard extends StatelessWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
+      color: const Color(0xFF1A1A1A),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: InkWell(
-        onTap: () => context.push('/profile/${user.id}'),
+        onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Photo area
             Expanded(
-              child: Container(
-                color: theme.colorScheme.primaryContainer
-                    .withValues(alpha: 0.3),
-                child: _buildAvatar(theme),
+              child: Stack(
+                children: [
+                  Container(
+                    color: Colors.grey.shade900,
+                    child: Center(
+                      child: Text(
+                        (user.displayName ?? user.email)[0].toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 32,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Online indicator dot
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             // Info area
             Padding(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     user.displayName ?? user.email,
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -254,23 +299,14 @@ class _NearbyUserCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      const Icon(Icons.location_on,
-                          size: 12, color: Colors.grey),
+                      Icon(Icons.location_on,
+                          size: 10, color: Colors.grey.shade500),
                       const SizedBox(width: 2),
                       Text(
                         user.distanceText,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const Spacer(),
-                      // Online indicator dot
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
                           color: Colors.green,
-                          shape: BoxShape.circle,
+                          fontSize: 10,
                         ),
                       ),
                     ],
@@ -279,20 +315,6 @@ class _NearbyUserCard extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAvatar(ThemeData theme) {
-    // TODO: Show profile photo when URL is available
-    // Use: Image.network('$apiUrl/photos/${user.profilePhotoId}', fit: BoxFit.cover)
-    return Center(
-      child: Text(
-        (user.displayName ?? user.email)[0].toUpperCase(),
-        style: TextStyle(
-          fontSize: 32,
-          color: theme.colorScheme.onPrimaryContainer,
         ),
       ),
     );

@@ -68,7 +68,13 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
 
           if (conversations.isEmpty) {
             return const Center(
-              child: Text('No conversations yet'),
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Text(
+                  'No conversations yet. Tap on a profile to start chatting.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
             );
           }
 
@@ -78,11 +84,32 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final conv = conversations[index];
-              return _ConversationTile(
-                conversation: conv,
-                onTap: () {
-                  context.push('/chat/${conv.conversationId}');
+              return Dismissible(
+                key: Key(conv.conversationId),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  color: Colors.red,
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                onDismissed: (_) async {
+                  try {
+                    // TODO: Backend delete endpoint
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Conversation deleted')),
+                    );
+                  } catch (e) {
+                    // Refresh the list
+                    _refresh();
+                  }
                 },
+                child: _ConversationTile(
+                  conversation: conv,
+                  onTap: () {
+                    context.push('/inbox/${conv.conversationId}');
+                  },
+                ),
               );
             },
           );

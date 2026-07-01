@@ -78,6 +78,11 @@ class ChatService {
         .toList();
   }
 
+  /// REST: delete a conversation.
+  Future<void> deleteConversation(String conversationId) async {
+    await _dio.delete('/chat/conversations/$conversationId');
+  }
+
   /// REST: mark conversation as read.
   Future<void> markRead(String conversationId) async {
     await _dio.post('/chat/conversations/$conversationId/read', data: {});

@@ -50,7 +50,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this, initialIndex: _initialIndex);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: _initialIndex,
+    );
     _loadNotificationPreferences();
     _loadBlockedUsers();
   }
@@ -95,10 +99,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
   }
 
-  Future<void> _updateNotificationPreference(
-    String key,
-    bool value,
-  ) async {
+  Future<void> _updateNotificationPreference(String key, bool value) async {
     try {
       final dio = ref.read(dioProvider);
       await dio.put<Map<String, dynamic>>(
@@ -142,8 +143,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
     try {
       final dio = ref.read(dioProvider);
-      final response =
-          await dio.get<Map<String, dynamic>>('/blocks');
+      final response = await dio.get<Map<String, dynamic>>('/blocks');
       final blocksJson = response.data!['blocks'] as List<dynamic>;
       setState(() {
         _blockedUsers = blocksJson
@@ -154,8 +154,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     } on DioException catch (e) {
       setState(() {
         _blocksLoading = false;
-        _blocksError =
-            'Failed to load: ${e.response?.statusCode ?? e.message}';
+        _blocksError = 'Failed to load: ${e.response?.statusCode ?? e.message}';
       });
     } catch (e) {
       setState(() {
@@ -306,7 +305,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 value: _newMessages,
-                activeColor: theme.colorScheme.primary,
+                activeThumbColor: theme.colorScheme.primary,
                 onChanged: (val) {
                   setState(() => _newMessages = val);
                   _updateNotificationPreference('new_messages', val);
@@ -320,7 +319,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 value: _newTaps,
-                activeColor: theme.colorScheme.primary,
+                activeThumbColor: theme.colorScheme.primary,
                 onChanged: (val) {
                   setState(() => _newTaps = val);
                   _updateNotificationPreference('new_taps', val);
@@ -334,7 +333,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 value: _promotions,
-                activeColor: theme.colorScheme.primary,
+                activeThumbColor: theme.colorScheme.primary,
                 onChanged: (val) {
                   setState(() => _promotions = val);
                   _updateNotificationPreference('promotions', val);
@@ -364,7 +363,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 value: _showDistance,
-                activeColor: theme.colorScheme.primary,
+                activeThumbColor: theme.colorScheme.primary,
                 onChanged: (val) {
                   setState(() => _showDistance = val);
                 },
@@ -377,7 +376,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 value: _showOnlineStatus,
-                activeColor: theme.colorScheme.primary,
+                activeThumbColor: theme.colorScheme.primary,
                 onChanged: (val) {
                   setState(() => _showOnlineStatus = val);
                 },
@@ -390,7 +389,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 value: _discreetMode,
-                activeColor: theme.colorScheme.primary,
+                activeThumbColor: theme.colorScheme.primary,
                 onChanged: (val) {
                   setState(() => _discreetMode = val);
                 },
@@ -438,9 +437,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             const SizedBox(height: 16),
             Text(
               'No blocked users',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: Colors.grey,
-              ),
+              style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
             ),
             const SizedBox(height: 8),
             Text(
@@ -475,9 +472,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     leading: CircleAvatar(
                       backgroundColor: Colors.grey.shade700,
                       child: Text(
-                        (displayName.isNotEmpty
-                                ? displayName[0]
-                                : '?')
+                        (displayName.isNotEmpty ? displayName[0] : '?')
                             .toUpperCase(),
                         style: const TextStyle(color: Colors.white),
                       ),
@@ -487,7 +482,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ? Text(
                             reason,
                             style: const TextStyle(
-                                color: Colors.grey, fontSize: 12),
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
                           )
                         : null,
                     trailing: TextButton(

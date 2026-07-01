@@ -15,6 +15,10 @@ class ExploreScreen extends ConsumerStatefulWidget {
 class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   late Future<List<NearbyUser>> _globalUsersFuture;
 
+  // Roam location state — persists across refreshes
+  double _roamLat = 19.4326;
+  double _roamLon = -99.1332;
+
   @override
   void initState() {
     super.initState();
@@ -24,8 +28,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   Future<List<NearbyUser>> _fetchGlobalUsers({double? lat, double? lon}) async {
     final dio = ref.read(dioProvider);
     final queryParams = <String, dynamic>{
-      'lat': lat ?? 19.4326,
-      'lon': lon ?? -99.1332,
+      'lat': lat ?? _roamLat,
+      'lon': lon ?? _roamLon,
       'radius_m': 500000,
       'limit': 50,
     };
@@ -87,6 +91,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               if (lat != null && lon != null) {
                 Navigator.of(ctx).pop();
                 setState(() {
+                  _roamLat = lat;
+                  _roamLon = lon;
                   _globalUsersFuture = _fetchGlobalUsers(lat: lat, lon: lon);
                 });
               }

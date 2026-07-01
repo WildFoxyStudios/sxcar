@@ -84,8 +84,14 @@ pub async fn create_tap(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    // TODO: send push notification to recipient (stub)
-    tracing::info!("tap from {user_id} to {} (type: {})", req.to_user_id, req.tap_type);
+    // Send push notification to recipient
+    if let Some(ref fcm) = state.fcm {
+        let title = "New Tap!".to_string();
+        let body = format!("Someone sent you a {}!", req.tap_type);
+        if let Err(e) = fcm.send_to_user(&state.pool, req.to_user_id, &title, &body).await {
+            tracing::warn!(to_user = %req.to_user_id, error = %e, "tap push failed");
+        }
+    }
 
     Ok((
         StatusCode::CREATED,

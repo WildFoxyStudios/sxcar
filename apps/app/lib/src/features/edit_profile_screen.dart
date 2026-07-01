@@ -186,8 +186,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         '/profile',
         data: {'profile_photo_key': uploadUrl.key},
       );
-      final userJson =
-          updateResponse.data!['user'] as Map<String, dynamic>;
+      final userJson = updateResponse.data!['user'] as Map<String, dynamic>;
       final updatedProfile = UserProfile.fromJson(userJson);
 
       setState(() {
@@ -209,7 +208,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'Photo upload failed: ${e.response?.statusCode ?? e.message}'),
+              'Photo upload failed: ${e.response?.statusCode ?? e.message}',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -246,10 +246,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         'body_type': _bodyType,
         'relationship_status': _relationshipStatus,
         'position': _position,
-        'ethnicity':
-            _ethnicityController.text.isEmpty ? null : _ethnicityController.text,
-        'pronouns':
-            _pronounsController.text.isEmpty ? null : _pronounsController.text,
+        'ethnicity': _ethnicityController.text.isEmpty
+            ? null
+            : _ethnicityController.text,
+        'pronouns': _pronounsController.text.isEmpty
+            ? null
+            : _pronounsController.text,
         'tribes': _selectedTribes.toList(),
         'looking_for': _selectedLookingFor.toList(),
       };
@@ -282,7 +284,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'Failed to save: ${e.response?.statusCode ?? e.message}'),
+              'Failed to save: ${e.response?.statusCode ?? e.message}',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -305,33 +308,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Profile'),
-      ),
+      appBar: AppBar(title: const Text('Edit Profile')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(
-                        _error!,
-                        style: const TextStyle(color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton(
-                        onPressed: _loadProfile,
-                        child: const Text('Retry'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    _error!,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
                   ),
-                )
-              : _buildForm(theme),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: _loadProfile,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : _buildForm(theme),
     );
   }
 
@@ -365,7 +365,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   radius: 48,
                   backgroundColor: Colors.black54,
                   child: const CircularProgressIndicator(
-                      color: Color(0xFFF4C542)),
+                    color: Color(0xFFF4C542),
+                  ),
                 ),
             ],
           ),
@@ -448,15 +449,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _buildLabel('Body Type'),
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
-          value: _bodyType,
+          initialValue: _bodyType,
           dropdownColor: const Color(0xFF1A1A1A),
           style: const TextStyle(color: Colors.white),
           decoration: _inputDecoration('Select body type'),
           items: _bodyTypes
-              .map((t) => DropdownMenuItem(
-                    value: t,
-                    child: Text(t),
-                  ))
+              .map((t) => DropdownMenuItem(value: t, child: Text(t)))
               .toList(),
           onChanged: (val) => setState(() => _bodyType = val),
         ),
@@ -466,15 +464,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _buildLabel('Position'),
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
-          value: _position,
+          initialValue: _position,
           dropdownColor: const Color(0xFF1A1A1A),
           style: const TextStyle(color: Colors.white),
           decoration: _inputDecoration('Select position'),
           items: _positions
-              .map((p) => DropdownMenuItem(
-                    value: p,
-                    child: Text(p),
-                  ))
+              .map((p) => DropdownMenuItem(value: p, child: Text(p)))
               .toList(),
           onChanged: (val) => setState(() => _position = val),
         ),
@@ -484,15 +479,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _buildLabel('Relationship Status'),
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
-          value: _relationshipStatus,
+          initialValue: _relationshipStatus,
           dropdownColor: const Color(0xFF1A1A1A),
           style: const TextStyle(color: Colors.white),
           decoration: _inputDecoration('Select relationship status'),
           items: _relationshipStatuses
-              .map((r) => DropdownMenuItem(
-                    value: r,
-                    child: Text(r),
-                  ))
+              .map((r) => DropdownMenuItem(value: r, child: Text(r)))
               .toList(),
           onChanged: (val) => setState(() => _relationshipStatus = val),
         ),
@@ -542,9 +534,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               checkmarkColor: theme.colorScheme.primary,
               backgroundColor: Colors.grey.shade800,
               labelStyle: TextStyle(
-                color: selected
-                    ? theme.colorScheme.primary
-                    : Colors.white70,
+                color: selected ? theme.colorScheme.primary : Colors.white70,
                 fontSize: 13,
               ),
               side: BorderSide(
@@ -581,9 +571,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               checkmarkColor: theme.colorScheme.primary,
               backgroundColor: Colors.grey.shade800,
               labelStyle: TextStyle(
-                color: selected
-                    ? theme.colorScheme.primary
-                    : Colors.white70,
+                color: selected ? theme.colorScheme.primary : Colors.white70,
                 fontSize: 13,
               ),
               side: BorderSide(
@@ -620,10 +608,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   )
                 : const Text(
                     'Save',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
           ),
         ),

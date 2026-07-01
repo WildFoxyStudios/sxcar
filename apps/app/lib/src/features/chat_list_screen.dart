@@ -108,12 +108,15 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                 ),
                 onDismissed: (_) async {
                   try {
-                    // TODO: Backend delete endpoint
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Conversation deleted')),
-                    );
+                    final chatService = ref.read(chatServiceProvider);
+                    await chatService.deleteConversation(conv.conversationId);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Conversation deleted')),
+                      );
+                    }
+                    _refresh();
                   } catch (e) {
-                    // Refresh the list
                     _refresh();
                   }
                 },

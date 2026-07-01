@@ -395,6 +395,30 @@ pub async fn list_messages(
 // REST: mark as read
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// REST: delete conversation
+// ---------------------------------------------------------------------------
+
+/// DELETE /chat/conversations/:id
+pub async fn delete_conversation(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Path(conversation_id): Path<Uuid>,
+) -> Result<StatusCode, StatusCode> {
+    let deleted = db::chat::delete_conversation(&state.pool, conversation_id, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("delete_conversation error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !deleted {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 /// POST /chat/conversations/:id/read
 pub async fn mark_read(
     AuthUser(user_id): AuthUser,

@@ -508,8 +508,8 @@ pub async fn create_campaign(
 
 /// POST /admin/campaigns/:id/send
 ///
-/// STUB: solo cambia el status a "sending". El envio real via FCM/email
-/// requiere integracion con Firebase Cloud Messaging y un proveedor de email.
+/// Sends push notifications to the campaign's target segment via FCM.
+/// Falls back gracefully if FCM is not configured.
 pub async fn send_campaign(
     State(state): State<AppState>,
     staff: StaffAuth,
@@ -518,15 +518,60 @@ pub async fn send_campaign(
 ) -> Result<(AuditTarget, AuditJustification, Json<Value>), StatusCode> {
     rbac_check(&staff, "campaigns.write")?;
 
-    db::enterprise::update_campaign_status(&state.pool, id, "sending")
+    // Load campaign details
+    let campaign = db::enterprise::get_campaign(&state.pool, id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if campaign.campaign_type == "push" {
+        // Determine target user IDs from target_segment ({"user_ids": ["uuid", ...]})
+        let target_user_ids: Vec<Uuid> = campaign
+            .target_segment
+            .as_ref()
+            .and_then(|seg| seg.get("user_ids"))
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().and_then(|s| Uuid::parse_str(s).ok()))
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let user_ids = db::enterprise::get_campaign_target_user_ids(&state.pool, &target_user_ids)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        // Send push via FCM if available
+        if let Some(ref fcm) = state.fcm {
+            let title = campaign.title.as_deref().unwrap_or("New update");
+            let body = &campaign.body;
+
+            for uid in &user_ids {
+                if let Err(e) = fcm.send_to_user(&state.pool, *uid, title, body).await {
+                    tracing::warn!(user_id = %uid, error = %e, "campaign push failed");
+                }
+            }
+
+            tracing::info!(
+                campaign_id = %id,
+                total_users = %user_ids.len(),
+                "campaign push sent"
+            );
+        } else {
+            tracing::warn!(campaign_id = %id, "FCM not configured — push not sent");
+        }
+    }
+
+    // Mark as sent
+    db::enterprise::update_campaign_status(&state.pool, id, "sent")
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let justification = body._justification.unwrap_or_else(|| "send campaign".into());
     Ok((
         AuditTarget(id.to_string()),
         AuditJustification(justification),
-        Json(json!({ "id": id, "status": "sending" })),
+        Json(json!({ "id": id, "status": "sent" })),
     ))
 }
 

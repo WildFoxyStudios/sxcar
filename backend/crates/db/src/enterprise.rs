@@ -407,6 +407,63 @@ pub async fn create_campaign(
     Ok(id)
 }
 
+pub async fn get_campaign(pool: &Pool, id: Uuid) -> anyhow::Result<CampaignRow> {
+    use sqlx::Row;
+
+    let row = sqlx::query(
+        r#"SELECT id, name, campaign_type, title, body, target_segment,
+                  scheduled_at, sent_at, status, created_at, created_by
+           FROM campaigns
+           WHERE id = $1"#,
+    )
+    .bind(id)
+    .fetch_optional(pool)
+    .await?;
+
+    match row {
+        Some(r) => Ok(CampaignRow {
+            id: r.get("id"),
+            name: r.get("name"),
+            campaign_type: r.get("campaign_type"),
+            title: r.get("title"),
+            body: r.get("body"),
+            target_segment: r.get("target_segment"),
+            scheduled_at: r.get("scheduled_at"),
+            sent_at: r.get("sent_at"),
+            status: r.get("status"),
+            created_at: r.get("created_at"),
+            created_by: r.get("created_by"),
+        }),
+        None => anyhow::bail!("campaign not found"),
+    }
+}
+
+/// Get all user IDs, optionally filtered by a list of user_ids from target_segment.
+/// If user_ids is empty, returns all user IDs.
+pub async fn get_campaign_target_user_ids(
+    pool: &Pool,
+    user_ids: &[Uuid],
+) -> anyhow::Result<Vec<Uuid>> {
+    if user_ids.is_empty() {
+        // Return all user IDs
+        let rows = sqlx::query_scalar::<_, Uuid>(
+            r#"SELECT id FROM users ORDER BY id"#,
+        )
+        .fetch_all(pool)
+        .await?;
+        Ok(rows)
+    } else {
+        // Filter to only the specified user IDs that exist
+        let rows = sqlx::query_scalar::<_, Uuid>(
+            r#"SELECT id FROM users WHERE id = ANY($1) ORDER BY id"#,
+        )
+        .bind(user_ids)
+        .fetch_all(pool)
+        .await?;
+        Ok(rows)
+    }
+}
+
 pub async fn update_campaign_status(
     pool: &Pool,
     id: Uuid,

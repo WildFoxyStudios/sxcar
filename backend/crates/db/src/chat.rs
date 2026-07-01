@@ -198,3 +198,42 @@ pub async fn mark_read(
 
     Ok(())
 }
+
+/// Delete a conversation (only if the user is a member).
+/// Also cascades to messages and conversation_members via FK.
+pub async fn delete_conversation(
+    pool: &sqlx::PgPool,
+    conversation_id: Uuid,
+    user_id: Uuid,
+) -> anyhow::Result<bool> {
+    // Verify the user is a member first
+    let is_member: Option<(bool,)> = sqlx::query_as(
+        r#"SELECT EXISTS(SELECT 1 FROM conversation_members WHERE conversation_id = $1 AND user_id = $2)"#,
+    )
+    .bind(conversation_id)
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?;
+
+    if !is_member.map(|r| r.0).unwrap_or(false) {
+        return Ok(false);
+    }
+
+    // Delete messages first (FK constraint), then members, then conversation
+    let mut tx = pool.begin().await?;
+    sqlx::query("DELETE FROM messages WHERE conversation_id = $1")
+        .bind(conversation_id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query("DELETE FROM conversation_members WHERE conversation_id = $1")
+        .bind(conversation_id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query("DELETE FROM conversations WHERE id = $1")
+        .bind(conversation_id)
+        .execute(&mut *tx)
+        .await?;
+    tx.commit().await?;
+
+    Ok(true)
+}

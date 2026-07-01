@@ -26,6 +26,7 @@ use axum::{
     Router,
 };
 use db::Pool;
+use fcm::FcmClient;
 use tarpit::{Tarpit, TarpitConfig};
 
 #[derive(Clone)]
@@ -40,6 +41,7 @@ pub struct AppState {
     pub limiter: Arc<ratelimit::Limiter>,
     pub r2: Option<Arc<media::R2Config>>,
     pub chat_broker: chat_broker::ChatBroker,
+    pub fcm: Option<Arc<FcmClient>>,
 }
 
 pub struct AppDeps {
@@ -63,6 +65,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         limiter: Arc::new(ratelimit::Limiter::from_env_or(10.0, 1.0)),
         r2: media::R2Config::from_env().map(Arc::new),
         chat_broker,
+        fcm: FcmClient::from_env().map(Arc::new),
     };
 
     let auth_routes = auth::router().route_layer(axum::middleware::from_fn_with_state(
@@ -79,6 +82,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/profile/:id", get(profile::get_by_id))
         .route("/chat/conversations", get(chat::list_conversations).post(chat::create_conversation))
         .route("/chat/conversations/:id/messages", get(chat::list_messages).post(chat::send_message))
+        .route("/chat/conversations/:id", delete(chat::delete_conversation))
         .route("/chat/conversations/:id/read", post(chat::mark_read))
         .route("/ws/chat", get(chat::ws_handler))
         .route("/albums", get(albums::list).post(albums::create))

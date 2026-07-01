@@ -180,7 +180,7 @@ void main() {
       expect(find.text('Retry'), findsOneWidget);
     });
 
-    testWidgets('has filter and search icons in AppBar', (tester) async {
+    testWidgets('has filter icon in AppBar', (tester) async {
       final dio = Dio()..httpClientAdapter = _MockCascadeAdapter();
 
       await tester.pumpWidget(
@@ -195,7 +195,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.search), findsOneWidget);
+      // Filter icon is present; search icon was replaced by the filter sheet
       expect(find.byIcon(Icons.filter_list), findsOneWidget);
     });
 

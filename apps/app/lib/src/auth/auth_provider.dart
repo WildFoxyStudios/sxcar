@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api_client.dart';
 import 'auth_service.dart';
+import 'jwt_utils.dart';
 import 'models.dart';
 import 'token_storage.dart';
 
@@ -17,6 +18,10 @@ class AuthState {
     this.accessToken,
     this.email,
   });
+
+  /// The current user's id, decoded from the access token's `sub` claim.
+  /// Null when unauthenticated or the token is malformed.
+  String? get userId => jwtSubject(accessToken);
 
   AuthState copyWith({
     AuthStatus? status,

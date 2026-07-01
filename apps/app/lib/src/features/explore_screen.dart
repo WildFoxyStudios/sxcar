@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../places/places_service.dart';
 import '../places/roam_service.dart';
+import '../rightnow/rightnow_service.dart';
 import 'cascade_screen.dart' show NearbyUser;
 
 /// Explore — global user grid with Roam support backed by real places.
@@ -177,7 +178,22 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           ),
         ],
       ),
-      body: FutureBuilder<List<NearbyUser>>(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showPostRightNowSheet,
+        icon: const Icon(Icons.bolt),
+        label: const Text('Right Now'),
+      ),
+      body: Column(
+        children: [
+          const _RightNowStrip(),
+          Expanded(child: _buildGrid(theme)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGrid(ThemeData theme) {
+    return FutureBuilder<List<NearbyUser>>(
         future: _globalUsersFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -269,6 +285,200 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             ),
           );
         },
+      );
+  }
+
+  void _showPostRightNowSheet() {
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = TextEditingController();
+    int minutes = 60;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1A1A1A),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
+          child: StatefulBuilder(
+            builder: (ctx, setSheet) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Post Right Now',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    maxLength: 140,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      hintText: "What are you up to, right now?",
+                      hintStyle: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text('Expires in:',
+                          style: TextStyle(color: Colors.grey)),
+                      const SizedBox(width: 12),
+                      DropdownButton<int>(
+                        value: minutes,
+                        dropdownColor: const Color(0xFF1A1A1A),
+                        style: const TextStyle(color: Colors.white),
+                        items: const [
+                          DropdownMenuItem(value: 30, child: Text('30 min')),
+                          DropdownMenuItem(value: 60, child: Text('1 hour')),
+                          DropdownMenuItem(value: 120, child: Text('2 hours')),
+                        ],
+                        onChanged: (v) => setSheet(() => minutes = v ?? 60),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () async {
+                        final text = controller.text.trim();
+                        if (text.isEmpty) return;
+                        Navigator.of(ctx).pop();
+                        try {
+                          await ref
+                              .read(rightNowServiceProvider)
+                              .create(text, minutes);
+                          ref.invalidate(rightNowFeedProvider);
+                          messenger.showSnackBar(const SnackBar(
+                              content: Text('Posted to Right Now')));
+                        } catch (_) {
+                          messenger.showSnackBar(const SnackBar(
+                              content: Text('Failed to post')));
+                        }
+                      },
+                      child: const Text('Post'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Horizontal strip of active "Right Now" intents shown atop Explore.
+class _RightNowStrip extends ConsumerWidget {
+  const _RightNowStrip();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final feed = ref.watch(rightNowFeedProvider);
+    final currentUserId = ref.watch(authStateProvider).userId;
+
+    return feed.maybeWhen(
+      data: (intents) {
+        if (intents.isEmpty) return const SizedBox.shrink();
+        return SizedBox(
+          height: 96,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            itemCount: intents.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final intent = intents[index];
+              final isMine = intent.userId == currentUserId;
+              return _RightNowCard(
+                intent: intent,
+                isMine: isMine,
+                onDelete: isMine
+                    ? () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        try {
+                          await ref
+                              .read(rightNowServiceProvider)
+                              .delete(intent.id);
+                          ref.invalidate(rightNowFeedProvider);
+                        } catch (_) {
+                          messenger.showSnackBar(const SnackBar(
+                              content: Text('Failed to delete')));
+                        }
+                      }
+                    : null,
+              );
+            },
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _RightNowCard extends StatelessWidget {
+  final RightNowIntent intent;
+  final bool isMine;
+  final VoidCallback? onDelete;
+
+  const _RightNowCard({
+    required this.intent,
+    required this.isMine,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isMine ? const Color(0xFF2A2415) : const Color(0xFF1F1F1F),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isMine ? const Color(0xFFF4C542) : Colors.transparent,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.bolt, color: Color(0xFFF4C542), size: 16),
+              const Spacer(),
+              if (isMine && onDelete != null)
+                GestureDetector(
+                  onTap: onDelete,
+                  child: const Icon(Icons.close, color: Colors.grey, size: 16),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Expanded(
+            child: Text(
+              intent.body,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ),
+        ],
       ),
     );
   }

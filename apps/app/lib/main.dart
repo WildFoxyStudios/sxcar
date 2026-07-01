@@ -21,6 +21,7 @@ import 'src/features/verify_email_screen.dart';
 import 'src/features/you_screen.dart';
 import 'src/features/edit_profile_screen.dart';
 import 'src/features/settings_screen.dart';
+import 'src/phrases/phrases_screen.dart';
 
 const Color grindrYellow = Color(0xFFF4C542);
 
@@ -167,6 +168,10 @@ final _router = GoRouter(
                 initialTab:
                     state.uri.queryParameters['tab'] ?? 'notifications',
               ),
+            ),
+            GoRoute(
+              path: '/settings/phrases',
+              builder: (_, _) => const PhrasesScreen(),
             ),
             GoRoute(
               path: '/albums',

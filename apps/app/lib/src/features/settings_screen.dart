@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 
 /// Settings screen with notification prefs, privacy toggles, blocked users,
@@ -264,6 +265,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     );
   }
 
+  // --- Saved Phrases shortcut ---
+
+  /// A shortcut to the saved phrases screen, rendered at the top of the
+  /// notifications tab so it's always visible.
+  Widget _buildPhrasesShortcut(ThemeData theme) {
+    return Card(
+      color: const Color(0xFF1A1A1A),
+      child: ListTile(
+        leading: const Icon(Icons.chat_bubble_outline, color: Colors.white70),
+        title: const Text('Saved Phrases'),
+        subtitle: const Text(
+          'Quick chat lines you can reuse',
+          style: TextStyle(color: Colors.grey, fontSize: 12),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        onTap: () => context.push('/settings/phrases'),
+      ),
+    );
+  }
+
   // --- Notifications Tab ---
 
   Widget _buildNotificationsTab(ThemeData theme) {
@@ -294,6 +315,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        _buildPhrasesShortcut(theme),
+        const SizedBox(height: 16),
         Card(
           color: const Color(0xFF1A1A1A),
           child: Column(

@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../auth/auth_provider.dart';
+import '../settings/tier3_settings_service.dart';
 
 /// Settings screen with notification prefs, privacy toggles, blocked users,
 /// and account actions.  Parameterized by [initialTab].
@@ -31,6 +33,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   bool _showOnlineStatus = true;
   bool _discreetMode = false;
 
+  // Tier 3: friendly reminder (server) + screenshot alerts (local pref)
+  static const String _screenshotPrefKey = 'screenshot_alerts_enabled';
+  int? _idleReminderHours;
+  bool _idleReminderLoading = true;
+  bool _screenshotAlerts = false;
+
   // Blocked users
   List<Map<String, dynamic>> _blockedUsers = [];
   bool _blocksLoading = true;
@@ -58,6 +66,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     );
     _loadNotificationPreferences();
     _loadBlockedUsers();
+    _loadTier3Settings();
+  }
+
+  Future<void> _loadTier3Settings() async {
+    // Screenshot alerts is a local-only preference.
+    final prefs = await SharedPreferences.getInstance();
+    final screenshot = prefs.getBool(_screenshotPrefKey) ?? false;
+    // Friendly reminder is server-side.
+    int? hours;
+    try {
+      hours = await ref.read(tier3SettingsServiceProvider).getIdleReminderHours();
+    } catch (_) {
+      hours = null;
+    }
+    if (!mounted) return;
+    setState(() {
+      _screenshotAlerts = screenshot;
+      _idleReminderHours = hours;
+      _idleReminderLoading = false;
+    });
+  }
+
+  Future<void> _setIdleReminder(int? hours) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final previous = _idleReminderHours;
+    setState(() => _idleReminderHours = hours);
+    try {
+      await ref.read(tier3SettingsServiceProvider).setIdleReminderHours(hours);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _idleReminderHours = previous);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Failed to update reminder')),
+      );
+    }
+  }
+
+  Future<void> _setScreenshotAlerts(bool value) async {
+    setState(() => _screenshotAlerts = value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_screenshotPrefKey, value);
   }
 
   @override
@@ -434,6 +483,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 onChanged: (val) {
                   setState(() => _discreetMode = val);
                 },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Card(
+          color: const Color(0xFF1A1A1A),
+          child: Column(
+            children: [
+              ListTile(
+                title: const Text('Friendly reminder'),
+                subtitle: const Text(
+                  'Nudge chats you have not replied to',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                trailing: _idleReminderLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : DropdownButton<int?>(
+                        value: _idleReminderHours,
+                        dropdownColor: const Color(0xFF1A1A1A),
+                        style: const TextStyle(color: Colors.white),
+                        items: const [
+                          DropdownMenuItem(value: null, child: Text('Off')),
+                          DropdownMenuItem(value: 12, child: Text('12h')),
+                          DropdownMenuItem(value: 24, child: Text('24h')),
+                          DropdownMenuItem(value: 48, child: Text('48h')),
+                        ],
+                        onChanged: _setIdleReminder,
+                      ),
+              ),
+              const Divider(height: 1, color: Color(0xFF2A2A2A)),
+              SwitchListTile(
+                title: const Text('Screenshot alerts'),
+                subtitle: const Text(
+                  'Notify when someone screenshots your chat',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                value: _screenshotAlerts,
+                activeThumbColor: theme.colorScheme.primary,
+                onChanged: _setScreenshotAlerts,
               ),
             ],
           ),

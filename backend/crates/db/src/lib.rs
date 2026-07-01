@@ -15,6 +15,7 @@ pub mod profiles;
 pub mod staff;
 pub mod support;
 pub mod tier2;
+pub mod tier3;
 pub mod users;
 
 /// Crea un pool de conexiones a Postgres.

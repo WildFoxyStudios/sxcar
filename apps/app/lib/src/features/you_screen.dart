@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
+import '../boost/boost_service.dart';
 import '../profile_views/viewed_me_provider.dart';
 import 'profile_screen.dart' show UserProfile;
 
@@ -165,23 +166,29 @@ class _YouScreenState extends ConsumerState<YouScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         // Profile photo
-        Center(
-          child: CircleAvatar(
-            radius: 60,
-            backgroundColor: Colors.grey.shade800,
-            backgroundImage: p.profilePhotoUrl != null
-                ? NetworkImage(p.profilePhotoUrl!)
-                : null,
-            child: p.profilePhotoUrl == null
-                ? Text(
-                    (p.displayName ?? emailPrefix)[0].toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 40,
-                      color: theme.colorScheme.primary,
-                    ),
-                  )
-                : null,
-          ),
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            Center(
+              child: CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.grey.shade800,
+                backgroundImage: p.profilePhotoUrl != null
+                    ? NetworkImage(p.profilePhotoUrl!)
+                    : null,
+                child: p.profilePhotoUrl == null
+                    ? Text(
+                        (p.displayName ?? emailPrefix)[0].toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 40,
+                          color: theme.colorScheme.primary,
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+            const _BoostBadge(),
+          ],
         ),
         const SizedBox(height: 16),
 
@@ -204,6 +211,13 @@ class _YouScreenState extends ConsumerState<YouScreen> {
             fontSize: 13,
           ),
           textAlign: TextAlign.center,
+        ),
+
+        const SizedBox(height: 12),
+
+        // Boost button
+        Center(
+          child: const _BoostButton(),
         ),
 
         // Bio
@@ -392,6 +406,153 @@ class _YouScreenState extends ConsumerState<YouScreen> {
           ),
         );
       }).toList(),
+    );
+  }
+}
+
+/// Boost button — shown in the You screen. When inactive, tap to activate.
+/// When active, shows the "BOOSTED" badge with minutes remaining.
+class _BoostButton extends ConsumerStatefulWidget {
+  const _BoostButton();
+
+  @override
+  ConsumerState<_BoostButton> createState() => _BoostButtonState();
+}
+
+class _BoostButtonState extends ConsumerState<_BoostButton> {
+  bool _activating = false;
+
+  Future<void> _activate() async {
+    setState(() => _activating = true);
+    try {
+      final service = ref.read(boostServiceProvider);
+      await service.activate();
+      ref.invalidate(activeBoostProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Boosted for 30 min!'),
+            backgroundColor: Color(0xFFF4C542),
+          ),
+        );
+      }
+    } on DioException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to boost: ${e.response?.statusCode ?? e.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to boost: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _activating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final activeAsync = ref.watch(activeBoostProvider);
+    final active = activeAsync is AsyncData<Boost?> ? activeAsync.value : null;
+
+    if (active != null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: theme.colorScheme.primary.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.bolt, color: theme.colorScheme.primary, size: 18),
+            const SizedBox(width: 6),
+            Text(
+              'BOOSTED · ${active.minutesRemaining}m left',
+              style: TextStyle(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: 200,
+      child: FilledButton.icon(
+        onPressed: _activating ? null : _activate,
+        icon: _activating
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.black,
+                ),
+              )
+            : const Icon(Icons.bolt),
+        label: Text(_activating ? 'Boosting...' : 'Boost'),
+        style: FilledButton.styleFrom(
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: Colors.black,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+    );
+  }
+}
+
+/// "BOOSTED" badge overlaid on the profile photo. Visible only when active.
+class _BoostBadge extends ConsumerWidget {
+  const _BoostBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeAsync = ref.watch(activeBoostProvider);
+    final theme = Theme.of(context);
+    final active =
+        activeAsync is AsyncData<Boost?> ? activeAsync.value : null;
+
+    if (active == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(Icons.bolt, color: Colors.black, size: 14),
+          SizedBox(width: 2),
+          Text(
+            'BOOSTED',
+            style: TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

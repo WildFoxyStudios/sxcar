@@ -44,6 +44,18 @@ class _CombinedAdapter implements HttpClientAdapter {
         Headers.contentTypeHeader: [Headers.jsonContentType],
       });
     }
+    if (options.path == '/profile/views') {
+      return ResponseBody.fromString(jsonEncode({'viewers': []}), 200, headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      });
+    }
+    if (options.path == '/boost/active') {
+      return ResponseBody.fromString(
+        jsonEncode({'active': false, 'minutes_remaining': 0}),
+        200,
+        headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+      );
+    }
     return ResponseBody.fromString('{}', 404, headers: {
       Headers.contentTypeHeader: [Headers.jsonContentType],
     });
@@ -89,7 +101,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('@test'), findsOneWidget);
+
+      // Scroll down to find the Logout + Delete Account rows.
+      await tester.scrollUntilVisible(
+        find.text('Logout'),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Logout'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Delete Account'),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Delete Account'), findsOneWidget);
     });
 

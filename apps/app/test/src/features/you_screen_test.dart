@@ -8,11 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Adapter that returns profile on /profile, albums on /albums, and
-/// /profile/views can be customized via [viewers].
+/// /profile/views can be customized via [viewers], and /boost/active can
+/// be customized via [activeBoost].
 class _CombinedAdapter implements HttpClientAdapter {
   final List<Map<String, dynamic>> viewers;
+  final Map<String, dynamic>? activeBoost;
+  final List<Map<String, dynamic>> boostPosts = [];
 
-  _CombinedAdapter({this.viewers = const []});
+  _CombinedAdapter({this.viewers = const [], this.activeBoost});
 
   @override
   Future<ResponseBody> fetch(
@@ -58,6 +61,34 @@ class _CombinedAdapter implements HttpClientAdapter {
       return ResponseBody.fromString(
         body,
         200,
+        headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+      );
+    }
+    if (options.path == '/boost/active') {
+      if (activeBoost == null) {
+        return ResponseBody.fromString(
+          jsonEncode({'active': false, 'minutes_remaining': 0}),
+          200,
+          headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+        );
+      }
+      return ResponseBody.fromString(
+        jsonEncode({'active': true, ...activeBoost!}),
+        200,
+        headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+      );
+    }
+    if (options.method == 'POST' && options.path == '/boost') {
+      boostPosts.add({'method': 'POST', 'path': '/boost'});
+      return ResponseBody.fromString(
+        jsonEncode({
+          'boost': {
+            'id': 'new-boost',
+            'expires_at': '2026-07-01T12:30:00Z',
+            'minutes_remaining': 30,
+          }
+        }),
+        201,
         headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
       );
     }
@@ -139,6 +170,13 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      // The logout option is below the profile + viewed me section; scroll
+      // down to find it.
+      await tester.scrollUntilVisible(
+        find.text('Logout'),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Logout'), findsOneWidget);
     });
 
@@ -157,6 +195,12 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      // Delete Account sits at the bottom of the scrollable area.
+      await tester.scrollUntilVisible(
+        find.text('Delete Account'),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Delete Account'), findsOneWidget);
     });
 
@@ -211,6 +255,75 @@ void main() {
       expect(find.text('VIEWED ME'), findsOneWidget);
       expect(find.text('Bob'), findsOneWidget);
       expect(find.text('Alice'), findsOneWidget);
+    });
+
+    testWidgets('shows Boost button when not active', (tester) async {
+      final dio = Dio()..httpClientAdapter = _CombinedAdapter();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(home: YouScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Boost'), findsOneWidget);
+    });
+
+    testWidgets('shows BOOSTED badge when active', (tester) async {
+      final dio = Dio()
+        ..httpClientAdapter = _CombinedAdapter(
+          activeBoost: {
+            'id': 'b-1',
+            'expires_at': '2026-07-01T12:30:00Z',
+            'minutes_remaining': 22,
+          },
+        );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(home: YouScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // The badge appears on the profile photo AND the button shows
+      // "BOOSTED · Nm left" — both contain "BOOSTED".
+      expect(find.textContaining('BOOSTED'), findsNWidgets(2));
+      expect(find.textContaining('22m left'), findsOneWidget);
+    });
+
+    testWidgets('tapping Boost calls POST /boost', (tester) async {
+      final adapter = _CombinedAdapter();
+      final dio = Dio()..httpClientAdapter = adapter;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(home: YouScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Boost'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(adapter.boostPosts, hasLength(1));
     });
   });
 }

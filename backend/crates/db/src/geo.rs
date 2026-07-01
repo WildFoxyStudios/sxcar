@@ -1,6 +1,21 @@
 use crate::Pool;
 use sqlx::FromRow;
 
+pub async fn upsert_location(pool: &Pool, user_id: uuid::Uuid, lon: f64, lat: f64) -> anyhow::Result<()> {
+    sqlx::query(
+        r#"INSERT INTO locations (user_id, geog)
+           VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography)
+           ON CONFLICT (user_id) DO UPDATE SET
+             geog = EXCLUDED.geog"#,
+    )
+    .bind(user_id)
+    .bind(lon)
+    .bind(lat)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
 #[derive(Debug, FromRow, serde::Serialize)]
 pub struct NearbyUserRow {
     pub id: uuid::Uuid,

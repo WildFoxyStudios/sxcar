@@ -145,7 +145,28 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
           final users = snapshot.data ?? [];
           if (users.isEmpty) {
-            return const Center(child: Text('No users found'));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.explore_outlined, size: 64, color: Colors.grey.shade600),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No users found in this area',
+                      style: theme.textTheme.titleLarge?.copyWith(color: Colors.white),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Try roaming to a different location!',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           return RefreshIndicator(

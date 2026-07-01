@@ -14,10 +14,11 @@ import 'src/features/explore_screen.dart';
 import 'src/features/interest_screen.dart';
 import 'src/features/login_screen.dart';
 import 'src/features/profile_detail_screen.dart';
-import 'src/features/profile_screen.dart';
 import 'src/features/register_screen.dart';
 import 'src/features/verify_email_screen.dart';
 import 'src/features/you_screen.dart';
+import 'src/features/edit_profile_screen.dart';
+import 'src/features/settings_screen.dart';
 
 const Color grindrYellow = Color(0xFFF4C542);
 
@@ -134,7 +135,14 @@ final _router = GoRouter(
             ),
             GoRoute(
               path: '/edit-profile',
-              builder: (_, _) => const ProfileScreen(),
+              builder: (_, _) => const EditProfileScreen(),
+            ),
+            GoRoute(
+              path: '/settings',
+              builder: (_, state) => SettingsScreen(
+                initialTab:
+                    state.uri.queryParameters['tab'] ?? 'notifications',
+              ),
             ),
             GoRoute(
               path: '/albums',

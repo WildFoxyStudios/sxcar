@@ -67,12 +67,25 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           final conversations = snapshot.data ?? [];
 
           if (conversations.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text(
-                  'No conversations yet. Tap on a profile to start chatting.',
-                  textAlign: TextAlign.center,
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey.shade600),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No conversations yet',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Find someone in Cascade and say hi!',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
             );

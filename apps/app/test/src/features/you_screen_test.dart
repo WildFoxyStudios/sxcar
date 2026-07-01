@@ -90,7 +90,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('test@example.com'), findsOneWidget);
+      expect(find.text('@test'), findsOneWidget);
     });
 
     testWidgets('shows Edit Profile button', (tester) async {

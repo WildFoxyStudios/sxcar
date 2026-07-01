@@ -115,7 +115,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('No albums yet. Tap + to create one.'), findsOneWidget);
+      expect(find.text('No albums yet'), findsOneWidget);
     });
 
     testWidgets('shows error state on failure', (tester) async {

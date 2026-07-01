@@ -216,8 +216,27 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
 
     final albums = _albums ?? [];
     if (albums.isEmpty) {
-      return const Center(
-        child: Text('No albums yet. Tap + to create one.'),
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.photo_album, size: 64, color: Colors.grey.shade600),
+              const SizedBox(height: 16),
+              Text(
+                'No albums yet',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tap + to create your first album!',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       );
     }
 

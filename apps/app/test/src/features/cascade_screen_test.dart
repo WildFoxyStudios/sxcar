@@ -158,7 +158,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('No users found nearby'), findsOneWidget);
+      expect(find.text('No one nearby yet'), findsOneWidget);
     });
 
     testWidgets('shows error state on failure', (tester) async {

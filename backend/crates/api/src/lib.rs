@@ -4,6 +4,7 @@ pub mod auth;
 pub mod chat;
 pub mod config;
 pub mod cors;
+pub mod dev;
 pub mod fcm;
 pub mod grid;
 pub mod health;
@@ -105,6 +106,8 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
     for path in tarpit::HONEYPOT_PATHS {
         router = router.route(path, any(tarpit::handler));
     }
+    // Dev seed endpoint (gated by DEV_SEED_ENABLED env var at request time)
+    router = router.route("/dev/seed", dev::seed_service());
     // CORS como capa externa: resuelve el preflight OPTIONS antes del rate-limiter.
     router.layer(cors::cors_layer()).with_state(state)
 }

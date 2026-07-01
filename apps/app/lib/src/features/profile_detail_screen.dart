@@ -66,9 +66,9 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
   Future<void> _sendTap() async {
     try {
       final dio = ref.read(dioProvider);
-      await dio.post('/taps/send', data: {
-        'recipient_id': widget.userId,
-        'kind': '👋',
+      await dio.post('/taps', data: {
+        'to_user_id': widget.userId,
+        'tap_type': 'wave',
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -108,7 +108,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
       if (_isBlocked) {
         await dio.delete('/blocks/${widget.userId}');
       } else {
-        await dio.post('/blocks', data: {'blocked_user_id': widget.userId});
+        await dio.post('/blocks', data: {'user_id': widget.userId, 'reason': null});
       }
       setState(() => _isBlocked = !_isBlocked);
       if (mounted) {
@@ -180,7 +180,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Photo header
+          // Photo header with swipeable gallery
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
@@ -190,17 +190,19 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
               onPressed: () => Navigator.of(context).pop(),
             ),
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                color: Colors.grey.shade900,
-                child: Center(
-                  child: Text(
-                    (p.displayName ?? p.email)[0].toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 64,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ),
+              background: PageView(
+                children: [
+                  if (p.profilePhotoUrl != null)
+                    Image.network(
+                      p.profilePhotoUrl!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 300,
+                      errorBuilder: (_, _, _) => _buildPhotoPlaceholder(p),
+                    )
+                  else
+                    _buildPhotoPlaceholder(p),
+                ],
               ),
             ),
           ),
@@ -403,6 +405,21 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoPlaceholder(UserProfile p) {
+    return Container(
+      color: Colors.grey.shade900,
+      child: Center(
+        child: Text(
+          (p.displayName ?? p.email)[0].toUpperCase(),
+          style: TextStyle(
+            fontSize: 64,
+            color: Colors.grey.shade700,
+          ),
+        ),
       ),
     );
   }

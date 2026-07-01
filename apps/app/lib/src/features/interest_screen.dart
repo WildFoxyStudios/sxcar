@@ -9,7 +9,7 @@ class ReceivedTap {
   final String senderId;
   final String? senderDisplayName;
   final String? senderPhotoUrl;
-  final String kind;
+  final String tapType;
   final String createdAt;
 
   const ReceivedTap({
@@ -17,7 +17,7 @@ class ReceivedTap {
     required this.senderId,
     this.senderDisplayName,
     this.senderPhotoUrl,
-    required this.kind,
+    required this.tapType,
     required this.createdAt,
   });
 
@@ -27,9 +27,39 @@ class ReceivedTap {
       senderId: json['sender_id'] as String,
       senderDisplayName: json['sender_display_name'] as String?,
       senderPhotoUrl: json['sender_photo_url'] as String?,
-      kind: json['kind'] as String? ?? '👋',
+      tapType: json['tap_type'] as String? ?? 'wave',
       createdAt: json['created_at'] as String,
     );
+  }
+}
+
+String _tapTypeEmoji(String tapType) {
+  switch (tapType) {
+    case 'fire':
+      return '🔥';
+    case 'wave':
+      return '👋';
+    case 'smile':
+      return '😊';
+    case 'hello':
+      return '👋';
+    default:
+      return '👋';
+  }
+}
+
+String _tapTypeDisplay(String tapType) {
+  switch (tapType) {
+    case 'fire':
+      return 'Sent a fire! 🔥';
+    case 'wave':
+      return 'Sent a wave! 👋';
+    case 'smile':
+      return 'Sent a smile! 😊';
+    case 'hello':
+      return 'Said hello! 👋';
+    default:
+      return 'Sent $tapType';
   }
 }
 
@@ -164,7 +194,28 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
 
         final taps = snapshot.data ?? [];
         if (taps.isEmpty) {
-          return const Center(child: Text('No taps yet'));
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.local_fire_department, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No taps or favorites yet',
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tap someone to show interest!',
+                    style: TextStyle(color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         return ListView.separated(
@@ -177,12 +228,12 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
               leading: CircleAvatar(
                 backgroundColor: Colors.grey.shade800,
                 child: Text(
-                  tap.kind,
+                  _tapTypeEmoji(tap.tapType),
                   style: const TextStyle(fontSize: 20),
                 ),
               ),
               title: Text(tap.senderDisplayName ?? 'Unknown'),
-              subtitle: Text(tap.kind),
+              subtitle: Text(_tapTypeDisplay(tap.tapType)),
               onTap: () => context.push('/profile/${tap.senderId}'),
             );
           },
@@ -221,7 +272,28 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
 
         final favorites = snapshot.data ?? [];
         if (favorites.isEmpty) {
-          return const Center(child: Text('No favorites yet'));
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.star_border, size: 64, color: Colors.grey.shade600),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No favorites yet',
+                    style: theme.textTheme.titleLarge?.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Star someone you like to add them here!',
+                    style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         return ListView.separated(

@@ -88,7 +88,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('test@example.com'), findsOneWidget);
+      expect(find.text('@test'), findsOneWidget);
       expect(find.text('Logout'), findsOneWidget);
       expect(find.text('Delete Account'), findsOneWidget);
     });
@@ -110,8 +110,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Profile loads with email 'test@example.com', which is shown
-      expect(find.text('test@example.com'), findsOneWidget);
+      // Profile loads with email 'test@example.com', shows @test prefix
+      expect(find.text('@test'), findsOneWidget);
     });
   });
 }

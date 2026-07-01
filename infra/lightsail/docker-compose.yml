@@ -1,6 +1,7 @@
-# Despliegue en el VPS Lightsail (Debian 13 x86_64): API + túnel cloudflared.
-# DB = Neon (en .env, gitignored). Redis se añade cuando las features lo usen.
+# Despliegue en el VPS Lightsail (Debian 13 x86_64): API + Redis + túnel cloudflared.
+# DB = Neon (en .env, gitignored). Redis local para rate-limit + chat pub/sub.
 # En el box:  cd ~/proyectox && docker compose up -d
+
 name: proyectox
 
 services:
@@ -12,8 +13,26 @@ services:
     environment:
       BIND_ADDR: 0.0.0.0:8080
       TARPIT_ENABLED: "true"
+      REDIS_URL: redis://redis:6379
     expose:
       - "8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save 60 1 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    expose:
+      - "6379"
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -24,3 +43,6 @@ services:
       - ./71025a02-45aa-414b-83c0-3dce38eeefcc.json:/etc/cloudflared/71025a02-45aa-414b-83c0-3dce38eeefcc.json:ro
     depends_on:
       - api
+
+volumes:
+  redis-data:

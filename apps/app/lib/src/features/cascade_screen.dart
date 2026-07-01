@@ -77,6 +77,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
   String? _bodyType;
   String? _lookingFor;
   String _searchQuery = '';
+  double _distanceKm = 5; // Default 5 km radius
 
   @override
   void initState() {
@@ -88,7 +89,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
     final dio = ref.read(dioProvider);
     const lat = 19.4326;
     const lon = -99.1332;
-    const radiusM = 5000;
+    final radiusM = (_distanceKm * 1000).round();
 
     final queryParams = <String, dynamic>{
       'lat': lat,
@@ -142,7 +143,8 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
       _selectedTribes.isNotEmpty ||
       _bodyType != null ||
       _lookingFor != null ||
-      _searchQuery.isNotEmpty;
+      _searchQuery.isNotEmpty ||
+      _distanceKm != 5;
 
   @override
   Widget build(BuildContext context) {
@@ -170,6 +172,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                   _bodyType = null;
                   _lookingFor = null;
                   _searchQuery = '';
+                  _distanceKm = 5;
                   _nearbyUsersFuture = _fetchNearbyUsers();
                 });
               },
@@ -364,6 +367,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
     Set<String> localTribes = Set.from(_selectedTribes);
     String? localBodyType = _bodyType;
     String? localLookingFor = _lookingFor;
+    double localDistanceKm = _distanceKm;
     final searchController = TextEditingController(text: _searchQuery);
 
     showModalBottomSheet(
@@ -394,6 +398,22 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
+
+                // --- Distance slider ---
+                Text(
+                  'Distance: ${localDistanceKm.round()} km',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                Slider(
+                  key: const Key('distance_slider'),
+                  value: localDistanceKm,
+                  min: 1,
+                  max: 50,
+                  divisions: 49,
+                  label: '${localDistanceKm.round()} km',
+                  onChanged: (v) => setSheetState(() => localDistanceKm = v),
+                ),
+                const SizedBox(height: 12),
 
                 // --- Age range slider ---
                 Text('Age Range: ${localAge.start.round()} - ${localAge.end.round()}',
@@ -504,6 +524,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                             localTribes = {};
                             localBodyType = null;
                             localLookingFor = null;
+                            localDistanceKm = 5;
                             searchController.clear();
                           });
                         },
@@ -520,6 +541,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                             _selectedTribes = localTribes;
                             _bodyType = localBodyType;
                             _lookingFor = localLookingFor;
+                            _distanceKm = localDistanceKm;
                             _searchQuery = searchController.text.trim();
                             _nearbyUsersFuture = _fetchNearbyUsers();
                           });

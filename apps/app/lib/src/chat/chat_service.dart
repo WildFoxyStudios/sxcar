@@ -49,12 +49,15 @@ class ChatService {
   }
 
   /// REST: send a message in a conversation.
+  ///
+  /// The server responds with `{id, kind}` (the Tier 1 media-message change
+  /// renamed the field from `message_id` to `id`).
   Future<String> sendMessage(String conversationId, String text) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/chat/conversations/$conversationId/messages',
       data: {'text': text},
     );
-    return response.data!['message_id'] as String;
+    return response.data!['id'] as String;
   }
 
   /// REST: get message history for a conversation.

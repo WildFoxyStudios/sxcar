@@ -144,7 +144,7 @@ void main() {
 /// the redirect logic without pulling in Firebase or the full route
 /// table (which references screens that need native bindings).
 GoRouter _buildTestRouter({required String initialLocation}) {
-  final noopBuilder = (BuildContext _, GoRouterState __) =>
+  Widget noopBuilder(BuildContext _, GoRouterState _) =>
       const Scaffold(body: SizedBox.shrink());
   return GoRouter(
     initialLocation: initialLocation,

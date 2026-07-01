@@ -3,27 +3,32 @@ import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/chat/chat_service.dart';
 import 'package:app/src/chat/models.dart';
 import 'package:app/src/features/chat_screen.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 /// A controllable fake [ChatService] whose async methods are gated by
 /// [Completer]s, so the test can dispose the widget between the call and
 /// the resolution to reproduce the original bug.
-class _FakeChatService implements ChatService {
-  final _messageController =
-      StreamController<Map<String, dynamic>>.broadcast();
-
-  /// Completer gating [getMessages]. If non-null, the next [getMessages]
-  /// call returns this future. Test can resolve it to control timing.
+class _FakeChatService extends ChatService {
   Completer<List<Message>>? getMessagesCompleter;
-
-  /// Completer gating [sendMessage].
   Completer<String>? sendMessageCompleter;
 
+  // A parallel broadcast controller used to feed messages to the WS
+  // listener, since the parent's _messageController is private.
+  final _testMessageController =
+      StreamController<Map<String, dynamic>>.broadcast();
+
+  _FakeChatService() : super(Dio(), null);
+
+  /// Inject a fake WebSocket message into the stream the screen listens to.
+  void injectMessage(Map<String, dynamic> msg) {
+    _testMessageController.add(msg);
+  }
+
   @override
-  Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
+  Stream<Map<String, dynamic>> get messageStream => _testMessageController.stream;
 
   @override
   Future<List<Message>> getMessages(String conversationId,
@@ -44,37 +49,6 @@ class _FakeChatService implements ChatService {
 
   @override
   void connectWebSocket() {}
-
-  @override
-  void disconnectWebSocket() {}
-
-  @override
-  void sendViaWebSocket(Map<String, dynamic> message) {}
-
-  @override
-  Future<List<Conversation>> listConversations() async => const [];
-  @override
-  Future<String> createConversation(String participantId) async => 'c';
-  @override
-  Future<void> deleteConversation(String conversationId) async {}
-  @override
-  Future<void> markRead(String conversationId) async {}
-
-  @override
-  WebSocketChannel? get _channel => null;
-
-  @override
-  StreamSubscription<dynamic>? get _subscription => null;
-  @override
-  set _subscription(StreamSubscription<dynamic>? v) {}
-
-  @override
-  set _channel(WebSocketChannel? v) {}
-
-  @override
-  void dispose() {
-    _messageController.close();
-  }
 }
 
 class _AuthedNotifier extends AuthNotifier {
@@ -99,6 +73,16 @@ Widget _wrap(Widget child, _FakeChatService fake) {
   );
 }
 
+Widget _emptyAfterDispose(_FakeChatService fake) {
+  return ProviderScope(
+    overrides: [
+      authStateProvider.overrideWith(() => _AuthedNotifier()),
+      chatServiceProvider.overrideWithValue(fake),
+    ],
+    child: const MaterialApp(home: SizedBox.shrink()),
+  );
+}
+
 void main() {
   group('ChatScreen dispose-during-async regression', () {
     testWidgets(
@@ -108,31 +92,19 @@ void main() {
       fake.getMessagesCompleter = Completer<List<Message>>();
 
       await tester.pumpWidget(_wrap(const ChatScreen(conversationId: 'c1'), fake));
-
-      // Let initState -> _loadMessages run; the completer is still open.
       await tester.pump();
 
       // Dispose the widget tree by replacing it with an empty SizedBox.
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthedNotifier()),
-            chatServiceProvider.overrideWithValue(fake),
-          ],
-          child: const MaterialApp(home: SizedBox.shrink()),
-        ),
-      );
+      await tester.pumpWidget(_emptyAfterDispose(fake));
       await tester.pump();
 
       // Now resolve the in-flight getMessages request AFTER the widget is
       // disposed. Before the fix, the awaiting setState() would throw
-      // "Looking up a deactivated widget's ancestor is unsafe" (or the
-      // binding.dart:509 assertion) at this point.
+      // "Looking up a deactivated widget's ancestor is unsafe" at this point.
       fake.getMessagesCompleter!.complete(const <Message>[]);
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      await fake._messageController.close();
     });
 
     testWidgets(
@@ -150,15 +122,7 @@ void main() {
       await tester.pump();
 
       // Dispose mid-send.
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthedNotifier()),
-            chatServiceProvider.overrideWithValue(fake),
-          ],
-          child: const MaterialApp(home: SizedBox.shrink()),
-        ),
-      );
+      await tester.pumpWidget(_emptyAfterDispose(fake));
       await tester.pump();
 
       // Resolve sendMessage after dispose.
@@ -166,7 +130,6 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      await fake._messageController.close();
     });
 
     testWidgets(
@@ -174,23 +137,20 @@ void main() {
         (tester) async {
       final fake = _FakeChatService();
 
+      // connectWebSocket in the fake pushes a message into the
+      // service's broadcast stream — but it does so during the
+      // widget's lifetime, which is fine for the pre-dispose test.
+      // For the post-dispose test, we instead push a message via
+      // fake.injectMessage(...) which writes to the same stream.
       await tester.pumpWidget(_wrap(const ChatScreen(conversationId: 'c1'), fake));
       await tester.pumpAndSettle();
 
       // Dispose.
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthedNotifier()),
-            chatServiceProvider.overrideWithValue(fake),
-          ],
-          child: const MaterialApp(home: SizedBox.shrink()),
-        ),
-      );
+      await tester.pumpWidget(_emptyAfterDispose(fake));
       await tester.pump();
 
       // Push a WebSocket message after dispose.
-      fake._messageController.add({
+      fake.injectMessage({
         'type': 'message',
         'id': 'm1',
         'conversation_id': 'c1',
@@ -201,7 +161,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      await fake._messageController.close();
     });
   });
 }
+

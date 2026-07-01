@@ -29,7 +29,7 @@ const Color grindrYellow = Color(0xFFF4C542);
 /// callback to detect unregistered paths arriving from a deep link
 /// (e.g. `vibra://profile/abc123` or `https://api.turnend.win/profile/abc123`)
 /// and bounce them to a safe fallback. If we don't, GoRouter throws
-/// "goroute /<unmatched> doesn't exist" before any screen can render.
+/// `goroute /<unmatched> doesn't exist` before any screen can render.
 const Set<String> _knownTopLevelPaths = {
   '/splash',
   '/login',

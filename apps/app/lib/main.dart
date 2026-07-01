@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
 import 'src/rust/frb_generated.dart';
 import 'src/auth/auth_provider.dart';
+import 'src/presence/presence_service.dart';
 import 'src/features/album_detail_screen.dart';
 import 'src/features/albums_screen.dart';
 import 'src/features/cascade_screen.dart';
@@ -236,13 +237,34 @@ class VibraApp extends ConsumerStatefulWidget {
   ConsumerState<VibraApp> createState() => _VibraAppState();
 }
 
-class _VibraAppState extends ConsumerState<VibraApp> {
+class _VibraAppState extends ConsumerState<VibraApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     Future.microtask(() {
       ref.read(authStateProvider.notifier).checkAuth();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Send a heartbeat each time the app returns to the foreground so the
+    // backend keeps our last_seen fresh. Only do this when authenticated —
+    // guest sessions have no user id to attribute the heartbeat to.
+    if (state == AppLifecycleState.resumed &&
+        ref.read(authStateProvider).status == AuthStatus.authenticated) {
+      // Read the provider so the side-effect (POST) actually runs.
+      ref.read(heartbeatProvider);
+    }
   }
 
   @override

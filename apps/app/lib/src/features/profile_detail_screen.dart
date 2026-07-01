@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../chat/chat_service.dart';
+import '../presence/presence_service.dart';
 import 'profile_screen.dart' show UserProfile;
 
 /// Full-screen profile of another user with action buttons.
@@ -232,6 +233,8 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                     ),
                   ],
 
+                  // Presence badge (online dot + last-seen text)
+                  _PresenceBadge(userId: p.id),
                   const SizedBox(height: 16),
 
                   // Action buttons row
@@ -480,6 +483,49 @@ class _ActionButton extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Small badge showing online / last-seen status for a user. Uses the
+/// `userStatusProvider` family from the presence module.
+class _PresenceBadge extends ConsumerWidget {
+  final String userId;
+
+  const _PresenceBadge({required this.userId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statusAsync = ref.watch(userStatusProvider(userId));
+    return statusAsync.when(
+      loading: () => const SizedBox(height: 20),
+      error: (_, _) => const SizedBox(height: 20),
+      data: (status) {
+        final label = formatLastSeen(status);
+        if (label.isEmpty) return const SizedBox(height: 20);
+        final color = status.isOnline ? Colors.green : Colors.grey.shade500;
+        return Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(color: color, fontSize: 13),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
+import '../presence/presence_service.dart';
 
 /// Model for a user in the cascade grid.
 class NearbyUser {
@@ -538,15 +539,25 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
   }
 }
 
-class _UserCard extends StatelessWidget {
+class _UserCard extends ConsumerWidget {
   final NearbyUser user;
   final VoidCallback onTap;
 
   const _UserCard({required this.user, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final statusAsync = ref.watch(userStatusProvider(user.id));
+
+    final isOnline = statusAsync.maybeWhen(
+      data: (s) => s.isOnline,
+      orElse: () => false,
+    );
+    final lastSeenLabel = statusAsync.maybeWhen(
+      data: formatLastSeen,
+      orElse: () => '',
+    );
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -575,16 +586,20 @@ class _UserCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Online indicator dot
+                  // Online indicator dot — green if online, grey otherwise
                   Positioned(
                     top: 6,
                     right: 6,
                     child: Container(
                       width: 10,
                       height: 10,
-                      decoration: const BoxDecoration(
-                        color: Colors.green,
+                      decoration: BoxDecoration(
+                        color: isOnline ? Colors.green : Colors.grey.shade600,
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF1A1A1A),
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),
@@ -621,6 +636,17 @@ class _UserCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  // Last-seen label below the distance (e.g. "Active 5m ago")
+                  if (lastSeenLabel.isNotEmpty && !isOnline)
+                    Text(
+                      lastSeenLabel,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.grey.shade500,
+                        fontSize: 9,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                 ],
               ),
             ),

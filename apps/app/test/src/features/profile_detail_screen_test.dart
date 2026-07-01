@@ -14,6 +14,22 @@ class _MockProfileDetailAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    final regExp = RegExp(r'^/users/([^/]+)/status$');
+    final statusMatch = regExp.firstMatch(options.path);
+    if (options.method == 'GET' && statusMatch != null) {
+      final body = jsonEncode({
+        'is_online': true,
+        'last_seen_at': '2026-07-01T00:00:00Z',
+      });
+      return ResponseBody.fromString(
+        body,
+        200,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
+
     final body = jsonEncode({
       'user': {
         'id': 'user-1',
@@ -169,6 +185,26 @@ void main() {
 
       expect(find.textContaining('Failed to load profile'), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
+    });
+
+    testWidgets('shows Online badge when user is online', (tester) async {
+      final dio = Dio()..httpClientAdapter = _MockProfileDetailAdapter();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(
+            home: ProfileDetailScreen(userId: 'user-1'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Online'), findsOneWidget);
     });
   });
 }

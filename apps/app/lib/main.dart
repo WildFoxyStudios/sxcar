@@ -22,6 +22,7 @@ import 'src/features/you_screen.dart';
 import 'src/features/edit_profile_screen.dart';
 import 'src/features/settings_screen.dart';
 import 'src/phrases/phrases_screen.dart';
+import 'src/sessions/sessions_screen.dart';
 
 const Color grindrYellow = Color(0xFFF4C542);
 
@@ -44,6 +45,7 @@ const Set<String> _knownTopLevelPaths = {
   '/edit-profile',
   '/settings',
   '/settings/phrases',
+  '/settings/sessions',
   '/albums',
 };
 
@@ -231,6 +233,10 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: '/settings/phrases',
               builder: (_, _) => const PhrasesScreen(),
+            ),
+            GoRoute(
+              path: '/settings/sessions',
+              builder: (_, _) => const SessionsScreen(),
             ),
             GoRoute(
               path: '/albums',

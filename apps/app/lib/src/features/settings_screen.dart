@@ -285,6 +285,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     );
   }
 
+  /// A shortcut to the active sessions / devices screen.
+  Widget _buildSessionsShortcut(ThemeData theme) {
+    return Card(
+      color: const Color(0xFF1A1A1A),
+      child: ListTile(
+        leading: const Icon(Icons.devices, color: Colors.white70),
+        title: const Text('Active Sessions'),
+        subtitle: const Text(
+          'Devices signed in to your account',
+          style: TextStyle(color: Colors.grey, fontSize: 12),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        onTap: () => context.push('/settings/sessions'),
+      ),
+    );
+  }
+
   // --- Notifications Tab ---
 
   Widget _buildNotificationsTab(ThemeData theme) {
@@ -316,6 +333,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       padding: const EdgeInsets.all(16),
       children: [
         _buildPhrasesShortcut(theme),
+        _buildSessionsShortcut(theme),
         const SizedBox(height: 16),
         Card(
           color: const Color(0xFF1A1A1A),

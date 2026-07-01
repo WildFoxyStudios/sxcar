@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
+import '../profile_views/viewed_me_provider.dart';
 import 'profile_screen.dart' show UserProfile;
 
 /// You screen — own profile, stats, tribes, settings, logout.
@@ -243,6 +244,10 @@ class _YouScreenState extends ConsumerState<YouScreen> {
         ),
         const SizedBox(height: 24),
 
+        // Viewed Me section
+        _ViewedMeSection(),
+        const SizedBox(height: 24),
+
         // Settings section header
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
@@ -387,6 +392,149 @@ class _YouScreenState extends ConsumerState<YouScreen> {
           ),
         );
       }).toList(),
+    );
+  }
+}
+
+/// "Viewed Me" section on the YouScreen. Shows up to 10 recent profile
+/// viewers with a circular avatar + name. Empty-state when no viewers.
+class _ViewedMeSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final viewersAsync = ref.watch(viewedMeProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            'VIEWED ME',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: Colors.grey,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        Card(
+          color: const Color(0xFF1A1A1A),
+          child: viewersAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+            error: (_, _) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text(
+                  'Could not load viewers',
+                  style: TextStyle(color: Colors.grey.shade400),
+                ),
+              ),
+            ),
+            data: (viewers) {
+              if (viewers.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 24, horizontal: 16),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.visibility_off_outlined,
+                            size: 36, color: Colors.grey.shade600),
+                        const SizedBox(height: 8),
+                        Text(
+                          'No one has viewed you yet',
+                          style:
+                              TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final limited = viewers.take(10).toList();
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                    vertical: 8, horizontal: 8),
+                child: SizedBox(
+                  height: 92,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: limited.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final viewer = limited[index];
+                      return _ViewerTile(viewer: viewer);
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Single circular avatar tile for a profile viewer.
+class _ViewerTile extends StatelessWidget {
+  final ProfileViewer viewer;
+
+  const _ViewerTile({required this.viewer});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final displayName = viewer.displayName ?? 'Anonymous';
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => context.push('/profile/${viewer.viewerId}'),
+      child: SizedBox(
+        width: 64,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: Colors.grey.shade800,
+              backgroundImage: viewer.profilePhotoUrl != null
+                  ? NetworkImage(viewer.profilePhotoUrl!)
+                  : null,
+              child: viewer.profilePhotoUrl == null
+                  ? Text(
+                      displayName.isNotEmpty
+                          ? displayName[0].toUpperCase()
+                          : '?',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              displayName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

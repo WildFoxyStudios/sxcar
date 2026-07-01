@@ -7,8 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Adapter that returns profile on /profile and albums on /albums.
+/// Adapter that returns profile on /profile, albums on /albums, and
+/// /profile/views can be customized via [viewers].
 class _CombinedAdapter implements HttpClientAdapter {
+  final List<Map<String, dynamic>> viewers;
+
+  _CombinedAdapter({this.viewers = const []});
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -42,6 +47,14 @@ class _CombinedAdapter implements HttpClientAdapter {
     }
     if (options.path == '/albums') {
       final body = jsonEncode({'albums': <dynamic>[]});
+      return ResponseBody.fromString(
+        body,
+        200,
+        headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+      );
+    }
+    if (options.path == '/profile/views') {
+      final body = jsonEncode({'viewers': viewers});
       return ResponseBody.fromString(
         body,
         200,
@@ -145,6 +158,59 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Delete Account'), findsOneWidget);
+    });
+
+    testWidgets('shows Viewed Me empty state when no viewers', (tester) async {
+      final dio = Dio()..httpClientAdapter = _CombinedAdapter(viewers: []);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(home: YouScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('VIEWED ME'), findsOneWidget);
+      expect(find.text('No one has viewed you yet'), findsOneWidget);
+    });
+
+    testWidgets('shows Viewed Me section with viewer names', (tester) async {
+      final dio = Dio()
+        ..httpClientAdapter = _CombinedAdapter(viewers: [
+          {
+            'viewer_id': 'viewer-1',
+            'viewed_at': '2026-07-01T10:00:00Z',
+            'display_name': 'Bob',
+            'profile_photo_url': null,
+          },
+          {
+            'viewer_id': 'viewer-2',
+            'viewed_at': '2026-07-01T09:00:00Z',
+            'display_name': 'Alice',
+            'profile_photo_url': null,
+          },
+        ]);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(home: YouScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('VIEWED ME'), findsOneWidget);
+      expect(find.text('Bob'), findsOneWidget);
+      expect(find.text('Alice'), findsOneWidget);
     });
   });
 }

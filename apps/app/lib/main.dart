@@ -25,6 +25,35 @@ import 'src/phrases/phrases_screen.dart';
 
 const Color grindrYellow = Color(0xFFF4C542);
 
+/// Top-level paths that are valid in the route table. Used by the redirect
+/// callback to detect unregistered paths arriving from a deep link
+/// (e.g. `vibra://profile/abc123` or `https://api.turnend.win/profile/abc123`)
+/// and bounce them to a safe fallback. If we don't, GoRouter throws
+/// "goroute /<unmatched> doesn't exist" before any screen can render.
+const Set<String> _knownTopLevelPaths = {
+  '/splash',
+  '/login',
+  '/register',
+  '/verify-email',
+  '/profile',
+  '/cascade',
+  '/interest',
+  '/inbox',
+  '/explore',
+  '/you',
+  '/edit-profile',
+  '/settings',
+  '/settings/phrases',
+  '/albums',
+};
+
+/// Returns the top-level path segment for a URI (e.g. `/profile/abc123` -> `/profile`).
+String _topLevelPath(String fullPath) {
+  final segments = fullPath.split('/');
+  if (segments.length < 2) return fullPath;
+  return '/${segments[1]}';
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -32,36 +61,66 @@ Future<void> main() async {
   runApp(const ProviderScope(child: VibraApp()));
 }
 
-final _router = GoRouter(
+/// Top-level redirect logic. Extracted as a function so widget tests can
+/// call it directly with arbitrary incoming paths to assert fallback
+/// behaviour without spinning up a full GoRouter.
+String? appRedirect({
+  required String incomingPath,
+  required String matchedLocation,
+  required AuthStatus status,
+}) {
+  // Deep-link / unmatched route guard. GoRouter runs the redirect
+  // BEFORE the route table is matched. If the incoming URL does not
+  // correspond to any registered top-level path (e.g. an old deep
+  // link, a typo, or a route we removed), fall back to a safe page
+  // rather than letting GoRouter throw "goroute /... doesn't exist".
+  if (!_knownTopLevelPaths.contains(_topLevelPath(incomingPath))) {
+    if (status == AuthStatus.unauthenticated) {
+      return '/login';
+    }
+    // Loading or authenticated: land on the home tab. The auth-state
+    // checks below will further redirect if appropriate.
+    return '/cascade';
+  }
+
+  final isAuthRoute = matchedLocation == '/login' ||
+      matchedLocation == '/register';
+  final isVerifyRoute = matchedLocation == '/verify-email';
+  final isSplash = matchedLocation == '/splash';
+
+  // While checking stored tokens, show splash — don't redirect to login yet
+  if (status == AuthStatus.loading) {
+    return isSplash ? null : '/splash';
+  }
+
+  if (status == AuthStatus.unauthenticated && !isAuthRoute) {
+    return '/login';
+  }
+
+  if (status == AuthStatus.authenticated && (isAuthRoute || isSplash)) {
+    return '/cascade';
+  }
+
+  if (status == AuthStatus.emailUnverified && !isVerifyRoute) {
+    return '/verify-email';
+  }
+
+  return null;
+}
+
+/// The application's GoRouter. Exposed (non-private) so widget tests can
+/// pump it with arbitrary initial locations and assert deep-link / route
+/// fallback behaviour.
+final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
   redirect: (context, state) {
     final authState =
         ProviderScope.containerOf(context).read(authStateProvider);
-
-    final isAuthRoute = state.matchedLocation == '/login' ||
-        state.matchedLocation == '/register';
-    final isVerifyRoute = state.matchedLocation == '/verify-email';
-    final isSplash = state.matchedLocation == '/splash';
-
-    // While checking stored tokens, show splash — don't redirect to login yet
-    if (authState.status == AuthStatus.loading) {
-      return isSplash ? null : '/splash';
-    }
-
-    if (authState.status == AuthStatus.unauthenticated && !isAuthRoute) {
-      return '/login';
-    }
-
-    if (authState.status == AuthStatus.authenticated &&
-        (isAuthRoute || isSplash)) {
-      return '/cascade';
-    }
-
-    if (authState.status == AuthStatus.emailUnverified && !isVerifyRoute) {
-      return '/verify-email';
-    }
-
-    return null;
+    return appRedirect(
+      incomingPath: state.uri.path,
+      matchedLocation: state.matchedLocation,
+      status: authState.status,
+    );
   },
   routes: [
     // Splash — shown while checking stored tokens
@@ -312,7 +371,7 @@ class _VibraAppState extends ConsumerState<VibraApp>
   Widget build(BuildContext context) {
     ref.listen<AuthState>(authStateProvider, (prev, next) {
       if (prev?.status != next.status) {
-        _router.refresh();
+        appRouter.refresh();
       }
     });
 
@@ -346,7 +405,7 @@ class _VibraAppState extends ConsumerState<VibraApp>
           ),
         ),
       ),
-      routerConfig: _router,
+      routerConfig: appRouter,
     );
   }
 }

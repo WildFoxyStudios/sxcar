@@ -86,6 +86,14 @@
                 <data android:scheme="https"
                       android:host="app.turnend.win"/>
             </intent-filter>
+
+            <!-- Custom-scheme deep links (e.g. vibra://profile/abc123) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="vibra"/>
+            </intent-filter>
         </activity>
 
         <!-- File provider for camera photos -->

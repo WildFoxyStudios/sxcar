@@ -43,6 +43,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     chatService.connectWebSocket();
 
     _wsSubscription = chatService.messageStream.listen((json) {
+      // WebSocket events can fire after the widget is disposed (e.g. the
+      // service is still running while the user navigates away). Guard
+      // with [mounted] before touching setState.
+      if (!mounted) return;
       final type = json['type'] as String?;
       if (type == 'message') {
         final message = Message.fromWebSocketJson(json);
@@ -60,12 +64,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     try {
       final chatService = ref.read(chatServiceProvider);
       final messages = await chatService.getMessages(widget.conversationId);
+      if (!mounted) return; // widget disposed while the request was in flight
       setState(() {
-        _messages = messages;
+        // Copy into a mutable list — the source list from the service
+        // may be const / unmodifiable, and we append to _messages in
+        // _sendMessage and the WS listener.
+        _messages = List<Message>.from(messages);
         _loading = false;
       });
       _scrollToBottom();
     } catch (e) {
+      if (!mounted) return; // widget disposed while the request was in flight
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -74,7 +83,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _scrollToBottom() {
+    if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Re-check inside the post-frame callback: the widget may have been
+      // disposed between the schedule and the actual frame.
+      if (!mounted) return;
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,

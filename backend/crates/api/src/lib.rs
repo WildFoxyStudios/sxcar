@@ -17,6 +17,7 @@ pub mod chat_broker;
 pub mod ratelimit;
 pub mod social;
 pub mod tarpit;
+pub mod tier2;
 pub mod well_known;
 
 use std::sync::Arc;
@@ -112,6 +113,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/blocks/:user_id", delete(social::unblock_user))
         .merge(auth_routes)
         .merge(admin::router(state.clone()))
+        .merge(tier2::router())
         .merge(media::router());
     for path in tarpit::HONEYPOT_PATHS {
         router = router.route(path, any(tarpit::handler));

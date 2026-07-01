@@ -305,7 +305,7 @@ async fn send_message_and_retrieve() {
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "send message should 201");
-    let _msg_id = body["message_id"].as_str().unwrap().to_string();
+    let _msg_id = body["id"].as_str().unwrap().to_string();
 
     // User B sends a reply
     let (st, body) = post(
@@ -316,7 +316,7 @@ async fn send_message_and_retrieve() {
     )
     .await;
     assert_eq!(st, StatusCode::CREATED);
-    let _msg_id_2 = body["message_id"].as_str().unwrap().to_string();
+    let _msg_id_2 = body["id"].as_str().unwrap().to_string();
 
     // User A retrieves message history
     let (st, body) = get(

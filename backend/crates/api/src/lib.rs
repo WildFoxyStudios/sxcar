@@ -112,6 +112,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/favorites/:user_id", delete(social::remove_favorite))
         .route("/blocks", get(social::list_blocks).post(social::block_user))
         .route("/blocks/:user_id", delete(social::unblock_user))
+        .route("/reports", post(social::create_report))
         .merge(auth_routes)
         .merge(admin::router(state.clone()))
         .merge(tier2::router())

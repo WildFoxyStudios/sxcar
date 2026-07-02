@@ -25,6 +25,31 @@ pub struct ReportRow {
     pub resolved_at: Option<OffsetDateTime>,
 }
 
+/// Crea un reporte de usuario (endpoint de cara al usuario, no admin).
+/// `target_kind` ∈ ('profile','photo','message'). Devuelve el id creado.
+pub async fn create_report(
+    pool: &Pool,
+    reporter_id: Uuid,
+    target_user_id: Uuid,
+    target_kind: &str,
+    target_id: Option<Uuid>,
+    reason: Option<&str>,
+) -> anyhow::Result<Uuid> {
+    let row = sqlx::query!(
+        r#"INSERT INTO reports (reporter_id, target_user_id, target_kind, target_id, reason)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING id"#,
+        reporter_id,
+        target_user_id,
+        target_kind,
+        target_id,
+        reason,
+    )
+    .fetch_one(pool)
+    .await?;
+    Ok(row.id)
+}
+
 /// Busca un reporte por ID.
 pub async fn find_report_by_id(
     pool: &Pool,

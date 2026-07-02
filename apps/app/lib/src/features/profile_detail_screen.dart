@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../chat/chat_service.dart';
 import '../presence/presence_service.dart';
+import '../reports/report_service.dart';
 import 'profile_screen.dart' show UserProfile;
 
 /// Full-screen profile of another user with action buttons.
@@ -125,6 +126,52 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
           SnackBar(content: Text('Failed: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _showReportSheet() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final reason = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A1A),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Report this user',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            for (final r in kReportReasons)
+              ListTile(
+                title: Text(r, style: const TextStyle(color: Colors.white)),
+                onTap: () => Navigator.of(ctx).pop(r),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (reason == null) return;
+    try {
+      await ref.read(reportServiceProvider).report(
+            targetUserId: widget.userId,
+            targetKind: 'profile',
+            reason: reason,
+          );
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Report submitted. Thank you.')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Failed to submit report')),
+      );
     }
   }
 
@@ -266,6 +313,12 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                         label: 'Block',
                         color: _isBlocked ? Colors.red : Colors.grey,
                         onPressed: _toggleBlock,
+                      ),
+                      _ActionButton(
+                        icon: Icons.flag_outlined,
+                        label: 'Report',
+                        color: Colors.grey,
+                        onPressed: _showReportSheet,
                       ),
                     ],
                   ),

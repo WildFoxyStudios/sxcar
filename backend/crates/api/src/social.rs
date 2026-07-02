@@ -339,3 +339,56 @@ pub async fn list_blocks(
 
     Ok(Json(BlockListResponse { blocks }))
 }
+
+// ---------------------------------------------------------------------------
+// Reports (user-facing) — feeds the admin moderation queue
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct CreateReportRequest {
+    pub target_user_id: Uuid,
+    /// One of: 'profile', 'photo', 'message'.
+    pub target_kind: String,
+    /// Optional id of the specific photo/message being reported.
+    pub target_id: Option<Uuid>,
+    pub reason: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct CreateReportResponse {
+    pub id: String,
+}
+
+/// POST /reports — a user reports another user's profile/photo/message.
+pub async fn create_report(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Json(req): Json<CreateReportRequest>,
+) -> Result<(StatusCode, Json<CreateReportResponse>), StatusCode> {
+    if req.target_user_id == user_id {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    match req.target_kind.as_str() {
+        "profile" | "photo" | "message" => {}
+        _ => return Err(StatusCode::BAD_REQUEST),
+    }
+
+    let id = db::moderation::create_report(
+        &state.pool,
+        user_id,
+        req.target_user_id,
+        &req.target_kind,
+        req.target_id,
+        req.reason.as_deref(),
+    )
+    .await
+    .map_err(|e| {
+        tracing::error!("create_report error: {e}");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(CreateReportResponse { id: id.to_string() }),
+    ))
+}

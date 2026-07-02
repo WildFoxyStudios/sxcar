@@ -615,3 +615,63 @@ async fn unauthenticated_requests_rejected() {
     .await;
     assert_eq!(st, StatusCode::UNAUTHORIZED, "/blocks POST should 401 without auth");
 }
+
+#[tokio::test]
+async fn report_user_creates_report() {
+    let app = test_app().await;
+
+    let (token_a, _user_a) = register_user(&app, &unique_email()).await;
+    let (_token_b, user_b) = register_user(&app, &unique_email()).await;
+
+    // A reports B's profile
+    let (st, body) = post(
+        &app,
+        "/reports",
+        serde_json::json!({
+            "target_user_id": user_b.to_string(),
+            "target_kind": "profile",
+            "reason": "Harassment"
+        }),
+        Some(&token_a),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "report should 201: {body}");
+    assert!(!body["id"].as_str().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn report_self_rejected() {
+    let app = test_app().await;
+    let (token_a, user_a) = register_user(&app, &unique_email()).await;
+
+    let (st, _) = post(
+        &app,
+        "/reports",
+        serde_json::json!({
+            "target_user_id": user_a.to_string(),
+            "target_kind": "profile"
+        }),
+        Some(&token_a),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "self-report should be 400");
+}
+
+#[tokio::test]
+async fn report_invalid_kind_rejected() {
+    let app = test_app().await;
+    let (token_a, _user_a) = register_user(&app, &unique_email()).await;
+    let (_token_b, user_b) = register_user(&app, &unique_email()).await;
+
+    let (st, _) = post(
+        &app,
+        "/reports",
+        serde_json::json!({
+            "target_user_id": user_b.to_string(),
+            "target_kind": "nonsense"
+        }),
+        Some(&token_a),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "invalid kind should be 400");
+}

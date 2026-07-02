@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
+import '../location/location_service.dart';
 import '../presence/presence_service.dart';
 
 /// Model for a user in the cascade grid.
@@ -78,17 +80,37 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
   String? _lookingFor;
   String _searchQuery = '';
   double _distanceKm = 5; // Default 5 km radius
+  Position? _lastPosition;
+  bool _locationDenied = false;
 
   @override
   void initState() {
     super.initState();
-    _nearbyUsersFuture = _fetchNearbyUsers();
+    _nearbyUsersFuture = _initAndFetch();
+  }
+
+  /// Fetches GPS position first, updates cached state, then fetches users.
+  Future<List<NearbyUser>> _initAndFetch() async {
+    final service = ref.read(locationServiceProvider);
+    final pos = await service.getCurrentPosition() ??
+        await service.getLastKnownPosition();
+    if (mounted) {
+      setState(() {
+        _lastPosition = pos;
+        _locationDenied = pos == null;
+      });
+    }
+    return _fetchNearbyUsers();
   }
 
   Future<List<NearbyUser>> _fetchNearbyUsers() async {
+    final pos = _lastPosition;
+    // Return empty list immediately when GPS is unavailable — the build()
+    // method will show the "enable location" banner instead.
+    if (pos == null) return const [];
     final dio = ref.read(dioProvider);
-    const lat = 19.4326;
-    const lon = -99.1332;
+    final lat = pos.latitude;
+    final lon = pos.longitude;
     final radiusM = (_distanceKm * 1000).round();
 
     final queryParams = <String, dynamic>{
@@ -132,7 +154,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
 
   void _refresh() {
     setState(() {
-      _nearbyUsersFuture = _fetchNearbyUsers();
+      _nearbyUsersFuture = _initAndFetch();
     });
   }
 
@@ -188,6 +210,8 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
       ),
       body: Column(
         children: [
+          // Location denied banner
+          if (_locationDenied) _buildLocationBanner(),
           // Active filter chips summary
           if (_hasActiveFilters)
             Container(
@@ -321,7 +345,18 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () async => _refresh(),
+                  onRefresh: () async {
+                    final service = ref.read(locationServiceProvider);
+                    final pos = await service.getCurrentPosition() ??
+                        await service.getLastKnownPosition();
+                    if (mounted) {
+                      setState(() {
+                        _lastPosition = pos;
+                        _locationDenied = pos == null;
+                        _nearbyUsersFuture = _fetchNearbyUsers();
+                      });
+                    }
+                  },
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       return CustomScrollView(
@@ -355,6 +390,39 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Banner shown when the user has denied location permission.
+  Widget _buildLocationBanner() {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF1A1A1A),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.location_off,
+            color: Color(0xFFF4C542),
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Enable location to see people nearby',
+              style: TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Geolocator.openAppSettings(),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFF4C542),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+            child: const Text('Open Settings'),
           ),
         ],
       ),

@@ -6,6 +6,7 @@ import '../location/location_service.dart';
 import '../places/places_service.dart';
 import '../places/roam_service.dart';
 import '../rightnow/rightnow_service.dart';
+import '../theme/app_theme.dart';
 import 'cascade_screen.dart' show NearbyUser;
 
 /// Explore — global user grid with Roam support backed by real places.
@@ -90,7 +91,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: VibraTheme.kSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -259,19 +260,31 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.explore_outlined,
-                        size: 64, color: Colors.grey.shade600),
-                    const SizedBox(height: 16),
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: const BoxDecoration(
+                        color: VibraTheme.kSurface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.explore_outlined,
+                        size: 36,
+                        color: VibraTheme.kAccent,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     Text(
                       'No users found in this area',
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(color: Colors.white),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: VibraTheme.kTextPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Try roaming to a different location!',
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: Colors.grey),
+                      style: VibraTheme.bodySecondary,
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -324,7 +337,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: VibraTheme.kSurface,
       builder: (ctx) {
         return Padding(
           padding: EdgeInsets.only(
@@ -366,7 +379,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       const SizedBox(width: 12),
                       DropdownButton<int>(
                         value: minutes,
-                        dropdownColor: const Color(0xFF1A1A1A),
+                        dropdownColor: VibraTheme.kSurface,
                         style: const TextStyle(color: Colors.white),
                         items: const [
                           DropdownMenuItem(value: 30, child: Text('30 min')),
@@ -477,10 +490,10 @@ class _RightNowCard extends StatelessWidget {
       width: 160,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isMine ? const Color(0xFF2A2415) : const Color(0xFF1F1F1F),
-        borderRadius: BorderRadius.circular(12),
+        color: isMine ? const Color(0xFF2A2415) : VibraTheme.kSurfaceElevated,
+        borderRadius: BorderRadius.circular(VibraTheme.kRadiusCard),
         border: Border.all(
-          color: isMine ? const Color(0xFFF4C542) : Colors.transparent,
+          color: isMine ? VibraTheme.kAccent : Colors.transparent,
         ),
       ),
       child: Column(
@@ -488,7 +501,7 @@ class _RightNowCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.bolt, color: Color(0xFFF4C542), size: 16),
+              const Icon(Icons.bolt, color: VibraTheme.kAccent, size: 16),
               const Spacer(),
               if (isMine && onDelete != null)
                 GestureDetector(
@@ -512,6 +525,8 @@ class _RightNowCard extends StatelessWidget {
   }
 }
 
+/// Full-bleed photo card matching the Cascade grid style (no online dot
+/// since Explore shows global users where real-time status is less relevant).
 class _ExploreUserCard extends StatelessWidget {
   final NearbyUser user;
 
@@ -519,59 +534,115 @@ class _ExploreUserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      color: const Color(0xFF1A1A1A),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: InkWell(
-        onTap: () => context.push('/profile/${user.id}'),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return GestureDetector(
+      onTap: () => context.push('/profile/${user.id}'),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(VibraTheme.kRadiusCard),
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Expanded(
+            // Background: network photo or gradient placeholder
+            if (user.profilePhotoUrl != null)
+              Image.network(
+                user.profilePhotoUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _buildPlaceholder(),
+              )
+            else
+              _buildPlaceholder(),
+
+            // Bottom gradient scrim
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 72,
               child: Container(
-                color: Colors.grey.shade900,
-                child: Center(
-                  child: Text(
-                    (user.displayName ?? user.email)[0].toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 32,
-                      color: Colors.grey.shade600,
-                    ),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Color(0xD9000000),
+                    ],
                   ),
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
+
+            // Name + distance overlay (bottom)
+            Positioned(
+              left: 6,
+              right: 6,
+              bottom: 6,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     user.displayName ?? user.email,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: const TextStyle(
                       color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(blurRadius: 4, color: Color(0x99000000)),
+                      ],
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 1),
                   Text(
                     user.distanceText,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.green,
-                      fontSize: 10,
+                    style: const TextStyle(
+                      color: VibraTheme.kTextSecondary,
+                      fontSize: 9,
                     ),
                   ),
                 ],
               ),
             ),
+
+            // Verified badge (top right)
+            if (user.isVerified)
+              Positioned(
+                top: 5,
+                right: 5,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: VibraTheme.kAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, color: Colors.black, size: 11),
+                ),
+              ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [VibraTheme.kSurface, VibraTheme.kSurfaceElevated],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          (user.displayName ?? user.email)[0].toUpperCase(),
+          style: const TextStyle(
+            fontSize: 28,
+            color: VibraTheme.kTextMuted,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -679,7 +750,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                 label: const Text('Use real location'),
               ),
               const SizedBox(height: 16),
-              const Divider(color: Color(0xFF2A2A2A)),
+              const Divider(color: VibraTheme.kDivider),
               const SizedBox(height: 8),
               placesAsync.when(
                 loading: () => const Padding(

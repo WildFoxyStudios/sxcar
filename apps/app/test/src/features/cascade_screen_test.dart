@@ -271,8 +271,8 @@ void main() {
         ),
       );
 
-      // Initially shows loading
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // Initially shows shimmer skeleton loaders (no user data yet)
+      expect(find.text('Bob'), findsNothing);
 
       // Wait for GPS + data
       await tester.pumpAndSettle();

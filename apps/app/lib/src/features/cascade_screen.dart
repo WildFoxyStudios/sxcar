@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 import '../auth/auth_provider.dart';
 import '../location/location_service.dart';
 import '../presence/presence_service.dart';
+import '../theme/app_theme.dart';
 
 /// Model for a user in the cascade grid.
 class NearbyUser {
@@ -13,7 +15,9 @@ class NearbyUser {
   final String? displayName;
   final String? bio;
   final String? profilePhotoId;
+  final String? profilePhotoUrl;
   final double distanceM;
+  final bool isVerified;
 
   const NearbyUser({
     required this.id,
@@ -21,7 +25,9 @@ class NearbyUser {
     this.displayName,
     this.bio,
     this.profilePhotoId,
+    this.profilePhotoUrl,
     required this.distanceM,
+    this.isVerified = false,
   });
 
   factory NearbyUser.fromJson(Map<String, dynamic> json) {
@@ -31,7 +37,9 @@ class NearbyUser {
       displayName: json['display_name'] as String?,
       bio: json['bio'] as String?,
       profilePhotoId: json['profile_photo_id'] as String?,
+      profilePhotoUrl: json['profile_photo_url'] as String?,
       distanceM: (json['distance_m'] as num).toDouble(),
+      isVerified: json['verified'] == true,
     );
   }
 
@@ -61,8 +69,8 @@ const _kLookingFor = [
 
 /// Cascade — the main screen showing nearby users in a 3-column grid.
 ///
-/// Replaces the old NearbyScreen. Each card shows a photo placeholder,
-/// display name, distance, and a green online indicator dot.
+/// Full-bleed photo cards, gradient scrim, name/distance/online overlay,
+/// verified badge slot, shimmer skeleton loaders, polished empty state.
 class CascadeScreen extends ConsumerStatefulWidget {
   const CascadeScreen({super.key});
 
@@ -158,7 +166,6 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
     });
   }
 
-  /// Build the active filter chips summary bar below the AppBar title.
   bool get _hasActiveFilters =>
       _ageRange.start > 18 ||
       _ageRange.end < 99 ||
@@ -213,138 +220,27 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
           // Location denied banner
           if (_locationDenied) _buildLocationBanner(),
           // Active filter chips summary
-          if (_hasActiveFilters)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: [
-                  if (_ageRange.start > 18 || _ageRange.end < 99)
-                    Chip(
-                      label: Text('Age ${_ageRange.start.round()}-${_ageRange.end.round()}'),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        setState(() {
-                          _ageRange = const RangeValues(18, 99);
-                          _nearbyUsersFuture = _fetchNearbyUsers();
-                        });
-                      },
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  for (final tribe in _selectedTribes)
-                    Chip(
-                      label: Text(tribe),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        setState(() {
-                          _selectedTribes = Set.from(_selectedTribes)..remove(tribe);
-                          _nearbyUsersFuture = _fetchNearbyUsers();
-                        });
-                      },
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  if (_bodyType != null)
-                    Chip(
-                      label: Text(_bodyType!),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        setState(() {
-                          _bodyType = null;
-                          _nearbyUsersFuture = _fetchNearbyUsers();
-                        });
-                      },
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  if (_lookingFor != null)
-                    Chip(
-                      label: Text(_lookingFor!),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        setState(() {
-                          _lookingFor = null;
-                          _nearbyUsersFuture = _fetchNearbyUsers();
-                        });
-                      },
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  if (_searchQuery.isNotEmpty)
-                    Chip(
-                      label: Text('"$_searchQuery"'),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        setState(() {
-                          _searchQuery = '';
-                          _nearbyUsersFuture = _fetchNearbyUsers();
-                        });
-                      },
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                ],
-              ),
-            ),
+          if (_hasActiveFilters) _buildActiveFilterChips(),
           // User grid
           Expanded(
             child: FutureBuilder<List<NearbyUser>>(
               future: _nearbyUsersFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return _buildShimmerGrid();
                 }
 
                 if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Failed to load nearby users',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton(
-                          onPressed: _refresh,
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
+                  return _buildErrorState(theme);
                 }
 
                 final users = snapshot.data ?? [];
                 if (users.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.public, size: 64, color: Colors.grey.shade600),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No one nearby yet',
-                            style: theme.textTheme.titleLarge?.copyWith(color: Colors.white),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Try Explore to see people everywhere!',
-                            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return _buildEmptyState(theme);
                 }
 
                 return RefreshIndicator(
+                  color: VibraTheme.kAccent,
                   onRefresh: () async {
                     final service = ref.read(locationServiceProvider);
                     final pos = await service.getCurrentPosition() ??
@@ -357,35 +253,31 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                       });
                     }
                   },
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      return CustomScrollView(
-                        slivers: [
-                          SliverPadding(
-                            padding: const EdgeInsets.all(8),
-                            sliver: SliverGrid(
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                childAspectRatio: 0.75,
-                                crossAxisSpacing: 8,
-                                mainAxisSpacing: 8,
-                              ),
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  final user = users[index];
-                                  return _UserCard(
-                                    user: user,
-                                    onTap: () => context.push('/profile/${user.id}'),
-                                  );
-                                },
-                                childCount: users.length,
-                              ),
-                            ),
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.all(8),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            childAspectRatio: 0.75,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
                           ),
-                        ],
-                      );
-                    },
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final user = users[index];
+                              return _UserCard(
+                                user: user,
+                                onTap: () => context.push('/profile/${user.id}'),
+                              );
+                            },
+                            childCount: users.length,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -396,30 +288,135 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
     );
   }
 
+  /// Shimmer skeleton grid shown while fetching users.
+  Widget _buildShimmerGrid() {
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 0.75,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: 9,
+      itemBuilder: (_, _) => Shimmer.fromColors(
+        baseColor: VibraTheme.kSurface,
+        highlightColor: VibraTheme.kSurfaceElevated,
+        child: Container(
+          decoration: BoxDecoration(
+            color: VibraTheme.kSurface,
+            borderRadius: BorderRadius.circular(VibraTheme.kRadiusCard),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Polished error state.
+  Widget _buildErrorState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                color: VibraTheme.kSurface,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                size: 36,
+                color: VibraTheme.kError,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Failed to load nearby users',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: VibraTheme.kTextPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _refresh,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Polished empty state.
+  Widget _buildEmptyState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: const BoxDecoration(
+                color: VibraTheme.kSurface,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.people_outline,
+                size: 36,
+                color: VibraTheme.kAccent,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'No one nearby yet',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: VibraTheme.kTextPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try Explore to see people everywhere!',
+              style: VibraTheme.bodySecondary,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Banner shown when the user has denied location permission.
   Widget _buildLocationBanner() {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF1A1A1A),
+      color: VibraTheme.kSurface,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
           const Icon(
             Icons.location_off,
-            color: Color(0xFFF4C542),
+            color: VibraTheme.kAccent,
             size: 20,
           ),
           const SizedBox(width: 12),
           const Expanded(
             child: Text(
               'Enable location to see people nearby',
-              style: TextStyle(color: Colors.white, fontSize: 13),
+              style: TextStyle(color: VibraTheme.kTextPrimary, fontSize: 13),
             ),
           ),
           TextButton(
             onPressed: () => Geolocator.openAppSettings(),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFF4C542),
+              foregroundColor: VibraTheme.kAccent,
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
             child: const Text('Open Settings'),
@@ -429,8 +426,85 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
     );
   }
 
+  /// Removable active-filter chip row.
+  Widget _buildActiveFilterChips() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        children: [
+          if (_ageRange.start > 18 || _ageRange.end < 99)
+            Chip(
+              label: Text('Age ${_ageRange.start.round()}-${_ageRange.end.round()}'),
+              deleteIcon: const Icon(Icons.close, size: 16),
+              onDeleted: () {
+                setState(() {
+                  _ageRange = const RangeValues(18, 99);
+                  _nearbyUsersFuture = _fetchNearbyUsers();
+                });
+              },
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          for (final tribe in _selectedTribes)
+            Chip(
+              label: Text(tribe),
+              deleteIcon: const Icon(Icons.close, size: 16),
+              onDeleted: () {
+                setState(() {
+                  _selectedTribes = Set.from(_selectedTribes)..remove(tribe);
+                  _nearbyUsersFuture = _fetchNearbyUsers();
+                });
+              },
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          if (_bodyType != null)
+            Chip(
+              label: Text(_bodyType!),
+              deleteIcon: const Icon(Icons.close, size: 16),
+              onDeleted: () {
+                setState(() {
+                  _bodyType = null;
+                  _nearbyUsersFuture = _fetchNearbyUsers();
+                });
+              },
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          if (_lookingFor != null)
+            Chip(
+              label: Text(_lookingFor!),
+              deleteIcon: const Icon(Icons.close, size: 16),
+              onDeleted: () {
+                setState(() {
+                  _lookingFor = null;
+                  _nearbyUsersFuture = _fetchNearbyUsers();
+                });
+              },
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          if (_searchQuery.isNotEmpty)
+            Chip(
+              label: Text('"$_searchQuery"'),
+              deleteIcon: const Icon(Icons.close, size: 16),
+              onDeleted: () {
+                setState(() {
+                  _searchQuery = '';
+                  _nearbyUsersFuture = _fetchNearbyUsers();
+                });
+              },
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+        ],
+      ),
+    );
+  }
+
   void _showFilterSheet(BuildContext context) {
-    // Local copies so changes are discarded on Cancel
     RangeValues localAge = _ageRange;
     Set<String> localTribes = Set.from(_selectedTribes);
     String? localBodyType = _bodyType;
@@ -440,7 +514,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: VibraTheme.kSurface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -479,18 +553,22 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                   max: 50,
                   divisions: 49,
                   label: '${localDistanceKm.round()} km',
+                  activeColor: VibraTheme.kAccent,
                   onChanged: (v) => setSheetState(() => localDistanceKm = v),
                 ),
                 const SizedBox(height: 12),
 
                 // --- Age range slider ---
-                Text('Age Range: ${localAge.start.round()} - ${localAge.end.round()}',
-                    style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  'Age Range: ${localAge.start.round()} - ${localAge.end.round()}',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
                 RangeSlider(
                   values: localAge,
                   min: 18,
                   max: 99,
                   divisions: 81,
+                  activeColor: VibraTheme.kAccent,
                   labels: RangeLabels(
                     localAge.start.round().toString(),
                     localAge.end.round().toString(),
@@ -510,8 +588,8 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                     return FilterChip(
                       label: Text(tribe, style: const TextStyle(fontSize: 12)),
                       selected: selected,
-                      selectedColor: Theme.of(context).colorScheme.primary.withAlpha(80),
-                      checkmarkColor: Colors.white,
+                      selectedColor: VibraTheme.kAccent.withValues(alpha: 0.2),
+                      checkmarkColor: VibraTheme.kAccent,
                       onSelected: (val) {
                         setSheetState(() {
                           if (val) {
@@ -629,6 +707,8 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
   }
 }
 
+/// Full-bleed photo card with gradient scrim, name/distance/online overlay,
+/// and an optional verified badge in the top-right corner.
 class _UserCard extends ConsumerWidget {
   final NearbyUser user;
   final VoidCallback onTap;
@@ -637,110 +717,142 @@ class _UserCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final statusAsync = ref.watch(userStatusProvider(user.id));
 
     final isOnline = statusAsync.maybeWhen(
       data: (s) => s.isOnline,
       orElse: () => false,
     );
-    final lastSeenLabel = statusAsync.maybeWhen(
-      data: formatLastSeen,
-      orElse: () => '',
-    );
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      color: const Color(0xFF1A1A1A),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(VibraTheme.kRadiusCard),
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            // Photo area
-            Expanded(
-              child: Stack(
-                children: [
-                  Container(
-                    color: Colors.grey.shade900,
-                    child: Center(
-                      child: Text(
-                        (user.displayName ?? user.email)[0].toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 32,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ),
+            // Background: network photo or gradient placeholder
+            if (user.profilePhotoUrl != null)
+              Image.network(
+                user.profilePhotoUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _buildPlaceholder(),
+              )
+            else
+              _buildPlaceholder(),
+
+            // Bottom gradient scrim (transparent → near-black)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 72,
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Color(0xD9000000),
+                    ],
                   ),
-                  // Online indicator dot — green if online, grey otherwise
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: isOnline ? Colors.green : Colors.grey.shade600,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF1A1A1A),
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-            // Info area
-            Padding(
-              padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
+
+            // Name + distance overlay (bottom left)
+            Positioned(
+              left: 6,
+              right: 18,
+              bottom: 6,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     user.displayName ?? user.email,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: const TextStyle(
                       color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(blurRadius: 4, color: Color(0x99000000)),
+                      ],
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on,
-                          size: 10, color: Colors.grey.shade500),
-                      const SizedBox(width: 2),
-                      Text(
-                        user.distanceText,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.green,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ),
-                  // Last-seen label below the distance (e.g. "Active 5m ago")
-                  if (lastSeenLabel.isNotEmpty && !isOnline)
-                    Text(
-                      lastSeenLabel,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.grey.shade500,
-                        fontSize: 9,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 1),
+                  Text(
+                    user.distanceText,
+                    style: const TextStyle(
+                      color: VibraTheme.kTextSecondary,
+                      fontSize: 9,
                     ),
+                  ),
                 ],
               ),
             ),
+
+            // Online dot (bottom right corner)
+            Positioned(
+              right: 5,
+              bottom: 9,
+              child: Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(
+                  color: isOnline ? VibraTheme.kOnline : VibraTheme.kTextMuted,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.black, width: 1.5),
+                ),
+              ),
+            ),
+
+            // Verified badge (top right) — shown when user.isVerified
+            if (user.isVerified)
+              Positioned(
+                top: 5,
+                right: 5,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: VibraTheme.kAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.black,
+                    size: 11,
+                  ),
+                ),
+              ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Gradient placeholder shown when no profile photo is available.
+  Widget _buildPlaceholder() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [VibraTheme.kSurface, VibraTheme.kSurfaceElevated],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          (user.displayName ?? user.email)[0].toUpperCase(),
+          style: const TextStyle(
+            fontSize: 28,
+            color: VibraTheme.kTextMuted,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );

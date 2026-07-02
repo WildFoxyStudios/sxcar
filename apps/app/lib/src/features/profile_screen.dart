@@ -23,6 +23,7 @@ class UserProfile {
   final String? pronouns;
   final String? profilePhotoId;
   final String? profilePhotoUrl;
+  final bool isVerified;
   final List<String> tribes;
   final List<String> lookingFor;
   final List<String> meetAt;
@@ -47,6 +48,7 @@ class UserProfile {
     this.pronouns,
     this.profilePhotoId,
     this.profilePhotoUrl,
+    this.isVerified = false,
     this.tribes = const [],
     this.lookingFor = const [],
     this.meetAt = const [],
@@ -73,6 +75,7 @@ class UserProfile {
       pronouns: json['pronouns'] as String?,
       profilePhotoId: json['profile_photo_id'] as String?,
       profilePhotoUrl: json['profile_photo_url'] as String?,
+      isVerified: json['verified'] == true,
       tribes: (json['tribes'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??

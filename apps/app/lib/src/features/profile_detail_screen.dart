@@ -6,6 +6,7 @@ import '../auth/auth_provider.dart';
 import '../chat/chat_service.dart';
 import '../presence/presence_service.dart';
 import '../reports/report_service.dart';
+import '../theme/app_theme.dart';
 import 'profile_screen.dart' show UserProfile;
 
 /// Full-screen profile of another user with action buttons.
@@ -110,7 +111,8 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
       if (_isBlocked) {
         await dio.delete('/blocks/${widget.userId}');
       } else {
-        await dio.post('/blocks', data: {'user_id': widget.userId, 'reason': null});
+        await dio.post('/blocks',
+            data: {'user_id': widget.userId, 'reason': null});
       }
       setState(() => _isBlocked = !_isBlocked);
       if (mounted) {
@@ -133,7 +135,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final reason = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: VibraTheme.kSurface,
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -143,7 +145,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
               child: Text(
                 'Report this user',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: VibraTheme.kTextPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -151,7 +153,9 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
             ),
             for (final r in kReportReasons)
               ListTile(
-                title: Text(r, style: const TextStyle(color: Colors.white)),
+                title: Text(r,
+                    style:
+                        const TextStyle(color: VibraTheme.kTextPrimary)),
                 onTap: () => Navigator.of(ctx).pop(r),
               ),
           ],
@@ -195,28 +199,44 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Profile')),
-        body: const Center(child: CircularProgressIndicator()),
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Profile')),
+        appBar: AppBar(),
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(_error!, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _loadProfile,
-                child: const Text('Retry'),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: VibraTheme.kSurface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.error_outline,
+                      size: 36, color: VibraTheme.kError),
+                ),
+                const SizedBox(height: 20),
+                Text(_error!,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(color: VibraTheme.kTextPrimary),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _loadProfile,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -228,209 +248,249 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Photo header with swipeable gallery
+          // ── Hero photo header ──────────────────────────────────────────────
           SliverAppBar(
-            expandedHeight: 300,
+            expandedHeight: 380,
             pinned: true,
             backgroundColor: Colors.black,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
+            leading: Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
             ),
             flexibleSpace: FlexibleSpaceBar(
-              background: PageView(
+              background: Stack(
+                fit: StackFit.expand,
                 children: [
+                  // Photo or placeholder
                   if (p.profilePhotoUrl != null)
                     Image.network(
                       p.profilePhotoUrl!,
                       fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: 300,
                       errorBuilder: (_, _, _) => _buildPhotoPlaceholder(p),
                     )
                   else
                     _buildPhotoPlaceholder(p),
+                  // Bottom gradient to fade into scaffold background
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: 120,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Color(0xFF0D0D0D)],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Verified badge overlay (top right of photo)
+                  if (p.isVerified)
+                    Positioned(
+                      top: 60,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: VibraTheme.kAccent,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.verified, color: Colors.black, size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              'Verified',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
 
-          // Content
+          // ── Profile content ────────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name and age
-                  Text(
-                    p.displayName ?? p.email,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  // Name row + verified inline
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          p.displayName ?? p.email,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            color: VibraTheme.kTextPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      if (p.isVerified)
+                        const Icon(Icons.verified,
+                            color: VibraTheme.kAccent, size: 22),
+                    ],
                   ),
+
+                  // Age
                   if (p.birthdate != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       _calculateAge(p.birthdate!),
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Colors.grey,
+                        color: VibraTheme.kTextSecondary,
                       ),
                     ),
                   ],
 
-                  // Presence badge (online dot + last-seen text)
+                  // Presence badge (online dot + last-seen)
                   _PresenceBadge(userId: p.id),
-                  const SizedBox(height: 16),
 
-                  // Action buttons row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _ActionButton(
-                        icon: Icons.chat,
-                        label: 'Chat',
-                        color: theme.colorScheme.primary,
-                        onPressed: _startChat,
-                      ),
-                      _ActionButton(
-                        icon: Icons.local_fire_department,
-                        label: 'Tap',
-                        color: Colors.orange,
-                        onPressed: _sendTap,
-                      ),
-                      _ActionButton(
-                        icon: _isFavorited ? Icons.star : Icons.star_border,
-                        label: 'Favorite',
-                        color: _isFavorited
-                            ? const Color(0xFFF4C542)
-                            : Colors.grey,
-                        onPressed: _toggleFavorite,
-                      ),
-                      _ActionButton(
-                        icon: _isBlocked ? Icons.block : Icons.block,
-                        label: 'Block',
-                        color: _isBlocked ? Colors.red : Colors.grey,
-                        onPressed: _toggleBlock,
-                      ),
-                      _ActionButton(
-                        icon: Icons.flag_outlined,
-                        label: 'Report',
-                        color: Colors.grey,
-                        onPressed: _showReportSheet,
-                      ),
-                    ],
+                  const SizedBox(height: 20),
+
+                  // ── Action bar ─────────────────────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: VibraTheme.kSurface,
+                      borderRadius:
+                          BorderRadius.circular(VibraTheme.kRadiusCard),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _ActionButton(
+                          icon: Icons.chat_bubble_outline,
+                          label: 'Chat',
+                          color: VibraTheme.kAccent,
+                          onPressed: _startChat,
+                        ),
+                        _ActionButton(
+                          icon: Icons.local_fire_department,
+                          label: 'Tap',
+                          color: Colors.deepOrange,
+                          onPressed: _sendTap,
+                        ),
+                        _ActionButton(
+                          icon: _isFavorited
+                              ? Icons.star
+                              : Icons.star_border_outlined,
+                          label: 'Favorite',
+                          color: _isFavorited
+                              ? VibraTheme.kAccent
+                              : VibraTheme.kTextSecondary,
+                          onPressed: _toggleFavorite,
+                        ),
+                        _ActionButton(
+                          icon: Icons.block,
+                          label: 'Block',
+                          color: _isBlocked
+                              ? VibraTheme.kError
+                              : VibraTheme.kTextSecondary,
+                          onPressed: _toggleBlock,
+                        ),
+                        _ActionButton(
+                          icon: Icons.flag_outlined,
+                          label: 'Report',
+                          color: VibraTheme.kTextMuted,
+                          onPressed: _showReportSheet,
+                        ),
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  // About section
+                  // ── About ──────────────────────────────────────────────────
                   if (p.bio != null && p.bio!.isNotEmpty) ...[
+                    _sectionHeader('About'),
+                    const SizedBox(height: 8),
                     Text(
-                      'About',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      p.bio!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: VibraTheme.kTextPrimary,
+                        height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(p.bio!, style: theme.textTheme.bodyLarge),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                   ],
 
-                  // Stats
-                  Text(
-                    'Stats',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                  // ── Stats ──────────────────────────────────────────────────
+                  _sectionHeader('Stats'),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: VibraTheme.kSurface,
+                      borderRadius:
+                          BorderRadius.circular(VibraTheme.kRadiusCard),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildStatTile(theme, 'Height',
+                            p.heightCm != null ? '${p.heightCm} cm' : null,
+                            Icons.height),
+                        _buildStatTile(theme, 'Weight',
+                            p.weightKg != null ? '${p.weightKg} kg' : null,
+                            Icons.monitor_weight_outlined),
+                        _buildStatTile(
+                            theme, 'Body Type', p.bodyType, Icons.fitness_center),
+                        _buildStatTile(theme, 'Relationship',
+                            p.relationshipStatus, Icons.favorite_outline),
+                        _buildStatTile(
+                            theme, 'Position', p.position, Icons.sync_alt),
+                        _buildStatTile(
+                            theme, 'Ethnicity', p.ethnicity, Icons.people_outline),
+                        _buildStatTile(
+                            theme, 'Pronouns', p.pronouns, Icons.person_outline),
+                      ].where((w) => w is! SizedBox).toList(),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  _buildStatRow(theme, 'Height',
-                      p.heightCm != null ? '${p.heightCm} cm' : null),
-                  _buildStatRow(theme, 'Weight',
-                      p.weightKg != null ? '${p.weightKg} kg' : null),
-                  _buildStatRow(theme, 'Body Type', p.bodyType),
-                  _buildStatRow(theme, 'Relationship', p.relationshipStatus),
-                  _buildStatRow(theme, 'Position', p.position),
-                  _buildStatRow(theme, 'Ethnicity', p.ethnicity),
-                  _buildStatRow(theme, 'Pronouns', p.pronouns),
 
+                  // ── Tribes ────────────────────────────────────────────────
                   if (p.tribes.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      'Tribes',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
+                    const SizedBox(height: 20),
+                    _sectionHeader('Tribes'),
                     const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: p.tribes
-                          .map((t) => Chip(
-                                label: Text(t),
-                                backgroundColor: Colors.grey.shade800,
-                                labelStyle: const TextStyle(color: Colors.white),
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                              ))
-                          .toList(),
-                    ),
+                    _buildChipWrap(p.tribes, VibraTheme.kAccent),
                   ],
 
+                  // ── Looking for ───────────────────────────────────────────
                   if (p.lookingFor.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      'Looking for',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
+                    const SizedBox(height: 20),
+                    _sectionHeader('Looking for'),
                     const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: p.lookingFor
-                          .map((t) => Chip(
-                                label: Text(t),
-                                backgroundColor: Colors.grey.shade800,
-                                labelStyle: const TextStyle(color: Colors.white),
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                              ))
-                          .toList(),
-                    ),
+                    _buildChipWrap(
+                        p.lookingFor, VibraTheme.kTextSecondary),
                   ],
 
+                  // ── Tags ──────────────────────────────────────────────────
                   if (p.tags.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      'Tags',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
+                    const SizedBox(height: 20),
+                    _sectionHeader('Tags'),
                     const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: p.tags
-                          .map((t) => Chip(
-                                label: Text(t),
-                                backgroundColor: Colors.grey.shade800,
-                                labelStyle: const TextStyle(color: Colors.white),
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                              ))
-                          .toList(),
-                    ),
+                    _buildChipWrap(p.tags, VibraTheme.kTextSecondary),
                   ],
-
-                  const SizedBox(height: 32),
                 ],
               ),
             ),
@@ -440,40 +500,93 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     );
   }
 
-  Widget _buildStatRow(ThemeData theme, String label, String? value) {
-    if (value == null || value.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: Colors.grey),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
+  Widget _sectionHeader(String title) {
+    return Text(
+      title.toUpperCase(),
+      style: const TextStyle(
+        color: VibraTheme.kTextMuted,
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
       ),
+    );
+  }
+
+  /// Stat row inside the stats card — skipped when value is null/empty.
+  Widget _buildStatTile(
+      ThemeData theme, String label, String? value, IconData icon) {
+    if (value == null || value.isEmpty) return const SizedBox.shrink();
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Icon(icon, size: 16, color: VibraTheme.kTextMuted),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: const TextStyle(
+                    color: VibraTheme.kTextSecondary, fontSize: 13),
+              ),
+              const Spacer(),
+              Text(
+                value,
+                style: const TextStyle(
+                    color: VibraTheme.kTextPrimary, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1, color: VibraTheme.kDivider, indent: 44),
+      ],
+    );
+  }
+
+  Widget _buildChipWrap(List<String> items, Color accent) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: items.map((item) {
+        return Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(VibraTheme.kRadiusChip),
+            border: Border.all(color: accent.withValues(alpha: 0.3)),
+          ),
+          child: Text(
+            item,
+            style: TextStyle(
+              color: accent == VibraTheme.kAccent
+                  ? VibraTheme.kAccent
+                  : VibraTheme.kTextPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
   Widget _buildPhotoPlaceholder(UserProfile p) {
     return Container(
-      color: Colors.grey.shade900,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [VibraTheme.kSurface, VibraTheme.kSurfaceElevated],
+        ),
+      ),
       child: Center(
         child: Text(
           (p.displayName ?? p.email)[0].toUpperCase(),
-          style: TextStyle(
-            fontSize: 64,
-            color: Colors.grey.shade700,
+          style: const TextStyle(
+            fontSize: 80,
+            color: VibraTheme.kTextMuted,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
@@ -500,6 +613,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
   }
 }
 
+/// Icon + label action button used in the profile action bar.
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -515,27 +629,35 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          icon: Icon(icon, color: color),
-          onPressed: onPressed,
-          style: IconButton.styleFrom(
-            backgroundColor: color.withValues(alpha: 0.1),
-            padding: const EdgeInsets.all(12),
-          ),
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -556,7 +678,8 @@ class _PresenceBadge extends ConsumerWidget {
       data: (status) {
         final label = formatLastSeen(status);
         if (label.isEmpty) return const SizedBox(height: 20);
-        final color = status.isOnline ? Colors.green : Colors.grey.shade500;
+        final color =
+            status.isOnline ? VibraTheme.kOnline : VibraTheme.kTextMuted;
         return Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Row(

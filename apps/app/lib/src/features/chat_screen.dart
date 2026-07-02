@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../chat/chat_service.dart';
 import '../chat/models.dart';
 import '../auth/auth_provider.dart';
+import '../theme/app_theme.dart';
 
 /// Real-time chat screen with WebSocket connection.
 class ChatScreen extends ConsumerStatefulWidget {
@@ -43,9 +44,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     chatService.connectWebSocket();
 
     _wsSubscription = chatService.messageStream.listen((json) {
-      // WebSocket events can fire after the widget is disposed (e.g. the
-      // service is still running while the user navigates away). Guard
-      // with [mounted] before touching setState.
       if (!mounted) return;
       final type = json['type'] as String?;
       if (type == 'message') {
@@ -64,17 +62,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     try {
       final chatService = ref.read(chatServiceProvider);
       final messages = await chatService.getMessages(widget.conversationId);
-      if (!mounted) return; // widget disposed while the request was in flight
+      if (!mounted) return;
       setState(() {
-        // Copy into a mutable list — the source list from the service
-        // may be const / unmodifiable, and we append to _messages in
-        // _sendMessage and the WS listener.
         _messages = List<Message>.from(messages);
         _loading = false;
       });
       _scrollToBottom();
     } catch (e) {
-      if (!mounted) return; // widget disposed while the request was in flight
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -85,8 +80,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _scrollToBottom() {
     if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Re-check inside the post-frame callback: the widget may have been
-      // disposed between the schedule and the actual frame.
       if (!mounted) return;
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -104,7 +97,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     _textController.clear();
 
-    // Add optimistic message
+    // Optimistic message
     final authState = ref.read(authStateProvider);
     final optimistic = Message(
       id: '',
@@ -128,139 +121,320 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  String? _currentUserId() {
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chat')),
+      backgroundColor: VibraTheme.kBg,
+      appBar: AppBar(
+        backgroundColor: VibraTheme.kSurface,
+        title: const Text('Chat'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: VibraTheme.kDivider),
+        ),
+      ),
       body: Column(
         children: [
-          // Message list
+          // ── Message list ─────────────────────────────────────────────────
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: CircularProgressIndicator(
+                        color: VibraTheme.kAccent))
                 : _error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.error_outline,
-                                size: 48, color: Colors.red),
-                            const SizedBox(height: 16),
-                            Text('Failed to load messages',
-                                style: theme.textTheme.titleMedium),
-                            const SizedBox(height: 16),
-                            FilledButton(
-                              onPressed: () {
-                                setState(() {
-                                  _loading = true;
-                                  _error = null;
-                                });
-                                _loadMessages();
-                              },
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      )
+                    ? _buildErrorState(theme)
                     : _messages.isEmpty
-                        ? const Center(child: Text('No messages yet'))
+                        ? _buildEmptyState(theme)
                         : ListView.builder(
                             controller: _scrollController,
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 16),
                             itemCount: _messages.length,
                             itemBuilder: (context, index) {
                               final message = _messages[index];
                               final isMe =
                                   message.senderId == _currentUserId();
-                              return _MessageBubble(
-                                message: message,
-                                isMe: isMe,
+                              final showTimestamp = _shouldShowTimestamp(
+                                  index);
+                              return Column(
+                                children: [
+                                  if (showTimestamp)
+                                    _buildTimestamp(message.createdAt),
+                                  _MessageBubble(
+                                      message: message, isMe: isMe),
+                                ],
                               );
                             },
                           ),
           ),
 
-          // Input bar
+          // ── Input bar ─────────────────────────────────────────────────────
+          _buildInputBar(theme),
+        ],
+      ),
+    );
+  }
+
+  /// Show a timestamp divider every 10 messages or at the first message.
+  bool _shouldShowTimestamp(int index) {
+    if (index == 0) return true;
+    return false;
+  }
+
+  Widget _buildTimestamp(String iso) {
+    final dt = DateTime.tryParse(iso)?.toLocal();
+    if (dt == null) return const SizedBox.shrink();
+    final now = DateTime.now();
+    String label;
+    if (now.difference(dt).inDays == 0) {
+      label =
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } else {
+      label =
+          '${dt.day}/${dt.month}  ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: VibraTheme.kTextMuted,
+          fontSize: 11,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildErrorState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                  color: VibraTheme.kSurface, shape: BoxShape.circle),
+              child: const Icon(Icons.error_outline,
+                  size: 32, color: VibraTheme.kError),
+            ),
+            const SizedBox(height: 16),
+            Text('Failed to load messages',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(color: VibraTheme.kTextPrimary)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _loading = true;
+                  _error = null;
+                });
+                _loadMessages();
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-            ),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      decoration: const InputDecoration(
-                        hintText: 'Type a message...',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sendMessage(),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: _sendMessage,
-                  ),
-                ],
-              ),
-            ),
+            width: 72,
+            height: 72,
+            decoration: const BoxDecoration(
+                color: VibraTheme.kSurface, shape: BoxShape.circle),
+            child: const Icon(Icons.chat_bubble_outline,
+                size: 32, color: VibraTheme.kAccent),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No messages yet',
+            style: TextStyle(
+                color: VibraTheme.kTextPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Say hi to start the conversation!',
+            style: TextStyle(color: VibraTheme.kTextSecondary, fontSize: 13),
           ),
         ],
       ),
     );
   }
 
-  String? _currentUserId() {
-    // In a real app, extract user ID from token or store it in auth state
-    return null;
+  Widget _buildInputBar(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      decoration: const BoxDecoration(
+        color: VibraTheme.kSurface,
+        border: Border(top: BorderSide(color: VibraTheme.kDivider)),
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            // Attach icon
+            IconButton(
+              icon: const Icon(Icons.attach_file,
+                  color: VibraTheme.kTextMuted, size: 22),
+              onPressed: () {
+                // Attachment feature placeholder — no-op for now
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            ),
+            const SizedBox(width: 6),
+            // Text input
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: VibraTheme.kSurfaceElevated,
+                  borderRadius:
+                      BorderRadius.circular(VibraTheme.kRadiusInput * 2),
+                ),
+                child: TextField(
+                  controller: _textController,
+                  style: const TextStyle(
+                      color: VibraTheme.kTextPrimary, fontSize: 14),
+                  decoration: const InputDecoration(
+                    hintText: 'Type a message...',
+                    hintStyle: TextStyle(
+                        color: VibraTheme.kTextMuted, fontSize: 14),
+                    border: InputBorder.none,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  maxLines: null,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendMessage(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Send button
+            Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: VibraTheme.kAccent,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.send,
+                    color: Colors.black, size: 18),
+                onPressed: _sendMessage,
+                padding: EdgeInsets.zero,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
+/// Chat bubble — sent messages are accent-tinted, received are dark grey.
 class _MessageBubble extends StatelessWidget {
   final Message message;
   final bool isMe;
 
-  const _MessageBubble({
-    required this.message,
-    required this.isMe,
-  });
+  const _MessageBubble({required this.message, required this.isMe});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // Media messages (images/video) render as rounded thumbnails
+    if (message.kind == 'image' || message.kind == 'video') {
+      return _buildMediaBubble(context);
+    }
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        margin: EdgeInsets.only(
+          top: 3,
+          bottom: 3,
+          left: isMe ? 60 : 0,
+          right: isMe ? 0 : 60,
         ),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
+          // Sent: slight accent tint; Received: dark surface
           color: isMe
-              ? theme.colorScheme.primary
-              : theme.colorScheme.surfaceContainerHighest,
+              ? VibraTheme.kAccent.withValues(alpha: 0.15)
+              : VibraTheme.kSurfaceElevated,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
-            bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
-            bottomRight: isMe ? Radius.zero : const Radius.circular(16),
+            bottomLeft:
+                isMe ? const Radius.circular(16) : const Radius.circular(4),
+            bottomRight:
+                isMe ? const Radius.circular(4) : const Radius.circular(16),
           ),
+          border: isMe
+              ? Border.all(
+                  color: VibraTheme.kAccent.withValues(alpha: 0.3),
+                  width: 1)
+              : null,
         ),
         child: Text(
           message.body ?? '',
           style: TextStyle(
             color: isMe
-                ? theme.colorScheme.onPrimary
-                : theme.colorScheme.onSurface,
+                ? VibraTheme.kAccent
+                : VibraTheme.kTextPrimary,
+            fontSize: 14,
+            height: 1.4,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMediaBubble(BuildContext context) {
+    final url = message.body ?? '';
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: EdgeInsets.only(
+          top: 3,
+          bottom: 3,
+          left: isMe ? 60 : 0,
+          right: isMe ? 0 : 60,
+        ),
+        width: 180,
+        height: 180,
+        decoration: BoxDecoration(
+          color: VibraTheme.kSurface,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: url.isNotEmpty
+              ? Image.network(url, fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const Center(
+                        child: Icon(Icons.broken_image,
+                            color: VibraTheme.kTextMuted),
+                      ))
+              : const Center(
+                  child: Icon(Icons.image_outlined,
+                      color: VibraTheme.kTextMuted, size: 40)),
         ),
       ),
     );

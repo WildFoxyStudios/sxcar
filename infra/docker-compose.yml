@@ -1,25 +1,58 @@
+name: proyectox
+
 services:
-  postgres:
-    image: postgis/postgis:16-3.4
+  api:
+    image: proyectox-api:local
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: dev
-      POSTGRES_PASSWORD: dev
-      POSTGRES_DB: appdb
+      BIND_ADDR: 0.0.0.0:8080
+      TARPIT_ENABLED: "true"
+      REDIS_URL: redis://redis:6379
     ports:
-      - "5433:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dev -d appdb"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    command: redis-server --save 60 1 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --config /etc/cloudflared/config.yml --no-autoupdate run
+    volumes:
+      - ./cloudflared-config.yml:/etc/cloudflared/config.yml:ro
+      - ./71025a02-45aa-414b-83c0-3dce38eeefcc.json:/etc/cloudflared/71025a02-45aa-414b-83c0-3dce38eeefcc.json:ro
+    depends_on:
+      - api
+
+
+  # Portainer CE — web UI to manage this Docker host.
+  # Reachable only via Tailscale: https://100.74.226.125:9443
+  # Reuses the existing proyectox_portainer_data volume (config preserved).
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - proyectox_portainer_data:/data
     ports:
-      - "6379:6379"
+      - "9443:9443"
+
 
 volumes:
-  pgdata:
+  redis-data:
+  proyectox_portainer_data:

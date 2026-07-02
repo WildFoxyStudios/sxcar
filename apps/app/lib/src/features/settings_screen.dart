@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../auth/auth_provider.dart';
 import '../settings/tier3_settings_service.dart';
+import '../theme/app_theme.dart';
 
 /// Settings screen with notification prefs, privacy toggles, blocked users,
 /// and account actions.  Parameterized by [initialTab].
@@ -225,7 +226,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('User unblocked'),
-            backgroundColor: Color(0xFF2E7D32),
+            backgroundColor: Color(0xFF2E7D32), // success green — intentional
           ),
         );
       }
@@ -247,7 +248,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: VibraTheme.kSurface,
         title: const Text('Logout'),
         content: const Text('Are you sure you want to log out?'),
         actions: [
@@ -271,7 +272,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: VibraTheme.kSurface,
         title: const Text('Delete Account'),
         content: const Text('This feature is not yet available.'),
         actions: [
@@ -322,7 +323,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     return Card(
       color: const Color(0xFF1A1A1A),
       child: ListTile(
-        leading: const Icon(Icons.chat_bubble_outline, color: Colors.white70),
+        leading: const Icon(Icons.chat_bubble_outline, color: VibraTheme.kTextSecondary),
         title: const Text('Saved Phrases'),
         subtitle: const Text(
           'Quick chat lines you can reuse',
@@ -339,7 +340,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     return Card(
       color: const Color(0xFF1A1A1A),
       child: ListTile(
-        leading: const Icon(Icons.devices, color: Colors.white70),
+        leading: const Icon(Icons.devices, color: VibraTheme.kTextSecondary),
         title: const Text('Active Sessions'),
         subtitle: const Text(
           'Devices signed in to your account',
@@ -385,7 +386,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         _buildSessionsShortcut(theme),
         const SizedBox(height: 16),
         Card(
-          color: const Color(0xFF1A1A1A),
+          color: VibraTheme.kSurface,
           child: Column(
             children: [
               SwitchListTile(
@@ -401,7 +402,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   _updateNotificationPreference('new_messages', val);
                 },
               ),
-              const Divider(height: 1, color: Color(0xFF2A2A2A)),
+              const Divider(height: 1, color: VibraTheme.kDivider),
               SwitchListTile(
                 title: const Text('New Taps'),
                 subtitle: const Text(
@@ -415,7 +416,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   _updateNotificationPreference('new_taps', val);
                 },
               ),
-              const Divider(height: 1, color: Color(0xFF2A2A2A)),
+              const Divider(height: 1, color: VibraTheme.kDivider),
               SwitchListTile(
                 title: const Text('Promotions'),
                 subtitle: const Text(
@@ -443,7 +444,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       padding: const EdgeInsets.all(16),
       children: [
         Card(
-          color: const Color(0xFF1A1A1A),
+          color: VibraTheme.kSurface,
           child: Column(
             children: [
               SwitchListTile(
@@ -458,7 +459,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   setState(() => _showDistance = val);
                 },
               ),
-              const Divider(height: 1, color: Color(0xFF2A2A2A)),
+              const Divider(height: 1, color: VibraTheme.kDivider),
               SwitchListTile(
                 title: const Text('Show Online Status'),
                 subtitle: const Text(
@@ -471,7 +472,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   setState(() => _showOnlineStatus = val);
                 },
               ),
-              const Divider(height: 1, color: Color(0xFF2A2A2A)),
+              const Divider(height: 1, color: VibraTheme.kDivider),
               SwitchListTile(
                 title: const Text('Discreet Mode'),
                 subtitle: const Text(
@@ -489,7 +490,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         ),
         const SizedBox(height: 8),
         Card(
-          color: const Color(0xFF1A1A1A),
+          color: VibraTheme.kSurface,
           child: Column(
             children: [
               ListTile(
@@ -506,8 +507,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       )
                     : DropdownButton<int?>(
                         value: _idleReminderHours,
-                        dropdownColor: const Color(0xFF1A1A1A),
-                        style: const TextStyle(color: Colors.white),
+                        dropdownColor: VibraTheme.kSurfaceElevated,
+                        style: const TextStyle(color: VibraTheme.kTextPrimary),
                         items: const [
                           DropdownMenuItem(value: null, child: Text('Off')),
                           DropdownMenuItem(value: 12, child: Text('12h')),
@@ -517,7 +518,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         onChanged: _setIdleReminder,
                       ),
               ),
-              const Divider(height: 1, color: Color(0xFF2A2A2A)),
+              const Divider(height: 1, color: VibraTheme.kDivider),
               SwitchListTile(
                 title: const Text('Screenshot alerts'),
                 subtitle: const Text(
@@ -564,22 +565,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
     if (_blockedUsers.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.block, size: 64, color: Colors.grey.shade600),
-            const SizedBox(height: 16),
-            Text(
-              'No blocked users',
-              style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'When you block someone, they will appear here.',
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-              textAlign: TextAlign.center,
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: const BoxDecoration(
+                  color: VibraTheme.kSurface,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.block,
+                    size: 36, color: VibraTheme.kTextMuted),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'No blocked users',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(color: VibraTheme.kTextPrimary),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'When you block someone, they will appear here.',
+                style: TextStyle(
+                    color: VibraTheme.kTextSecondary, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -588,7 +603,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       padding: const EdgeInsets.all(16),
       children: [
         Card(
-          color: const Color(0xFF1A1A1A),
+          color: VibraTheme.kSurface,
           child: Column(
             children: _blockedUsers.asMap().entries.map((entry) {
               final idx = entry.key;
@@ -601,14 +616,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               return Column(
                 children: [
                   if (idx > 0)
-                    const Divider(height: 1, color: Color(0xFF2A2A2A)),
+                    const Divider(height: 1, color: VibraTheme.kDivider),
                   ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Colors.grey.shade700,
+                      backgroundColor: VibraTheme.kSurface,
                       child: Text(
                         (displayName.isNotEmpty ? displayName[0] : '?')
                             .toUpperCase(),
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: VibraTheme.kAccent),
                       ),
                     ),
                     title: Text(displayName),
@@ -625,7 +640,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       onPressed: () => _unblockUser(userId),
                       child: const Text(
                         'Unblock',
-                        style: TextStyle(color: Color(0xFFF4C542)),
+                        style: TextStyle(color: VibraTheme.kAccent),
                       ),
                     ),
                   ),
@@ -648,7 +663,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           ),
         ),
         Card(
-          color: const Color(0xFF1A1A1A),
+          color: VibraTheme.kSurface,
           child: Column(
             children: [
               ListTile(
@@ -659,7 +674,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ),
                 onTap: _logout,
               ),
-              const Divider(height: 1, color: Color(0xFF2A2A2A)),
+              const Divider(height: 1, color: VibraTheme.kDivider),
               ListTile(
                 leading: const Icon(Icons.delete_forever, color: Colors.red),
                 title: const Text(

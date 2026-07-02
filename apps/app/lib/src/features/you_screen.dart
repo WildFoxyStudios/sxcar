@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../boost/boost_service.dart';
 import '../profile_views/viewed_me_provider.dart';
+import '../theme/app_theme.dart';
 import 'profile_screen.dart' show UserProfile;
 
 /// You screen — own profile, stats, tribes, settings, logout.
@@ -60,7 +61,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: VibraTheme.kSurface,
         title: const Text('Logout'),
         content: const Text('Are you sure you want to log out?'),
         actions: [
@@ -70,7 +71,8 @@ class _YouScreenState extends ConsumerState<YouScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            child: const Text('Logout',
+                style: TextStyle(color: VibraTheme.kError)),
           ),
         ],
       ),
@@ -84,7 +86,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: VibraTheme.kSurface,
         title: const Text('Delete Account'),
         content: const Text('This feature is not yet available.'),
         actions: [
@@ -172,16 +174,17 @@ class _YouScreenState extends ConsumerState<YouScreen> {
             Center(
               child: CircleAvatar(
                 radius: 60,
-                backgroundColor: Colors.grey.shade800,
+                backgroundColor: VibraTheme.kSurface,
                 backgroundImage: p.profilePhotoUrl != null
                     ? NetworkImage(p.profilePhotoUrl!)
                     : null,
                 child: p.profilePhotoUrl == null
                     ? Text(
                         (p.displayName ?? emailPrefix)[0].toUpperCase(),
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 40,
-                          color: theme.colorScheme.primary,
+                          color: VibraTheme.kAccent,
+                          fontWeight: FontWeight.bold,
                         ),
                       )
                     : null,
@@ -276,49 +279,53 @@ class _YouScreenState extends ConsumerState<YouScreen> {
 
         // Settings card
         Card(
-          color: const Color(0xFF1A1A1A),
+          color: VibraTheme.kSurface,
           child: Column(
             children: [
               ListTile(
                 leading: const Icon(Icons.notifications_outlined,
-                    color: Colors.white70),
+                    color: VibraTheme.kTextSecondary),
                 title: const Text('Notifications'),
-                trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                trailing: const Icon(Icons.chevron_right,
+                    color: VibraTheme.kTextMuted),
                 onTap: () =>
                     context.push('/settings?tab=notifications'),
               ),
-              const Divider(height: 1, color: Color(0xFF2A2A2A)),
+              const Divider(height: 1, color: VibraTheme.kDivider),
               ListTile(
-                leading:
-                    const Icon(Icons.lock_outline, color: Colors.white70),
+                leading: const Icon(Icons.lock_outline,
+                    color: VibraTheme.kTextSecondary),
                 title: const Text('Privacy'),
-                trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                trailing: const Icon(Icons.chevron_right,
+                    color: VibraTheme.kTextMuted),
                 onTap: () => context.push('/settings?tab=privacy'),
               ),
-              const Divider(height: 1, color: Color(0xFF2A2A2A)),
+              const Divider(height: 1, color: VibraTheme.kDivider),
               ListTile(
-                leading:
-                    const Icon(Icons.block, color: Colors.white70),
+                leading: const Icon(Icons.block,
+                    color: VibraTheme.kTextSecondary),
                 title: const Text('Blocked Users'),
-                trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                trailing: const Icon(Icons.chevron_right,
+                    color: VibraTheme.kTextMuted),
                 onTap: () => context.push('/settings?tab=blocks'),
               ),
-              const Divider(height: 1, color: Color(0xFF2A2A2A)),
+              const Divider(height: 1, color: VibraTheme.kDivider),
               ListTile(
-                leading: const Icon(Icons.logout, color: Colors.red),
+                leading:
+                    const Icon(Icons.logout, color: VibraTheme.kError),
                 title: const Text(
                   'Logout',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: VibraTheme.kError),
                 ),
                 onTap: _logout,
               ),
-              const Divider(height: 1, color: Color(0xFF2A2A2A)),
+              const Divider(height: 1, color: VibraTheme.kDivider),
               ListTile(
-                leading:
-                    const Icon(Icons.delete_forever, color: Colors.red),
+                leading: const Icon(Icons.delete_forever,
+                    color: VibraTheme.kError),
                 title: const Text(
                   'Delete Account',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: VibraTheme.kError),
                 ),
                 onTap: _deleteAccount,
               ),
@@ -365,17 +372,19 @@ class _YouScreenState extends ConsumerState<YouScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.grey.shade800,
-        borderRadius: BorderRadius.circular(20),
+        color: VibraTheme.kSurface,
+        borderRadius: BorderRadius.circular(VibraTheme.kRadiusChip),
+        border: Border.all(color: VibraTheme.kDivider),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey.shade400),
+          Icon(icon, size: 14, color: VibraTheme.kTextMuted),
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
+            style: const TextStyle(
+                color: VibraTheme.kTextPrimary, fontSize: 13),
           ),
         ],
       ),
@@ -390,16 +399,16 @@ class _YouScreenState extends ConsumerState<YouScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(20),
+            color: VibraTheme.kAccent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(VibraTheme.kRadiusChip),
             border: Border.all(
-              color: theme.colorScheme.primary.withValues(alpha: 0.5),
+              color: VibraTheme.kAccent.withValues(alpha: 0.3),
             ),
           ),
           child: Text(
             t,
-            style: TextStyle(
-              color: theme.colorScheme.primary,
+            style: const TextStyle(
+              color: VibraTheme.kAccent,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -432,7 +441,7 @@ class _BoostButtonState extends ConsumerState<_BoostButton> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Boosted for 30 min!'),
-            backgroundColor: Color(0xFFF4C542),
+            backgroundColor: VibraTheme.kAccent,
           ),
         );
       }
@@ -579,7 +588,7 @@ class _ViewedMeSection extends ConsumerWidget {
           ),
         ),
         Card(
-          color: const Color(0xFF1A1A1A),
+          color: VibraTheme.kSurface,
           child: viewersAsync.when(
             loading: () => const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -609,13 +618,13 @@ class _ViewedMeSection extends ConsumerWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.visibility_off_outlined,
-                            size: 36, color: Colors.grey.shade600),
+                        const Icon(Icons.visibility_off_outlined,
+                            size: 36, color: VibraTheme.kTextMuted),
                         const SizedBox(height: 8),
-                        Text(
+                        const Text(
                           'No one has viewed you yet',
-                          style:
-                              TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                          style: TextStyle(
+                              color: VibraTheme.kTextSecondary, fontSize: 13),
                         ),
                       ],
                     ),
@@ -657,7 +666,6 @@ class _ViewerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final displayName = viewer.displayName ?? 'Anonymous';
 
     return InkWell(
@@ -670,7 +678,7 @@ class _ViewerTile extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 26,
-              backgroundColor: Colors.grey.shade800,
+              backgroundColor: VibraTheme.kSurface,
               backgroundImage: viewer.profilePhotoUrl != null
                   ? NetworkImage(viewer.profilePhotoUrl!)
                   : null,
@@ -679,9 +687,9 @@ class _ViewerTile extends StatelessWidget {
                       displayName.isNotEmpty
                           ? displayName[0].toUpperCase()
                           : '?',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 18,
-                        color: theme.colorScheme.primary,
+                        color: VibraTheme.kAccent,
                       ),
                     )
                   : null,

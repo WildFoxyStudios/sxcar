@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
+import '../theme/app_theme.dart';
 
 /// Model for a tap received from another user.
 class ReceivedTap {
@@ -194,22 +195,34 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
 
         final taps = snapshot.data ?? [];
         if (taps.isEmpty) {
-          return const Center(
+          return Center(
             child: Padding(
-              padding: EdgeInsets.all(32),
+              padding: const EdgeInsets.all(32),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.local_fire_department, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'No taps or favorites yet',
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: VibraTheme.kSurface,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.local_fire_department,
+                        size: 36, color: VibraTheme.kAccent),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 20),
                   Text(
+                    'No taps yet',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: VibraTheme.kTextPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
                     'Tap someone to show interest!',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: VibraTheme.kTextSecondary),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -219,21 +232,29 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
         }
 
         return ListView.separated(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(12),
           itemCount: taps.length,
-          separatorBuilder: (_, _) => const Divider(height: 1),
+          separatorBuilder: (_, _) =>
+              const Divider(height: 1, color: VibraTheme.kDivider),
           itemBuilder: (context, index) {
             final tap = taps[index];
             return ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               leading: CircleAvatar(
-                backgroundColor: Colors.grey.shade800,
+                backgroundColor: VibraTheme.kSurface,
                 child: Text(
                   _tapTypeEmoji(tap.tapType),
                   style: const TextStyle(fontSize: 20),
                 ),
               ),
               title: Text(tap.senderDisplayName ?? 'Unknown'),
-              subtitle: Text(_tapTypeDisplay(tap.tapType)),
+              subtitle: Text(
+                _tapTypeDisplay(tap.tapType),
+                style: const TextStyle(color: VibraTheme.kTextMuted),
+              ),
+              trailing: const Icon(Icons.chevron_right,
+                  color: VibraTheme.kTextMuted, size: 18),
               onTap: () => context.push('/profile/${tap.senderId}'),
             );
           },
@@ -278,16 +299,28 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.star_border, size: 64, color: Colors.grey.shade600),
-                  const SizedBox(height: 16),
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: VibraTheme.kSurface,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.star_border_outlined,
+                        size: 36, color: VibraTheme.kAccent),
+                  ),
+                  const SizedBox(height: 20),
                   Text(
                     'No favorites yet',
-                    style: theme.textTheme.titleLarge?.copyWith(color: Colors.white),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: VibraTheme.kTextPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Star someone you like to add them here!',
-                    style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                    style: TextStyle(color: VibraTheme.kTextSecondary),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -297,24 +330,27 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
         }
 
         return ListView.separated(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(12),
           itemCount: favorites.length,
-          separatorBuilder: (_, _) => const Divider(height: 1),
+          separatorBuilder: (_, _) =>
+              const Divider(height: 1, color: VibraTheme.kDivider),
           itemBuilder: (context, index) {
             final fav = favorites[index];
             return ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               leading: CircleAvatar(
-                backgroundColor: Colors.grey.shade800,
+                backgroundColor: VibraTheme.kSurface,
                 child: Text(
                   (fav.displayName ?? '?')[0].toUpperCase(),
-                  style: TextStyle(
-                    color: theme.colorScheme.primary,
+                  style: const TextStyle(
+                    color: VibraTheme.kAccent,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               title: Text(fav.displayName ?? 'Unknown'),
-              trailing: const Icon(Icons.star, color: Color(0xFFF4C542)),
+              trailing: const Icon(Icons.star, color: VibraTheme.kAccent),
               onTap: () => context.push('/profile/${fav.userId}'),
             );
           },

@@ -54,15 +54,31 @@ final authStateProvider = NotifierProvider<AuthNotifier, AuthState>(
   AuthNotifier.new,
 );
 
+/// Resolves when the auth notifier has finished hydrating from storage
+/// (status is no longer `loading`). Any screen that fires authenticated
+/// requests in initState should `await` this — without it, requests race
+/// the storage read and 401 because the Authorization header is missing.
+final authReadyProvider = FutureProvider<void>((ref) async {
+  while (ref.read(authStateProvider).status == AuthStatus.loading) {
+    await Future<void>.delayed(const Duration(milliseconds: 16));
+  }
+});
+
 class AuthNotifier extends Notifier<AuthState> {
   String? _currentRefreshToken;
 
   @override
   AuthState build() {
+    // Hydrate from storage on the next microtask so the first frame is
+    // drawn with status=loading and any initial route that depends on
+    // authState (like the splash) can use authReadyProvider to wait.
+    // _hydrate publishes the real status (authenticated/unauthenticated)
+    // a few milliseconds later, and authReadyProvider signals the transition.
+    Future.microtask(_hydrate);
     return const AuthState();
   }
 
-  Future<void> checkAuth() async {
+  Future<void> _hydrate() async {
     final tokenStorage = ref.read(tokenStorageProvider);
     final accessToken = await tokenStorage.getAccessToken();
     if (accessToken != null) {
@@ -75,6 +91,9 @@ class AuthNotifier extends Notifier<AuthState> {
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
   }
+
+  /// Backward-compat alias — some widgets trigger this explicitly.
+  Future<void> checkAuth() => _hydrate();
 
   Future<TokenPair> login(String email, String password) async {
     final authService = ref.read(authServiceProvider);

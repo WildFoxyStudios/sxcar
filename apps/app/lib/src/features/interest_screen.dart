@@ -116,7 +116,24 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
     super.dispose();
   }
 
+  /// Wait until `authState` actually has a token before firing any
+  /// authenticated request. The Dio client's Authorization interceptor reads
+  /// from the secure-storage cache, but the cache is only populated after
+  /// the boot path reads the token (asynchronous). If the user lands on
+  /// InterestScreen before that finishes, the request goes out without a
+  /// Bearer header and the server returns 401 — a race that the catch-all
+  /// refresh-on-401 in api_client cannot recover from (no refresh token yet
+  /// either). Poll the provider until the token is present.
+  Future<void> _waitForAuth() async {
+    while (mounted) {
+      final token = ref.read(authStateProvider).accessToken;
+      if (token != null && token.isNotEmpty) return;
+      await Future<void>.delayed(const Duration(milliseconds: 16));
+    }
+  }
+
   Future<List<ReceivedTap>> _fetchTaps() async {
+    await _waitForAuth();
     final dio = ref.read(dioProvider);
     final response =
         await dio.get<Map<String, dynamic>>('/taps/received');
@@ -128,6 +145,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
   }
 
   Future<List<FavoriteUser>> _fetchFavorites() async {
+    await _waitForAuth();
     final dio = ref.read(dioProvider);
     final response = await dio.get<Map<String, dynamic>>('/favorites');
     final data = response.data!;

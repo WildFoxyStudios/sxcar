@@ -84,6 +84,32 @@ class _AuthenticatedNotifier extends AuthNotifier {
   Future<void> logout() async {}
 }
 
+/// Notifier that starts with `loading` (no token) and is later updated
+/// to `authenticated` with a token. Used to reproduce the race where
+/// InterestScreen runs `_fetchTaps` / `_fetchFavorites` before the
+/// secure-storage token is loaded.
+class _LoadingThenAuthNotifier extends AuthNotifier {
+  _LoadingThenAuthNotifier() : super();
+
+  @override
+  AuthState build() => const AuthState(
+        status: AuthStatus.loading,
+        accessToken: null,
+        email: null,
+      );
+
+  void becomeAuthed() {
+    state = const AuthState(
+      status: AuthStatus.authenticated,
+      accessToken: 'test-token',
+      email: 'test@example.com',
+    );
+  }
+
+  @override
+  Future<void> logout() async {}
+}
+
 void main() {
   group('InterestScreen', () {
     testWidgets('shows Taps and Favorites tabs', (tester) async {
@@ -131,6 +157,49 @@ void main() {
 
       // Should show Charlie in favorites
       expect(find.text('Charlie'), findsOneWidget);
+    });
+
+    testWidgets(
+        'Favorites and Taps requests WAIT for the auth token when it is '
+        'still loading at boot (regression for 401 on /favorites)', (tester) async {
+      // The original bug: _fetchFavorites / _fetchTaps ran in initState
+      // and fired immediately. The Dio interceptor then read the secure
+      // storage cache (still empty mid-boot) and the request went out
+      // without an Authorization header, producing the 401 we saw in
+      // logcat. The fix polls authState.accessToken before firing.
+      final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
+      final notifier = _LoadingThenAuthNotifier();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => notifier),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(home: InterestScreen()),
+        ),
+      );
+
+      // Pump a few frames — requests MUST NOT have been sent yet
+      // (the auth token is still null). Tap on Favorites so the
+      // FutureBuilder for the second tab builds.
+      await tester.pump();
+      await tester.pump();
+      await tester.tap(find.text('Favorites').last);
+      await tester.pump();
+      // Still loading — the fetcher must be waiting on the notifier.
+      // (No tappable content yet → "No favorites yet" empty state.)
+      // The key proof: no exception, no 401 printed; the tab shows
+      // its loading state.
+      expect(tester.takeException(), isNull);
+
+      // Now become authenticated — the waiting fetcher should fire
+      // immediately and the empty state should switch to "Charlie".
+      notifier.becomeAuthed();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Charlie'), findsOneWidget,
+          reason: 'fetch should have fired once the token arrived');
     });
   });
 }

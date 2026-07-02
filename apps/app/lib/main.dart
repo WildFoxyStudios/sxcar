@@ -186,18 +186,27 @@ final GoRouter appRouter = GoRouter(
             ),
           ],
         ),
-        // Tab 2: Chat (inbox + conversation)
+        // Tab 2: Chat (inbox + conversation).
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/inbox',
               builder: (_, _) => const ChatListScreen(),
               routes: [
+                // conversationId sub-route: pageBuilder (not builder) so we
+                // can pass a unique ValueKey per /inbox/<id>. Otherwise the
+                // StatefulShellRoute's IndexedStack reuses the same Page for
+                // /inbox and /inbox/123 and Navigator's debug assert fires
+                // about duplicated page keys.
                 GoRoute(
                   path: ':conversationId',
-                  builder: (_, state) => ChatScreen(
-                    conversationId:
-                        state.pathParameters['conversationId']!,
+                  pageBuilder: (context, state) => MaterialPage<void>(
+                    key: ValueKey(
+                        'chat-${state.pathParameters['conversationId']}'),
+                    child: ChatScreen(
+                      conversationId:
+                          state.pathParameters['conversationId']!,
+                    ),
                   ),
                 ),
               ],

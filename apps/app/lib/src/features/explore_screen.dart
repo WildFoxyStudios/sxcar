@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
+import '../location/location_service.dart';
 import '../places/places_service.dart';
 import '../places/roam_service.dart';
 import '../rightnow/rightnow_service.dart';
@@ -29,6 +30,21 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   void initState() {
     super.initState();
     _globalUsersFuture = _fetchGlobalUsers();
+    _applyRealLocationDefault();
+  }
+
+  /// On first load, if the user has NOT set a persisted Roam location, use the
+  /// device's real GPS as the default center instead of the hardcoded fallback.
+  Future<void> _applyRealLocationDefault() async {
+    final pos = await ref.read(currentPositionProvider.future);
+    if (pos == null || !mounted) return;
+    // Roam-persisted location (applied via ref.listen in build) wins.
+    if (_hasAppliedPersistedRoam && _isRoam) return;
+    setState(() {
+      _roamLat = pos.latitude;
+      _roamLon = pos.longitude;
+      _globalUsersFuture = _fetchGlobalUsers(lat: pos.latitude, lon: pos.longitude);
+    });
   }
 
   Future<List<NearbyUser>> _fetchGlobalUsers({double? lat, double? lon}) async {
@@ -112,12 +128,24 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           }
         },
         onUseRealLocation: () async {
-          // Use a default fallback lat/lon (Mexico City) — backend
-          // geolocator is a future enhancement; for now we keep the user's
-          // current area and clear the roam flag.
-          const lat = 19.4326;
-          const lon = -99.1332;
+          // Read the device's REAL GPS position (falls back to last-known
+          // inside the provider). If unavailable, keep whatever we had.
           try {
+            final pos = await ref.read(currentPositionProvider.future);
+            if (pos == null) {
+              if (outerContext.mounted) {
+                Navigator.of(ctx).pop();
+                outerMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Location unavailable — enable GPS permission in settings'),
+                  ),
+                );
+              }
+              return;
+            }
+            final lat = pos.latitude;
+            final lon = pos.longitude;
             final roam = ref.read(roamServiceProvider);
             await roam.setRealLocation(lat: lat, lon: lon);
             ref.invalidate(roamLocationProvider);

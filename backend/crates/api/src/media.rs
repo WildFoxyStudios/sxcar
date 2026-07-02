@@ -5,7 +5,7 @@
 //! `host` con payload `UNSIGNED-PAYLOAD`, que es lo que R2 espera para URLs
 //! presignadas. La corrección de la firma se valida E2E contra R2.
 
-use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
+use axum::{extract::{Query, State}, http::StatusCode, routing::{get, post}, Json, Router};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -326,9 +326,54 @@ pub async fn upload_url(
     }))
 }
 
+#[derive(Deserialize)]
+pub struct GetUrlQuery {
+    /// Existing R2 object key (e.g. "album/user-id/photo.jpg"). Must not be
+    /// empty or contain ".." to prevent path-traversal.
+    pub key: String,
+    /// Bucket routing: "profile" → media bucket, "album" → private bucket,
+    /// "verification" → verification bucket. Mirrors upload_url routing.
+    pub kind: String,
+}
+
+#[derive(Serialize)]
+pub struct GetUrlRes {
+    pub get_url: String,
+}
+
+/// GET /media/get-url?key=<r2_key>&kind=<profile|album|verification>
+///
+/// Returns a presigned GET URL (3600 s) for an existing media key.
+/// Auth required. Mirrors upload_url's bucket routing and 503 behaviour when
+/// R2 credentials are absent.
+pub async fn get_url(
+    State(state): State<AppState>,
+    _user: AuthUser,
+    Query(q): Query<GetUrlQuery>,
+) -> Result<Json<GetUrlRes>, StatusCode> {
+    // Validate the request before requiring R2 config, so bad input is 400
+    // even in environments without R2 credentials (dev/CI → r2 = None).
+    if !matches!(q.kind.as_str(), "profile" | "album" | "verification") {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    if q.key.is_empty() || q.key.contains("..") {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    let cfg = state.r2.as_ref().ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
+    let bucket = match q.kind.as_str() {
+        "profile" => &cfg.bucket_media,
+        "album" => &cfg.bucket_private,
+        _ => &cfg.bucket_verification,
+    };
+    let now = OffsetDateTime::now_utc();
+    let url = presign(cfg, "GET", bucket, &q.key, 3600, now);
+    Ok(Json(GetUrlRes { get_url: url }))
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/media/upload-url", post(upload_url))
+        .route("/media/get-url", get(get_url))
         .route("/media/photos", post(create_photo))
 }
 

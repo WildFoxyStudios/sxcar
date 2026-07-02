@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../auth/auth_provider.dart';
 import '../health/health_service.dart';
 import '../media/media_service.dart';
+import '../nsfw/nsfw_service.dart';
 import 'profile_screen.dart' show UserProfile;
 
 /// Full editing form for the user's own profile at route /edit-profile.
@@ -217,6 +218,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       setState(() => _isUploadingPhoto = true);
 
       final bytes = await picked.readAsBytes();
+
+      // On-device NSFW check before upload.
+      final nsfwResult =
+          await ref.read(nsfwServiceProvider).check(bytes.toList());
+      if (!mounted) return;
+      if (nsfwResult.isNsfw) {
+        setState(() => _isUploadingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'This image appears to violate our content guidelines.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
       final mediaService = MediaService(ref.read(dioProvider));
       // Backend allows only kind ∈ {profile, album, verification}.

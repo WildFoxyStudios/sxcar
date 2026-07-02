@@ -7,6 +7,7 @@ import '../auth/auth_provider.dart';
 import '../chat/chat_service.dart';
 import '../chat/models.dart';
 import '../media/media_service.dart';
+import '../nsfw/nsfw_service.dart';
 import '../theme/app_theme.dart';
 
 /// Real-time chat screen with WebSocket connection.
@@ -134,6 +135,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     final Uint8List bytes = await file.readAsBytes();
     if (!mounted) return;
+
+    // On-device NSFW check before showing the send sheet.
+    final nsfwResult =
+        await ref.read(nsfwServiceProvider).check(bytes.toList());
+    if (!mounted) return;
+    if (nsfwResult.isNsfw) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'This image appears to violate our content guidelines.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     // Show preview bottom sheet; returns the "view once" toggle value,
     // or null if the user dismissed without sending.

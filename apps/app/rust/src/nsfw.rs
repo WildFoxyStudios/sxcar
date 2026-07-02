@@ -1,8 +1,9 @@
 use image::GenericImageView;
 use std::sync::OnceLock;
 
-// tract-onnx requires native clang for Android/WASM; platform-gate the FFI.
-#[cfg(not(any(target_os = "android", target_family = "wasm")))]
+// tract-onnx is pure Rust and cross-compiles to Android via cargo-ndk.
+// Only skip on WASM where the filesystem is not accessible.
+#[cfg(not(target_family = "wasm"))]
 use tract_onnx::prelude::*;
 
 /// NSFW classification result.
@@ -16,20 +17,31 @@ pub struct NsfwResult {
 /// Threshold above which an image is considered NSFW.
 const NSFW_THRESHOLD: f32 = 0.7;
 
-/// Cached ONNX model (lazy-loaded once). Only on native desktop.
-#[cfg(not(any(target_os = "android", target_family = "wasm")))]
-#[allow(dead_code)]
+// ---------------------------------------------------------------------------
+// Discovered model spec (introspected from assets/models/nsfw.onnx)
+//
+// Producer : tf2onnx 1.17.0  (converted from nsfwjs TF2 SavedModel)
+// Input    : name="input", shape=[1, 224, 224, 3], dtype=float32, layout=NHWC
+// Output   : shape=[1, 5], dtype=float32
+//            indices → classes: [drawings=0, hentai=1, neutral=2, porn=3, sexy=4]
+// NSFW score = (hentai + porn + 0.5 * sexy) clamped to [0, 1]
+// ---------------------------------------------------------------------------
+
+/// Cached compiled ONNX model (lazy-loaded once per process).
+/// Available on native platforms (Android + desktop); skipped on WASM.
+#[cfg(not(target_family = "wasm"))]
 static MODEL: OnceLock<
     SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
 > = OnceLock::new();
 
-/// Path to the ONNX model file, set before classification.
+/// Absolute path to the ONNX model file, set once before first inference.
 static MODEL_PATH: OnceLock<String> = OnceLock::new();
 
-/// Set the path to the NSFW ONNX model file.
+/// Store the path to the NSFW ONNX model file.
 ///
-/// Call this at app startup with the path to the bundled model asset,
-/// e.g. `loadNsfwModel(path: "assets/models/nsfw.onnx")`.
+/// Must be called before [`nsfw_classify`].  The Dart side extracts the
+/// bundled asset to a temp path and passes that path here once at startup.
+/// Returns `Err` if the path was already set (harmless — ignore it).
 #[flutter_rust_bridge::frb]
 pub fn load_nsfw_model(path: String) -> Result<(), String> {
     MODEL_PATH
@@ -41,58 +53,68 @@ pub fn load_nsfw_model(path: String) -> Result<(), String> {
 ///
 /// `image_bytes` is the raw image data (JPEG, PNG, etc.).
 ///
-/// # Web (WASM)
-///
-/// tract-onnx does not compile to WASM. On web, this function returns an error
-/// instructing the caller to use the platform's JS-based NSFW detection instead.
+/// On WASM, returns an error — the Dart caller should skip the check on web.
+/// On failure, the Dart caller should fail-open (allow the upload) and log.
 #[flutter_rust_bridge::frb]
 pub fn nsfw_classify(image_bytes: Vec<u8>) -> Result<NsfwResult, String> {
-    // Android/WASM: tract-onnx needs native clang — return clear error.
-    #[cfg(any(target_os = "android", target_family = "wasm"))]
+    #[cfg(target_family = "wasm")]
     {
         let _ = image_bytes;
         return Err(
-            "NSFW detection on web uses a different engine (JS/ONNX runtime). \
-             Call the Dart-side nsfw proxy instead."
+            "NSFW detection on web uses a JS-side engine; call the Dart proxy instead."
                 .to_string(),
         );
     }
 
-    // Native path below (desktop only — tract-onnx needs clang, not on Android/WASM).
-    #[cfg(not(any(target_os = "android", target_family = "wasm")))]
+    #[allow(unreachable_code)]
+    #[cfg(not(target_family = "wasm"))]
     {
         // 1. Decode image
         let img = image::load_from_memory(&image_bytes)
             .map_err(|e| format!("Failed to decode image: {e}"))?;
 
-        // 2. Resize to model input size (224x224 for most mobile-optimized NSFW models)
+        // 2. Resize to 224 × 224 (model input size)
         let resized = img.resize_exact(224, 224, image::imageops::FilterType::Nearest);
 
-        // 3. Convert to tensor (NHWC: 1, 224, 224, 3) normalized to [0,1]
-        let mut tensor_data = vec![0.0f32; 3 * 224 * 224];
+        // 3. Build NHWC tensor [1, 224, 224, 3], values in [0, 1]
+        let mut tensor_data = vec![0.0f32; 224 * 224 * 3];
         for (i, (_, _, pixel)) in resized.pixels().enumerate() {
-            tensor_data[i * 3] = pixel[0] as f32 / 255.0;
+            tensor_data[i * 3]     = pixel[0] as f32 / 255.0;
             tensor_data[i * 3 + 1] = pixel[1] as f32 / 255.0;
             tensor_data[i * 3 + 2] = pixel[2] as f32 / 255.0;
         }
 
-        // 4. Load model (cached after first load)
+        // 4. Load (or retrieve cached) model
         let model = load_model()?;
 
         // 5. Run inference
         let tensor = tract_ndarray::Array4::from_shape_vec((1, 224, 224, 3), tensor_data)
             .map_err(|e| format!("Failed to create tensor: {e}"))?;
-        let input = Tensor::from(tensor);
+        let input: Tensor = tensor.into();
 
         let result = model
             .run(tvec!(input.into()))
             .map_err(|e| format!("Inference failed: {e}"))?;
 
-        // 6. Get softmax output (2 classes: SFW=0, NSFW=1)
+        // 6. Extract NSFW score from output
+        // Output shape [1, 5]: indices [drawings, hentai, neutral, porn, sexy]
         let output = result[0]
             .to_array_view::<f32>()
             .map_err(|e| format!("Failed to read output tensor: {e}"))?;
-        let nsfw_score = output[[0, 1]]; // index 1 = NSFW probability
+
+        let shape = output.shape();
+        let nsfw_score = if shape.len() >= 2 && shape[1] == 5 {
+            // 5-class nsfwjs model
+            let hentai = output[[0, 1]];
+            let porn   = output[[0, 3]];
+            let sexy   = output[[0, 4]];
+            (hentai + porn + 0.5 * sexy).clamp(0.0, 1.0)
+        } else if shape.len() >= 2 && shape[1] >= 2 {
+            // Fallback 2-class [normal, nsfw]
+            output[[0, 1]]
+        } else {
+            return Err(format!("Unexpected output shape: {shape:?}"));
+        };
 
         Ok(NsfwResult {
             score: nsfw_score,
@@ -101,16 +123,11 @@ pub fn nsfw_classify(image_bytes: Vec<u8>) -> Result<NsfwResult, String> {
     }
 }
 
-/// Load (or retrieve cached) ONNX model.
+/// Load (or retrieve cached) compiled ONNX model.
 ///
-/// # Stub
-///
-/// In production, the ONNX model is loaded from the path set by
-/// [`load_nsfw_model`] and cached in [`MODEL`]. For now (F1.3), the model
-/// file is not yet bundled, so this function returns a clear error.
-///
-/// The actual file‑based loading will be wired in a follow‑up task.
-#[cfg(not(any(target_os = "android", target_family = "wasm")))]
+/// The model is loaded from the path set by [`load_nsfw_model`] and compiled
+/// once; subsequent calls return a reference to the cached plan.
+#[cfg(not(target_family = "wasm"))]
 fn load_model(
 ) -> Result<
     &'static SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
@@ -121,13 +138,14 @@ fn load_model(
     }
     let path = MODEL_PATH
         .get()
-        .ok_or_else(|| "NSFW model path not set — call load_nsfw_model(path) first. Download the ONNX model from https://github.com/Fyko/nsfw/releases".to_string())?;
-    let model_bytes =
-        std::fs::read(path).map_err(|e| format!("Failed to read model file '{path}': {e}; download from https://github.com/Fyko/nsfw/releases"))?;
-    let model = tract_onnx::tract_onnx()
-        .model_for_read(&mut &*model_bytes)
-        .map_err(|e| format!("Failed to parse ONNX model: {e}"))?
-        .with_input_fact(0, InferenceFact::dt_shape(f32::datum_type(), tvec!(1, 224, 224, 3)))
+        .ok_or_else(|| "NSFW model path not set — call load_nsfw_model(path) first".to_string())?;
+    let model = tract_onnx::onnx()
+        .model_for_path(path)
+        .map_err(|e| format!("Failed to parse ONNX model at '{path}': {e}"))?
+        .with_input_fact(
+            0,
+            InferenceFact::dt_shape(f32::datum_type(), tvec!(1, 224, 224, 3)),
+        )
         .map_err(|e| format!("Failed to set input shape: {e}"))?
         .into_optimized()
         .map_err(|e| format!("Failed to optimize model: {e}"))?
@@ -144,39 +162,85 @@ fn load_model(
 mod tests {
     use super::*;
 
+    /// Generate a solid-colour JPEG in memory (no file I/O required).
+    fn make_solid_jpeg(r: u8, g: u8, b: u8, w: u32, h: u32) -> Vec<u8> {
+        use image::codecs::jpeg::JpegEncoder;
+        use image::{ExtendedColorType, ImageBuffer, Rgb};
+        let img: ImageBuffer<Rgb<u8>, Vec<u8>> =
+            ImageBuffer::from_pixel(w, h, Rgb([r, g, b]));
+        let mut buf = std::io::Cursor::new(Vec::new());
+        let mut encoder = JpegEncoder::new(&mut buf);
+        encoder
+            .encode(img.as_raw(), w, h, ExtendedColorType::Rgb8)
+            .expect("JPEG encode should succeed");
+        buf.into_inner()
+    }
+
     #[test]
     fn test_decode_valid_jpeg() {
-        // Create a tiny valid JPEG in memory (1x1 pixel).
-        let mut buf = std::io::Cursor::new(Vec::new());
-        let img = image::DynamicImage::new_rgb8(1, 1);
-        let mut encoder = image::codecs::jpeg::JpegEncoder::new(&mut buf);
-        encoder
-            .encode(img.as_bytes(), 1, 1, image::ExtendedColorType::Rgb8)
-            .expect("JPEG encode should succeed");
-        let jpeg_bytes = buf.into_inner();
-
-        // Verify it decodes with the image crate
-        let decoded = image::load_from_memory(&jpeg_bytes);
+        let jpeg = make_solid_jpeg(200, 150, 100, 8, 8);
+        let decoded = image::load_from_memory(&jpeg);
         assert!(decoded.is_ok(), "JPEG should decode successfully");
-        assert_eq!(decoded.unwrap().dimensions(), (1, 1));
+        assert_eq!(decoded.unwrap().dimensions(), (8, 8));
     }
 
     #[test]
     fn test_model_load_fails_gracefully() {
-        // Without calling load_nsfw_model, the classify function should return
-        // a clear error about model not being configured.
+        // 100 zero bytes are neither a valid image nor an ONNX file.
+        // Expected outcomes depending on test-execution order:
+        //   • MODEL_PATH not yet set → "not set" error
+        //   • MODEL_PATH set by test_real_inference (runs in parallel) →
+        //     model loads fine, then image decode fails → "Failed to decode"
         let result = nsfw_classify(vec![0u8; 100]);
-        assert!(result.is_err(), "Should fail without model configured");
+        assert!(result.is_err(), "Should fail on bad input");
         let err = result.unwrap_err();
         assert!(
-            err.contains("not yet bundled") || err.contains("Failed to decode"),
-            "Error should mention model bundling or decode: {err}"
+            err.contains("not set") || err.contains("Failed to decode"),
+            "Unexpected error message: {err}"
         );
     }
 
     #[test]
     fn test_threshold_default_0_7() {
-        // Verify the threshold constant is 0.7
         assert!((NSFW_THRESHOLD - 0.7).abs() < f32::EPSILON);
+    }
+
+    /// Real-inference smoke test: loads assets/models/nsfw.onnx via tract,
+    /// classifies a neutral grey image, and asserts score ∈ [0, 1].
+    ///
+    /// Cargo sets cwd = crate root (apps/app/rust/) so the relative path
+    /// `../assets/models/nsfw.onnx` resolves to apps/app/assets/models/nsfw.onnx.
+    #[test]
+    fn test_real_inference_neutral_image() {
+        let model_path = "../assets/models/nsfw.onnx";
+
+        // Set model path — ignore "already set" from parallel test runs.
+        let _ = load_nsfw_model(model_path.to_string());
+
+        // Neutral image: solid grey 64 × 64.
+        let jpeg = make_solid_jpeg(128, 128, 128, 64, 64);
+
+        let result = nsfw_classify(jpeg);
+        match result {
+            Ok(r) => {
+                assert!(
+                    (0.0..=1.0).contains(&r.score),
+                    "score out of [0,1] range: {}",
+                    r.score
+                );
+                assert!(
+                    !r.is_nsfw,
+                    "neutral grey image must not be flagged NSFW, score={}",
+                    r.score
+                );
+            }
+            Err(e) => {
+                panic!(
+                    "Real inference failed: {e}\n\
+                     If error mentions 'quantized ops', report BLOCKED — \
+                     tract cannot load this quantized model and ort is needed."
+                );
+            }
+        }
     }
 }

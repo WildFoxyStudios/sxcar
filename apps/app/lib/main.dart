@@ -23,6 +23,7 @@ import 'src/features/edit_profile_screen.dart';
 import 'src/features/settings_screen.dart';
 import 'src/phrases/phrases_screen.dart';
 import 'src/sessions/sessions_screen.dart';
+import 'src/theme/app_theme.dart';
 
 const Color grindrYellow = Color(0xFFF4C542);
 
@@ -384,33 +385,7 @@ class _VibraAppState extends ConsumerState<VibraApp>
     return MaterialApp.router(
       title: 'Vibra',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF000000),
-        colorScheme: const ColorScheme.dark(
-          primary: grindrYellow,
-          secondary: grindrYellow,
-          surface: Color(0xFF1A1A1A),
-          onPrimary: Colors.black,
-          onSecondary: Colors.black,
-        ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Color(0xFF0D0D0D),
-          selectedItemColor: grindrYellow,
-          unselectedItemColor: Color(0xFF777777),
-          type: BottomNavigationBarType.fixed,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0D0D0D),
-          elevation: 0,
-        ),
-        cardTheme: CardThemeData(
-          color: const Color(0xFF1A1A1A),
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
+      theme: VibraTheme.dark(),
       routerConfig: appRouter,
     );
   }

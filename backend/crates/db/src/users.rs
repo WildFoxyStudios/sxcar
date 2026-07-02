@@ -289,6 +289,7 @@ pub struct UserFullRow {
     pub pronouns: Option<String>,
     pub profile_photo_id: Option<uuid::Uuid>,
     pub profile_photo_url: Option<String>,
+    pub verified: bool,
 }
 
 #[derive(Debug)]
@@ -363,7 +364,8 @@ pub async fn find_user_full(
                   p.body_type, p.relationship_status, p.position,
                   p.ethnicity, p.pronouns, p.profile_photo_id,
                   (SELECT r2_key FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1)
-                    as "profile_photo_url"
+                    as "profile_photo_url",
+                  COALESCE(p.verified, false) as "verified!"
            FROM users u
            LEFT JOIN profiles p ON p.user_id = u.id
            WHERE u.id = $1"#,

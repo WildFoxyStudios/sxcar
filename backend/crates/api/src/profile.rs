@@ -19,6 +19,7 @@ fn user_full_to_json(
         "id": u.id,
         "email": u.email,
         "email_verified": u.email_verified,
+        "verified": u.verified,
         "status": u.status,
         "role": u.role,
         "created_at": u.created_at.to_string(),

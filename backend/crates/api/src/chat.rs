@@ -273,6 +273,9 @@ pub struct SendMessageRequest {
     pub caption: Option<String>,
     pub lat: Option<f64>,
     pub lon: Option<f64>,
+    /// When true and a media_key is present, the photo is "view once"
+    /// (kind='ephemeral_photo') — the recipient can open it a single time.
+    pub ephemeral: Option<bool>,
 }
 
 #[derive(Serialize)]
@@ -283,8 +286,12 @@ pub struct SendMessageResponse {
 
 fn classify_kind(req: &SendMessageRequest) -> Option<&'static str> {
     if req.media_key.is_some() {
-        // DB CHECK constraint allows only 'photo' or 'location' kinds for media
-        Some("photo")
+        // "view once" photos get kind='ephemeral_photo'; otherwise 'photo'.
+        if req.ephemeral == Some(true) {
+            Some("ephemeral_photo")
+        } else {
+            Some("photo")
+        }
     } else if req.lat.is_some() && req.lon.is_some() {
         Some("location")
     } else if req.text.is_some() {
@@ -419,6 +426,7 @@ pub struct MessageJson {
     pub lat: Option<f64>,
     pub lon: Option<f64>,
     pub read_at: Option<String>,
+    pub ephemeral_viewed_at: Option<String>,
     pub created_at: String,
 }
 
@@ -473,6 +481,10 @@ pub async fn list_messages(
             lat: r.lat,
             lon: r.lon,
             read_at: r.read_at.map(|t| {
+                t.format(&time::format_description::well_known::Rfc3339)
+                    .unwrap_or_default()
+            }),
+            ephemeral_viewed_at: r.ephemeral_viewed_at.map(|t| {
                 t.format(&time::format_description::well_known::Rfc3339)
                     .unwrap_or_default()
             }),
@@ -552,4 +564,23 @@ pub async fn mark_read(
         })?;
 
     Ok(Json(serde_json::json!({ "marked": marked })))
+}
+
+/// POST /chat/conversations/:id/messages/:message_id/viewed
+/// Marks an ephemeral ("view once") photo as viewed by the recipient. The
+/// first successful call stamps `ephemeral_viewed_at`; subsequent calls (or
+/// non-ephemeral/own messages) are no-ops. Clients hide the photo once viewed.
+pub async fn mark_ephemeral_viewed(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Path((conversation_id, message_id)): Path<(Uuid, Uuid)>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let newly_viewed =
+        db::chat::mark_ephemeral_viewed(&state.pool, conversation_id, message_id, user_id)
+            .await
+            .map_err(|e| {
+                tracing::error!("mark_ephemeral_viewed error: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+    Ok(Json(serde_json::json!({ "viewed": newly_viewed })))
 }

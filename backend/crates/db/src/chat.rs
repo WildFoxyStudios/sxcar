@@ -27,6 +27,7 @@ pub struct MessageRow {
     pub lat: Option<f64>,
     pub lon: Option<f64>,
     pub read_at: Option<time::OffsetDateTime>,
+    pub ephemeral_viewed_at: Option<time::OffsetDateTime>,
     pub created_at: time::OffsetDateTime,
 }
 
@@ -133,7 +134,7 @@ pub async fn list_messages(
             r#"
             SELECT id, conversation_id, sender_id, kind, body,
                    media_key, media_type, caption, lat, lon,
-                   read_at, created_at
+                   read_at, ephemeral_viewed_at, created_at
             FROM messages
             WHERE conversation_id = $1 AND created_at < $2
             ORDER BY created_at DESC
@@ -150,7 +151,7 @@ pub async fn list_messages(
             r#"
             SELECT id, conversation_id, sender_id, kind, body,
                    media_key, media_type, caption, lat, lon,
-                   read_at, created_at
+                   read_at, ephemeral_viewed_at, created_at
             FROM messages
             WHERE conversation_id = $1
             ORDER BY created_at DESC
@@ -184,7 +185,7 @@ pub async fn insert_message(
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING id, conversation_id, sender_id, kind, body,
                   media_key, media_type, caption, lat, lon,
-                  read_at, created_at
+                  read_at, ephemeral_viewed_at, created_at
         "#,
     )
     .bind(conversation_id)
@@ -248,6 +249,39 @@ pub async fn mark_read(
     .await?;
 
     Ok(())
+}
+
+/// Mark an ephemeral photo as viewed (first view stamps `ephemeral_viewed_at`).
+/// Only stamps if: the message is an ephemeral_photo, the viewer is a member of
+/// the conversation, the viewer is NOT the sender, and it wasn't already viewed.
+/// Returns true if this call was the one that marked it viewed.
+pub async fn mark_ephemeral_viewed(
+    pool: &sqlx::PgPool,
+    conversation_id: Uuid,
+    message_id: Uuid,
+    viewer_id: Uuid,
+) -> anyhow::Result<bool> {
+    let res = sqlx::query(
+        r#"
+        UPDATE messages
+        SET ephemeral_viewed_at = now()
+        WHERE id = $1
+          AND conversation_id = $2
+          AND kind = 'ephemeral_photo'
+          AND sender_id <> $3
+          AND ephemeral_viewed_at IS NULL
+          AND EXISTS (
+            SELECT 1 FROM conversation_members
+            WHERE conversation_id = $2 AND user_id = $3
+          )
+        "#,
+    )
+    .bind(message_id)
+    .bind(conversation_id)
+    .bind(viewer_id)
+    .execute(pool)
+    .await?;
+    Ok(res.rows_affected() > 0)
 }
 
 /// Delete a conversation (only if the user is a member).

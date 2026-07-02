@@ -87,6 +87,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/chat/conversations/:id/messages", get(chat::list_messages).post(chat::send_message))
         .route("/chat/conversations/:id", delete(chat::delete_conversation))
         .route("/chat/conversations/:id/read", post(chat::mark_read))
+        .route("/chat/conversations/:id/messages/:message_id/viewed", post(chat::mark_ephemeral_viewed))
         .route("/ws/chat", get(chat::ws_handler))
         .route("/albums", get(albums::list).post(albums::create))
         .route("/albums/shared", get(albums::shared))

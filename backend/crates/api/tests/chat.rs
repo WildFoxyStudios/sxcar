@@ -360,3 +360,57 @@ async fn send_message_and_retrieve() {
     let convos = body["conversations"].as_array().unwrap();
     assert_eq!(convos[0]["unread_count"].as_i64(), Some(0));
 }
+
+#[tokio::test]
+async fn ephemeral_photo_view_once() {
+    let app = test_app().await;
+
+    // Register two users
+    let (st, body) = post(&app, "/auth/register", serde_json::json!({
+        "email": unique_email(), "password": "secret123", "dob": "1990-01-01",
+        "consents": ["tos","privacy"]
+    }), None).await;
+    assert_eq!(st, StatusCode::CREATED);
+    let token_a = body["access"].as_str().unwrap().to_string();
+
+    let (st, body) = post(&app, "/auth/register", serde_json::json!({
+        "email": unique_email(), "password": "secret456", "dob": "1990-01-01",
+        "consents": ["tos","privacy"]
+    }), None).await;
+    assert_eq!(st, StatusCode::CREATED);
+    let token_b = body["access"].as_str().unwrap().to_string();
+    let user_id_b = user_id_from_token(&token_b);
+
+    // A creates a conversation with B
+    let (st, body) = post(&app, "/chat/conversations",
+        serde_json::json!({"participant_id": user_id_b.to_string()}), Some(&token_a)).await;
+    assert_eq!(st, StatusCode::CREATED);
+    let conv_id = body["conversation_id"].as_str().unwrap().to_string();
+
+    // A sends an ephemeral (view-once) photo
+    let (st, body) = post(&app, &format!("/chat/conversations/{conv_id}/messages"),
+        serde_json::json!({"media_key": "private/ph.jpg", "media_type": "photo", "ephemeral": true}),
+        Some(&token_a)).await;
+    assert_eq!(st, StatusCode::CREATED, "ephemeral send should 201: {body}");
+    assert_eq!(body["kind"].as_str(), Some("ephemeral_photo"));
+    let msg_id = body["id"].as_str().unwrap().to_string();
+
+    // B views it once -> viewed=true
+    let (st, body) = post(&app, &format!("/chat/conversations/{conv_id}/messages/{msg_id}/viewed"),
+        serde_json::json!({}), Some(&token_b)).await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(body["viewed"], serde_json::json!(true), "first view should mark it");
+
+    // B views again -> viewed=false (already viewed)
+    let (st, body) = post(&app, &format!("/chat/conversations/{conv_id}/messages/{msg_id}/viewed"),
+        serde_json::json!({}), Some(&token_b)).await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(body["viewed"], serde_json::json!(false), "second view is a no-op");
+
+    // Message list shows ephemeral_viewed_at set for the recipient
+    let (st, body) = get(&app, &format!("/chat/conversations/{conv_id}/messages?limit=50"), &token_b).await;
+    assert_eq!(st, StatusCode::OK);
+    let msgs = body["messages"].as_array().unwrap();
+    let eph = msgs.iter().find(|m| m["id"].as_str() == Some(&msg_id)).unwrap();
+    assert!(eph["ephemeral_viewed_at"].as_str().is_some(), "viewed_at should be set");
+}

@@ -91,6 +91,55 @@ class ChatService {
     await _dio.post('/chat/conversations/$conversationId/read', data: {});
   }
 
+  /// REST: send a photo message in a conversation.
+  ///
+  /// Set [ephemeral] to true for a view-once photo. When false, the field is
+  /// omitted from the request body per the backend contract.
+  Future<String> sendPhotoMessage(
+    String conversationId, {
+    required String mediaKey,
+    bool ephemeral = false,
+  }) async {
+    final data = <String, dynamic>{
+      'media_key': mediaKey,
+      'media_type': 'photo',
+    };
+    if (ephemeral) data['ephemeral'] = true;
+
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/chat/conversations/$conversationId/messages',
+      data: data,
+    );
+    return response.data!['id'] as String;
+  }
+
+  /// REST: get a presigned GET URL for a private album media key.
+  ///
+  /// Calls `GET /media/get-url?key=…&kind=album` and returns the
+  /// `get_url` string (valid for 3600 s).
+  Future<String> getMediaUrl(String key) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/media/get-url',
+      queryParameters: {'key': key, 'kind': 'album'},
+    );
+    return response.data!['get_url'] as String;
+  }
+
+  /// REST: mark an ephemeral photo as viewed by the recipient.
+  ///
+  /// Returns `true` only on the *first* call for this message. Subsequent
+  /// calls return `false` (photo already expired).
+  Future<bool> markEphemeralViewed(
+    String conversationId,
+    String messageId,
+  ) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/chat/conversations/$conversationId/messages/$messageId/viewed',
+      data: {},
+    );
+    return response.data!['viewed'] as bool;
+  }
+
   /// Connect to the WebSocket for real-time messaging.
   /// The auth token is passed as a query parameter.
   void connectWebSocket() {

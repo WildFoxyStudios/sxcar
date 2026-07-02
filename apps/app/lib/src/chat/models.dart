@@ -40,6 +40,21 @@ class Message {
   final String? body;
   final String createdAt;
 
+  /// R2 object key for photo messages; null for text messages.
+  final String? mediaKey;
+
+  /// MIME-type category — 'photo' for image messages; null for text.
+  final String? mediaType;
+
+  /// ISO-8601 timestamp set by the server when the recipient reads the
+  /// conversation. Null until read. Parsed defensively (field may be absent).
+  final String? readAt;
+
+  /// ISO-8601 timestamp set by the server on the first view of an ephemeral
+  /// photo by the recipient. Once set the photo is permanently expired.
+  /// Null for non-ephemeral messages and un-viewed ephemeral ones.
+  final String? ephemeralViewedAt;
+
   const Message({
     required this.id,
     required this.conversationId,
@@ -47,6 +62,10 @@ class Message {
     required this.kind,
     this.body,
     required this.createdAt,
+    this.mediaKey,
+    this.mediaType,
+    this.readAt,
+    this.ephemeralViewedAt,
   });
 
   factory Message.fromJson(Map<String, dynamic> json) {
@@ -57,18 +76,30 @@ class Message {
       kind: json['kind'] as String,
       body: json['body'] as String?,
       createdAt: json['created_at'] as String,
+      mediaKey: json['media_key'] as String?,
+      mediaType: json['media_type'] as String?,
+      readAt: json['read_at'] as String?,
+      ephemeralViewedAt: json['ephemeral_viewed_at'] as String?,
     );
   }
 
-  /// Parse the WebSocket outgoing message format.
+  /// Parse the WebSocket outgoing-message payload.
+  ///
+  /// WS payloads include `kind` and optionally `media_key`/`media_type`, but
+  /// do NOT include viewed/read timestamps — those are REST-only fields.
   factory Message.fromWebSocketJson(Map<String, dynamic> json) {
     return Message(
       id: json['id'] as String,
       conversationId: json['conversation_id'] as String,
       senderId: json['sender_id'] as String,
-      kind: 'text',
+      kind: json['kind'] as String? ?? 'text',
       body: json['body'] as String?,
       createdAt: json['sent_at'] as String,
+      mediaKey: json['media_key'] as String?,
+      mediaType: json['media_type'] as String?,
+      // WS payload does not include viewed/read timestamps — REST-only fields.
+      readAt: null,
+      ephemeralViewedAt: null,
     );
   }
 }

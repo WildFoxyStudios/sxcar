@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import '../auth/auth_provider.dart';
 import '../chat/chat_service.dart';
 import '../chat/models.dart';
-import '../auth/auth_provider.dart';
+import '../media/media_service.dart';
 import '../theme/app_theme.dart';
 
 /// Real-time chat screen with WebSocket connection.
@@ -102,7 +105,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final optimistic = Message(
       id: '',
       conversationId: widget.conversationId,
-      senderId: authState.accessToken ?? '',
+      senderId: authState.userId ?? '',
       kind: 'text',
       body: text,
       createdAt: DateTime.now().toIso8601String(),
@@ -121,8 +124,70 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  /// Pick a photo from the gallery, show a preview sheet, then upload and send.
+  Future<void> _pickAndSendPhoto() async {
+    final picker = ImagePicker();
+    final XFile? file =
+        await picker.pickImage(source: ImageSource.gallery);
+    if (file == null) return;
+    if (!mounted) return;
+
+    final Uint8List bytes = await file.readAsBytes();
+    if (!mounted) return;
+
+    // Show preview bottom sheet; returns the "view once" toggle value,
+    // or null if the user dismissed without sending.
+    final bool? viewOnce = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: VibraTheme.kSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _PhotoSendSheet(imageBytes: bytes),
+    );
+
+    if (viewOnce == null || !mounted) return;
+
+    // Upload to R2 then send message.
+    try {
+      final dio = ref.read(dioProvider);
+      final mediaService = MediaService(dio);
+      final uploadUrl = await mediaService.getUploadUrl(kind: 'album');
+      await mediaService.uploadToR2(uploadUrl.putUrl, bytes);
+      if (!mounted) return;
+
+      final chatService = ref.read(chatServiceProvider);
+      await chatService.sendPhotoMessage(
+        widget.conversationId,
+        mediaKey: uploadUrl.key,
+        ephemeral: viewOnce,
+      );
+      if (!mounted) return;
+
+      // Optimistic bubble for the sender.
+      final authState = ref.read(authStateProvider);
+      final optimistic = Message(
+        id: '',
+        conversationId: widget.conversationId,
+        senderId: authState.userId ?? '',
+        kind: viewOnce ? 'ephemeral_photo' : 'photo',
+        createdAt: DateTime.now().toIso8601String(),
+        mediaKey: uploadUrl.key,
+        mediaType: 'photo',
+      );
+      setState(() => _messages.add(optimistic));
+      _scrollToBottom();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send photo: $e')),
+      );
+    }
+  }
+
   String? _currentUserId() {
-    return null;
+    return ref.read(authStateProvider).userId;
   }
 
   @override
@@ -289,13 +354,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       child: SafeArea(
         child: Row(
           children: [
-            // Attach icon
+            // Attach icon — opens image picker
             IconButton(
               icon: const Icon(Icons.attach_file,
                   color: VibraTheme.kTextMuted, size: 22),
-              onPressed: () {
-                // Attachment feature placeholder — no-op for now
-              },
+              onPressed: _pickAndSendPhoto,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             ),
@@ -349,33 +412,68 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 }
 
-/// Chat bubble — sent messages are accent-tinted, received are dark grey.
-class _MessageBubble extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// Message bubble
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Chat bubble — handles text, photo, and ephemeral-photo kinds.
+///
+/// Converted to [ConsumerStatefulWidget] so that:
+/// - Photo bubbles can lazily fetch their presigned URL once via the service.
+/// - Ephemeral bubbles can track local-view state for the tap-to-expire flow.
+class _MessageBubble extends ConsumerStatefulWidget {
   final Message message;
   final bool isMe;
 
   const _MessageBubble({required this.message, required this.isMe});
 
   @override
-  Widget build(BuildContext context) {
-    // Media messages (images/video) render as rounded thumbnails
-    if (message.kind == 'image' || message.kind == 'video') {
-      return _buildMediaBubble(context);
-    }
+  ConsumerState<_MessageBubble> createState() => _MessageBubbleState();
+}
 
+class _MessageBubbleState extends ConsumerState<_MessageBubble> {
+  /// Whether the current user viewed the ephemeral photo in this session.
+  bool _locallyViewed = false;
+
+  /// Cached presigned-URL future for photo bubbles (set once in initState).
+  Future<String>? _urlFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.message.kind == 'photo') {
+      final key = widget.message.mediaKey ?? '';
+      if (key.isNotEmpty) {
+        _urlFuture =
+            ref.read(chatServiceProvider).getMediaUrl(key);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final message = widget.message;
+    final isMe = widget.isMe;
+
+    switch (message.kind) {
+      case 'photo':
+        return _buildPhotoBubble(context, isMe);
+      case 'ephemeral_photo':
+        return _buildEphemeralBubble(context, isMe);
+      default:
+        return _buildTextBubble(isMe);
+    }
+  }
+
+  // ── Text bubble ────────────────────────────────────────────────────────────
+
+  Widget _buildTextBubble(bool isMe) {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: EdgeInsets.only(
-          top: 3,
-          bottom: 3,
-          left: isMe ? 60 : 0,
-          right: isMe ? 0 : 60,
-        ),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        margin: _bubbleMargin(isMe),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          // Sent: slight accent tint; Received: dark surface
           color: isMe
               ? VibraTheme.kAccent.withValues(alpha: 0.15)
               : VibraTheme.kSurfaceElevated,
@@ -389,16 +487,13 @@ class _MessageBubble extends StatelessWidget {
           ),
           border: isMe
               ? Border.all(
-                  color: VibraTheme.kAccent.withValues(alpha: 0.3),
-                  width: 1)
+                  color: VibraTheme.kAccent.withValues(alpha: 0.3), width: 1)
               : null,
         ),
         child: Text(
-          message.body ?? '',
+          widget.message.body ?? '',
           style: TextStyle(
-            color: isMe
-                ? VibraTheme.kAccent
-                : VibraTheme.kTextPrimary,
+            color: isMe ? VibraTheme.kAccent : VibraTheme.kTextPrimary,
             fontSize: 14,
             height: 1.4,
           ),
@@ -407,34 +502,361 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildMediaBubble(BuildContext context) {
-    final url = message.body ?? '';
+  // ── Photo bubble ───────────────────────────────────────────────────────────
+
+  Widget _buildPhotoBubble(BuildContext context, bool isMe) {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: EdgeInsets.only(
-          top: 3,
-          bottom: 3,
-          left: isMe ? 60 : 0,
-          right: isMe ? 0 : 60,
+        margin: _bubbleMargin(isMe),
+        width: 220,
+        height: 220,
+        decoration: BoxDecoration(
+          color: VibraTheme.kSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: VibraTheme.kDivider),
         ),
-        width: 180,
-        height: 180,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: FutureBuilder<String>(
+            future: _urlFuture,
+            builder: (context, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: VibraTheme.kAccent),
+                );
+              }
+              if (snap.hasError || !snap.hasData) {
+                return const Center(
+                  child: Icon(Icons.broken_image,
+                      color: VibraTheme.kTextMuted, size: 40),
+                );
+              }
+              return GestureDetector(
+                onTap: () => _openFullScreen(context, snap.data!),
+                child: Image.network(
+                  snap.data!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const Center(
+                    child: Icon(Icons.broken_image,
+                        color: VibraTheme.kTextMuted),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Ephemeral bubble ───────────────────────────────────────────────────────
+
+  Widget _buildEphemeralBubble(BuildContext context, bool isMe) {
+    // Sender always sees a neutral "sent" card — they can never re-open it.
+    if (isMe) {
+      return _buildEphemeralSentCard();
+    }
+
+    // Recipient: expired if the server already recorded a view OR we viewed it
+    // in this session.
+    final isExpired =
+        widget.message.ephemeralViewedAt != null || _locallyViewed;
+    if (isExpired) {
+      return _buildEphemeralExpiredCard(isMe);
+    }
+
+    return _buildTapToViewCard(context);
+  }
+
+  Widget _buildTapToViewCard(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: () => _onTapEphemeral(context),
+        child: Container(
+          margin: _bubbleMargin(false),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: VibraTheme.kSurface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: VibraTheme.kAccent, width: 1.5),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.local_fire_department,
+                  color: VibraTheme.kAccent, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Tap to view once',
+                style: TextStyle(
+                  color: VibraTheme.kAccent,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEphemeralSentCard() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        margin: _bubbleMargin(true),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: VibraTheme.kSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: VibraTheme.kDivider),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.timer_outlined, color: VibraTheme.kTextMuted, size: 18),
+            SizedBox(width: 8),
+            Text(
+              'View-once photo sent',
+              style: TextStyle(color: VibraTheme.kTextSecondary, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEphemeralExpiredCard(bool isMe) {
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: _bubbleMargin(isMe),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: VibraTheme.kSurface,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: url.isNotEmpty
-              ? Image.network(url, fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const Center(
-                        child: Icon(Icons.broken_image,
-                            color: VibraTheme.kTextMuted),
-                      ))
-              : const Center(
-                  child: Icon(Icons.image_outlined,
-                      color: VibraTheme.kTextMuted, size: 40)),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.do_not_disturb_alt,
+                color: VibraTheme.kTextMuted, size: 18),
+            SizedBox(width: 8),
+            Text(
+              'Photo expired',
+              style: TextStyle(color: VibraTheme.kTextMuted, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Ephemeral tap flow ─────────────────────────────────────────────────────
+
+  Future<void> _onTapEphemeral(BuildContext context) async {
+    final message = widget.message;
+    final chatService = ref.read(chatServiceProvider);
+    // Capture Navigator before any await to satisfy BuildContext-across-async-gap lint.
+    final navigator = Navigator.of(context);
+
+    // Mark as viewed on the server first.
+    bool firstView = false;
+    try {
+      firstView = await chatService.markEphemeralViewed(
+        message.conversationId,
+        message.id,
+      );
+    } catch (_) {
+      // If the server call fails, do not reveal the photo.
+      return;
+    }
+
+    if (!mounted) return;
+
+    if (!firstView) {
+      // Already viewed on another device; collapse to expired state.
+      setState(() => _locallyViewed = true);
+      return;
+    }
+
+    // Fetch presigned URL and open full-screen viewer.
+    String url;
+    try {
+      url = await chatService.getMediaUrl(message.mediaKey ?? '');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _locallyViewed = true);
+      return;
+    }
+
+    if (!mounted) return;
+
+    // Show photo full-screen; when the user closes it, collapse to expired.
+    await navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => _FullScreenPhotoViewer(url: url),
+      ),
+    );
+
+    if (!mounted) return;
+    setState(() => _locallyViewed = true);
+  }
+
+  void _openFullScreen(BuildContext context, String url) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => _FullScreenPhotoViewer(url: url),
+      ),
+    );
+  }
+
+  // ── Shared helpers ─────────────────────────────────────────────────────────
+
+  EdgeInsets _bubbleMargin(bool isMe) {
+    return EdgeInsets.only(
+      top: 3,
+      bottom: 3,
+      left: isMe ? 60 : 0,
+      right: isMe ? 0 : 60,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Photo send sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Bottom sheet shown before sending a photo.
+///
+/// Displays a preview of [imageBytes] and lets the user toggle
+/// "View once" mode. Pops with `true` (view once) or `false` (normal photo).
+class _PhotoSendSheet extends StatefulWidget {
+  final Uint8List imageBytes;
+
+  const _PhotoSendSheet({required this.imageBytes});
+
+  @override
+  State<_PhotoSendSheet> createState() => _PhotoSendSheetState();
+}
+
+class _PhotoSendSheetState extends State<_PhotoSendSheet> {
+  bool _viewOnce = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: VibraTheme.kDivider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          // Preview
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 240),
+              child: Image.memory(
+                widget.imageBytes,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // View-once toggle row
+          Row(
+            children: [
+              const Icon(Icons.local_fire_department,
+                  color: VibraTheme.kAccent, size: 20),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'View once',
+                  style: TextStyle(
+                    color: VibraTheme.kTextPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Switch(
+                value: _viewOnce,
+                onChanged: (v) => setState(() => _viewOnce = v),
+                activeThumbColor: VibraTheme.kAccent,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Send button — pops with the toggle value
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(_viewOnce),
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Full-screen photo viewer
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Full-screen photo viewer used for both normal and ephemeral photos.
+///
+/// Ephemeral: the calling bubble marks the photo as expired *after* this
+/// route is popped (the caller listens to the returned Future).
+class _FullScreenPhotoViewer extends StatelessWidget {
+  final String url;
+
+  const _FullScreenPhotoViewer({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Center(
+        child: Image.network(
+          url,
+          fit: BoxFit.contain,
+          loadingBuilder: (_, child, progress) {
+            if (progress == null) return child;
+            return const Center(
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Colors.white),
+            );
+          },
+          errorBuilder: (_, _, _) => const Icon(
+            Icons.broken_image,
+            color: Colors.white54,
+            size: 64,
+          ),
         ),
       ),
     );

@@ -106,6 +106,8 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/users/:id/status", get(grindr_t1::user_status))
         .route("/profile/views", get(grindr_t1::list_profile_views))
         .route("/profile/health", get(grindr_t1::get_health).put(grindr_t1::update_health))
+        .route("/profile/verify", post(grindr_t1::submit_verification))
+        .route("/profile/verify/status", get(grindr_t1::verification_status))
         .route("/taps/received", get(social::list_taps_received))
         .route("/taps/sent", get(social::list_taps_sent))
         .route("/favorites", get(social::list_favorites).post(social::add_favorite))

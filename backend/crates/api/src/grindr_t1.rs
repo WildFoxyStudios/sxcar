@@ -209,3 +209,44 @@ pub async fn update_health(
         "prep": row.prep,
     })))
 }
+// ---------------------------------------------------------------------------
+// Profile verification (photo verification badge)
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct SubmitVerificationRequest {
+    /// R2 object key of the uploaded verification photo (kind='verification').
+    pub photo_key: String,
+}
+
+/// POST /profile/verify — submit a verification photo (pending admin review).
+pub async fn submit_verification(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Json(req): Json<SubmitVerificationRequest>,
+) -> Result<Json<Value>, StatusCode> {
+    if req.photo_key.trim().is_empty() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    let id = db::verification::submit_verification(&state.pool, user_id, &req.photo_key)
+        .await
+        .map_err(|e| {
+            tracing::error!("submit_verification error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(Json(json!({ "id": id.to_string(), "status": "pending" })))
+}
+
+/// GET /profile/verify/status — current verification state for the caller.
+pub async fn verification_status(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+) -> Result<Json<Value>, StatusCode> {
+    let s = db::verification::get_verification_status(&state.pool, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("verification_status error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(Json(json!({ "verified": s.verified, "pending": s.pending })))
+}

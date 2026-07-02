@@ -17,6 +17,7 @@ pub mod support;
 pub mod tier2;
 pub mod tier3;
 pub mod users;
+pub mod verification;
 
 /// Crea un pool de conexiones a Postgres.
 pub async fn connect(database_url: &str) -> anyhow::Result<Pool> {

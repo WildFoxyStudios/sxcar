@@ -508,3 +508,46 @@ async fn profile_health_invalid_date_is_400() {
     .await;
     assert_eq!(st, StatusCode::BAD_REQUEST);
 }
+#[tokio::test]
+async fn verification_submit_and_status() {
+    let app = test_app().await;
+    let (token_a, _user_a, _token_b, _user_b) = register_two(&app).await;
+
+    // Initially not verified, not pending.
+    let (st, body) = get(&app, "/profile/verify/status", &token_a).await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(body["verified"], serde_json::json!(false));
+    assert_eq!(body["pending"], serde_json::json!(false));
+
+    // Submit a verification photo.
+    let (st, body) = post(
+        &app,
+        "/profile/verify",
+        serde_json::json!({ "photo_key": "verification/abc.jpg" }),
+        Some(&token_a),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "submit should 200: {body}");
+    assert_eq!(body["status"], serde_json::json!("pending"));
+
+    // Now pending, still not verified.
+    let (st, body) = get(&app, "/profile/verify/status", &token_a).await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(body["verified"], serde_json::json!(false));
+    assert_eq!(body["pending"], serde_json::json!(true));
+}
+
+#[tokio::test]
+async fn verification_empty_photo_key_rejected() {
+    let app = test_app().await;
+    let (token_a, _user_a, _token_b, _user_b) = register_two(&app).await;
+
+    let (st, _) = post(
+        &app,
+        "/profile/verify",
+        serde_json::json!({ "photo_key": "" }),
+        Some(&token_a),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST);
+}

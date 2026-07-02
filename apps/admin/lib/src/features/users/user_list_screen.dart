@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../theme/admin_theme.dart';
 import '../../widgets/admin_http_client.dart';
 import '../../widgets/admin_layout.dart';
 
@@ -23,12 +24,12 @@ class UserRow {
 
   factory UserRow.fromJson(Map<String, dynamic> json) {
     return UserRow(
-      id: json['id'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-      emailVerified: json['email_verified'] as bool? ?? false,
-      status: json['status'] as String? ?? 'unknown',
-      role: json['role'] as String? ?? 'user',
-      createdAt: json['created_at'] as String? ?? '',
+      id:            json['id']             as String? ?? '',
+      email:         json['email']          as String? ?? '',
+      emailVerified: json['email_verified'] as bool?   ?? false,
+      status:        json['status']         as String? ?? 'unknown',
+      role:          json['role']           as String? ?? 'user',
+      createdAt:     json['created_at']     as String? ?? '',
     );
   }
 }
@@ -54,18 +55,20 @@ class UserListResponse {
             .toList() ??
         [];
     return UserListResponse(
-      users: usersList,
-      total: json['total'] as int? ?? 0,
+      users:    usersList,
+      total:    json['total'] as int? ?? 0,
       byStatus: byStatusList,
     );
   }
 }
 
-final userListProvider = FutureProvider.autoDispose.family<UserListResponse, String>((ref, query) async {
+final userListProvider =
+    FutureProvider.autoDispose.family<UserListResponse, String>(
+        (ref, query) async {
   final client = ref.read(adminHttpClientProvider);
   final response = await client.dio.get('/admin/users', queryParameters: {
-    'q': query,
-    'limit': '20',
+    'q':      query,
+    'limit':  '20',
     'offset': '0',
   });
   return UserListResponse.fromJson(response.data as Map<String, dynamic>);
@@ -89,9 +92,7 @@ class _UserListScreenState extends ConsumerState<UserListScreen> {
   }
 
   void _onSearch(String query) {
-    setState(() {
-      _currentQuery = query.trim();
-    });
+    setState(() => _currentQuery = query.trim());
   }
 
   @override
@@ -100,107 +101,357 @@ class _UserListScreenState extends ConsumerState<UserListScreen> {
 
     return AdminLayout(
       selectedIndex: 1,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Users',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search by email...',
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _onSearch('');
-                        },
-                      )
-                    : null,
-              ),
-              onSubmitted: _onSearch,
-              onChanged: (value) {
-                if (value.isEmpty && _currentQuery.isNotEmpty) {
-                  _onSearch('');
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: usersAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text('Failed to load users: $error'),
-                    ],
-                  ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header ────────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Row(
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Users',
+                      style: TextStyle(
+                        color: AdminTheme.kText,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Manage platform accounts',
+                      style: TextStyle(color: AdminTheme.kMuted, fontSize: 12),
+                    ),
+                  ],
                 ),
-                data: (response) => _buildUserList(context, response),
+                const Spacer(),
+                usersAsync.maybeWhen(
+                  data: (r) => Text(
+                    '${r.total} total',
+                    style: const TextStyle(color: AdminTheme.kMuted, fontSize: 12),
+                  ),
+                  orElse: () => const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Search bar ────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: SizedBox(
+              height: 40,
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(color: AdminTheme.kText, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Search by email…',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  contentPadding: EdgeInsets.zero,
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 16),
+                          onPressed: () {
+                            _searchController.clear();
+                            _onSearch('');
+                          },
+                        )
+                      : null,
+                ),
+                onSubmitted: _onSearch,
+                onChanged: (v) {
+                  if (v.isEmpty && _currentQuery.isNotEmpty) {
+                    _onSearch('');
+                  }
+                  setState(() {});
+                },
               ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Table ─────────────────────────────────────────────────────────
+          Expanded(
+            child: usersAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => _errorState(error.toString()),
+              data: (response) => _buildTable(context, response),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _errorState(String error) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, size: 40, color: AdminTheme.kRed),
+          const SizedBox(height: 12),
+          Text(
+            'Failed to load users: $error',
+            style: const TextStyle(color: AdminTheme.kMuted, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTable(BuildContext context, UserListResponse response) {
+    if (response.users.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.person_search, size: 40, color: AdminTheme.kMuted),
+            SizedBox(height: 12),
+            Text(
+              'No users found.',
+              style: TextStyle(color: AdminTheme.kMuted, fontSize: 14),
             ),
           ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Table header
+        Container(
+          height: 40,
+          decoration: const BoxDecoration(
+            color: AdminTheme.kSurface,
+            border: Border(
+              bottom: BorderSide(color: AdminTheme.kBorder),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: const Row(
+            children: [
+              Expanded(
+                flex: 5,
+                child: _ColHeader('EMAIL'),
+              ),
+              SizedBox(width: 110, child: _ColHeader('STATUS')),
+              SizedBox(width: 80,  child: _ColHeader('ROLE')),
+              SizedBox(width: 170, child: _ColHeader('CREATED')),
+              SizedBox(width: 48),
+            ],
+          ),
+        ),
+        // Table body
+        Expanded(
+          child: ListView.builder(
+            itemCount: response.users.length,
+            itemBuilder: (ctx, i) {
+              final user = response.users[i];
+              return _UserTableRow(user: user);
+            },
+          ),
+        ),
+        // Footer
+        Container(
+          height: 36,
+          decoration: const BoxDecoration(
+            color: AdminTheme.kSurface,
+            border: Border(top: BorderSide(color: AdminTheme.kBorder)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            children: [
+              Text(
+                'Showing ${response.users.length} of ${response.total} users',
+                style: const TextStyle(
+                  color: AdminTheme.kMuted,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Column header ─────────────────────────────────────────────────────────────
+
+class _ColHeader extends StatelessWidget {
+  final String label;
+  const _ColHeader(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AdminTheme.kMuted,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.7,
+        ),
+      ),
+    );
+  }
+}
+
+// ── User table row ────────────────────────────────────────────────────────────
+
+class _UserTableRow extends StatefulWidget {
+  final UserRow user;
+  const _UserTableRow({required this.user});
+
+  @override
+  State<_UserTableRow> createState() => _UserTableRowState();
+}
+
+class _UserTableRowState extends State<_UserTableRow> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit:  (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () => context.push('/users/${widget.user.id}'),
+        child: Container(
+          height: 50,
+          decoration: BoxDecoration(
+            color: _hovered
+                ? AdminTheme.kBorder.withValues(alpha: 0.5)
+                : Colors.transparent,
+            border: const Border(
+              bottom: BorderSide(color: AdminTheme.kBorder, width: 0.5),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 5,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AdminTheme.kAccentBg,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          widget.user.email.isNotEmpty
+                              ? widget.user.email[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                            color: AdminTheme.kAccent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        widget.user.email,
+                        style: const TextStyle(
+                          color: AdminTheme.kText,
+                          fontSize: 13,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                width: 110,
+                child: _StatusChip(status: widget.user.status),
+              ),
+              SizedBox(
+                width: 80,
+                child: Text(
+                  widget.user.role,
+                  style: const TextStyle(
+                    color: AdminTheme.kMuted,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 170,
+                child: Text(
+                  _fmtDate(widget.user.createdAt),
+                  style: const TextStyle(
+                    color: AdminTheme.kMuted,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 48,
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: _hovered ? AdminTheme.kMuted : AdminTheme.kBorder,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildUserList(BuildContext context, UserListResponse response) {
-    if (response.users.isEmpty) {
-      return const Center(child: Text('No users found.'));
+  String _fmtDate(String iso) {
+    if (iso.isEmpty) return '—';
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return iso.length > 10 ? iso.substring(0, 10) : iso;
     }
-
-    return ListView.builder(
-      itemCount: response.users.length,
-      itemBuilder: (context, index) {
-        final user = response.users[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          child: ListTile(
-            leading: CircleAvatar(
-              child: Text(user.email.isNotEmpty
-                  ? user.email[0].toUpperCase()
-                  : '?'),
-            ),
-            title: Text(user.email),
-            subtitle: Text('Created: ${user.createdAt}'),
-            trailing: _statusBadge(user.status),
-            onTap: () => context.push('/users/${user.id}'),
-          ),
-        );
-      },
-    );
   }
+}
 
-  Widget _statusBadge(String status) {
-    final (Color color, String label) = switch (status) {
-      'active' => (Colors.green, 'Active'),
-      'suspended' => (Colors.orange, 'Suspended'),
-      'banned' => (Colors.red, 'Banned'),
-      _ => (Colors.grey, status),
+// ── Status chip (shared) ─────────────────────────────────────────────────────
+
+class _StatusChip extends StatelessWidget {
+  final String status;
+  const _StatusChip({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final (Color fg, Color bg, String label) = switch (status) {
+      'active'    => (AdminTheme.kGreen,  AdminTheme.kGreen.withValues(alpha: 0.12),  'Active'),
+      'suspended' => (AdminTheme.kOrange, AdminTheme.kOrange.withValues(alpha: 0.12), 'Suspended'),
+      'banned'    => (AdminTheme.kRed,    AdminTheme.kRed.withValues(alpha: 0.12),    'Banned'),
+      _           => (AdminTheme.kMuted,  AdminTheme.kBorder,                         status),
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color),
+        color: bg,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: fg.withValues(alpha: 0.35)),
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: fg,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../theme/admin_theme.dart';
 import '../../widgets/admin_http_client.dart';
 import '../../widgets/admin_layout.dart';
 
@@ -25,13 +26,13 @@ class FeatureFlag {
 
   factory FeatureFlag.fromJson(Map<String, dynamic> json) {
     return FeatureFlag(
-      key: json['key'] as String? ?? '',
-      value: json['value'],
+      key:         json['key']        as String? ?? '',
+      value:       json['value'],
       description: json['description'] as String?,
-      enabled: json['enabled'] as bool? ?? false,
-      createdAt: json['created_at'] as String? ?? '',
-      updatedAt: json['updated_at'] as String? ?? '',
-      updatedBy: json['updated_by'] as String?,
+      enabled:     json['enabled']    as bool?   ?? false,
+      createdAt:   json['created_at'] as String? ?? '',
+      updatedAt:   json['updated_at'] as String? ?? '',
+      updatedBy:   json['updated_by'] as String?,
     );
   }
 }
@@ -56,81 +57,102 @@ class FlagsScreen extends ConsumerWidget {
 
     return AdminLayout(
       selectedIndex: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header ────────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Row(
               children: [
-                Text(
-                  'Feature Flags',
-                  style: Theme.of(context).textTheme.headlineMedium,
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Feature Flags',
+                      style: TextStyle(
+                        color: AdminTheme.kText,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Toggle platform features without a deploy',
+                      style: TextStyle(color: AdminTheme.kMuted, fontSize: 12),
+                    ),
+                  ],
                 ),
+                const Spacer(),
                 FilledButton.icon(
                   onPressed: () => _showCreateDialog(context, ref),
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add, size: 16),
                   label: const Text('New Flag'),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: flagsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text('Failed to load flags: $error'),
-                    ],
-                  ),
+          ),
+          const Divider(height: 1),
+
+          // ── List ──────────────────────────────────────────────────────────
+          Expanded(
+            child: flagsAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        size: 40, color: AdminTheme.kRed),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Failed to load flags: $error',
+                      style:
+                          const TextStyle(color: AdminTheme.kMuted, fontSize: 14),
+                    ),
+                  ],
                 ),
-                data: (flags) => flags.isEmpty
-                    ? const Center(child: Text('No feature flags configured.'))
-                    : ListView.builder(
-                        itemCount: flags.length,
-                        itemBuilder: (context, index) {
-                          final flag = flags[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            child: ListTile(
-                              title: Text(flag.key),
-                              subtitle: Text(flag.description ?? 'Value: ${flag.value}'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Switch(
-                                    value: flag.enabled,
-                                    onChanged: (enabled) =>
-                                        _toggleFlag(context, ref, flag, enabled),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline,
-                                        color: Colors.red),
-                                    onPressed: () =>
-                                        _deleteFlag(context, ref, flag.key),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
               ),
+              data: (flags) => flags.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.toggle_off,
+                              size: 40, color: AdminTheme.kMuted),
+                          SizedBox(height: 12),
+                          Text(
+                            'No feature flags configured.',
+                            style: TextStyle(
+                                color: AdminTheme.kMuted, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: flags.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: 8),
+                      itemBuilder: (ctx, i) => _FlagCard(
+                        flag: flags[i],
+                        onToggle: (enabled) =>
+                            _toggleFlag(context, ref, flags[i], enabled),
+                        onDelete: () =>
+                            _deleteFlag(context, ref, flags[i].key),
+                      ),
+                    ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   void _showCreateDialog(BuildContext context, WidgetRef ref) {
-    final keyController = TextEditingController();
-    final valueController = TextEditingController(text: 'true');
+    final keyController         = TextEditingController();
+    final valueController       = TextEditingController(text: 'true');
     final descriptionController = TextEditingController();
 
     showDialog(
@@ -143,28 +165,27 @@ class FlagsScreen extends ConsumerWidget {
             children: [
               TextField(
                 controller: keyController,
+                style: const TextStyle(color: AdminTheme.kText),
                 decoration: const InputDecoration(
                   labelText: 'Key',
                   hintText: 'e.g. new_onboarding_flow',
-                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: valueController,
+                style: const TextStyle(color: AdminTheme.kText),
                 decoration: const InputDecoration(
                   labelText: 'Value',
                   hintText: 'true, false, or JSON value',
-                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
+                style: const TextStyle(color: AdminTheme.kText),
+                decoration:
+                    const InputDecoration(labelText: 'Description'),
                 maxLines: 2,
               ),
             ],
@@ -179,8 +200,11 @@ class FlagsScreen extends ConsumerWidget {
             onPressed: () {
               Navigator.of(ctx).pop();
               _createFlag(
-                context, ref, keyController.text,
-                valueController.text, descriptionController.text,
+                context,
+                ref,
+                keyController.text,
+                valueController.text,
+                descriptionController.text,
               );
             },
             child: const Text('Create'),
@@ -191,36 +215,34 @@ class FlagsScreen extends ConsumerWidget {
   }
 
   Future<void> _createFlag(
-      BuildContext context, WidgetRef ref,
-      String key, String value, String description) async {
+    BuildContext context,
+    WidgetRef ref,
+    String key,
+    String value,
+    String description,
+  ) async {
     if (key.isEmpty) return;
 
     try {
       final client = ref.read(adminHttpClientProvider);
-      // Parse value as JSON if possible
-      dynamic parsedValue;
-      try {
-        parsedValue = value.toLowerCase() == 'true'
-            ? true
-            : value.toLowerCase() == 'false'
-                ? false
-                : value; // Keep as string for simplicity
-      } catch (_) {
-        parsedValue = value;
-      }
+      dynamic parsedValue = value.toLowerCase() == 'true'
+          ? true
+          : value.toLowerCase() == 'false'
+              ? false
+              : value;
 
       await client.dio.post('/admin/flags', data: {
-        'key': key,
-        'value': parsedValue,
+        'key':         key,
+        'value':       parsedValue,
         'description': description.isEmpty ? null : description,
-        'enabled': true,
+        'enabled':     true,
       });
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Flag "$key" created'),
-            backgroundColor: Colors.green,
+            backgroundColor: AdminTheme.kGreen,
           ),
         );
         ref.invalidate(flagsProvider);
@@ -228,44 +250,54 @@ class FlagsScreen extends ConsumerWidget {
     } on DioException catch (e) {
       if (context.mounted) {
         final msg = e.response?.data is Map
-            ? ((e.response!.data as Map)['error'] ?? 'Failed to create flag').toString()
+            ? ((e.response!.data as Map)['error'] ?? 'Failed to create flag')
+                .toString()
             : 'Failed to create flag';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+          SnackBar(content: Text(msg), backgroundColor: AdminTheme.kRed),
         );
       }
     }
   }
 
   Future<void> _toggleFlag(
-      BuildContext context, WidgetRef ref, FeatureFlag flag, bool enabled) async {
+    BuildContext context,
+    WidgetRef ref,
+    FeatureFlag flag,
+    bool enabled,
+  ) async {
     try {
       final client = ref.read(adminHttpClientProvider);
       await client.dio.post('/admin/flags', data: {
-        'key': flag.key,
-        'value': flag.value ?? true,
+        'key':         flag.key,
+        'value':       flag.value ?? true,
         'description': flag.description,
-        'enabled': enabled,
+        'enabled':     enabled,
       });
       ref.invalidate(flagsProvider);
     } on DioException catch (e) {
       if (context.mounted) {
         final msg = e.response?.data is Map
-            ? ((e.response!.data as Map)['error'] ?? 'Failed to update flag').toString()
+            ? ((e.response!.data as Map)['error'] ?? 'Failed to update flag')
+                .toString()
             : 'Failed to update flag';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+          SnackBar(content: Text(msg), backgroundColor: AdminTheme.kRed),
         );
       }
     }
   }
 
-  Future<void> _deleteFlag(BuildContext context, WidgetRef ref, String key) async {
+  Future<void> _deleteFlag(
+    BuildContext context,
+    WidgetRef ref,
+    String key,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Flag'),
-        content: Text('Are you sure you want to delete "$key"?'),
+        content: Text('Delete flag "$key"? This cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -273,7 +305,10 @@ class FlagsScreen extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: AdminTheme.kRed,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -290,7 +325,7 @@ class FlagsScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Flag "$key" deleted'),
-            backgroundColor: Colors.green,
+            backgroundColor: AdminTheme.kGreen,
           ),
         );
         ref.invalidate(flagsProvider);
@@ -298,12 +333,104 @@ class FlagsScreen extends ConsumerWidget {
     } on DioException catch (e) {
       if (context.mounted) {
         final msg = e.response?.data is Map
-            ? ((e.response!.data as Map)['error'] ?? 'Failed to delete flag').toString()
+            ? ((e.response!.data as Map)['error'] ?? 'Failed to delete flag')
+                .toString()
             : 'Failed to delete flag';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+          SnackBar(content: Text(msg), backgroundColor: AdminTheme.kRed),
         );
       }
     }
+  }
+}
+
+// ── Flag card ─────────────────────────────────────────────────────────────────
+
+class _FlagCard extends StatelessWidget {
+  final FeatureFlag flag;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback onDelete;
+
+  const _FlagCard({
+    required this.flag,
+    required this.onToggle,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AdminTheme.kCard,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AdminTheme.kBorder),
+      ),
+      child: Row(
+        children: [
+          // Enabled indicator dot
+          Container(
+            width: 8,
+            height: 8,
+            margin: const EdgeInsets.only(right: 14),
+            decoration: BoxDecoration(
+              color: flag.enabled ? AdminTheme.kGreen : AdminTheme.kBorder,
+              shape: BoxShape.circle,
+            ),
+          ),
+          // Key + description
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  flag.key,
+                  style: const TextStyle(
+                    color: AdminTheme.kText,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                if (flag.description != null &&
+                    flag.description!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    flag.description!,
+                    style: const TextStyle(
+                        color: AdminTheme.kMuted, fontSize: 12),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Value: ${flag.value}',
+                    style: const TextStyle(
+                        color: AdminTheme.kMuted, fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Toggle
+          Switch(
+            value: flag.enabled,
+            onChanged: onToggle,
+          ),
+          // Delete
+          IconButton(
+            icon: const Icon(
+              Icons.delete_outline,
+              size: 18,
+              color: AdminTheme.kMuted,
+            ),
+            tooltip: 'Delete flag',
+            onPressed: onDelete,
+            style: IconButton.styleFrom(
+              hoverColor: AdminTheme.kRed.withValues(alpha: 0.1),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

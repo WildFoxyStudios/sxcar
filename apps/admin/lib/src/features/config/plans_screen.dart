@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../theme/admin_theme.dart';
 import '../../widgets/admin_http_client.dart';
 import '../../widgets/admin_layout.dart';
 
@@ -21,10 +22,10 @@ class Plan {
 
   factory Plan.fromJson(Map<String, dynamic> json) {
     return Plan(
-      code: json['code'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      tier: json['tier'] as int? ?? 0,
-      active: json['active'] as bool? ?? false,
+      code:        json['code']        as String? ?? '',
+      name:        json['name']        as String? ?? '',
+      tier:        json['tier']        as int?    ?? 0,
+      active:      json['active']      as bool?   ?? false,
       description: json['description'] as String?,
     );
   }
@@ -45,9 +46,9 @@ class PlanFeature {
 
   factory PlanFeature.fromJson(Map<String, dynamic> json) {
     return PlanFeature(
-      planCode: json['plan_code'] as String? ?? '',
-      feature: json['feature'] as String? ?? '',
-      enabled: json['enabled'] as bool? ?? false,
+      planCode:   json['plan_code']   as String? ?? '',
+      feature:    json['feature']     as String? ?? '',
+      enabled:    json['enabled']     as bool?   ?? false,
       limitValue: json['limit_value'] as int?,
     );
   }
@@ -64,7 +65,9 @@ final plansProvider = FutureProvider.autoDispose<List<Plan>>((ref) async {
   return plansList;
 });
 
-final planFeaturesProvider = FutureProvider.autoDispose.family<List<PlanFeature>, String>((ref, planCode) async {
+final planFeaturesProvider =
+    FutureProvider.autoDispose.family<List<PlanFeature>, String>(
+        (ref, planCode) async {
   final client = ref.read(adminHttpClientProvider);
   final response = await client.dio.get('/admin/plans/$planCode/features');
   final data = response.data as Map<String, dynamic>;
@@ -84,59 +87,163 @@ class PlansScreen extends ConsumerWidget {
 
     return AdminLayout(
       selectedIndex: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Plans',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: plansAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text('Failed to load plans: $error'),
-                    ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header ────────────────────────────────────────────────────────
+          const Padding(
+            padding: EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Plans',
+                  style: TextStyle(
+                    color: AdminTheme.kText,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                data: (plans) => plans.isEmpty
-                    ? const Center(child: Text('No plans configured.'))
-                    : ListView.builder(
-                        itemCount: plans.length,
-                        itemBuilder: (context, index) {
-                          final plan = plans[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            child: ExpansionTile(
-                              leading: Icon(
-                                plan.active ? Icons.check_circle : Icons.cancel,
-                                color: plan.active ? Colors.green : Colors.grey,
-                              ),
-                              title: Text('${plan.name} (${plan.code})'),
-                              subtitle: Text(
-                                'Tier ${plan.tier}${plan.description != null ? " - ${plan.description}" : ""}',
-                              ),
-                              children: [
-                                _PlanFeaturesList(planCode: plan.code),
-                                const SizedBox(height: 8),
-                                Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: _AddFeatureButton(planCode: plan.code),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                SizedBox(height: 2),
+                Text(
+                  'Subscription tiers and feature entitlements',
+                  style: TextStyle(color: AdminTheme.kMuted, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+
+          // ── List ──────────────────────────────────────────────────────────
+          Expanded(
+            child: plansAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        size: 40, color: AdminTheme.kRed),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Failed to load plans: $error',
+                      style:
+                          const TextStyle(color: AdminTheme.kMuted, fontSize: 14),
+                    ),
+                  ],
+                ),
               ),
+              data: (plans) => plans.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.credit_card,
+                              size: 40, color: AdminTheme.kMuted),
+                          SizedBox(height: 12),
+                          Text(
+                            'No plans configured.',
+                            style: TextStyle(
+                                color: AdminTheme.kMuted, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: plans.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: 10),
+                      itemBuilder: (ctx, i) =>
+                          _PlanCard(plan: plans[i]),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Plan card ─────────────────────────────────────────────────────────────────
+
+class _PlanCard extends StatelessWidget {
+  final Plan plan;
+  const _PlanCard({required this.plan});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AdminTheme.kCard,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AdminTheme.kBorder),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ),
+        child: ExpansionTile(
+          tilePadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: EdgeInsets.zero,
+          leading: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: plan.active
+                  ? AdminTheme.kAccentBg
+                  : AdminTheme.kBorder.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              plan.active ? Icons.check : Icons.close,
+              size: 16,
+              color: plan.active ? AdminTheme.kAccent : AdminTheme.kMuted,
+            ),
+          ),
+          title: Row(
+            children: [
+              Text(
+                plan.name,
+                style: const TextStyle(
+                  color: AdminTheme.kText,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AdminTheme.kBorder,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  plan.code,
+                  style: const TextStyle(
+                    color: AdminTheme.kMuted,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          subtitle: Text(
+            'Tier ${plan.tier}'
+            '${plan.description != null ? " · ${plan.description}" : ""}',
+            style:
+                const TextStyle(color: AdminTheme.kMuted, fontSize: 12),
+          ),
+          children: [
+            const Divider(height: 1),
+            _PlanFeaturesList(planCode: plan.code),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: _AddFeatureButton(planCode: plan.code),
             ),
           ],
         ),
@@ -145,9 +252,10 @@ class PlansScreen extends ConsumerWidget {
   }
 }
 
+// ── Features list ─────────────────────────────────────────────────────────────
+
 class _PlanFeaturesList extends ConsumerWidget {
   final String planCode;
-
   const _PlanFeaturesList({required this.planCode});
 
   @override
@@ -159,31 +267,66 @@ class _PlanFeaturesList extends ConsumerWidget {
         padding: EdgeInsets.all(16),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (error, stack) => Padding(
+      error: (error, _) => Padding(
         padding: const EdgeInsets.all(16),
-        child: Text('Failed to load features: $error'),
+        child: Text(
+          'Failed to load features: $error',
+          style: const TextStyle(color: AdminTheme.kMuted, fontSize: 13),
+        ),
       ),
       data: (features) {
         if (features.isEmpty) {
           return const Padding(
             padding: EdgeInsets.all(16),
-            child: Text('No features configured for this plan.'),
+            child: Text(
+              'No features configured for this plan.',
+              style: TextStyle(color: AdminTheme.kMuted, fontSize: 13),
+            ),
           );
         }
         return Column(
           children: features
-              .map((f) => ListTile(
-                    dense: true,
-                    leading: Icon(
-                      f.enabled ? Icons.check : Icons.close,
-                      color: f.enabled ? Colors.green : Colors.red,
-                      size: 20,
+              .map(
+                (f) => Container(
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                          color: AdminTheme.kBorder, width: 0.5),
                     ),
-                    title: Text(f.feature),
-                    subtitle: f.limitValue != null
-                        ? Text('Limit: ${f.limitValue}')
-                        : null,
-                  ))
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        f.enabled ? Icons.check : Icons.close,
+                        size: 14,
+                        color:
+                            f.enabled ? AdminTheme.kGreen : AdminTheme.kRed,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          f.feature,
+                          style: const TextStyle(
+                            color: AdminTheme.kText,
+                            fontSize: 13,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ),
+                      if (f.limitValue != null)
+                        Text(
+                          'limit: ${f.limitValue}',
+                          style: const TextStyle(
+                            color: AdminTheme.kMuted,
+                            fontSize: 11,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              )
               .toList(),
         );
       },
@@ -191,23 +334,33 @@ class _PlanFeaturesList extends ConsumerWidget {
   }
 }
 
+// ── Add feature button ────────────────────────────────────────────────────────
+
 class _AddFeatureButton extends ConsumerWidget {
   final String planCode;
-
   const _AddFeatureButton({required this.planCode});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return OutlinedButton.icon(
-      onPressed: () => _showAddFeatureDialog(context, ref, planCode),
-      icon: const Icon(Icons.add),
+      icon: const Icon(Icons.add, size: 14),
       label: const Text('Add Feature'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AdminTheme.kAccent,
+        side: const BorderSide(color: AdminTheme.kBorder),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
+        ),
+      ),
+      onPressed: () => _showAddFeatureDialog(context, ref, planCode),
     );
   }
 
-  void _showAddFeatureDialog(BuildContext context, WidgetRef ref, String planCode) {
+  void _showAddFeatureDialog(
+      BuildContext context, WidgetRef ref, String planCode) {
     final featureController = TextEditingController();
-    final limitController = TextEditingController();
+    final limitController   = TextEditingController();
     bool enabled = true;
 
     showDialog(
@@ -221,27 +374,31 @@ class _AddFeatureButton extends ConsumerWidget {
               children: [
                 TextField(
                   controller: featureController,
+                  style: const TextStyle(color: AdminTheme.kText),
                   decoration: const InputDecoration(
                     labelText: 'Feature',
                     hintText: 'e.g. unlimited_likes',
-                    border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: limitController,
+                  style: const TextStyle(color: AdminTheme.kText),
                   decoration: const InputDecoration(
                     labelText: 'Limit Value (optional)',
                     hintText: 'e.g. 100',
-                    border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 12),
                 SwitchListTile(
-                  title: const Text('Enabled'),
+                  title: const Text(
+                    'Enabled',
+                    style: TextStyle(color: AdminTheme.kText, fontSize: 14),
+                  ),
                   value: enabled,
                   onChanged: (v) => setDialogState(() => enabled = v),
+                  contentPadding: EdgeInsets.zero,
                 ),
               ],
             ),
@@ -255,8 +412,12 @@ class _AddFeatureButton extends ConsumerWidget {
               onPressed: () {
                 Navigator.of(ctx).pop();
                 _addFeature(
-                  context, ref, planCode, featureController.text,
-                  enabled, limitController.text,
+                  context,
+                  ref,
+                  planCode,
+                  featureController.text,
+                  enabled,
+                  limitController.text,
                 );
               },
               child: const Text('Add'),
@@ -268,12 +429,17 @@ class _AddFeatureButton extends ConsumerWidget {
   }
 
   Future<void> _addFeature(
-      BuildContext context, WidgetRef ref,
-      String planCode, String feature, bool enabled, String limitStr) async {
+    BuildContext context,
+    WidgetRef ref,
+    String planCode,
+    String feature,
+    bool enabled,
+    String limitStr,
+  ) async {
     if (feature.isEmpty) return;
 
     try {
-      final client = ref.read(adminHttpClientProvider);
+      final client     = ref.read(adminHttpClientProvider);
       final int? limit = int.tryParse(limitStr);
 
       await client.dio.post('/admin/plans/$planCode/features', data: {
@@ -286,7 +452,7 @@ class _AddFeatureButton extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Feature "$feature" added to $planCode'),
-            backgroundColor: Colors.green,
+            backgroundColor: AdminTheme.kGreen,
           ),
         );
         ref.invalidate(planFeaturesProvider(planCode));
@@ -294,10 +460,11 @@ class _AddFeatureButton extends ConsumerWidget {
     } on DioException catch (e) {
       if (context.mounted) {
         final msg = e.response?.data is Map
-            ? ((e.response!.data as Map)['error'] ?? 'Failed to add feature').toString()
+            ? ((e.response!.data as Map)['error'] ?? 'Failed to add feature')
+                .toString()
             : 'Failed to add feature';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+          SnackBar(content: Text(msg), backgroundColor: AdminTheme.kRed),
         );
       }
     }

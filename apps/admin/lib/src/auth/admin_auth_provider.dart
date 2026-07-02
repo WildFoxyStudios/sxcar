@@ -10,12 +10,15 @@ class AuthState {
   final String? accessToken;
   final String? sessionId;
   final String? error;
+  /// Email captured at login step; shown in the top bar.
+  final String? adminEmail;
 
   const AuthState({
     this.status = AuthStatus.unauthenticated,
     this.accessToken,
     this.sessionId,
     this.error,
+    this.adminEmail,
   });
 
   AuthState copyWith({
@@ -23,12 +26,16 @@ class AuthState {
     String? accessToken,
     String? sessionId,
     String? error,
+    String? adminEmail,
   }) {
     return AuthState(
-      status: status ?? this.status,
+      status:      status      ?? this.status,
       accessToken: accessToken ?? this.accessToken,
-      sessionId: sessionId ?? this.sessionId,
-      error: error,
+      sessionId:   sessionId   ?? this.sessionId,
+      // error intentionally always overrides (null clears it)
+      error:       error,
+      // adminEmail persists across copyWith unless a new value is passed
+      adminEmail:  adminEmail  ?? this.adminEmail,
     );
   }
 }
@@ -43,7 +50,7 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   AdminAuthService get _authService => ref.read(adminAuthServiceProvider);
-  AdminHttpClient get _httpClient => ref.read(adminHttpClientProvider);
+  AdminHttpClient  get _httpClient  => ref.read(adminHttpClientProvider);
 
   void _unauthorizedLogout() {
     state = const AuthState();
@@ -54,7 +61,10 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading, error: null);
     try {
       final mfaToken = await _authService.login(email, password);
-      state = state.copyWith(status: AuthStatus.unauthenticated);
+      state = state.copyWith(
+        status:     AuthStatus.unauthenticated,
+        adminEmail: email, // keep email so the top bar can show it after 2FA
+      );
       return mfaToken;
     } on DioException catch (e) {
       final msg = _extractErrorMessage(e);
@@ -76,10 +86,10 @@ class AuthNotifier extends Notifier<AuthState> {
       final result = await _authService.verify2FA(mfaToken, totpCode);
       await _httpClient.setToken(result['access_token']!);
       state = state.copyWith(
-        status: AuthStatus.authenticated,
+        status:      AuthStatus.authenticated,
         accessToken: result['access_token'],
-        sessionId: result['session_id'],
-        error: null,
+        sessionId:   result['session_id'],
+        error:       null,
       );
       return true;
     } on DioException catch (e) {

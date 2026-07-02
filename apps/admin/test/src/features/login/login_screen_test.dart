@@ -18,6 +18,6 @@ void main() {
     expect(find.text('Admin Login'), findsOneWidget);
     expect(find.byIcon(Icons.email_outlined), findsOneWidget);
     expect(find.byIcon(Icons.lock_outlined), findsOneWidget);
-    expect(find.text('Login'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
   });
 }

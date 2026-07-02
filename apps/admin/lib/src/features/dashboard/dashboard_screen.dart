@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../theme/admin_theme.dart';
 import '../../widgets/admin_http_client.dart';
 import '../../widgets/admin_layout.dart';
 
@@ -22,17 +23,18 @@ class AnalyticsOverview {
 
   factory AnalyticsOverview.fromJson(Map<String, dynamic> json) {
     return AnalyticsOverview(
-      totalUsers: json['total_users'] as int? ?? 0,
-      activeToday: json['active_today'] as int? ?? 0,
-      bannedUsers: json['banned_users'] as int? ?? 0,
+      totalUsers:     json['total_users']     as int? ?? 0,
+      activeToday:    json['active_today']    as int? ?? 0,
+      bannedUsers:    json['banned_users']    as int? ?? 0,
       suspendedUsers: json['suspended_users'] as int? ?? 0,
-      premiumUsers: json['premium_users'] as int? ?? 0,
-      newUsersToday: json['new_users_today'] as int? ?? 0,
+      premiumUsers:   json['premium_users']   as int? ?? 0,
+      newUsersToday:  json['new_users_today'] as int? ?? 0,
     );
   }
 }
 
-final dashboardProvider = FutureProvider.autoDispose<AnalyticsOverview>((ref) async {
+final dashboardProvider =
+    FutureProvider.autoDispose<AnalyticsOverview>((ref) async {
   final client = ref.read(adminHttpClientProvider);
   final response = await client.dio.get('/admin/analytics/overview');
   return AnalyticsOverview.fromJson(response.data as Map<String, dynamic>);
@@ -47,137 +49,248 @@ class DashboardScreen extends ConsumerWidget {
 
     return AdminLayout(
       selectedIndex: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Dashboard',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 24),
-            analyticsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text('Failed to load analytics: $error'),
-                  ],
-                ),
-              ),
-              data: (analytics) => Expanded(
-                child: _buildGrid(context, analytics),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGrid(BuildContext context, AnalyticsOverview analytics) {
-    return GridView.count(
-      crossAxisCount: _gridColumns(context),
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.5,
-      children: [
-        _StatCard(
-          title: 'Total Users',
-          value: analytics.totalUsers.toString(),
-          icon: Icons.people,
-          color: Colors.blue,
-        ),
-        _StatCard(
-          title: 'Active Today',
-          value: analytics.activeToday.toString(),
-          icon: Icons.trending_up,
-          color: Colors.green,
-        ),
-        _StatCard(
-          title: 'Premium Users',
-          value: analytics.premiumUsers.toString(),
-          icon: Icons.star,
-          color: Colors.amber,
-        ),
-        _StatCard(
-          title: 'New Today',
-          value: analytics.newUsersToday.toString(),
-          icon: Icons.person_add,
-          color: Colors.teal,
-        ),
-        _StatCard(
-          title: 'Banned',
-          value: analytics.bannedUsers.toString(),
-          icon: Icons.block,
-          color: Colors.red,
-        ),
-        _StatCard(
-          title: 'Suspended',
-          value: analytics.suspendedUsers.toString(),
-          icon: Icons.pause_circle,
-          color: Colors.orange,
-        ),
-      ],
-    );
-  }
-
-  int _gridColumns(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width >= 1200) return 3;
-    if (width >= 800) return 2;
-    return 1;
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+            // Page header
             Row(
               children: [
-                Icon(icon, color: color, size: 28),
-                const Spacer(),
-                Text(
-                  value,
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Overview',
+                        style: TextStyle(
+                          color: AdminTheme.kText,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Platform metrics at a glance',
+                        style: TextStyle(color: AdminTheme.kMuted, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                // Refresh button
+                analyticsAsync.when(
+                  loading: () => const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  error: (_, _) => const SizedBox.shrink(),
+                  data: (_) => IconButton(
+                    icon: const Icon(Icons.refresh, size: 18, color: AdminTheme.kMuted),
+                    tooltip: 'Refresh',
+                    onPressed: () => ref.invalidate(dashboardProvider),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+            const SizedBox(height: 28),
+            analyticsAsync.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(64),
+                  child: CircularProgressIndicator(),
+                ),
               ),
+              error: (error, _) => _ErrorBanner(error: error.toString()),
+              data: (analytics) => _MetricGrid(analytics: analytics),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+// ── Error banner ─────────────────────────────────────────────────────────────
+
+class _ErrorBanner extends StatelessWidget {
+  final String error;
+  const _ErrorBanner({required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AdminTheme.kRed.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AdminTheme.kRed.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: AdminTheme.kRed, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Failed to load analytics: $error',
+              style: const TextStyle(color: AdminTheme.kRed, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Metric grid ──────────────────────────────────────────────────────────────
+
+class _MetricGrid extends StatelessWidget {
+  final AnalyticsOverview analytics;
+  const _MetricGrid({required this.analytics});
+
+  @override
+  Widget build(BuildContext context) {
+    final metrics = [
+      _MetricDef(
+        label: 'TOTAL USERS',
+        value: analytics.totalUsers,
+        icon: Icons.people,
+        accent: AdminTheme.kAccent,
+      ),
+      _MetricDef(
+        label: 'ACTIVE TODAY',
+        value: analytics.activeToday,
+        icon: Icons.trending_up,
+        accent: AdminTheme.kGreen,
+      ),
+      _MetricDef(
+        label: 'PREMIUM',
+        value: analytics.premiumUsers,
+        icon: Icons.workspace_premium,
+        accent: AdminTheme.kAccent,
+      ),
+      _MetricDef(
+        label: 'NEW TODAY',
+        value: analytics.newUsersToday,
+        icon: Icons.person_add_outlined,
+        accent: AdminTheme.kBlue,
+      ),
+      _MetricDef(
+        label: 'SUSPENDED',
+        value: analytics.suspendedUsers,
+        icon: Icons.pause_circle_outlined,
+        accent: AdminTheme.kOrange,
+      ),
+      _MetricDef(
+        label: 'BANNED',
+        value: analytics.bannedUsers,
+        icon: Icons.block_outlined,
+        accent: AdminTheme.kRed,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cols = constraints.maxWidth >= 1100
+            ? 3
+            : constraints.maxWidth >= 700
+                ? 2
+                : 1;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: cols,
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 14,
+            childAspectRatio: 2.6,
+          ),
+          itemCount: metrics.length,
+          itemBuilder: (ctx, i) => _MetricCard(metric: metrics[i]),
+        );
+      },
+    );
+  }
+}
+
+class _MetricDef {
+  final String label;
+  final int value;
+  final IconData icon;
+  final Color accent;
+  const _MetricDef({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.accent,
+  });
+}
+
+class _MetricCard extends StatelessWidget {
+  final _MetricDef metric;
+  const _MetricCard({required this.metric});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        color: AdminTheme.kCard,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AdminTheme.kBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Icon + label row
+          Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: metric.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(metric.icon, color: metric.accent, size: 16),
+              ),
+              const Spacer(),
+            ],
+          ),
+          // Value + label
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _formatNumber(metric.value),
+                style: const TextStyle(
+                  color: AdminTheme.kText,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                metric.label,
+                style: const TextStyle(
+                  color: AdminTheme.kMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatNumber(int n) {
+    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
+    return n.toString();
   }
 }

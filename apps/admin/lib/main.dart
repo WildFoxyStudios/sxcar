@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'src/auth/admin_auth_provider.dart';
-import 'src/features/dashboard/dashboard_screen.dart';
 import 'src/features/config/flags_screen.dart';
 import 'src/features/config/plans_screen.dart';
+import 'src/features/dashboard/dashboard_screen.dart';
 import 'src/features/login/login_screen.dart';
 import 'src/features/login/totp_screen.dart';
 import 'src/features/moderation/reports_screen.dart';
 import 'src/features/users/user_detail_screen.dart';
 import 'src/features/users/user_list_screen.dart';
+import 'src/theme/admin_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,13 +29,9 @@ class AdminApp extends ConsumerWidget {
     final router = _createRouter(ref);
 
     return MaterialApp.router(
-      title: 'Admin Panel',
+      title: 'Vibra Admin',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        useMaterial3: true,
-        brightness: Brightness.light,
-      ),
+      theme: AdminTheme.build(),
       routerConfig: router,
     );
   }

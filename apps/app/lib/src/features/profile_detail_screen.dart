@@ -2,16 +2,18 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../auth/auth_provider.dart';
 import '../chat/chat_service.dart';
 import '../presence/presence_service.dart';
 import '../reports/report_service.dart';
 import '../theme/app_theme.dart';
+import 'cascade_screen.dart' show NearbyUser;
 import 'profile_screen.dart' show UserProfile;
 
-/// Full-screen profile of another user with action buttons.
+/// Full-screen profile of another user — Grindr-style redesign (T4).
 ///
-/// Accessed by tapping a user card in Cascade, Interest, or Explore.
+/// Accessed by tapping a user card in Cascade, Interest, or Navegar.
 class ProfileDetailScreen extends ConsumerStatefulWidget {
   final String userId;
 
@@ -28,11 +30,20 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
   String? _error;
   bool _isFavorited = false;
   bool _isBlocked = false;
+  Map<String, dynamic>? _healthData;
+  List<NearbyUser> _suggestions = [];
+  final TextEditingController _messageController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProfile() async {
@@ -43,26 +54,54 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
 
     try {
       final dio = ref.read(dioProvider);
-      final response = await dio
-          .get<Map<String, dynamic>>('/profile/${widget.userId}');
+      final response =
+          await dio.get<Map<String, dynamic>>('/profile/${widget.userId}');
       final userJson = response.data!['user'] as Map<String, dynamic>;
       final profile = UserProfile.fromJson(userJson);
+      final health = response.data!['health'] as Map<String, dynamic>?;
 
+      if (!mounted) return;
       setState(() {
         _profile = profile;
+        _healthData = health;
         _isLoading = false;
       });
+
+      // Fetch suggestions in background (silently ignore failures)
+      _loadSuggestions();
     } on DioException catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _error =
             'Failed to load profile: ${e.response?.statusCode ?? e.message}';
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _error = 'Failed to load profile: $e';
       });
+    }
+  }
+
+  Future<void> _loadSuggestions() async {
+    try {
+      final dio = ref.read(dioProvider);
+      final response =
+          await dio.get<Map<String, dynamic>>('/grid/nearby');
+      final usersJson =
+          response.data!['users'] as List<dynamic>? ?? [];
+      final list = usersJson
+          .map((e) => NearbyUser.fromJson(e as Map<String, dynamic>))
+          .where((u) => u.id != widget.userId)
+          .take(4)
+          .toList();
+      if (mounted) {
+        setState(() => _suggestions = list);
+      }
+    } catch (_) {
+      // Silently skip — section is hidden when empty.
     }
   }
 
@@ -95,7 +134,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
       } else {
         await dio.post('/favorites', data: {'user_id': widget.userId});
       }
-      setState(() => _isFavorited = !_isFavorited);
+      if (mounted) setState(() => _isFavorited = !_isFavorited);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -105,6 +144,8 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     }
   }
 
+  // Keep _toggleBlock for future use — no block button in the new UI.
+  // ignore: unused_element
   Future<void> _toggleBlock() async {
     try {
       final dio = ref.read(dioProvider);
@@ -114,7 +155,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
         await dio.post('/blocks',
             data: {'user_id': widget.userId, 'reason': null});
       }
-      setState(() => _isBlocked = !_isBlocked);
+      if (mounted) setState(() => _isBlocked = !_isBlocked);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -184,15 +225,28 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
       final chatService = ref.read(chatServiceProvider);
       final conversationId =
           await chatService.createConversation(widget.userId);
-      if (mounted) {
-        context.push('/inbox/$conversationId');
-      }
+      if (!mounted) return;
+      context.push('/inbox/$conversationId');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to start chat: $e')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start chat: $e')),
+      );
+    }
+  }
+
+  Future<void> _sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
+    try {
+      final chatService = ref.read(chatServiceProvider);
+      final convId = await chatService.createConversation(widget.userId);
+      await chatService.sendMessage(convId, text.trim());
+      if (!mounted) return;
+      context.go('/inbox/$convId');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$e')));
     }
   }
 
@@ -200,13 +254,15 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
+        backgroundColor: VibraTheme.kBg,
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(),
+        backgroundColor: VibraTheme.kBg,
+        appBar: AppBar(backgroundColor: VibraTheme.kBg),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -243,254 +299,308 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     }
 
     final p = _profile!;
-    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // ── Hero photo header ──────────────────────────────────────────────
-          SliverAppBar(
-            expandedHeight: 380,
-            pinned: true,
-            backgroundColor: Colors.black,
-            leading: Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Photo or placeholder
-                  if (p.profilePhotoUrl != null)
-                    Image.network(
-                      p.profilePhotoUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => _buildPhotoPlaceholder(p),
-                    )
-                  else
-                    _buildPhotoPlaceholder(p),
-                  // Bottom gradient to fade into scaffold background
-                  const Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    height: 120,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Color(0xFF0D0D0D)],
-                        ),
-                      ),
-                    ),
+      backgroundColor: VibraTheme.kBg,
+      body: Column(
+        children: [
+          // ── Scrollable content ─────────────────────────────────────────────
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                // ── Hero photo SliverAppBar ──────────────────────────────────
+                SliverAppBar(
+                  expandedHeight: screenHeight * 0.65,
+                  pinned: true,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  surfaceTintColor: Colors.transparent,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
-                  // Verified badge overlay (top right of photo)
-                  if (p.isVerified)
-                    Positioned(
-                      top: 60,
-                      right: 16,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: VibraTheme.kAccent,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.verified, color: Colors.black, size: 14),
-                            SizedBox(width: 4),
-                            Text(
-                              'Verified',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.person_off_outlined,
+                        color: Colors.white,
                       ),
+                      onPressed: _showReportSheet,
                     ),
-                ],
-              ),
-            ),
-          ),
-
-          // ── Profile content ────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Name row + verified inline
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          p.displayName ?? p.email,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            color: VibraTheme.kTextPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                    IconButton(
+                      icon: Icon(
+                        _isFavorited ? Icons.star : Icons.star_border,
+                        color:
+                            _isFavorited ? VibraTheme.kYellow : Colors.white,
                       ),
-                      if (p.isVerified)
-                        const Icon(Icons.verified,
-                            color: VibraTheme.kAccent, size: 22),
-                    ],
-                  ),
-
-                  // Age
-                  if (p.birthdate != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      _calculateAge(p.birthdate!),
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: VibraTheme.kTextSecondary,
-                      ),
+                      onPressed: _toggleFavorite,
                     ),
                   ],
-
-                  // Presence badge (online dot + last-seen)
-                  _PresenceBadge(userId: p.id),
-
-                  const SizedBox(height: 20),
-
-                  // ── Action bar ─────────────────────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: VibraTheme.kSurface,
-                      borderRadius:
-                          BorderRadius.circular(VibraTheme.kRadiusCard),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: VibraTheme.kOnline,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        p.displayName ?? p.email,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  flexibleSpace: FlexibleSpaceBar(
+                    collapseMode: CollapseMode.pin,
+                    background: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        _ActionButton(
-                          icon: Icons.chat_bubble_outline,
-                          label: 'Chat',
-                          color: VibraTheme.kAccent,
-                          onPressed: _startChat,
+                        // Photo or letter placeholder
+                        if (p.profilePhotoUrl != null)
+                          Image.network(
+                            p.profilePhotoUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) =>
+                                _buildPhotoPlaceholder(p),
+                          )
+                        else
+                          _buildPhotoPlaceholder(p),
+                        // Bottom gradient → fades into kBg
+                        const Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 160,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  VibraTheme.kBg,
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                        _ActionButton(
-                          icon: Icons.local_fire_department,
-                          label: 'Tap',
-                          color: Colors.deepOrange,
-                          onPressed: _sendTap,
-                        ),
-                        _ActionButton(
-                          icon: _isFavorited
-                              ? Icons.star
-                              : Icons.star_border_outlined,
-                          label: 'Favorite',
-                          color: _isFavorited
-                              ? VibraTheme.kAccent
-                              : VibraTheme.kTextSecondary,
-                          onPressed: _toggleFavorite,
-                        ),
-                        _ActionButton(
-                          icon: Icons.block,
-                          label: 'Block',
-                          color: _isBlocked
-                              ? VibraTheme.kError
-                              : VibraTheme.kTextSecondary,
-                          onPressed: _toggleBlock,
-                        ),
-                        _ActionButton(
-                          icon: Icons.flag_outlined,
-                          label: 'Report',
-                          color: VibraTheme.kTextMuted,
-                          onPressed: _showReportSheet,
-                        ),
+                        // Verified badge (top-right of photo)
+                        if (p.isVerified)
+                          Positioned(
+                            top: 60,
+                            right: 16,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: VibraTheme.kYellow,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.verified,
+                                      color: Colors.black, size: 14),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Verified',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
+                ),
 
-                  const SizedBox(height: 24),
-
-                  // ── About ──────────────────────────────────────────────────
-                  if (p.bio != null && p.bio!.isNotEmpty) ...[
-                    _sectionHeader('About'),
-                    const SizedBox(height: 8),
-                    Text(
-                      p.bio!,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: VibraTheme.kTextPrimary,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-
-                  // ── Stats ──────────────────────────────────────────────────
-                  _sectionHeader('Stats'),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: VibraTheme.kSurface,
-                      borderRadius:
-                          BorderRadius.circular(VibraTheme.kRadiusCard),
-                    ),
+                // ── Profile body ─────────────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildStatTile(theme, 'Height',
-                            p.heightCm != null ? '${p.heightCm} cm' : null,
-                            Icons.height),
-                        _buildStatTile(theme, 'Weight',
-                            p.weightKg != null ? '${p.weightKg} kg' : null,
-                            Icons.monitor_weight_outlined),
-                        _buildStatTile(
-                            theme, 'Body Type', p.bodyType, Icons.fitness_center),
-                        _buildStatTile(theme, 'Relationship',
-                            p.relationshipStatus, Icons.favorite_outline),
-                        _buildStatTile(
-                            theme, 'Position', p.position, Icons.sync_alt),
-                        _buildStatTile(
-                            theme, 'Ethnicity', p.ethnicity, Icons.people_outline),
-                        _buildStatTile(
-                            theme, 'Pronouns', p.pronouns, Icons.person_outline),
-                      ].where((w) => w is! SizedBox).toList(),
+                        // Display name (34 w800)
+                        Text(
+                          p.displayName ?? p.email,
+                          style: const TextStyle(
+                            color: VibraTheme.kTextPrimary,
+                            fontSize: 34,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+
+                        // Presence badge
+                        _PresenceBadge(userId: p.id),
+                        const SizedBox(height: 8),
+
+                        // Quick stats row (position | height | weight | bodyType)
+                        _QuickStatsRow(profile: p),
+
+                        // ── ACERCA DE MÍ ────────────────────────────────────
+                        if (p.bio != null && p.bio!.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          _sectionHeader(l10n.acercaDeMi.toUpperCase()),
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: VibraTheme.kSurface,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            padding: const EdgeInsets.all(20),
+                            child: Text(
+                              p.bio!,
+                              style: const TextStyle(
+                                color: VibraTheme.kTextPrimary,
+                                fontSize: 17,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ],
+
+                        // ── ESTADÍSTICAS ────────────────────────────────────
+                        const SizedBox(height: 20),
+                        _sectionHeader(l10n.estadisticas.toUpperCase()),
+                        const SizedBox(height: 12),
+                        _buildStatsSection(p),
+
+                        // ── EXPECTATIVAS ────────────────────────────────────
+                        if (p.lookingFor.isNotEmpty || p.meetAt.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          _sectionHeader(l10n.expectativas.toUpperCase()),
+                          const SizedBox(height: 12),
+                          _buildExpectativasSection(p, l10n),
+                        ],
+
+                        // ── SALUD ───────────────────────────────────────────
+                        if (_hasHealthData()) ...[
+                          const SizedBox(height: 20),
+                          _sectionHeader(l10n.salud.toUpperCase()),
+                          const SizedBox(height: 12),
+                          _buildSaludSection(),
+                        ],
+
+                        // ── TE PODRÍA INTERESAR ─────────────────────────────
+                        if (_suggestions.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Text(
+                                l10n.tePodriaInteresar.toUpperCase(),
+                                style: const TextStyle(
+                                  color: VibraTheme.kTextSecondary,
+                                  fontSize: 13,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: VibraTheme.kYellow,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  l10n.nuevo.toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _buildSuggestionsGrid(),
+                        ],
+                      ],
                     ),
                   ),
+                ),
+              ],
+            ),
+          ),
 
-                  // ── Tribes ────────────────────────────────────────────────
-                  if (p.tribes.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _sectionHeader('Tribes'),
-                    const SizedBox(height: 8),
-                    _buildChipWrap(p.tribes, VibraTheme.kAccent),
-                  ],
-
-                  // ── Looking for ───────────────────────────────────────────
-                  if (p.lookingFor.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _sectionHeader('Looking for'),
-                    const SizedBox(height: 8),
-                    _buildChipWrap(
-                        p.lookingFor, VibraTheme.kTextSecondary),
-                  ],
-
-                  // ── Tags ──────────────────────────────────────────────────
-                  if (p.tags.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _sectionHeader('Tags'),
-                    const SizedBox(height: 8),
-                    _buildChipWrap(p.tags, VibraTheme.kTextSecondary),
-                  ],
+          // ── Sticky bottom bar ─────────────────────────────────────────────
+          Container(
+            color: VibraTheme.kBg,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: SafeArea(
+              top: false,
+              left: false,
+              right: false,
+              child: Row(
+                children: [
+                  // Di algo... pill text field
+                  Expanded(
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: VibraTheme.kChip,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: TextField(
+                        controller: _messageController,
+                        style: const TextStyle(
+                          color: VibraTheme.kTextPrimary,
+                          fontSize: 15,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: l10n.diAlgo,
+                          hintStyle: const TextStyle(
+                            color: VibraTheme.kTextSecondary,
+                            fontSize: 15,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                        ),
+                        onSubmitted: (text) {
+                          _messageController.clear();
+                          _sendMessage(text);
+                        },
+                      ),
+                    ),
+                  ),
+                  // Flame (Tap)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.local_fire_department,
+                      color: VibraTheme.kYellow,
+                      size: 28,
+                    ),
+                    onPressed: _sendTap,
+                  ),
+                  // Chat bubble
+                  IconButton(
+                    icon: const Icon(
+                      Icons.chat_bubble_outline,
+                      color: VibraTheme.kYellow,
+                      size: 28,
+                    ),
+                    onPressed: _startChat,
+                  ),
                 ],
               ),
             ),
@@ -500,70 +610,267 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     );
   }
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
   Widget _sectionHeader(String title) {
     return Text(
-      title.toUpperCase(),
+      title,
       style: const TextStyle(
-        color: VibraTheme.kTextMuted,
-        fontSize: 11,
-        fontWeight: FontWeight.bold,
+        color: VibraTheme.kTextSecondary,
+        fontSize: 13,
         letterSpacing: 1.2,
       ),
     );
   }
 
-  /// Stat row inside the stats card — skipped when value is null/empty.
-  Widget _buildStatTile(
-      ThemeData theme, String label, String? value, IconData icon) {
-    if (value == null || value.isEmpty) return const SizedBox.shrink();
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              Icon(icon, size: 16, color: VibraTheme.kTextMuted),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: const TextStyle(
-                    color: VibraTheme.kTextSecondary, fontSize: 13),
+  Widget _buildStatsSection(UserProfile p) {
+    final rows = <Widget>[];
+
+    // Height | Weight | BodyType in one row (only non-null parts)
+    final hwbParts = <String>[];
+    if (p.heightCm != null) hwbParts.add('${p.heightCm} cm');
+    if (p.weightKg != null) hwbParts.add('${p.weightKg} kg');
+    if (p.bodyType != null && p.bodyType!.isNotEmpty) {
+      hwbParts.add(p.bodyType!);
+    }
+    if (hwbParts.isNotEmpty) {
+      rows.add(_statRow(Icons.straighten, hwbParts.join(' | ')));
+    }
+
+    // Pronouns with (i) tooltip
+    if (p.pronouns != null && p.pronouns!.isNotEmpty) {
+      rows.add(_statRowWithTooltip(
+          Icons.person_outline, p.pronouns!, 'Pronombres / Pronouns'));
+    }
+
+    // Position (role)
+    if (p.position != null && p.position!.isNotEmpty) {
+      rows.add(_statRow(Icons.swap_vert, p.position!));
+    }
+
+    // Ethnicity
+    if (p.ethnicity != null && p.ethnicity!.isNotEmpty) {
+      rows.add(_statRow(Icons.circle_outlined, p.ethnicity!));
+    }
+
+    // Relationship status
+    if (p.relationshipStatus != null && p.relationshipStatus!.isNotEmpty) {
+      rows.add(_statRow(Icons.people_outline, p.relationshipStatus!));
+    }
+
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return Column(children: rows);
+  }
+
+  Widget _statRow(IconData icon, String value) {
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: VibraTheme.kTextSecondary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: VibraTheme.kTextPrimary,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
               ),
-              const Spacer(),
-              Text(
-                value,
-                style: const TextStyle(
-                    color: VibraTheme.kTextPrimary, fontSize: 13),
-              ),
-            ],
+            ),
           ),
-        ),
-        const Divider(height: 1, color: VibraTheme.kDivider, indent: 44),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildChipWrap(List<String> items, Color accent) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: items.map((item) {
-        return Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(VibraTheme.kRadiusChip),
-            border: Border.all(color: accent.withValues(alpha: 0.3)),
+  Widget _statRowWithTooltip(IconData icon, String value, String tooltip) {
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: VibraTheme.kTextSecondary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: VibraTheme.kTextPrimary,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
-          child: Text(
-            item,
-            style: TextStyle(
-              color: accent == VibraTheme.kAccent
-                  ? VibraTheme.kAccent
-                  : VibraTheme.kTextPrimary,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+          Tooltip(
+            message: tooltip,
+            child: const Icon(
+              Icons.info_outline,
+              size: 18,
+              color: VibraTheme.kTextSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpectativasSection(UserProfile p, AppLocalizations l10n) {
+    final rows = <Widget>[];
+    if (p.lookingFor.isNotEmpty) {
+      rows.add(
+        _expectativaRow(
+          Icons.people_outline,
+          l10n.enBuscaDe,
+          p.lookingFor.join(', '),
+        ),
+      );
+    }
+    if (p.meetAt.isNotEmpty) {
+      rows.add(
+        _expectativaRow(
+          Icons.home_outlined,
+          l10n.quedarEn,
+          p.meetAt.join(', '),
+        ),
+      );
+    }
+    return Column(children: rows);
+  }
+
+  Widget _expectativaRow(IconData icon, String label, String value) {
+    return SizedBox(
+      height: 44,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, size: 22, color: VibraTheme.kTextSecondary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: '$label ',
+                    style: const TextStyle(
+                      color: VibraTheme.kTextSecondary,
+                      fontSize: 15,
+                    ),
+                  ),
+                  TextSpan(
+                    text: value,
+                    style: const TextStyle(
+                      color: VibraTheme.kTextPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _hasHealthData() {
+    final h = _healthData;
+    if (h == null) return false;
+    final practices = h['safer_practices_list'] as List?;
+    return h['hiv_status'] != null ||
+        h['last_tested_at'] != null ||
+        (practices?.isNotEmpty ?? false);
+  }
+
+  Widget _buildSaludSection() {
+    final h = _healthData!;
+    final rows = <Widget>[];
+
+    if (h['hiv_status'] != null) {
+      rows.add(_statRowWithTooltip(
+        Icons.health_and_safety_outlined,
+        h['hiv_status'] as String,
+        'Estado de VIH',
+      ));
+    }
+    if (h['last_tested_at'] != null) {
+      rows.add(_statRow(
+        Icons.calendar_today_outlined,
+        h['last_tested_at'] as String,
+      ));
+    }
+    final practices = h['safer_practices_list'] as List?;
+    if (practices != null && practices.isNotEmpty) {
+      rows.add(_statRow(
+        Icons.favorite_border,
+        practices.map((e) => e as String).join(', '),
+      ));
+    }
+    return Column(children: rows);
+  }
+
+  Widget _buildSuggestionsGrid() {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      childAspectRatio: 0.85,
+      children: _suggestions.map((user) {
+        return GestureDetector(
+          onTap: () => context.pushReplacement('/profile/${user.id}'),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Photo or letter placeholder
+                if (user.profilePhotoUrl != null)
+                  Image.network(
+                    user.profilePhotoUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) =>
+                        _buildNearbyPlaceholder(user),
+                  )
+                else
+                  _buildNearbyPlaceholder(user),
+                // Gradient overlay
+                const Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 60,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.transparent, Colors.black87],
+                      ),
+                    ),
+                  ),
+                ),
+                // Name overlay (bottom-left)
+                Positioned(
+                  bottom: 8,
+                  left: 8,
+                  right: 8,
+                  child: Text(
+                    user.displayName ?? user.email,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      shadows: [
+                        Shadow(blurRadius: 4, color: Colors.black),
+                      ],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -593,77 +900,86 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     );
   }
 
-  String _calculateAge(String birthdate) {
-    try {
-      final parts = birthdate.split('-');
-      if (parts.length != 3) return '';
-      final year = int.parse(parts[0]);
-      final month = int.parse(parts[1]);
-      final day = int.parse(parts[2]);
-      final now = DateTime.now();
-      var age = now.year - year;
-      if (now.month < month ||
-          (now.month == month && now.day < day)) {
-        age--;
-      }
-      return '$age years old';
-    } catch (_) {
-      return '';
-    }
-  }
-}
-
-/// Icon + label action button used in the profile action bar.
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onPressed;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+  Widget _buildNearbyPlaceholder(NearbyUser user) {
+    return Container(
+      color: VibraTheme.kSurface,
+      child: Center(
+        child: Text(
+          (user.displayName ?? user.email)[0].toUpperCase(),
+          style: const TextStyle(
+            fontSize: 32,
+            color: VibraTheme.kTextMuted,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
   }
 }
 
-/// Small badge showing online / last-seen status for a user. Uses the
-/// `userStatusProvider` family from the presence module.
+// ── Supporting widgets ────────────────────────────────────────────────────────
+
+/// Quick stats row: position icon | height | weight | bodyType, kTextTertiary.
+class _QuickStatsRow extends StatelessWidget {
+  final UserProfile profile;
+
+  const _QuickStatsRow({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = profile;
+    final parts = <Widget>[];
+
+    if (p.position != null && p.position!.isNotEmpty) {
+      parts.add(Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.arrow_downward,
+              size: 14, color: VibraTheme.kTextTertiary),
+          const SizedBox(width: 2),
+          Text(
+            p.position!,
+            style: const TextStyle(
+              color: VibraTheme.kTextTertiary,
+              fontSize: 15,
+            ),
+          ),
+        ],
+      ));
+    }
+
+    final hwbParts = <String>[];
+    if (p.heightCm != null) hwbParts.add('${p.heightCm} cm');
+    if (p.weightKg != null) hwbParts.add('${p.weightKg} kg');
+    if (p.bodyType != null && p.bodyType!.isNotEmpty) {
+      hwbParts.add(p.bodyType!);
+    }
+    if (hwbParts.isNotEmpty) {
+      if (parts.isNotEmpty) {
+        parts.add(const Text(
+          ' | ',
+          style: TextStyle(color: VibraTheme.kTextTertiary, fontSize: 15),
+        ));
+      }
+      parts.add(Text(
+        hwbParts.join(' | '),
+        style: const TextStyle(
+          color: VibraTheme.kTextTertiary,
+          fontSize: 15,
+        ),
+      ));
+    }
+
+    if (parts.isEmpty) return const SizedBox.shrink();
+
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: parts,
+    );
+  }
+}
+
+/// Online / last-seen badge using the presence module.
 class _PresenceBadge extends ConsumerWidget {
   final String userId;
 
@@ -671,17 +987,21 @@ class _PresenceBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final statusAsync = ref.watch(userStatusProvider(userId));
+
     return statusAsync.when(
       loading: () => const SizedBox(height: 20),
       error: (_, _) => const SizedBox(height: 20),
       data: (status) {
-        final label = formatLastSeen(status);
+        final label = status.isOnline
+            ? (l10n?.conectado ?? 'Conectado')
+            : formatLastSeen(status);
         if (label.isEmpty) return const SizedBox(height: 20);
         final color =
             status.isOnline ? VibraTheme.kOnline : VibraTheme.kTextMuted;
         return Padding(
-          padding: const EdgeInsets.only(top: 6),
+          padding: const EdgeInsets.only(top: 4),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -694,10 +1014,7 @@ class _PresenceBadge extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(color: color, fontSize: 13),
-              ),
+              Text(label, style: TextStyle(color: color, fontSize: 13)),
             ],
           ),
         );

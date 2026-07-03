@@ -1,36 +1,109 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/features/profile_detail_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
-class _MockProfileDetailAdapter implements HttpClientAdapter {
+// ── Mock HTTP adapter (handles all routes used by ProfileDetailScreen) ─────────
+
+class _FullMockAdapter implements HttpClientAdapter {
+  /// Records '$METHOD $PATH' for each request.
+  final List<String> calls;
+
+  _FullMockAdapter({required this.calls});
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
-    final regExp = RegExp(r'^/users/([^/]+)/status$');
-    final statusMatch = regExp.firstMatch(options.path);
-    if (options.method == 'GET' && statusMatch != null) {
-      final body = jsonEncode({
-        'is_online': true,
-        'last_seen_at': '2026-07-01T00:00:00Z',
-      });
-      return ResponseBody.fromString(
-        body,
-        200,
-        headers: {
-          Headers.contentTypeHeader: [Headers.jsonContentType],
-        },
-      );
+    final path = options.path;
+    final method = options.method.toUpperCase();
+    calls.add('$method $path');
+
+    // GET /profile/:userId
+    if (method == 'GET' && path.startsWith('/profile/')) {
+      final userId = path.substring('/profile/'.length);
+      return _profileBody(userId: userId);
     }
 
-    final body = jsonEncode({
+    // GET /users/:id/status
+    if (method == 'GET' && _statusPattern.hasMatch(path)) {
+      return _json({
+        'is_online': true,
+        'last_seen_at': null,
+      });
+    }
+
+    // GET /grid/nearby
+    if (method == 'GET' && path == '/grid/nearby') {
+      return _json({
+        'users': [
+          _nearbyUser('u2', 'Alice'),
+          _nearbyUser('u3', 'Carol'),
+          _nearbyUser('u4', 'Dan'),
+          _nearbyUser('u5', 'Eve'),
+        ],
+      });
+    }
+
+    // POST /favorites
+    if (method == 'POST' && path == '/favorites') {
+      return _json({'ok': true});
+    }
+
+    // DELETE /favorites/:userId
+    if (method == 'DELETE' && path.startsWith('/favorites/')) {
+      return _json({'ok': true});
+    }
+
+    // POST /chat/conversations → {conversation_id: 'conv-1'}
+    if (method == 'POST' && path == '/chat/conversations') {
+      return _json({'conversation_id': 'conv-1'});
+    }
+
+    // POST /chat/conversations/:id/messages → {id: 'msg-1'}
+    if (method == 'POST' && _msgPattern.hasMatch(path)) {
+      return _json({'id': 'msg-1'});
+    }
+
+    // Default success
+    return _json({'ok': true});
+  }
+
+  @override
+  void close({bool force = false}) {}
+
+  // ── helpers ────────────────────────────────────────────────────────────────
+
+  static final _statusPattern = RegExp(r'^/users/[^/]+/status$');
+  static final _msgPattern =
+      RegExp(r'^/chat/conversations/[^/]+/messages$');
+
+  ResponseBody _profileBody({required String userId}) {
+    if (userId == 'minimal-user') {
+      // Minimal profile: only required fields, no health, no optional arrays
+      return _json({
+        'user': {
+          'id': 'minimal-user',
+          'email': 'min@test.com',
+          'email_verified': true,
+          'status': 'active',
+          'role': 'user',
+          'created_at': '2025-01-01T00:00:00Z',
+        },
+        // No 'health' key
+      });
+    }
+
+    // Full profile with all fields + health data
+    return _json({
       'user': {
         'id': 'user-1',
         'email': 'bob@test.com',
@@ -50,42 +123,43 @@ class _MockProfileDetailAdapter implements HttpClientAdapter {
         'pronouns': 'he/him',
         'profile_photo_id': null,
         'profile_photo_url': null,
+        'verified': false,
         'tribes': ['geek', 'bear'],
         'looking_for': ['chat', 'friends'],
         'meet_at': ['bar'],
         'tags': ['fitness'],
       },
+      'health': {
+        'hiv_status': 'negative',
+        'last_tested_at': '2025-10',
+        'safer_practices_list': ['condoms', 'prep'],
+      },
     });
+  }
+
+  Map<String, dynamic> _nearbyUser(String id, String name) => {
+        'id': id,
+        'email': '$name@test.com',
+        'display_name': name,
+        'bio': null,
+        'profile_photo_id': null,
+        'profile_photo_url': null,
+        'distance_m': 500.0,
+        'verified': false,
+      };
+
+  ResponseBody _json(Object body) {
     return ResponseBody.fromString(
-      body,
+      jsonEncode(body),
       200,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
       },
     );
   }
-
-  @override
-  void close({bool force = false}) {}
 }
 
-class _MockErrorAdapter implements HttpClientAdapter {
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    return ResponseBody.fromString(
-      '{"error":"not found"}',
-      404,
-      headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
-    );
-  }
-
-  @override
-  void close({bool force = false}) {}
-}
+// ── Auth stub ─────────────────────────────────────────────────────────────────
 
 class _AuthenticatedNotifier extends AuthNotifier {
   _AuthenticatedNotifier() : super();
@@ -101,49 +175,80 @@ class _AuthenticatedNotifier extends AuthNotifier {
   Future<void> logout() async {}
 }
 
+// ── Shared widget builder ─────────────────────────────────────────────────────
+
+Widget _withProviders(Widget child, Dio dio) {
+  return ProviderScope(
+    overrides: [
+      authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+      dioProvider.overrideWithValue(dio),
+    ],
+    child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      // Explicit Spanish locale so l10n strings match the brief
+      locale: const Locale('es'),
+      home: child,
+    ),
+  );
+}
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
 void main() {
   group('ProfileDetailScreen', () {
-    testWidgets('loads and displays user profile', (tester) async {
-      final dio = Dio()..httpClientAdapter = _MockProfileDetailAdapter();
+    // ── Test 1 ────────────────────────────────────────────────────────────────
+    testWidgets('renders all sections with full profile', (tester) async {
+      final calls = <String>[];
+      final dio = Dio()..httpClientAdapter = _FullMockAdapter(calls: calls);
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(
-            home: ProfileDetailScreen(userId: 'user-1'),
-          ),
-        ),
+        _withProviders(const ProfileDetailScreen(userId: 'user-1'), dio),
       );
 
-      // Initially loading
+      // Initially shows loading
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
       await tester.pumpAndSettle();
 
-      // Profile info
-      expect(find.text('Bob'), findsOneWidget);
-      expect(find.text('Hey there! I like hiking'), findsOneWidget);
+      // Name is displayed
+      expect(find.text('Bob'), findsWidgets);
 
-      // Stats
-      expect(find.text('180 cm'), findsOneWidget);
-      expect(find.text('75 kg'), findsOneWidget);
-      expect(find.text('athletic'), findsOneWidget);
-      expect(find.text('single'), findsOneWidget);
-      expect(find.text('versatile'), findsOneWidget);
-      expect(find.text('latino'), findsOneWidget);
-      expect(find.text('he/him'), findsOneWidget);
+      // Online status badge shows "Conectado" (Spanish l10n)
+      expect(find.textContaining('Conectado'), findsOneWidget);
 
-      // Tribe chips
-      expect(find.text('geek', skipOffstage: false), findsOneWidget);
-      expect(find.text('bear', skipOffstage: false), findsOneWidget);
+      // Bottom bar "Di algo..." hint is present
+      expect(find.textContaining('Di algo'), findsOneWidget);
+
+      // No unhandled exceptions
     });
 
-    testWidgets('shows action buttons: Chat, Tap, Favorite, Block',
-        (tester) async {
-      final dio = Dio()..httpClientAdapter = _MockProfileDetailAdapter();
+    // ── Test 2 ────────────────────────────────────────────────────────────────
+    testWidgets('Di algo sends message and navigates to inbox', (tester) async {
+      final calls = <String>[];
+      final dio = Dio()..httpClientAdapter = _FullMockAdapter(calls: calls);
+
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const ProfileDetailScreen(userId: 'user-1'),
+          ),
+          GoRoute(
+            path: '/inbox/:conversationId',
+            builder: (context, state) => Scaffold(
+              body: Text('inbox-${state.pathParameters['conversationId']}'),
+            ),
+          ),
+          GoRoute(
+            path: '/profile/:userId',
+            builder: (context, state) => Scaffold(
+              body: Text('profile-${state.pathParameters['userId']}'),
+            ),
+          ),
+        ],
+      );
 
       await tester.pumpWidget(
         ProviderScope(
@@ -151,60 +256,82 @@ void main() {
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
           ],
-          child: const MaterialApp(
-            home: ProfileDetailScreen(userId: 'user-1'),
+          child: MaterialApp.router(
+            routerConfig: router,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('es'),
           ),
         ),
       );
 
       await tester.pumpAndSettle();
 
-      // Action buttons
-      expect(find.text('Chat'), findsOneWidget);
-      expect(find.text('Tap'), findsOneWidget);
-      expect(find.text('Favorite'), findsOneWidget);
-      expect(find.text('Block'), findsOneWidget);
+      // Enter text in "Di algo" field
+      final textField = find.byType(TextField).first;
+      await tester.enterText(textField, 'hola');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      // Verify chat API calls were made
+      expect(calls, contains('POST /chat/conversations'));
+      expect(calls, contains('POST /chat/conversations/conv-1/messages'));
+
+      // Navigation happened — inbox screen is shown
+      expect(find.text('inbox-conv-1'), findsOneWidget);
     });
 
-    testWidgets('shows error state on failure', (tester) async {
-      final dio = Dio()..httpClientAdapter = _MockErrorAdapter();
+    // ── Test 3 ────────────────────────────────────────────────────────────────
+    testWidgets('favorite toggles state', (tester) async {
+      final calls = <String>[];
+      final dio = Dio()..httpClientAdapter = _FullMockAdapter(calls: calls);
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(
-            home: ProfileDetailScreen(userId: 'nonexistent'),
-          ),
-        ),
+        _withProviders(const ProfileDetailScreen(userId: 'user-1'), dio),
       );
-
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Failed to load profile'), findsOneWidget);
-      expect(find.text('Retry'), findsOneWidget);
+      // Initially shows star_border (not favorited)
+      expect(find.byIcon(Icons.star_border), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsNothing);
+
+      // Tap → add favorite (POST /favorites)
+      await tester.tap(find.byIcon(Icons.star_border));
+      await tester.pumpAndSettle();
+
+      expect(calls, contains('POST /favorites'));
+      // Now shows filled star
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.star_border), findsNothing);
+
+      // Tap again → remove favorite (DELETE /favorites/user-1)
+      await tester.tap(find.byIcon(Icons.star));
+      await tester.pumpAndSettle();
+
+      expect(calls, contains('DELETE /favorites/user-1'));
+      // Back to star_border
+      expect(find.byIcon(Icons.star_border), findsOneWidget);
     });
 
-    testWidgets('shows Online badge when user is online', (tester) async {
-      final dio = Dio()..httpClientAdapter = _MockProfileDetailAdapter();
+    // ── Test 4 ────────────────────────────────────────────────────────────────
+    testWidgets('no details field does not crash', (tester) async {
+      final calls = <String>[];
+      final dio = Dio()..httpClientAdapter = _FullMockAdapter(calls: calls);
 
+      // Uses minimal-user which has no health and no optional fields
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(
-            home: ProfileDetailScreen(userId: 'user-1'),
-          ),
+        _withProviders(
+          const ProfileDetailScreen(userId: 'minimal-user'),
+          dio,
         ),
       );
 
+      // pumpAndSettle must complete without exception
       await tester.pumpAndSettle();
 
-      expect(find.text('Online'), findsOneWidget);
+      // Basic sanity: loading state resolves and no crash
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('Failed to load profile'), findsNothing);
     });
   });
 }

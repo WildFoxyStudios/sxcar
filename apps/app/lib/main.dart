@@ -24,6 +24,7 @@ import 'src/features/settings_screen.dart';
 import 'src/phrases/phrases_screen.dart';
 import 'src/sessions/sessions_screen.dart';
 import 'src/theme/app_theme.dart';
+import 'l10n/gen/app_localizations.dart';
 
 const Color grindrYellow = Color(0xFFF4C542);
 
@@ -396,6 +397,8 @@ class _VibraAppState extends ConsumerState<VibraApp>
       debugShowCheckedModeBanner: false,
       theme: VibraTheme.dark(),
       routerConfig: appRouter,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
     );
   }
 }

@@ -1,0 +1,135 @@
+{
+  "@@locale": "es",
+  "@@last_modified": "2026-07-03",
+
+  "navegar": "Navegar",
+  "@navegar": { "description": "Bottom nav tab: Browse/Explore grid" },
+
+  "rightNow": "Right Now",
+  "@rightNow": { "description": "Bottom nav tab: Right Now feed" },
+
+  "interest": "Interest",
+  "@interest": { "description": "Bottom nav tab: Views & Taps" },
+
+  "buzon": "Buzón",
+  "@buzon": { "description": "Bottom nav tab: Inbox / Chat list" },
+
+  "tienda": "Tienda",
+  "@tienda": { "description": "Bottom nav tab: Shop / Plans" },
+
+  "explorarMasPerfiles": "Explorar más perfiles",
+  "@explorarMasPerfiles": { "description": "Search pill placeholder in Navegar header" },
+
+  "enLinea": "En línea",
+  "@enLinea": { "description": "Online filter chip label" },
+
+  "filtros": "Filtros",
+  "@filtros": { "description": "Filters chip / sheet title" },
+
+  "favoritos": "Favoritos",
+  "@favoritos": { "description": "Favorites filter chip / tab label" },
+
+  "verMasPerfiles": "Ver más perfiles",
+  "@verMasPerfiles": { "description": "Upsell band CTA in Navegar grid" },
+
+  "boost": "Boost",
+  "@boost": { "description": "Boost FAB / feature label" },
+
+  "guardar": "Guardar",
+  "@guardar": { "description": "Save button label (edit profile, settings)" },
+
+  "editarPerfil": "Editar perfil",
+  "@editarPerfil": { "description": "Edit profile action label" },
+
+  "misAlbumes": "Mis álbumes",
+  "@misAlbumes": { "description": "My albums menu item" },
+
+  "ajustes": "Ajustes",
+  "@ajustes": { "description": "Settings menu item / screen title" },
+
+  "online": "En línea",
+  "@online": { "description": "Online presence mode label in drawer segmented" },
+
+  "incognito": "Incógnito",
+  "@incognito": { "description": "Incognito presence mode label in drawer segmented" },
+
+  "acercaDeMi": "Acerca de mí",
+  "@acercaDeMi": { "description": "About Me profile section header" },
+
+  "estadisticas": "Estadísticas",
+  "@estadisticas": { "description": "Stats profile section header" },
+
+  "expectativas": "Expectativas",
+  "@expectativas": { "description": "Expectations profile section header" },
+
+  "salud": "Salud",
+  "@salud": { "description": "Health profile section header" },
+
+  "tePodriaInteresar": "Te podría interesar",
+  "@tePodriaInteresar": { "description": "You might like section header on profile detail" },
+
+  "nuevo": "Nuevo",
+  "@nuevo": { "description": "New badge label (e.g., on PODRÍA INTERESAR)" },
+
+  "diAlgo": "Di algo...",
+  "@diAlgo": { "description": "Placeholder for message input on profile detail" },
+
+  "conectado": "Conectado",
+  "@conectado": { "description": "Connected / online status label" },
+
+  "bandejaDeEntrada": "Bandeja de entrada",
+  "@bandejaDeEntrada": { "description": "Inbox tab label in chat list" },
+
+  "albumes": "Álbumes",
+  "@albumes": { "description": "Albums tab label in chat list" },
+
+  "noLeido": "No leído",
+  "@noLeido": { "description": "Unread filter chip in chat list" },
+
+  "views": "Views",
+  "@views": { "description": "Views tab label in Interest screen" },
+
+  "taps": "Taps",
+  "@taps": { "description": "Taps tab label in Interest screen" },
+
+  "desbloquearTodo": "Desbloquear todo",
+  "@desbloquearTodo": { "description": "Unlock everything CTA (Interest screen bottom bar)" },
+
+  "elijaLaActualizacion": "Elija la actualización",
+  "@elijaLaActualizacion": { "description": "Shop screen title: Choose your upgrade" },
+
+  "continuar": "Continuar",
+  "@continuar": { "description": "Continue CTA button (shop / onboarding)" },
+
+  "ahorra": "Ahorra {percent}%",
+  "@ahorra": {
+    "description": "Save X% label on plan duration cards",
+    "placeholders": {
+      "percent": {
+        "type": "int",
+        "example": "27"
+      }
+    }
+  },
+
+  "popular": "Popular",
+  "@popular": { "description": "Popular badge on a plan duration card" },
+
+  "complementos": "Complementos",
+  "@complementos": { "description": "Add-ons section on shop screen" },
+
+  "elegirUnPlan": "Elegir un plan",
+  "@elegirUnPlan": { "description": "Choose a plan CTA in drawer" },
+
+  "actualizaTuAlbum": "Actualiza tu álbum",
+  "@actualizaTuAlbum": { "description": "Update your album label in chat list carousel" },
+
+  "enBuscaDe": "En busca de",
+  "@enBuscaDe": { "description": "Looking For field label on profile" },
+
+  "quedarEn": "Quedar en",
+  "@quedarEn": { "description": "Meet At field label on profile" },
+
+  "cerrarSesion": "Cerrar sesión",
+  "@cerrarSesion": { "description": "Log out action label in settings / drawer" }
+}

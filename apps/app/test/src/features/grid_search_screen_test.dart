@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:app/src/auth/auth_provider.dart';
-import 'package:app/src/features/explore_screen.dart';
+import 'package:app/src/features/grid_search_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:app/l10n/gen/app_localizations.dart';
 
 class _MockExploreAdapter implements HttpClientAdapter {
   final List<Map<String, dynamic>> places;
@@ -118,7 +119,7 @@ class _AuthenticatedNotifier extends AuthNotifier {
 }
 
 void main() {
-  group('ExploreScreen', () {
+  group('GridSearchScreen', () {
     testWidgets('loads and displays global grid', (tester) async {
       final dio = Dio()..httpClientAdapter = _MockExploreAdapter();
 
@@ -128,7 +129,12 @@ void main() {
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
           ],
-          child: const MaterialApp(home: ExploreScreen()),
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: Locale('es'),
+            home: GridSearchScreen(),
+          ),
         ),
       );
 
@@ -148,7 +154,12 @@ void main() {
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
           ],
-          child: const MaterialApp(home: ExploreScreen()),
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: Locale('es'),
+            home: GridSearchScreen(),
+          ),
         ),
       );
 
@@ -176,7 +187,12 @@ void main() {
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
           ],
-          child: const MaterialApp(home: ExploreScreen()),
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: Locale('es'),
+            home: GridSearchScreen(),
+          ),
         ),
       );
 
@@ -206,7 +222,12 @@ void main() {
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
           ],
-          child: const MaterialApp(home: ExploreScreen()),
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: Locale('es'),
+            home: GridSearchScreen(),
+          ),
         ),
       );
 

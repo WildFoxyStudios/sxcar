@@ -5,26 +5,27 @@ import '../auth/auth_provider.dart';
 import '../location/location_service.dart';
 import '../places/places_service.dart';
 import '../places/roam_service.dart';
-import '../rightnow/rightnow_service.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'cascade_screen.dart' show NearbyUser;
 
 /// Explore — global user grid with Roam support backed by real places.
-class ExploreScreen extends ConsumerStatefulWidget {
-  const ExploreScreen({super.key});
+class GridSearchScreen extends ConsumerStatefulWidget {
+  const GridSearchScreen({super.key});
 
   @override
-  ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
+  ConsumerState<GridSearchScreen> createState() => _GridSearchScreenState();
 }
 
-class _ExploreScreenState extends ConsumerState<ExploreScreen> {
+class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   late Future<List<NearbyUser>> _globalUsersFuture;
+  final TextEditingController _searchController = TextEditingController();
 
   // Roam location state — defaults used until /me/location is fetched.
   double _roamLat = 19.4326;
   double _roamLon = -99.1332;
-  String _roamName = '';
   bool _isRoam = false;
+  String _roamName = '';
   bool _hasAppliedPersistedRoam = false;
 
   @override
@@ -32,6 +33,19 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     super.initState();
     _globalUsersFuture = _fetchGlobalUsers();
     _applyRealLocationDefault();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// Re-run the global query with the current search text.
+  void _applySearch() {
+    setState(() {
+      _globalUsersFuture = _fetchGlobalUsers();
+    });
   }
 
   /// On first load, if the user has NOT set a persisted Roam location, use the
@@ -56,6 +70,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       'radius_m': 500000,
       'limit': 50,
     };
+    final q = _searchController.text.trim();
+    if (q.isNotEmpty) queryParams['q'] = q;
 
     final response = await dio.get<Map<String, dynamic>>(
       '/grid/nearby',
@@ -79,6 +95,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     setState(() {
       _roamLat = lat;
       _roamLon = lon;
+
       _roamName = name ?? '';
       _isRoam = isRoam;
       _globalUsersFuture = _fetchGlobalUsers(lat: lat, lon: lon);
@@ -193,31 +210,74 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     });
 
     return Scaffold(
+      backgroundColor: VibraTheme.kBg,
       appBar: AppBar(
-        title: Text(
-          _roamName.isNotEmpty
-              ? 'Explore · $_roamName'
-              : (_isRoam ? 'Explore' : 'Explore · Your area'),
+        backgroundColor: VibraTheme.kBg,
+        titleSpacing: 0,
+        title: Container(
+          height: 44,
+          margin: const EdgeInsets.only(right: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: VibraTheme.kChip,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.search, color: Colors.white, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    hintText:
+                        AppLocalizations.of(context)!.explorarMasPerfiles,
+                    hintStyle:
+                        const TextStyle(color: VibraTheme.kTextSecondary),
+                  ),
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => _applySearch(),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
+          // When roaming, surface the active location name so the user knows
+          // the grid is NOT centered on their real position.
+          if (_isRoam && _roamName.isNotEmpty)
+            Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: VibraTheme.kChip,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _roamName,
+                  style: const TextStyle(
+                      color: VibraTheme.kYellow,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
           IconButton(
-            icon: const Icon(Icons.explore_outlined),
+            icon: Icon(
+              Icons.explore_outlined,
+              color: _isRoam ? VibraTheme.kYellow : Colors.white,
+            ),
             tooltip: 'Roam',
             onPressed: _showRoamSheet,
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showPostRightNowSheet,
-        icon: const Icon(Icons.bolt),
-        label: const Text('Right Now'),
-      ),
-      body: Column(
-        children: [
-          const _RightNowStrip(),
-          Expanded(child: _buildGrid(theme)),
-        ],
-      ),
+      body: _buildGrid(theme),
     );
   }
 
@@ -302,14 +362,14 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 return CustomScrollView(
                   slivers: [
                     SliverPadding(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.zero,
                       sliver: SliverGrid(
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
-                          childAspectRatio: 0.75,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
+                          childAspectRatio: 0.91,
+                          crossAxisSpacing: 1.5,
+                          mainAxisSpacing: 1.5,
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
@@ -329,201 +389,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       );
   }
 
-  void _showPostRightNowSheet() {
-    final messenger = ScaffoldMessenger.of(context);
-    final controller = TextEditingController();
-    int minutes = 60;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: VibraTheme.kSurface,
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 16,
-            right: 16,
-            top: 16,
-          ),
-          child: StatefulBuilder(
-            builder: (ctx, setSheet) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Post Right Now',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: controller,
-                    autofocus: true,
-                    maxLength: 140,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: "What are you up to, right now?",
-                      hintStyle: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Text('Expires in:',
-                          style: TextStyle(color: Colors.grey)),
-                      const SizedBox(width: 12),
-                      DropdownButton<int>(
-                        value: minutes,
-                        dropdownColor: VibraTheme.kSurface,
-                        style: const TextStyle(color: Colors.white),
-                        items: const [
-                          DropdownMenuItem(value: 30, child: Text('30 min')),
-                          DropdownMenuItem(value: 60, child: Text('1 hour')),
-                          DropdownMenuItem(value: 120, child: Text('2 hours')),
-                        ],
-                        onChanged: (v) => setSheet(() => minutes = v ?? 60),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () async {
-                        final text = controller.text.trim();
-                        if (text.isEmpty) return;
-                        Navigator.of(ctx).pop();
-                        try {
-                          await ref
-                              .read(rightNowServiceProvider)
-                              .create(text, minutes);
-                          ref.invalidate(rightNowFeedProvider);
-                          messenger.showSnackBar(const SnackBar(
-                              content: Text('Posted to Right Now')));
-                        } catch (_) {
-                          messenger.showSnackBar(const SnackBar(
-                              content: Text('Failed to post')));
-                        }
-                      },
-                      child: const Text('Post'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
 }
 
-/// Horizontal strip of active "Right Now" intents shown atop Explore.
-class _RightNowStrip extends ConsumerWidget {
-  const _RightNowStrip();
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final feed = ref.watch(rightNowFeedProvider);
-    final currentUserId = ref.watch(authStateProvider).userId;
-
-    return feed.maybeWhen(
-      data: (intents) {
-        if (intents.isEmpty) return const SizedBox.shrink();
-        return SizedBox(
-          height: 96,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            itemCount: intents.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final intent = intents[index];
-              final isMine = intent.userId == currentUserId;
-              return _RightNowCard(
-                intent: intent,
-                isMine: isMine,
-                onDelete: isMine
-                    ? () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        try {
-                          await ref
-                              .read(rightNowServiceProvider)
-                              .delete(intent.id);
-                          ref.invalidate(rightNowFeedProvider);
-                        } catch (_) {
-                          messenger.showSnackBar(const SnackBar(
-                              content: Text('Failed to delete')));
-                        }
-                      }
-                    : null,
-              );
-            },
-          ),
-        );
-      },
-      orElse: () => const SizedBox.shrink(),
-    );
-  }
-}
-
-class _RightNowCard extends StatelessWidget {
-  final RightNowIntent intent;
-  final bool isMine;
-  final VoidCallback? onDelete;
-
-  const _RightNowCard({
-    required this.intent,
-    required this.isMine,
-    this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: isMine ? const Color(0xFF2A2415) : VibraTheme.kSurfaceElevated,
-        borderRadius: BorderRadius.circular(VibraTheme.kRadiusCard),
-        border: Border.all(
-          color: isMine ? VibraTheme.kAccent : Colors.transparent,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.bolt, color: VibraTheme.kAccent, size: 16),
-              const Spacer(),
-              if (isMine && onDelete != null)
-                GestureDetector(
-                  onTap: onDelete,
-                  child: const Icon(Icons.close, color: Colors.grey, size: 16),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Expanded(
-            child: Text(
-              intent.body,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// Full-bleed photo card matching the Cascade grid style (no online dot
 /// since Explore shows global users where real-time status is less relevant).
@@ -537,7 +405,7 @@ class _ExploreUserCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push('/profile/${user.id}'),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(VibraTheme.kRadiusCard),
+        borderRadius: BorderRadius.zero,
         child: Stack(
           fit: StackFit.expand,
           children: [

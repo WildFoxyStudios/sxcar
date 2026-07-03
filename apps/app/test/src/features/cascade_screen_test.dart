@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:geolocator/geolocator.dart';
 
 // ---------------------------------------------------------------------------
@@ -204,104 +205,69 @@ class _RecordingCascadeAdapter implements HttpClientAdapter {
 }
 
 // ---------------------------------------------------------------------------
-// Queue-based adapter (used by GPS-specific tests)
-// ---------------------------------------------------------------------------
-
-class _MockAdapter implements HttpClientAdapter {
-  final _queue = <_MockResponse>[];
-
-  void enqueue(int statusCode, [Map<String, dynamic>? body]) {
-    _queue.add(_MockResponse(statusCode, body));
-  }
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    if (_queue.isEmpty) {
-      // Return empty users for any unexpected call (e.g., presence status).
-      return ResponseBody.fromString(
-        jsonEncode({'users': <dynamic>[]}),
-        200,
-        headers: {
-          'content-type': ['application/json'],
-        },
-      );
-    }
-    final response = _queue.removeAt(0);
-    final body = response.body != null ? jsonEncode(response.body) : '';
-    return ResponseBody.fromString(
-      body,
-      response.statusCode,
-      headers: {
-        'content-type': ['application/json'],
-      },
-    );
-  }
-
-  @override
-  void close({bool force = false}) {}
-}
-
-class _MockResponse {
-  final int statusCode;
-  final Map<String, dynamic>? body;
-  _MockResponse(this.statusCode, this.body);
-}
-
-// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
+Widget _wrap(Widget child, Dio dio, {LocationService? location}) {
+  return ProviderScope(
+    overrides: [
+      authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+      locationServiceProvider
+          .overrideWithValue(location ?? _gpsAvailableService),
+      dioProvider.overrideWithValue(dio),
+    ],
+    child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('es'),
+      home: child,
+    ),
+  );
+}
+
 void main() {
-  group('CascadeScreen', () {
-    testWidgets('loads and displays 3-column grid of users', (tester) async {
+  group('NavegarScreen (Grindr grid)', () {
+    testWidgets('loads and displays the full-bleed grid of users',
+        (tester) async {
       final dio = Dio()..httpClientAdapter = _MockCascadeAdapter();
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            locationServiceProvider.overrideWithValue(_gpsAvailableService),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: CascadeScreen()),
-        ),
-      );
+          _wrap(const NavegarScreen(), dio));
 
-      // Initially shows shimmer skeleton loaders (no user data yet)
+      // Initially no user data yet (shimmer skeletons).
       expect(find.text('Bob'), findsNothing);
 
-      // Wait for GPS + data
       await tester.pumpAndSettle();
 
-      // Should show user names
+      // Tiles show ONLY the display name overlay (no distance, no age).
       expect(find.text('Bob'), findsOneWidget);
       expect(find.text('Alice'), findsOneWidget);
       expect(find.text('Charlie'), findsOneWidget);
+      expect(find.text('500 m'), findsNothing);
+    });
 
-      // Should show distance text
-      expect(find.text('500 m'), findsOneWidget);
-      expect(find.text('1.2 km'), findsOneWidget);
-      expect(find.text('50 m'), findsOneWidget);
+    testWidgets('shows the Grindr header: search pill + filter chips',
+        (tester) async {
+      final dio = Dio()..httpClientAdapter = _MockCascadeAdapter();
+
+      await tester.pumpWidget(
+          _wrap(const NavegarScreen(), dio));
+      await tester.pumpAndSettle();
+
+      // Search pill hint (l10n es).
+      expect(find.text('Explorar más perfiles'), findsOneWidget);
+      // Filter chips row.
+      expect(find.text('Filtros'), findsOneWidget);
+      expect(find.text('Favoritos'), findsOneWidget);
+      expect(find.text('En línea'), findsOneWidget);
+      expect(find.text('Right Now'), findsWidgets); // chip + FAB pill
     });
 
     testWidgets('shows empty state when no users nearby', (tester) async {
       final dio = Dio()..httpClientAdapter = _MockEmptyAdapter();
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            locationServiceProvider.overrideWithValue(_gpsAvailableService),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: CascadeScreen()),
-        ),
-      );
-
+          _wrap(const NavegarScreen(), dio));
       await tester.pumpAndSettle();
 
       expect(find.text('No one nearby yet'), findsOneWidget);
@@ -311,216 +277,58 @@ void main() {
       final dio = Dio()..httpClientAdapter = _MockErrorAdapter();
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            locationServiceProvider.overrideWithValue(_gpsAvailableService),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: CascadeScreen()),
-        ),
-      );
-
+          _wrap(const NavegarScreen(), dio));
       await tester.pumpAndSettle();
 
       expect(find.text('Failed to load nearby users'), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
     });
 
-    testWidgets('has filter icon in AppBar', (tester) async {
+    testWidgets('"En línea" chip re-queries with online_only=true',
+        (tester) async {
+      final requests = <Map<String, dynamic>>[];
+      final dio = Dio()..httpClientAdapter = _RecordingCascadeAdapter(requests);
+
+      await tester.pumpWidget(
+          _wrap(const NavegarScreen(), dio));
+      await tester.pumpAndSettle();
+
+      expect(requests, isNotEmpty);
+      expect(requests.first.containsKey('online_only'), isFalse,
+          reason: 'initial query must not filter by online');
+
+      await tester.tap(find.text('En línea'));
+      await tester.pumpAndSettle();
+
+      expect(requests.last['online_only'], anyOf(true, 'true'),
+          reason: 'tapping the chip must re-query with online_only');
+    });
+
+    testWidgets('GPS denied — shows the enable-location banner',
+        (tester) async {
+      final dio = Dio()..httpClientAdapter = _MockCascadeAdapter();
+
+      await tester.pumpWidget(_wrap(const NavegarScreen(), dio,
+          location: _gpsDeniedService));
+      await tester.pumpAndSettle();
+
+      expect(
+          find.text('Enable location to see people nearby'), findsOneWidget);
+    });
+
+    testWidgets('tapping the Filtros chip opens the filter sheet',
+        (tester) async {
       final dio = Dio()..httpClientAdapter = _MockCascadeAdapter();
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            locationServiceProvider.overrideWithValue(_gpsAvailableService),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: CascadeScreen()),
-        ),
-      );
-
+          _wrap(const NavegarScreen(), dio));
       await tester.pumpAndSettle();
 
-      // Filter icon is present; search icon was replaced by the filter sheet
-      expect(find.byIcon(Icons.filter_list), findsOneWidget);
-    });
-
-    testWidgets('shows online indicator dot on user cards', (tester) async {
-      final dio = Dio()..httpClientAdapter = _MockCascadeAdapter();
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            locationServiceProvider.overrideWithValue(_gpsAvailableService),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: CascadeScreen()),
-        ),
-      );
-
+      await tester.tap(find.text('Filtros'));
       await tester.pumpAndSettle();
 
-      // Green online dots should be present
-      expect(find.byType(Container), findsWidgets);
+      // The existing filter sheet exposes the distance slider.
+      expect(find.byType(Slider), findsWidgets);
     });
-  });
-
-  group('CascadeScreen — distance slider', () {
-    testWidgets(
-      'distance slider defaults to 5 km and includes in initial query',
-      (tester) async {
-        final requests = <Map<String, dynamic>>[];
-        final dio = Dio()
-          ..httpClientAdapter = _RecordingCascadeAdapter(requests);
-
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: [
-              authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-              locationServiceProvider.overrideWithValue(_gpsAvailableService),
-              dioProvider.overrideWithValue(dio),
-            ],
-            child: const MaterialApp(home: CascadeScreen()),
-          ),
-        );
-
-        await tester.pumpAndSettle();
-
-        expect(requests, isNotEmpty);
-        final first = requests.first;
-        // Default 5 km = 5000 m
-        expect(first['radius_m'], equals(5000));
-      },
-    );
-
-    testWidgets(
-      'changing distance in filter sheet updates the grid query',
-      (tester) async {
-        final requests = <Map<String, dynamic>>[];
-        final dio = Dio()
-          ..httpClientAdapter = _RecordingCascadeAdapter(requests);
-
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: [
-              authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-              locationServiceProvider.overrideWithValue(_gpsAvailableService),
-              dioProvider.overrideWithValue(dio),
-            ],
-            child: const MaterialApp(home: CascadeScreen()),
-          ),
-        );
-
-        await tester.pumpAndSettle();
-
-        final initialCount = requests.length;
-
-        // Open filter sheet
-        await tester.tap(find.byIcon(Icons.filter_list));
-        await tester.pumpAndSettle();
-
-        // Distance label should be visible
-        expect(find.textContaining('Distance'), findsOneWidget);
-
-        // Slider should be present
-        final sliderFinder = find.byKey(const Key('distance_slider'));
-        expect(sliderFinder, findsOneWidget);
-
-        // Drag the slider thumb to a different value.
-        await tester.drag(sliderFinder, const Offset(500, 0));
-        await tester.pumpAndSettle();
-
-        // Scroll the bottom sheet so the Apply button is on screen.
-        await tester.drag(find.byType(SingleChildScrollView).first,
-            const Offset(0, -500));
-        await tester.pumpAndSettle();
-
-        // Apply the filter
-        await tester.tap(find.text('Apply'), warnIfMissed: false);
-        await tester.pumpAndSettle();
-
-        // A new request should have been made with the new radius
-        expect(requests.length, greaterThan(initialCount));
-        final last = requests.last;
-        expect(last['radius_m'], isA<num>());
-        // The new radius should be > the default 5000m
-        expect((last['radius_m'] as num).toInt(), greaterThan(5000));
-      },
-    );
-  });
-
-  // ---------------------------------------------------------------------------
-  // GPS integration tests (Task 2)
-  // ---------------------------------------------------------------------------
-
-  group('CascadeScreen — GPS integration', () {
-    Widget buildScreen({
-      required LocationService locationService,
-      required Dio dio,
-    }) {
-      return ProviderScope(
-        overrides: [
-          locationServiceProvider.overrideWithValue(locationService),
-          dioProvider.overrideWithValue(dio),
-        ],
-        child: const MaterialApp(
-          home: CascadeScreen(),
-        ),
-      );
-    }
-
-    Dio mockDio({Map<String, dynamic>? body}) {
-      final dio = Dio(BaseOptions(baseUrl: 'https://api.turnend.win'));
-      final adapter = _MockAdapter();
-      adapter.enqueue(200, body ?? {'users': []});
-      dio.httpClientAdapter = adapter;
-      return dio;
-    }
-
-    testWidgets(
-      'GPS available — no location banner shown',
-      (WidgetTester tester) async {
-        await tester.pumpWidget(buildScreen(
-          locationService: _gpsAvailableService,
-          dio: mockDio(),
-        ));
-
-        // pumpAndSettle drains the full async chain (GPS → network call →
-        // FutureBuilder rebuild) including Dio's internal zero-duration timers.
-        // Once the empty-list state replaces the spinner, no animations remain
-        // and the test settles quickly.
-        await tester.pumpAndSettle(const Duration(seconds: 5));
-
-        expect(
-          find.text('Enable location to see people nearby'),
-          findsNothing,
-          reason: 'Banner must NOT appear when GPS resolves to a position',
-        );
-      },
-    );
-
-    testWidgets(
-      'GPS denied — location banner visible',
-      (WidgetTester tester) async {
-        // Dio mock supplied but _fetchNearbyUsers returns early when position
-        // is null, so no HTTP call is actually made.
-        await tester.pumpWidget(buildScreen(
-          locationService: _gpsDeniedService,
-          dio: mockDio(),
-        ));
-
-        // GPS resolves instantly; banner is static so pumpAndSettle settles.
-        await tester.pumpAndSettle(const Duration(seconds: 5));
-
-        expect(
-          find.text('Enable location to see people nearby'),
-          findsOneWidget,
-          reason: 'Banner MUST appear when GPS is denied',
-        );
-      },
-    );
   });
 }

@@ -3,13 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../main.dart' show mainScaffoldKey;
 import '../auth/auth_provider.dart';
+import '../boost/boost_service.dart';
 import '../location/location_service.dart';
 import '../presence/presence_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/widgets.dart';
+import 'profile_drawer.dart' show ownProfileProvider;
+import 'profile_screen.dart' show UserProfile;
 
-/// Model for a user in the cascade grid.
+/// Model for a user in the nearby grid.
 class NearbyUser {
   final String id;
   final String email;
@@ -68,38 +73,44 @@ const _kLookingFor = [
   'Chat', 'Friends', 'Dates', 'Relationship', 'Networking', 'Right Now',
 ];
 
-/// Cascade — the main screen showing nearby users in a 3-column grid.
-///
-/// Full-bleed photo cards, gradient scrim, name/distance/online overlay,
-/// verified badge slot, shimmer skeleton loaders, polished empty state.
-class CascadeScreen extends ConsumerStatefulWidget {
-  const CascadeScreen({super.key});
+/// Navegar — the main screen showing nearby users in a 3-column full-bleed
+/// grid, Grindr-style header (avatar + search pill), filter chips, upsell
+/// band after row 2, and Boost / Right Now FABs.
+class NavegarScreen extends ConsumerStatefulWidget {
+  const NavegarScreen({super.key});
 
   @override
-  ConsumerState<CascadeScreen> createState() => _CascadeScreenState();
+  ConsumerState<NavegarScreen> createState() => _NavegarScreenState();
 }
 
-class _CascadeScreenState extends ConsumerState<CascadeScreen> {
+class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   late Future<List<NearbyUser>> _nearbyUsersFuture;
 
-  // Filter state
+  // ── Filter state (kept from original CascadeScreen) ────────────────────────
   RangeValues _ageRange = const RangeValues(18, 99);
   Set<String> _selectedTribes = {};
   String? _bodyType;
   String? _lookingFor;
   String _searchQuery = '';
-  double _distanceKm = 5; // Default 5 km radius
+  double _distanceKm = 5;
   Position? _lastPosition;
   bool _locationDenied = false;
+
+  // ── New state (T3) ─────────────────────────────────────────────────────────
+  bool _showFavoritesOnly = false;
+  bool _onlineOnly = false;
+  Set<String> _favoriteIds = {};
 
   @override
   void initState() {
     super.initState();
     _nearbyUsersFuture = _initAndFetch();
+    _loadFavorites();
   }
 
-  /// Fetches GPS position first, updates cached state, then fetches users.
+  /// Waits for auth, fetches GPS, then fetches nearby users.
   Future<List<NearbyUser>> _initAndFetch() async {
+    await ref.read(authReadyProvider.future);
     final service = ref.read(locationServiceProvider);
     final pos = await service.getCurrentPosition() ??
         await service.getLastKnownPosition();
@@ -112,30 +123,41 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
     return _fetchNearbyUsers();
   }
 
+  /// Loads the user's favorites list from the API (client-side filter support).
+  void _loadFavorites() async {
+    try {
+      await ref.read(authReadyProvider.future);
+      final dio = ref.read(dioProvider);
+      final resp = await dio.get<Map<String, dynamic>>('/favorites');
+      final favsJson = (resp.data!['favorites'] as List<dynamic>);
+      if (mounted) {
+        setState(() {
+          _favoriteIds = favsJson
+              .map((f) => (f as Map<String, dynamic>)['user_id'] as String)
+              .toSet();
+
+        });
+      }
+    } catch (_) {
+      // Favorites are optional — the chip simply filters nothing on failure.
+    }
+  }
+
   Future<List<NearbyUser>> _fetchNearbyUsers() async {
     final pos = _lastPosition;
-    // Return empty list immediately when GPS is unavailable — the build()
-    // method will show the "enable location" banner instead.
     if (pos == null) return const [];
     final dio = ref.read(dioProvider);
-    final lat = pos.latitude;
-    final lon = pos.longitude;
     final radiusM = (_distanceKm * 1000).round();
 
     final queryParams = <String, dynamic>{
-      'lat': lat,
-      'lon': lon,
+      'lat': pos.latitude,
+      'lon': pos.longitude,
       'radius_m': radiusM,
       'limit': 50,
     };
 
-    // Add filter parameters if set
-    if (_ageRange.start > 18) {
-      queryParams['min_age'] = _ageRange.start.round();
-    }
-    if (_ageRange.end < 99) {
-      queryParams['max_age'] = _ageRange.end.round();
-    }
+    if (_ageRange.start > 18) queryParams['min_age'] = _ageRange.start.round();
+    if (_ageRange.end < 99) queryParams['max_age'] = _ageRange.end.round();
     if (_selectedTribes.isNotEmpty) {
       queryParams['tribe'] = _selectedTribes.join(',');
     }
@@ -145,9 +167,8 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
     if (_lookingFor != null && _lookingFor!.isNotEmpty) {
       queryParams['looking_for'] = _lookingFor;
     }
-    if (_searchQuery.isNotEmpty) {
-      queryParams['q'] = _searchQuery;
-    }
+    if (_searchQuery.isNotEmpty) queryParams['q'] = _searchQuery;
+    if (_onlineOnly) queryParams['online_only'] = true;
 
     final response = await dio.get<Map<String, dynamic>>(
       '/grid/nearby',
@@ -174,152 +195,443 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
       _bodyType != null ||
       _lookingFor != null ||
       _searchQuery.isNotEmpty ||
-      _distanceKm != 5;
+      _distanceKm != 5 ||
+      _showFavoritesOnly ||
+      _onlineOnly;
+
+  void _toggleFavorites() {
+    setState(() {
+      _showFavoritesOnly = !_showFavoritesOnly;
+    });
+  }
+
+  void _toggleOnlineOnly() {
+    setState(() {
+      _onlineOnly = !_onlineOnly;
+      _nearbyUsersFuture = _fetchNearbyUsers();
+    });
+  }
+
+  Future<void> _handleBoost() async {
+    final activeAsync = ref.read(activeBoostProvider);
+    Boost? existingBoost;
+    if (activeAsync is AsyncData<Boost?>) {
+      existingBoost = activeAsync.value;
+    }
+    if (existingBoost != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Boost activo · ${existingBoost.minutesRemaining}m restantes',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+    try {
+      await ref.read(boostServiceProvider).activate();
+      ref.invalidate(activeBoostProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Boost activado por 30 min!'),
+            backgroundColor: VibraTheme.kBoost,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Boost activado')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final profileAsync = ref.watch(ownProfileProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        // Temporary drawer button (T2) — replaced by avatar in Navegar header (T3)
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          tooltip: 'Perfil',
-          onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
+      backgroundColor: VibraTheme.kBg,
+      floatingActionButton: _buildFabs(context),
+      body: RefreshIndicator(
+        color: VibraTheme.kAccent,
+        onRefresh: () async {
+          final service = ref.read(locationServiceProvider);
+          final pos = await service.getCurrentPosition() ??
+              await service.getLastKnownPosition();
+          if (mounted) {
+            setState(() {
+              _lastPosition = pos;
+              _locationDenied = pos == null;
+              _nearbyUsersFuture = _fetchNearbyUsers();
+            });
+          }
+        },
+        child: FutureBuilder<List<NearbyUser>>(
+          future: _nearbyUsersFuture,
+          builder: (context, snapshot) {
+            final isLoading =
+                snapshot.connectionState == ConnectionState.waiting;
+            final hasError = snapshot.hasError;
+            final rawUsers = snapshot.data ?? [];
+            final users = _showFavoritesOnly
+                ? rawUsers
+                    .where((u) => _favoriteIds.contains(u.id))
+                    .toList()
+                : rawUsers;
+
+            return CustomScrollView(
+              slivers: [
+                // ── Header SliverAppBar ──────────────────────────────────
+                _buildSliverAppBar(l10n, profileAsync, context),
+
+                // ── Location denied banner ───────────────────────────────
+                if (_locationDenied)
+                  SliverToBoxAdapter(child: _buildLocationBanner()),
+
+                // ── Filter chips row ─────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: _buildChipsRow(l10n, context),
+                ),
+
+                // ── Content: shimmer | error | empty | grid ──────────────
+                if (isLoading)
+                  // Shimmer skeleton as a sliver grid
+                  SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 1.5,
+                      crossAxisSpacing: 1.5,
+                      childAspectRatio: 0.91,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (_, _) => Shimmer.fromColors(
+                        baseColor: VibraTheme.kSurface,
+                        highlightColor: VibraTheme.kSurfaceElevated,
+                        child: Container(color: VibraTheme.kSurface),
+                      ),
+                      childCount: 9,
+                    ),
+                  )
+                else if (hasError)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _buildErrorState(Theme.of(context)),
+                  )
+                else if (users.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _buildEmptyState(Theme.of(context)),
+                  )
+                else ...[
+                  // First 6 users (rows 1–2)
+                  SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 1.5,
+                      crossAxisSpacing: 1.5,
+                      childAspectRatio: 0.91,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, index) {
+                        final user = users[index];
+                        return _UserCard(
+                          user: user,
+                          onTap: () => ctx.push('/profile/${user.id}'),
+                        );
+                      },
+                      childCount: users.length < 6 ? users.length : 6,
+                    ),
+                  ),
+
+                  // Upsell band — inserted after row 2
+                  if (users.length >= 6)
+                    SliverToBoxAdapter(
+                      child: _buildUpsellBand(l10n, context),
+                    ),
+
+                  // Remaining users (row 3+)
+                  if (users.length > 6)
+                    SliverGrid(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 1.5,
+                        crossAxisSpacing: 1.5,
+                        childAspectRatio: 0.91,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (ctx, index) {
+                          final user = users[index + 6];
+                          return _UserCard(
+                            user: user,
+                            onTap: () => ctx.push('/profile/${user.id}'),
+                          );
+                        },
+                        childCount: users.length - 6,
+                      ),
+                    ),
+                ],
+              ],
+            );
+          },
         ),
-        title: Text(
-          'Vibra',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        actions: [
-          if (_hasActiveFilters)
-            IconButton(
-              icon: const Icon(Icons.clear_all),
-              tooltip: 'Clear filters',
-              onPressed: () {
-                setState(() {
-                  _ageRange = const RangeValues(18, 99);
-                  _selectedTribes = {};
-                  _bodyType = null;
-                  _lookingFor = null;
-                  _searchQuery = '';
-                  _distanceKm = 5;
-                  _nearbyUsersFuture = _fetchNearbyUsers();
-                });
-              },
-            ),
-          IconButton(
-            icon: Icon(
-              Icons.filter_list,
-              color: _hasActiveFilters ? theme.colorScheme.primary : null,
-            ),
-            onPressed: () => _showFilterSheet(context),
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          // Location denied banner
-          if (_locationDenied) _buildLocationBanner(),
-          // Active filter chips summary
-          if (_hasActiveFilters) _buildActiveFilterChips(),
-          // User grid
-          Expanded(
-            child: FutureBuilder<List<NearbyUser>>(
-              future: _nearbyUsersFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return _buildShimmerGrid();
-                }
+    );
+  }
 
-                if (snapshot.hasError) {
-                  return _buildErrorState(theme);
-                }
+  // ── Header ─────────────────────────────────────────────────────────────────
 
-                final users = snapshot.data ?? [];
-                if (users.isEmpty) {
-                  return _buildEmptyState(theme);
-                }
+  Widget _buildSliverAppBar(
+    AppLocalizations l10n,
+    AsyncValue<UserProfile?> profileAsync,
+    BuildContext context,
+  ) {
+    final profile =
+        profileAsync.maybeWhen(data: (p) => p, orElse: () => null);
+    final photoUrl = profile?.profilePhotoUrl;
+    final initials = _avatarInitial(profile);
 
-                return RefreshIndicator(
-                  color: VibraTheme.kAccent,
-                  onRefresh: () async {
-                    final service = ref.read(locationServiceProvider);
-                    final pos = await service.getCurrentPosition() ??
-                        await service.getLastKnownPosition();
-                    if (mounted) {
-                      setState(() {
-                        _lastPosition = pos;
-                        _locationDenied = pos == null;
-                        _nearbyUsersFuture = _fetchNearbyUsers();
-                      });
-                    }
-                  },
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.all(8),
-                        sliver: SliverGrid(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            childAspectRatio: 0.75,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                          ),
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final user = users[index];
-                              return _UserCard(
-                                user: user,
-                                onTap: () => context.push('/profile/${user.id}'),
-                              );
-                            },
-                            childCount: users.length,
-                          ),
+    return SliverAppBar(
+      pinned: true,
+      backgroundColor: VibraTheme.kBg,
+      toolbarHeight: 64,
+      automaticallyImplyLeading: false,
+      titleSpacing: 0,
+      title: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            // Avatar with online dot → opens ProfileDrawer
+            GestureDetector(
+              onTap: () => mainScaffoldKey.currentState?.openDrawer(),
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: VibraTheme.kSurface,
+                      foregroundImage:
+                          photoUrl != null ? NetworkImage(photoUrl) : null,
+                      child: Text(
+                        initials,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    // Online dot
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: VibraTheme.kOnline,
+                          shape: BoxShape.circle,
+                          border:
+                              Border.all(color: Colors.black, width: 1.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 10),
+
+            // Search pill → GridSearchScreen
+            Expanded(
+              child: GestureDetector(
+                onTap: () => context.push('/grid-search'),
+                child: Container(
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: const BoxDecoration(
+                    color: VibraTheme.kChip,
+                    borderRadius: BorderRadius.all(Radius.circular(999)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.search_outlined,
+                        size: 18,
+                        color: VibraTheme.kTextSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        l10n.explorarMasPerfiles,
+                        style: const TextStyle(
+                          color: VibraTheme.kTextSecondary,
+                          fontSize: 15,
                         ),
                       ),
                     ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _avatarInitial(UserProfile? p) {
+    if (p == null) return '?';
+    final name = p.displayName ?? p.email;
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  // ── Chips row ──────────────────────────────────────────────────────────────
+
+  Widget _buildChipsRow(AppLocalizations l10n, BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        children: [
+          FilterChipPill(
+            icon: Icons.tune,
+            label: l10n.filtros,
+            active: _hasActiveFilters,
+            onTap: () => _showFilterSheet(context),
+          ),
+          const SizedBox(width: 8),
+          FilterChipPill(
+            icon: Icons.star,
+            label: l10n.favoritos,
+            active: _showFavoritesOnly,
+            onTap: _toggleFavorites,
+          ),
+          const SizedBox(width: 8),
+          FilterChipPill(
+            label: l10n.enLinea,
+            active: _onlineOnly,
+            onTap: _toggleOnlineOnly,
+          ),
+          const SizedBox(width: 8),
+          FilterChipPill(
+            label: l10n.rightNow,
+            active: false,
+            onTap: () => context.go('/right-now'),
           ),
         ],
       ),
     );
   }
 
-  /// Shimmer skeleton grid shown while fetching users.
-  Widget _buildShimmerGrid() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 0.75,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
-      itemCount: 9,
-      itemBuilder: (_, _) => Shimmer.fromColors(
-        baseColor: VibraTheme.kSurface,
-        highlightColor: VibraTheme.kSurfaceElevated,
-        child: Container(
-          decoration: BoxDecoration(
-            color: VibraTheme.kSurface,
-            borderRadius: BorderRadius.circular(VibraTheme.kRadiusCard),
-          ),
+  // ── Upsell band ────────────────────────────────────────────────────────────
+
+  Widget _buildUpsellBand(AppLocalizations l10n, BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.go('/tienda'),
+      child: Container(
+        height: 56,
+        color: VibraTheme.kBg,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Text(
+              l10n.verMasPerfiles,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const Spacer(),
+            const Icon(Icons.arrow_forward, color: Colors.white),
+          ],
         ),
       ),
     );
   }
 
-  /// Polished error state.
+  // ── FABs (Boost + Right Now) ───────────────────────────────────────────────
+
+  Widget _buildFabs(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // Boost pill
+        GestureDetector(
+          onTap: _handleBoost,
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            decoration: BoxDecoration(
+              color: VibraTheme.kBg,
+              borderRadius: const BorderRadius.all(Radius.circular(999)),
+              border: Border.all(color: VibraTheme.kBoost, width: 1),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Boost',
+                  style: TextStyle(
+                    color: VibraTheme.kBoost,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                SizedBox(width: 4),
+                Icon(Icons.bolt, color: VibraTheme.kBoost, size: 18),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Right Now pill
+        GestureDetector(
+          onTap: () => context.go('/right-now'),
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            decoration: BoxDecoration(
+              color: VibraTheme.kBg,
+              borderRadius: const BorderRadius.all(Radius.circular(999)),
+              border: Border.all(color: VibraTheme.kRightNow, width: 1),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Right Now',
+                  style: TextStyle(
+                    color: VibraTheme.kRightNow,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                SizedBox(width: 4),
+                Icon(Icons.water_drop, color: VibraTheme.kRightNow, size: 18),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── State helpers ──────────────────────────────────────────────────────────
+
   Widget _buildErrorState(ThemeData theme) {
     return Center(
       child: Padding(
@@ -359,7 +671,6 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
     );
   }
 
-  /// Polished empty state.
   Widget _buildEmptyState(ThemeData theme) {
     return Center(
       child: Padding(
@@ -390,7 +701,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Try Explore to see people everywhere!',
+              'Amplía tu radio o ajusta los filtros',
               style: VibraTheme.bodySecondary,
               textAlign: TextAlign.center,
             ),
@@ -400,7 +711,6 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
     );
   }
 
-  /// Banner shown when the user has denied location permission.
   Widget _buildLocationBanner() {
     return Container(
       width: double.infinity,
@@ -433,83 +743,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
     );
   }
 
-  /// Removable active-filter chip row.
-  Widget _buildActiveFilterChips() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 4,
-        children: [
-          if (_ageRange.start > 18 || _ageRange.end < 99)
-            Chip(
-              label: Text('Age ${_ageRange.start.round()}-${_ageRange.end.round()}'),
-              deleteIcon: const Icon(Icons.close, size: 16),
-              onDeleted: () {
-                setState(() {
-                  _ageRange = const RangeValues(18, 99);
-                  _nearbyUsersFuture = _fetchNearbyUsers();
-                });
-              },
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
-          for (final tribe in _selectedTribes)
-            Chip(
-              label: Text(tribe),
-              deleteIcon: const Icon(Icons.close, size: 16),
-              onDeleted: () {
-                setState(() {
-                  _selectedTribes = Set.from(_selectedTribes)..remove(tribe);
-                  _nearbyUsersFuture = _fetchNearbyUsers();
-                });
-              },
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
-          if (_bodyType != null)
-            Chip(
-              label: Text(_bodyType!),
-              deleteIcon: const Icon(Icons.close, size: 16),
-              onDeleted: () {
-                setState(() {
-                  _bodyType = null;
-                  _nearbyUsersFuture = _fetchNearbyUsers();
-                });
-              },
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
-          if (_lookingFor != null)
-            Chip(
-              label: Text(_lookingFor!),
-              deleteIcon: const Icon(Icons.close, size: 16),
-              onDeleted: () {
-                setState(() {
-                  _lookingFor = null;
-                  _nearbyUsersFuture = _fetchNearbyUsers();
-                });
-              },
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
-          if (_searchQuery.isNotEmpty)
-            Chip(
-              label: Text('"$_searchQuery"'),
-              deleteIcon: const Icon(Icons.close, size: 16),
-              onDeleted: () {
-                setState(() {
-                  _searchQuery = '';
-                  _nearbyUsersFuture = _fetchNearbyUsers();
-                });
-              },
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
-        ],
-      ),
-    );
-  }
+  // ── Filter sheet (UNCHANGED from original CascadeScreen) ──────────────────
 
   void _showFilterSheet(BuildContext context) {
     RangeValues localAge = _ageRange;
@@ -548,7 +782,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // --- Distance slider ---
+                // Distance slider
                 Text(
                   'Distance: ${localDistanceKm.round()} km',
                   style: Theme.of(context).textTheme.bodyMedium,
@@ -561,11 +795,12 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                   divisions: 49,
                   label: '${localDistanceKm.round()} km',
                   activeColor: VibraTheme.kAccent,
-                  onChanged: (v) => setSheetState(() => localDistanceKm = v),
+                  onChanged: (v) =>
+                      setSheetState(() => localDistanceKm = v),
                 ),
                 const SizedBox(height: 12),
 
-                // --- Age range slider ---
+                // Age range slider
                 Text(
                   'Age Range: ${localAge.start.round()} - ${localAge.end.round()}',
                   style: Theme.of(context).textTheme.bodyMedium,
@@ -584,7 +819,7 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // --- Tribe multi-select chips ---
+                // Tribe multi-select
                 Text('Tribe', style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 Wrap(
@@ -593,9 +828,11 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                   children: _kTribes.map((tribe) {
                     final selected = localTribes.contains(tribe);
                     return FilterChip(
-                      label: Text(tribe, style: const TextStyle(fontSize: 12)),
+                      label:
+                          Text(tribe, style: const TextStyle(fontSize: 12)),
                       selected: selected,
-                      selectedColor: VibraTheme.kAccent.withValues(alpha: 0.2),
+                      selectedColor:
+                          VibraTheme.kAccent.withValues(alpha: 0.2),
                       checkmarkColor: VibraTheme.kAccent,
                       onSelected: (val) {
                         setSheetState(() {
@@ -613,8 +850,9 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // --- Body type dropdown ---
-                Text('Body Type', style: Theme.of(context).textTheme.bodyMedium),
+                // Body type dropdown
+                Text('Body Type',
+                    style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 DropdownButtonFormField<String>(
                   key: ValueKey('body_type_${localBodyType ?? "none"}'),
@@ -622,18 +860,21 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                   hint: const Text('Any'),
                   items: _kBodyTypes
-                      .map((bt) => DropdownMenuItem(value: bt, child: Text(bt)))
+                      .map((bt) =>
+                          DropdownMenuItem(value: bt, child: Text(bt)))
                       .toList(),
                   onChanged: (v) => setSheetState(() => localBodyType = v),
                 ),
                 const SizedBox(height: 12),
 
-                // --- Looking for dropdown ---
-                Text('Looking For', style: Theme.of(context).textTheme.bodyMedium),
+                // Looking for dropdown
+                Text('Looking For',
+                    style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 DropdownButtonFormField<String>(
                   key: ValueKey('looking_for_${localLookingFor ?? "none"}'),
@@ -641,18 +882,22 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                   hint: const Text('Any'),
                   items: _kLookingFor
-                      .map((lf) => DropdownMenuItem(value: lf, child: Text(lf)))
+                      .map((lf) =>
+                          DropdownMenuItem(value: lf, child: Text(lf)))
                       .toList(),
-                  onChanged: (v) => setSheetState(() => localLookingFor = v),
+                  onChanged: (v) =>
+                      setSheetState(() => localLookingFor = v),
                 ),
                 const SizedBox(height: 12),
 
-                // --- Search text field ---
-                Text('Search', style: Theme.of(context).textTheme.bodyMedium),
+                // Search text field
+                Text('Search',
+                    style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 TextField(
                   controller: searchController,
@@ -660,13 +905,14 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
                     hintText: 'Name, bio...',
                     border: OutlineInputBorder(),
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                   onChanged: (v) {},
                 ),
                 const SizedBox(height: 24),
 
-                // --- Action buttons ---
+                // Action buttons
                 Row(
                   children: [
                     Expanded(
@@ -714,8 +960,10 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
   }
 }
 
-/// Full-bleed photo card with gradient scrim, name/distance/online overlay,
-/// and an optional verified badge in the top-right corner.
+// ── _UserCard ─────────────────────────────────────────────────────────────────
+
+/// Full-bleed photo card — no border radius, gradient scrim bottom 40%,
+/// online dot + name overlay bottom-left.
 class _UserCard extends ConsumerWidget {
   final NearbyUser user;
   final VoidCallback onTap;
@@ -725,7 +973,6 @@ class _UserCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(userStatusProvider(user.id));
-
     final isOnline = statusAsync.maybeWhen(
       data: (s) => s.isOnline,
       orElse: () => false,
@@ -734,11 +981,11 @@ class _UserCard extends ConsumerWidget {
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(VibraTheme.kRadiusCard),
+        borderRadius: BorderRadius.zero,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Background: network photo or gradient placeholder
+            // Photo
             if (user.profilePhotoUrl != null)
               Image.network(
                 user.profilePhotoUrl!,
@@ -748,76 +995,71 @@ class _UserCard extends ConsumerWidget {
             else
               _buildPlaceholder(),
 
-            // Bottom gradient scrim (transparent → near-black)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: 72,
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Color(0xD9000000),
-                    ],
+            // Bottom gradient scrim (40% of tile height)
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: FractionallySizedBox(
+                  heightFactor: 0.4,
+                  widthFactor: 1.0,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Color(0xD9000000),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
 
-            // Name + distance overlay (bottom left)
+            // Online dot + name overlay (bottom-left)
             Positioned(
               left: 6,
-              right: 18,
+              right: 6,
               bottom: 6,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    user.displayName ?? user.email,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(blurRadius: 4, color: Color(0x99000000)),
-                      ],
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: isOnline
+                          ? VibraTheme.kOnline
+                          : VibraTheme.kTextMuted,
+                      shape: BoxShape.circle,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 1),
-                  Text(
-                    user.distanceText,
-                    style: const TextStyle(
-                      color: VibraTheme.kTextSecondary,
-                      fontSize: 9,
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      user.displayName ?? user.email,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 4,
+                            color: Color(0x99000000),
+                          ),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
             ),
 
-            // Online dot (bottom right corner)
-            Positioned(
-              right: 5,
-              bottom: 9,
-              child: Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: isOnline ? VibraTheme.kOnline : VibraTheme.kTextMuted,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.black, width: 1.5),
-                ),
-              ),
-            ),
-
-            // Verified badge (top right) — shown when user.isVerified
+            // Verified badge (top right)
             if (user.isVerified)
               Positioned(
                 top: 5,
@@ -842,7 +1084,6 @@ class _UserCard extends ConsumerWidget {
     );
   }
 
-  /// Gradient placeholder shown when no profile photo is available.
   Widget _buildPlaceholder() {
     return Container(
       decoration: const BoxDecoration(

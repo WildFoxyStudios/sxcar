@@ -11,6 +11,7 @@ import 'src/features/album_detail_screen.dart';
 import 'src/features/albums_screen.dart';
 import 'src/features/cascade_screen.dart';
 import 'src/features/chat_list_screen.dart';
+import 'src/features/grid_search_screen.dart';
 import 'src/features/chat_screen.dart';
 import 'src/features/interest_screen.dart';
 import 'src/features/login_screen.dart';
@@ -60,6 +61,7 @@ const Set<String> _knownTopLevelPaths = {
   '/edit-profile',
   '/settings',
   '/albums',
+  '/grid-search',
   // Legacy paths kept as redirect routes so old deep links / tests don't break
   '/cascade',
   '/you',
@@ -190,6 +192,10 @@ final GoRouter appRouter = GoRouter(
     // These appear above the shell so they are full-screen (no bottom nav),
     // and a back button in their AppBar returns to the previous shell tab.
     GoRoute(
+      path: '/grid-search',
+      builder: (_, _) => const GridSearchScreen(),
+    ),
+    GoRoute(
       path: '/edit-profile',
       builder: (_, _) => const EditProfileScreen(),
     ),
@@ -244,7 +250,7 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/navegar',
-              builder: (_, _) => const CascadeScreen(),
+              builder: (_, _) => const NavegarScreen(),
             ),
           ],
         ),

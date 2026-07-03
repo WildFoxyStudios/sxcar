@@ -131,5 +131,20 @@
   "@quedarEn": { "description": "Meet At field label on profile" },
 
   "cerrarSesion": "Cerrar sesión",
-  "@cerrarSesion": { "description": "Log out action label in settings / drawer" }
+  "@cerrarSesion": { "description": "Log out action label in settings / drawer" },
+
+  "saludSexual": "Salud sexual",
+  "@saludSexual": { "description": "Sexual health menu item in drawer" },
+
+  "seguridadPrivacidad": "Centro de seguridad y privacidad",
+  "@seguridadPrivacidad": { "description": "Safety & privacy center menu item in drawer" },
+
+  "verPlanes": "Ver planes",
+  "@verPlanes": { "description": "See plans CTA on secondary plan card in drawer" },
+
+  "obtenerPremium": "Obtener Premium",
+  "@obtenerPremium": { "description": "Placeholder plan CTA in drawer (T7 wires real plan name)" },
+
+  "chatearMasLugarenos": "Chatear con más lugareños",
+  "@chatearMasLugarenos": { "description": "Plan card subtitle in drawer" }
 }

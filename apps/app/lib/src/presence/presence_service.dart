@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_provider.dart';
+import 'presence_mode_provider.dart';
 
 /// Online presence + last-seen info for a single user.
 class UserStatus {
@@ -50,7 +51,10 @@ final presenceServiceProvider = Provider<PresenceService>((ref) {
 
 /// Heartbeat provider — POSTs on construction and on each app foreground.
 /// The actual scheduling is done by `WidgetsBindingObserver` in main.dart.
+/// No-op when the user is in Incognito mode.
 final heartbeatProvider = Provider<void>((ref) {
+  final isIncognito = ref.watch(presenceModeProvider);
+  if (isIncognito) return; // Incognito: suppress heartbeat.
   final service = ref.watch(presenceServiceProvider);
   // Fire-and-forget; ignore failures.
   service.sendHeartbeat().catchError((_) {});

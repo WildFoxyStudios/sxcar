@@ -132,4 +132,19 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cerrarSesion => 'Cerrar sesión';
+
+  @override
+  String get saludSexual => 'Salud sexual';
+
+  @override
+  String get seguridadPrivacidad => 'Centro de seguridad y privacidad';
+
+  @override
+  String get verPlanes => 'Ver planes';
+
+  @override
+  String get obtenerPremium => 'Obtener Premium';
+
+  @override
+  String get chatearMasLugarenos => 'Chatear con más lugareños';
 }

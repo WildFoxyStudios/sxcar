@@ -132,4 +132,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cerrarSesion => 'Log Out';
+
+  @override
+  String get saludSexual => 'Sexual Health';
+
+  @override
+  String get seguridadPrivacidad => 'Safety & Privacy Center';
+
+  @override
+  String get verPlanes => 'See Plans';
+
+  @override
+  String get obtenerPremium => 'Get Premium';
+
+  @override
+  String get chatearMasLugarenos => 'Chat with more locals';
 }

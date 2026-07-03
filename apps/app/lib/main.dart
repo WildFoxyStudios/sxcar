@@ -12,13 +12,13 @@ import 'src/features/albums_screen.dart';
 import 'src/features/cascade_screen.dart';
 import 'src/features/chat_list_screen.dart';
 import 'src/features/chat_screen.dart';
-import 'src/features/explore_screen.dart';
 import 'src/features/interest_screen.dart';
 import 'src/features/login_screen.dart';
 import 'src/features/profile_detail_screen.dart';
+import 'src/features/profile_drawer.dart';
 import 'src/features/register_screen.dart';
+import 'src/features/right_now_screen.dart';
 import 'src/features/verify_email_screen.dart';
-import 'src/features/you_screen.dart';
 import 'src/features/edit_profile_screen.dart';
 import 'src/features/settings_screen.dart';
 import 'src/phrases/phrases_screen.dart';
@@ -26,7 +26,18 @@ import 'src/sessions/sessions_screen.dart';
 import 'src/theme/app_theme.dart';
 import 'l10n/gen/app_localizations.dart';
 
-const Color grindrYellow = Color(0xFFF4C542);
+// ---------------------------------------------------------------------------
+// Global key used by CascadeScreen's temporary drawer button (T2) and by
+// the Navegar header avatar (T3) to open the ProfileDrawer without needing
+// to walk up the widget tree past CascadeScreen's own Scaffold.
+// ---------------------------------------------------------------------------
+
+/// Key for the outer [MainShell] Scaffold that owns the [ProfileDrawer].
+final GlobalKey<ScaffoldState> mainScaffoldKey = GlobalKey<ScaffoldState>();
+
+// ---------------------------------------------------------------------------
+// Known top-level paths
+// ---------------------------------------------------------------------------
 
 /// Top-level paths that are valid in the route table. Used by the redirect
 /// callback to detect unregistered paths arriving from a deep link
@@ -39,16 +50,20 @@ const Set<String> _knownTopLevelPaths = {
   '/register',
   '/verify-email',
   '/profile',
-  '/cascade',
+  // New shell tabs (T2)
+  '/navegar',
+  '/right-now',
   '/interest',
   '/inbox',
-  '/explore',
-  '/you',
+  '/tienda',
+  // Top-level routes moved out of You branch (T2)
   '/edit-profile',
   '/settings',
-  '/settings/phrases',
-  '/settings/sessions',
   '/albums',
+  // Legacy paths kept as redirect routes so old deep links / tests don't break
+  '/cascade',
+  '/you',
+  '/explore',
 };
 
 /// Returns the top-level path segment for a URI (e.g. `/profile/abc123` -> `/profile`).
@@ -84,7 +99,7 @@ String? appRedirect({
     }
     // Loading or authenticated: land on the home tab. The auth-state
     // checks below will further redirect if appropriate.
-    return '/cascade';
+    return '/navegar';
   }
 
   final isAuthRoute = matchedLocation == '/login' ||
@@ -102,7 +117,7 @@ String? appRedirect({
   }
 
   if (status == AuthStatus.authenticated && (isAuthRoute || isSplash)) {
-    return '/cascade';
+    return '/navegar';
   }
 
   if (status == AuthStatus.emailUnverified && !isVerifyRoute) {
@@ -136,15 +151,20 @@ final GoRouter appRouter = GoRouter(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('V', style: TextStyle(color: grindrYellow, fontSize: 48, fontWeight: FontWeight.bold)),
+              Text('V',
+                  style: TextStyle(
+                      color: VibraTheme.kYellow,
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold)),
               SizedBox(height: 16),
-              CircularProgressIndicator(color: grindrYellow),
+              CircularProgressIndicator(color: VibraTheme.kYellow),
             ],
           ),
         ),
       ),
     ),
-    // Auth routes
+
+    // ── Auth routes ────────────────────────────────────────────────────────
     GoRoute(
       path: '/login',
       builder: (_, _) => const LoginScreen(),
@@ -157,28 +177,87 @@ final GoRouter appRouter = GoRouter(
       path: '/verify-email',
       builder: (_, _) => const VerifyEmailScreen(),
     ),
-    // Full-screen profile detail (no bottom nav)
+
+    // ── Full-screen profile detail (no bottom nav) ─────────────────────────
     GoRoute(
       path: '/profile/:userId',
       builder: (_, state) => ProfileDetailScreen(
         userId: state.pathParameters['userId']!,
       ),
     ),
-    // Main shell with 5-tab bottom navigation
+
+    // ── Top-level routes moved OUT of the You branch (T2) ─────────────────
+    // These appear above the shell so they are full-screen (no bottom nav),
+    // and a back button in their AppBar returns to the previous shell tab.
+    GoRoute(
+      path: '/edit-profile',
+      builder: (_, _) => const EditProfileScreen(),
+    ),
+    GoRoute(
+      path: '/settings',
+      builder: (_, state) => SettingsScreen(
+        initialTab: state.uri.queryParameters['tab'] ?? 'notifications',
+      ),
+    ),
+    GoRoute(
+      path: '/settings/phrases',
+      builder: (_, _) => const PhrasesScreen(),
+    ),
+    GoRoute(
+      path: '/settings/sessions',
+      builder: (_, _) => const SessionsScreen(),
+    ),
+    GoRoute(
+      path: '/albums',
+      builder: (_, _) => const AlbumsScreen(),
+      routes: [
+        GoRoute(
+          path: ':albumId',
+          builder: (_, state) => AlbumDetailScreen(
+            albumId: state.pathParameters['albumId']!,
+          ),
+        ),
+      ],
+    ),
+
+    // ── Legacy redirect routes (keeps old deep links / tests working) ──────
+    GoRoute(
+      path: '/cascade',
+      redirect: (_, _) => '/navegar',
+    ),
+    GoRoute(
+      path: '/you',
+      redirect: (_, _) => '/navegar',
+    ),
+    GoRoute(
+      path: '/explore',
+      redirect: (_, _) => '/right-now',
+    ),
+
+    // ── Main shell with 5-tab bottom navigation ────────────────────────────
     StatefulShellRoute.indexedStack(
       builder: (_, _, navigationShell) =>
           MainShell(navigationShell: navigationShell),
       branches: [
-        // Tab 0: Cascade (home)
+        // Tab 0: Navegar (nearby grid — content from CascadeScreen; T3 redesigns)
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/cascade',
+              path: '/navegar',
               builder: (_, _) => const CascadeScreen(),
             ),
           ],
         ),
-        // Tab 1: Interest (taps + favorites)
+        // Tab 1: Right Now (active "Right Now" intent feed)
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/right-now',
+              builder: (_, _) => const RightNowScreen(),
+            ),
+          ],
+        ),
+        // Tab 2: Interest (views + taps)
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -187,7 +266,7 @@ final GoRouter appRouter = GoRouter(
             ),
           ],
         ),
-        // Tab 2: Chat (inbox + conversation).
+        // Tab 3: Buzón (inbox + conversation).
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -214,52 +293,29 @@ final GoRouter appRouter = GoRouter(
             ),
           ],
         ),
-        // Tab 3: Explore (global grid)
+        // Tab 4: Tienda (shop / plans — placeholder until T7)
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/explore',
-              builder: (_, _) => const ExploreScreen(),
-            ),
-          ],
-        ),
-        // Tab 4: You (profile + settings)
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/you',
-              builder: (_, _) => const YouScreen(),
-            ),
-            GoRoute(
-              path: '/edit-profile',
-              builder: (_, _) => const EditProfileScreen(),
-            ),
-            GoRoute(
-              path: '/settings',
-              builder: (_, state) => SettingsScreen(
-                initialTab:
-                    state.uri.queryParameters['tab'] ?? 'notifications',
-              ),
-            ),
-            GoRoute(
-              path: '/settings/phrases',
-              builder: (_, _) => const PhrasesScreen(),
-            ),
-            GoRoute(
-              path: '/settings/sessions',
-              builder: (_, _) => const SessionsScreen(),
-            ),
-            GoRoute(
-              path: '/albums',
-              builder: (_, _) => const AlbumsScreen(),
-              routes: [
-                GoRoute(
-                  path: ':albumId',
-                  builder: (_, state) => AlbumDetailScreen(
-                    albumId: state.pathParameters['albumId']!,
+              path: '/tienda',
+              builder: (context, _) => Scaffold(
+                backgroundColor: VibraTheme.kBg,
+                appBar: AppBar(
+                  backgroundColor: VibraTheme.kBg,
+                  title: Text(
+                    AppLocalizations.of(context)?.tienda ?? 'Tienda',
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
-              ],
+                body: Center(
+                  child: Text(
+                    AppLocalizations.of(context)?.tienda ?? 'Tienda',
+                    style: const TextStyle(
+                        color: VibraTheme.kTextSecondary, fontSize: 18),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -268,7 +324,8 @@ final GoRouter appRouter = GoRouter(
   ],
 );
 
-/// Shell widget that provides the Grindr-style bottom navigation bar.
+/// Shell widget that provides the Grindr-style bottom navigation bar and
+/// the left-side [ProfileDrawer].
 class MainShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -276,44 +333,54 @@ class MainShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final unreadAsync = ref.watch(unreadCountProvider);
     final unreadCount = unreadAsync.maybeWhen(
       data: (n) => n,
       orElse: () => 0,
     );
 
+    final currentIndex = navigationShell.currentIndex;
+
     return Scaffold(
+      key: mainScaffoldKey,
+      backgroundColor: VibraTheme.kBg,
+      drawer: const ProfileDrawer(),
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: navigationShell.currentIndex,
+        currentIndex: currentIndex,
         onTap: (index) => navigationShell.goBranch(index),
         backgroundColor: const Color(0xFF0D0D0D),
-        selectedItemColor: grindrYellow,
+        selectedItemColor: VibraTheme.kYellow,
         unselectedItemColor: const Color(0xFF777777),
         type: BottomNavigationBarType.fixed,
         items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view_rounded),
-            label: 'Cascade',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border),
-            label: 'Interest',
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.grid_view_rounded),
+            label: l10n.navegar,
           ),
           BottomNavigationBarItem(
-            icon: _ChatTabIcon(
+            icon: Icon(currentIndex == 1
+                ? Icons.water_drop
+                : Icons.water_drop_outlined),
+            label: l10n.rightNow,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(currentIndex == 2
+                ? Icons.local_fire_department
+                : Icons.local_fire_department_outlined),
+            label: l10n.interest,
+          ),
+          BottomNavigationBarItem(
+            icon: _BuzonTabIcon(
               unreadCount: unreadCount,
-              isSelected: navigationShell.currentIndex == 2,
+              isSelected: currentIndex == 3,
             ),
-            label: 'Chat',
+            label: l10n.buzon,
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.explore_outlined),
-            label: 'Explore',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'You',
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.storefront_outlined),
+            label: l10n.tienda,
           ),
         ],
       ),
@@ -321,13 +388,13 @@ class MainShell extends ConsumerWidget {
   }
 }
 
-/// Chat tab icon — wraps the standard chat icon in a [Badge] when there
+/// Buzón tab icon — wraps the standard chat icon in a [Badge] when there
 /// are unread messages. Hidden when count == 0.
-class _ChatTabIcon extends StatelessWidget {
+class _BuzonTabIcon extends StatelessWidget {
   final int unreadCount;
   final bool isSelected;
 
-  const _ChatTabIcon({required this.unreadCount, required this.isSelected});
+  const _BuzonTabIcon({required this.unreadCount, required this.isSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -341,7 +408,7 @@ class _ChatTabIcon extends StatelessWidget {
         unreadCount > 99 ? '99+' : '$unreadCount',
         style: const TextStyle(color: Colors.white, fontSize: 10),
       ),
-      backgroundColor: Colors.red,
+      backgroundColor: VibraTheme.kBadgeRed,
       child: icon,
     );
   }
@@ -377,6 +444,7 @@ class _VibraAppState extends ConsumerState<VibraApp>
     // Send a heartbeat each time the app returns to the foreground so the
     // backend keeps our last_seen fresh. Only do this when authenticated —
     // guest sessions have no user id to attribute the heartbeat to.
+    // heartbeatProvider is automatically a no-op in Incognito mode.
     if (state == AppLifecycleState.resumed &&
         ref.read(authStateProvider).status == AuthStatus.authenticated) {
       // Read the provider so the side-effect (POST) actually runs.

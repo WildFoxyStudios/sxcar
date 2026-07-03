@@ -343,6 +343,36 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cerrar sesión'**
   String get cerrarSesion;
+
+  /// Sexual health menu item in drawer
+  ///
+  /// In es, this message translates to:
+  /// **'Salud sexual'**
+  String get saludSexual;
+
+  /// Safety & privacy center menu item in drawer
+  ///
+  /// In es, this message translates to:
+  /// **'Centro de seguridad y privacidad'**
+  String get seguridadPrivacidad;
+
+  /// See plans CTA on secondary plan card in drawer
+  ///
+  /// In es, this message translates to:
+  /// **'Ver planes'**
+  String get verPlanes;
+
+  /// Placeholder plan CTA in drawer (T7 wires real plan name)
+  ///
+  /// In es, this message translates to:
+  /// **'Obtener Premium'**
+  String get obtenerPremium;
+
+  /// Plan card subtitle in drawer
+  ///
+  /// In es, this message translates to:
+  /// **'Chatear con más lugareños'**
+  String get chatearMasLugarenos;
 }
 
 class _AppLocalizationsDelegate

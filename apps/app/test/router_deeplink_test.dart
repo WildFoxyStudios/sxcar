@@ -16,25 +16,27 @@ void main() {
       expect(result, equals('/login'));
     });
 
-    test('authenticated + unknown path → /cascade', () {
+    test('authenticated + unknown path → /navegar', () {
       final result = appRedirect(
         incomingPath: '/some/unregistered/path',
         matchedLocation: '/some/unregistered/path',
         status: AuthStatus.authenticated,
       );
-      expect(result, equals('/cascade'));
+      expect(result, equals('/navegar'));
     });
 
-    test('loading + unknown path → /cascade (avoid splash deadlock)', () {
+    test('loading + unknown path → /navegar (avoid splash deadlock)', () {
       final result = appRedirect(
         incomingPath: '/some/unregistered/path',
         matchedLocation: '/some/unregistered/path',
         status: AuthStatus.loading,
       );
-      expect(result, equals('/cascade'));
+      expect(result, equals('/navegar'));
     });
 
-    test('emailUnverified + unknown path → /cascade (TBD; the auth-guard will reroute to /verify-email)', () {
+    test(
+        'emailUnverified + unknown path → /navegar (TBD; the auth-guard will reroute to /verify-email)',
+        () {
       final result = appRedirect(
         incomingPath: '/some/unregistered/path',
         matchedLocation: '/some/unregistered/path',
@@ -43,8 +45,8 @@ void main() {
       // The unmatched-path check is the only one that runs for unknown
       // paths. Auth-state checks fire only after the path is known, so
       // a /verify-email bounce won't happen on the very first frame.
-      // We land on /cascade as a stable default.
-      expect(result, equals('/cascade'));
+      // We land on /navegar as a stable default.
+      expect(result, equals('/navegar'));
     });
 
     test('known path: unauthenticated + /login stays put', () {
@@ -56,13 +58,13 @@ void main() {
       expect(result, isNull);
     });
 
-    test('known path: authenticated + /login → /cascade', () {
+    test('known path: authenticated + /login → /navegar', () {
       final result = appRedirect(
         incomingPath: '/login',
         matchedLocation: '/login',
         status: AuthStatus.authenticated,
       );
-      expect(result, equals('/cascade'));
+      expect(result, equals('/navegar'));
     });
 
     test('known path: authenticated + /profile/abc123 stays put', () {
@@ -99,6 +101,29 @@ void main() {
         status: AuthStatus.emailUnverified,
       );
       expect(result, equals('/verify-email'));
+    });
+
+    // Legacy redirect paths are still known, so the unmatched guard
+    // doesn't fire — the auth-state check handles them instead.
+    test('known legacy path /cascade: authenticated stays put (then router redirects to /navegar)',
+        () {
+      final result = appRedirect(
+        incomingPath: '/cascade',
+        matchedLocation: '/cascade',
+        status: AuthStatus.authenticated,
+      );
+      // appRedirect doesn't know about the router-level /cascade→/navegar
+      // redirect; it just passes through and GoRouter's own redirect handles it.
+      expect(result, isNull);
+    });
+
+    test('known path /navegar: authenticated stays put', () {
+      final result = appRedirect(
+        incomingPath: '/navegar',
+        matchedLocation: '/navegar',
+        status: AuthStatus.authenticated,
+      );
+      expect(result, isNull);
     });
   });
 
@@ -159,19 +184,25 @@ GoRouter _buildTestRouter({required String initialLocation}) {
       GoRoute(path: '/register', builder: noopBuilder),
       GoRoute(path: '/verify-email', builder: noopBuilder),
       GoRoute(path: '/splash', builder: noopBuilder),
-      GoRoute(path: '/cascade', builder: noopBuilder),
+      // New shell tabs (T2)
+      GoRoute(path: '/navegar', builder: noopBuilder),
+      GoRoute(path: '/right-now', builder: noopBuilder),
       GoRoute(path: '/interest', builder: noopBuilder),
       GoRoute(path: '/inbox', builder: noopBuilder),
-      GoRoute(path: '/explore', builder: noopBuilder),
-      GoRoute(path: '/you', builder: noopBuilder),
+      GoRoute(path: '/tienda', builder: noopBuilder),
+      // Top-level routes
       GoRoute(path: '/edit-profile', builder: noopBuilder),
       GoRoute(path: '/settings', builder: noopBuilder),
-      GoRoute(path: '/settings/phrases', builder: noopBuilder),
       GoRoute(path: '/albums', builder: noopBuilder),
+      // Legacy redirect routes (kept as known paths)
+      GoRoute(path: '/cascade', redirect: (_, _) => '/navegar'),
+      GoRoute(path: '/you', redirect: (_, _) => '/navegar'),
+      GoRoute(path: '/explore', redirect: (_, _) => '/right-now'),
       GoRoute(
         path: '/profile/:userId',
         builder: (_, state) => Scaffold(
-          body: Center(child: Text('profile:${state.pathParameters['userId']}')),
+          body:
+              Center(child: Text('profile:${state.pathParameters['userId']}')),
         ),
       ),
     ],

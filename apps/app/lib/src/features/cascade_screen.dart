@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../main.dart' show mainScaffoldKey;
 import '../auth/auth_provider.dart';
 import '../location/location_service.dart';
 import '../presence/presence_service.dart';
@@ -181,6 +182,12 @@ class _CascadeScreenState extends ConsumerState<CascadeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        // Temporary drawer button (T2) — replaced by avatar in Navegar header (T3)
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white),
+          tooltip: 'Perfil',
+          onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
+        ),
         title: Text(
           'Vibra',
           style: TextStyle(

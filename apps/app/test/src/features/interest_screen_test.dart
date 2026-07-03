@@ -160,13 +160,15 @@ void main() {
     });
 
     testWidgets(
-        'Favorites and Taps requests WAIT for the auth token when it is '
-        'still loading at boot (regression for 401 on /favorites)', (tester) async {
+        'Favorites and Taps requests WAIT for authReadyProvider when the '
+        'notifier is still loading (regression for 401 on /favorites)', (tester) async {
       // The original bug: _fetchFavorites / _fetchTaps ran in initState
       // and fired immediately. The Dio interceptor then read the secure
       // storage cache (still empty mid-boot) and the request went out
       // without an Authorization header, producing the 401 we saw in
-      // logcat. The fix polls authState.accessToken before firing.
+      // logcat. The fix: AuthNotifier.build() hydrates from storage
+      // synchronously, and authReadyProvider lets the screen wait until
+      // the auth status is anything other than loading.
       final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
       final notifier = _LoadingThenAuthNotifier();
 
@@ -180,21 +182,17 @@ void main() {
         ),
       );
 
-      // Pump a few frames — requests MUST NOT have been sent yet
-      // (the auth token is still null). Tap on Favorites so the
-      // FutureBuilder for the second tab builds.
+      // Pump a few frames — the auth token is still null so the
+      // fetcher must be waiting on authReadyProvider. The tab shows
+      // its loading state. No exception (no 401 printed).
       await tester.pump();
       await tester.pump();
       await tester.tap(find.text('Favorites').last);
       await tester.pump();
-      // Still loading — the fetcher must be waiting on the notifier.
-      // (No tappable content yet → "No favorites yet" empty state.)
-      // The key proof: no exception, no 401 printed; the tab shows
-      // its loading state.
       expect(tester.takeException(), isNull);
 
-      // Now become authenticated — the waiting fetcher should fire
-      // immediately and the empty state should switch to "Charlie".
+      // Now become authenticated — authReadyProvider resolves and the
+      // fetcher fires.
       notifier.becomeAuthed();
       await tester.pumpAndSettle();
 

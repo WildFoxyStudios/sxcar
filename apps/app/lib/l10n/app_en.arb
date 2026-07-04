@@ -101,5 +101,18 @@
   "imperial": "Imperial",
   "siguenos": "Follow us",
   "eliminarCuenta": "Delete account",
-  "confirmarEliminar": "Delete account?"
+  "confirmarEliminar": "Delete account?",
+  "errorGuardandoPreferencia": "Error saving preference",
+  "reintentar": "Retry",
+  "notificacionesYSesiones": "Notifications and sessions",
+  "mensajesNuevos": "New messages",
+  "tapsNuevos": "New taps",
+  "promociones": "Promotions",
+  "frasesGuardadas": "Saved phrases",
+  "sesionesActivas": "Active sessions",
+  "proximamente": "Coming soon.",
+  "ok": "OK",
+  "cancelar": "Cancel",
+  "eliminar": "Delete",
+  "accionNoSePuedeDeshacer": "This action cannot be undone."
 }

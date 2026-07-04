@@ -309,4 +309,43 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get confirmarEliminar => '¿Eliminar cuenta?';
+
+  @override
+  String get errorGuardandoPreferencia => 'Error guardando preferencia';
+
+  @override
+  String get reintentar => 'Reintentar';
+
+  @override
+  String get notificacionesYSesiones => 'Notificaciones y sesiones';
+
+  @override
+  String get mensajesNuevos => 'Mensajes nuevos';
+
+  @override
+  String get tapsNuevos => 'Taps nuevos';
+
+  @override
+  String get promociones => 'Promociones';
+
+  @override
+  String get frasesGuardadas => 'Frases guardadas';
+
+  @override
+  String get sesionesActivas => 'Sesiones activas';
+
+  @override
+  String get proximamente => 'Próximamente.';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get cancelar => 'Cancelar';
+
+  @override
+  String get eliminar => 'Eliminar';
+
+  @override
+  String get accionNoSePuedeDeshacer => 'Esta acción no se puede deshacer.';
 }

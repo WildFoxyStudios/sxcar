@@ -685,6 +685,84 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'¿Eliminar cuenta?'**
   String get confirmarEliminar;
+
+  /// Snackbar when a notification-pref PUT fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error guardando preferencia'**
+  String get errorGuardandoPreferencia;
+
+  /// Retry button on error state
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get reintentar;
+
+  /// Settings → Notifications/Sessions section header
+  ///
+  /// In es, this message translates to:
+  /// **'Notificaciones y sesiones'**
+  String get notificacionesYSesiones;
+
+  /// Notification toggle for new message alerts
+  ///
+  /// In es, this message translates to:
+  /// **'Mensajes nuevos'**
+  String get mensajesNuevos;
+
+  /// Notification toggle for new tap alerts
+  ///
+  /// In es, this message translates to:
+  /// **'Taps nuevos'**
+  String get tapsNuevos;
+
+  /// Notification toggle for promotional pushes
+  ///
+  /// In es, this message translates to:
+  /// **'Promociones'**
+  String get promociones;
+
+  /// Settings row linking to saved phrases
+  ///
+  /// In es, this message translates to:
+  /// **'Frases guardadas'**
+  String get frasesGuardadas;
+
+  /// Settings row linking to active sessions
+  ///
+  /// In es, this message translates to:
+  /// **'Sesiones activas'**
+  String get sesionesActivas;
+
+  /// Coming-soon placeholder body text
+  ///
+  /// In es, this message translates to:
+  /// **'Próximamente.'**
+  String get proximamente;
+
+  /// OK button on placeholder dialogs
+  ///
+  /// In es, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// Cancel button on dialogs (delete account, etc.)
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar'**
+  String get cancelar;
+
+  /// Delete button on delete-account confirm dialog
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar'**
+  String get eliminar;
+
+  /// Delete account confirm dialog body text
+  ///
+  /// In es, this message translates to:
+  /// **'Esta acción no se puede deshacer.'**
+  String get accionNoSePuedeDeshacer;
 }
 
 class _AppLocalizationsDelegate

@@ -106,8 +106,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error guardando preferencia')),
+          SnackBar(content: Text(l10n.errorGuardandoPreferencia)),
         );
         _loadNotificationPreferences();
       }
@@ -256,7 +257,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: VibraSegmented(
-              options: const ['Métrico', 'Imperial'], // hardcoded Spanish labels
+              options: [l10n.metrico, l10n.imperial],
               selectedIndex: units,
               onChanged: (i) =>
                   ref.read(unitsProvider.notifier).setUnits(i),
@@ -268,7 +269,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Segmented3(
-              options: const ['Desactivada', 'Activado', 'Automático'],
+              options: [l10n.desactivada, l10n.activado, l10n.automatico],
               selectedIndex: visitorStatus,
               onChanged: (i) =>
                   ref.read(visitorStatusProvider.notifier).setVisitorStatus(i),
@@ -276,7 +277,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // ── NOTIFICACIONES / SESIONES ─────────────────────────────────
-          _sectionHeader('Notificaciones y sesiones', 'notificaciones'),
+          _sectionHeader(l10n.notificacionesYSesiones, 'notificaciones'),
           if (_notifLoading)
             const Padding(
               padding: EdgeInsets.all(16),
@@ -291,7 +292,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       style: const TextStyle(color: Colors.red)),
                   TextButton(
                     onPressed: _loadNotificationPreferences,
-                    child: const Text('Reintentar'),
+                    child: Text(l10n.reintentar),
                   ),
                 ],
               ),
@@ -299,7 +300,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           else ...[
             SettingRow(
               icon: Icons.message_outlined,
-              title: 'Mensajes nuevos',
+              title: l10n.mensajesNuevos,
               trailing: Switch(
                 value: _newMessages,
                 activeThumbColor: VibraTheme.kYellow,
@@ -312,7 +313,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
             SettingRow(
               icon: Icons.touch_app_outlined,
-              title: 'Taps nuevos',
+              title: l10n.tapsNuevos,
               trailing: Switch(
                 value: _newTaps,
                 activeThumbColor: VibraTheme.kYellow,
@@ -325,7 +326,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
             SettingRow(
               icon: Icons.local_offer_outlined,
-              title: 'Promociones',
+              title: l10n.promociones,
               trailing: Switch(
                 value: _promotions,
                 activeThumbColor: VibraTheme.kYellow,
@@ -338,13 +339,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
             SettingRow(
               icon: Icons.chat_bubble_outline,
-              title: 'Frases guardadas',
+              title: l10n.frasesGuardadas,
               onTap: () => context.push('/settings/phrases'),
             ),
             const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
             SettingRow(
               icon: Icons.devices,
-              title: 'Sesiones activas',
+              title: l10n.sesionesActivas,
               onTap: () => context.push('/settings/sessions'),
             ),
           ],
@@ -354,7 +355,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextButton(
               onPressed: _logout,
-              child: const Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
+              child: Text(l10n.cerrarSesion, style: const TextStyle(color: Colors.red)),
             ),
           ),
           const SizedBox(height: 32),
@@ -380,16 +381,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _placeholderDialog(String title) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: VibraTheme.kSurface,
         title: Text(title),
-        content: const Text('Próximamente.'),
+        content: Text(l10n.proximamente),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
+            child: Text(l10n.ok),
           ),
         ],
       ),
@@ -407,15 +409,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: VibraTheme.kSurface,
         title: Text(l10n.confirmarEliminar),
-        content: const Text('Esta acción no se puede deshacer.'),
+        content: Text(l10n.accionNoSePuedeDeshacer),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
+            child: Text(l10n.cancelar),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.eliminar, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -424,7 +426,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (!mounted) return;
     // TODO(phase-3): DELETE /profile
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Próximamente.')),
+      SnackBar(content: Text(l10n.proximamente)),
     );
   }
 }

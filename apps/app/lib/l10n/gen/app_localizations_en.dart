@@ -308,4 +308,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirmarEliminar => 'Delete account?';
+
+  @override
+  String get errorGuardandoPreferencia => 'Error saving preference';
+
+  @override
+  String get reintentar => 'Retry';
+
+  @override
+  String get notificacionesYSesiones => 'Notifications and sessions';
+
+  @override
+  String get mensajesNuevos => 'New messages';
+
+  @override
+  String get tapsNuevos => 'New taps';
+
+  @override
+  String get promociones => 'Promotions';
+
+  @override
+  String get frasesGuardadas => 'Saved phrases';
+
+  @override
+  String get sesionesActivas => 'Active sessions';
+
+  @override
+  String get proximamente => 'Coming soon.';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get cancelar => 'Cancel';
+
+  @override
+  String get eliminar => 'Delete';
+
+  @override
+  String get accionNoSePuedeDeshacer => 'This action cannot be undone.';
 }

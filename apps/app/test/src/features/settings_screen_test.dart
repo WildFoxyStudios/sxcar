@@ -198,13 +198,16 @@ void main() {
       await _setBigSurface(tester);
       await tester.pumpWidget(_wrap(router, dio));
       await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(SettingsScreen)),
+      )!;
 
       // Both options rendered.
-      expect(find.text('Métrico'), findsOneWidget);
-      expect(find.text('Imperial'), findsOneWidget);
+      expect(find.text(l10n.metrico), findsOneWidget);
+      expect(find.text(l10n.imperial), findsOneWidget);
 
       // Tap Imperial → unitsProvider becomes 1.
-      await tester.tap(find.text('Imperial'));
+      await tester.tap(find.text(l10n.imperial));
       await tester.pumpAndSettle();
 
       // Verify the value persisted via SharedPreferences.
@@ -218,22 +221,25 @@ void main() {
       await _setBigSurface(tester);
       await tester.pumpWidget(_wrap(router, dio));
       await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(SettingsScreen)),
+      )!;
 
       // Three options rendered (note "Desactivada" appears elsewhere as a
       // subtitle, so we just check Activado + Automático are present).
-      expect(find.text('Activado'), findsWidgets);
-      expect(find.text('Automático'), findsOneWidget);
+      expect(find.text(l10n.activado), findsWidgets);
+      expect(find.text(l10n.automatico), findsOneWidget);
 
       // Tap "Activado" (index 1). Use last() to prefer the Segmented3 option
       // over any other matches.
-      await tester.tap(find.text('Activado').last);
+      await tester.tap(find.text(l10n.activado).last);
       await tester.pumpAndSettle();
 
       final prefs1 = await SharedPreferences.getInstance();
       expect(prefs1.getInt('settings_visitor_status'), 1);
 
       // Tap "Automático" (index 2).
-      await tester.tap(find.text('Automático'));
+      await tester.tap(find.text(l10n.automatico));
       await tester.pumpAndSettle();
 
       final prefs2 = await SharedPreferences.getInstance();
@@ -292,6 +298,39 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Phrases'), findsOneWidget);
+    });
+  });
+
+  // ── Regression test: lock the l10n catalog for settings_screen ────────
+  // Asserts that the 14 new keys (T2.8) all render non-empty under the
+  // Spanish locale. Catches accidental deletions or placeholder regressions
+  // in future ARB edits.
+  group('settings_screen l10n keys', () {
+    testWidgets('all new keys render non-empty in es', (tester) async {
+      await tester.pumpWidget(_wrap(
+        _buildRouter(),
+        Dio()..httpClientAdapter = _MockAdapter(),
+      ));
+      await tester.pumpAndSettle();
+
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(SettingsScreen)),
+      )!;
+
+      expect(l10n.errorGuardandoPreferencia, isNotEmpty);
+      expect(l10n.reintentar, isNotEmpty);
+      expect(l10n.notificacionesYSesiones, isNotEmpty);
+      expect(l10n.mensajesNuevos, isNotEmpty);
+      expect(l10n.tapsNuevos, isNotEmpty);
+      expect(l10n.promociones, isNotEmpty);
+      expect(l10n.frasesGuardadas, isNotEmpty);
+      expect(l10n.sesionesActivas, isNotEmpty);
+      expect(l10n.cerrarSesion, isNotEmpty);
+      expect(l10n.proximamente, isNotEmpty);
+      expect(l10n.ok, isNotEmpty);
+      expect(l10n.cancelar, isNotEmpty);
+      expect(l10n.eliminar, isNotEmpty);
+      expect(l10n.accionNoSePuedeDeshacer, isNotEmpty);
     });
   });
 }

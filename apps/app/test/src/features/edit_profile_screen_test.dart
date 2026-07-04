@@ -278,4 +278,71 @@ void main() {
       expect(healthPut['prep'], isTrue);
     });
   });
+
+  group('EditProfileScreen — Section collapsibility (T6.1)', () {
+    testWidgets('Practices section starts collapsed', (tester) async {
+      final adapter = _MockEditProfileAdapter();
+      final dio = Dio()..httpClientAdapter = adapter;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(home: EditProfileScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Scroll until the PRACTICES header is visible (it's the 6th section,
+      // sandwiched between "What I like" and "Health").
+      await tester.scrollUntilVisible(
+        find.text('PRACTICES'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+
+      // The Practices header is the section title; it should always render
+      // (ExpansionTile renders the title regardless of collapse state).
+      expect(find.text('PRACTICES'), findsOneWidget);
+
+      // The Practices section is collapsed by default, so the inner
+      // "Select practices" placeholder is NOT rendered. After tapping the
+      // header to expand it, the placeholder becomes visible.
+      expect(find.text('Select practices'), findsNothing);
+
+      await tester.tap(find.text('PRACTICES'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Select practices'), findsOneWidget);
+    });
+
+    testWidgets('Health section is always expanded (PrEP visible without tap)',
+        (tester) async {
+      final adapter = _MockEditProfileAdapter();
+      final dio = Dio()..httpClientAdapter = adapter;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(home: EditProfileScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Scroll to the Health section.
+      await tester.drag(find.byType(ListView), const Offset(0, -1500));
+      await tester.pumpAndSettle();
+
+      // HEALTH header + PrEP switch + 'Not set' date should all be
+      // visible WITHOUT tapping the header first.
+      expect(find.text('HEALTH'), findsOneWidget);
+      expect(find.text('On PrEP'), findsOneWidget);
+      expect(find.text('Not set'), findsOneWidget);
+    });
+  });
 }

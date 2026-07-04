@@ -51,6 +51,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   DateTime? _lastTestedOn;
   bool? _prep;
 
+  // Per-section collapsed state for ExpansionTile (T6.1).
+  // True = collapsed. Defaults: essentials expanded, optional collapsed.
+  final Map<String, bool> _collapsedSections = {
+    'basicInfo': false,        // always expanded (most-used)
+    'appearance': false,       // always expanded (most-used)
+    'tribes': true,            // collapsed by default
+    'lookingFor': true,        // collapsed by default
+    'likes': true,             // collapsed by default (Vaccines + Trips live here)
+    'practices': true,         // NEW section, collapsed by default
+    'health': false,           // always expanded (PrEP switch tested)
+    'privacy': true,           // collapsed by default
+  };
+
   static const List<String> _hivStatusOptions = [
     'Unknown',
     'Negative',
@@ -192,7 +205,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profile photo updated!'),
-          backgroundColor: Color(0xFF2E7D32),
+          backgroundColor: VibraTheme.kSuccess,
         ),
       );
     } on DioException catch (e) {
@@ -286,7 +299,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profile saved!'),
-          backgroundColor: Color(0xFF2E7D32),
+          backgroundColor: VibraTheme.kSuccess,
         ),
       );
       // Pop only if a GoRouter is in scope (skip in widget tests).
@@ -318,7 +331,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Health info saved!'),
-            backgroundColor: Color(0xFF2E7D32),
+            backgroundColor: VibraTheme.kSuccess,
           ),
         );
       }
@@ -468,337 +481,413 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         const SizedBox(height: 24),
 
         // ── Basics ────────────────────────────────────────────────────────
-        _buildSectionHeader(
-            (l10n?.editProfileSectionBasics ?? 'Basic info').toUpperCase()),
-        const SizedBox(height: 8),
-        _buildLabel('Display Name'),
-        const SizedBox(height: 4),
-        TextField(
-          controller: _displayNameController,
-          onChanged: (_) => _pushTextToDraft(),
-          style: const TextStyle(color: VibraTheme.kTextPrimary),
-          decoration: _inputDecoration('Your display name'),
-        ),
-        const SizedBox(height: 12),
-        _buildLabel('Bio'),
-        const SizedBox(height: 4),
-        TextField(
-          controller: _bioController,
-          maxLines: 3,
-          onChanged: (_) => _pushTextToDraft(),
-          style: const TextStyle(color: VibraTheme.kTextPrimary),
-          decoration: _inputDecoration('Tell people about yourself'),
-        ),
-        const SizedBox(height: 24),
-
-        // ── Appearance ────────────────────────────────────────────────────
-        _buildSectionHeader(
-            (l10n?.editProfileSectionAppearance ?? 'Appearance').toUpperCase()),
-        const SizedBox(height: 8),
-        _buildSelectorListTile<String>(
-          label: 'Height',
-          current: draft.heightCm?.toString(),
-          placeholder: 'Select height',
-          onTap: () async {
-            final picked = await showHeightSheet(context, currentCm: draft.heightCm);
-            if (picked != null) {
-              _updateDraftField((p) => _copyWithHeight(p, picked));
-            }
-          },
-        ),
-        _buildSelectorListTile<String>(
-          label: 'Weight',
-          current: draft.weightKg?.toString(),
-          placeholder: 'Select weight',
-          onTap: () async {
-            final picked = await showWeightSheet(context, currentKg: draft.weightKg);
-            if (picked != null) {
-              _updateDraftField((p) => _copyWithWeight(p, picked));
-            }
-          },
-        ),
-        _buildSelectorListTile<String>(
-          label: 'Body Type',
-          current: draft.bodyType,
-          placeholder: 'Select body type',
-          onTap: () async {
-            final picked = await showBodyTypeSheet(context, current: draft.bodyType);
-            if (picked != null) {
-              _updateDraftField((p) => _copyWith(p, bodyType: picked));
-            }
-          },
-        ),
-        _buildSelectorListTile<String>(
-          label: 'Ethnicity',
-          current: draft.ethnicity,
-          placeholder: 'Select ethnicity',
-          onTap: () async {
-            final picked =
-                await showEthnicitySheet(context, current: draft.ethnicity);
-            if (picked != null) {
-              _updateDraftField((p) => _copyWith(p, ethnicity: picked));
-            }
-          },
-        ),
-        _buildSelectorListTile<String>(
-          label: 'Pronouns',
-          current: draft.pronouns,
-          placeholder: 'Select pronouns',
-          onTap: () async {
-            final picked =
-                await showPronounsSheet(context, current: draft.pronouns);
-            if (picked != null) {
-              _updateDraftField((p) => _copyWith(p, pronouns: picked));
-            }
-          },
-        ),
-        const SizedBox(height: 24),
-
-        // ── Tribes ────────────────────────────────────────────────────────
-        _buildSectionHeader(
-            (l10n?.editProfileSectionTribes ?? 'Tribes').toUpperCase()),
-        const SizedBox(height: 8),
-        ChipMultiSelect(
-          options: _tribeOptions,
-          selected: draft.tribes.toSet(),
-          onChanged: (next) =>
-              _updateDraftField((p) => _copyWith(p, tribes: next.toList())),
-        ),
-        const SizedBox(height: 24),
-
-        // ── Looking for ───────────────────────────────────────────────────
-        _buildSectionHeader(
-            (l10n?.editProfileSectionLookingFor ?? "What I'm looking for")
-                .toUpperCase()),
-        const SizedBox(height: 8),
-        _buildSelectorListTile<String>(
-          label: 'Looking For',
-          current: draft.lookingFor.isEmpty
-              ? null
-              : draft.lookingFor.join(', '),
-          placeholder: 'Select what you are looking for',
-          onTap: () async {
-            final picked = await showLookingForSheet(
-              context,
-              current: draft.lookingFor.toSet(),
-            );
-            if (picked != null) {
-              _updateDraftField(
-                  (p) => _copyWith(p, lookingFor: picked.toList()));
-            }
-          },
-        ),
-        _buildSelectorListTile<String>(
-          label: 'Meet At',
-          current:
-              draft.meetAt.isEmpty ? null : draft.meetAt.join(', '),
-          placeholder: 'Select where to meet',
-          onTap: () async {
-            final picked = await showMeetAtSheet(
-              context,
-              current: draft.meetAt.toSet(),
-            );
-            if (picked != null) {
-              _updateDraftField((p) => _copyWith(p, meetAt: picked.toList()));
-            }
-          },
-        ),
-        _buildSelectorListTile<String>(
-          label: 'Position',
-          current: draft.position,
-          placeholder: 'Select position',
-          onTap: () async {
-            final picked =
-                await showPositionSheet(context, current: draft.position);
-            if (picked != null) {
-              _updateDraftField((p) => _copyWith(p, position: picked));
-            }
-          },
-        ),
-        _buildSelectorListTile<String>(
-          label: 'Relationship Status',
-          current: draft.relationshipStatus,
-          placeholder: 'Select relationship status',
-          onTap: () async {
-            final picked = await showRelationshipSheet(
-              context,
-              current: draft.relationshipStatus,
-            );
-            if (picked != null) {
-              _updateDraftField(
-                  (p) => _copyWith(p, relationshipStatus: picked));
-            }
-          },
-        ),
-        const SizedBox(height: 24),
-
-        // ── Likes ─────────────────────────────────────────────────────────
-        _buildSectionHeader(
-            (l10n?.editProfileSectionLikes ?? 'What I like').toUpperCase()),
-        const SizedBox(height: 8),
-        _buildSelectorListTile<String>(
-          label: l10n?.detailsVaccines ?? 'Vaccines',
-          current: _detailsCount(draft, 'vaccines') > 0
-              ? '${_detailsCount(draft, 'vaccines')} selected'
-              : null,
-          placeholder: 'Select vaccines',
-          onTap: () async {
-            final current = _readVaccines(draft);
-            await Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => VaccinesScreen(
-                current: current,
-                onChanged: (next) {
-                  _updateDraftField((p) => _writeVaccines(p, next));
-                },
-              ),
-            ));
-          },
-        ),
-        _buildSelectorListTile<String>(
-          label: l10n?.detailsTripCount ?? 'Trips',
-          current: _detailsCount(draft, 'trips') > 0
-              ? '${_detailsCount(draft, 'trips')} trips'
-              : null,
-          placeholder: 'Add recent trips',
-          onTap: () async {
-            final current = _readTrips(draft);
-            await Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => AddTripScreen(
-                current: current,
-                onChanged: (next) {
-                  _updateDraftField((p) => _writeTrips(p, next));
-                },
-              ),
-            ));
-          },
-        ),
-        _buildSelectorListTile<String>(
-          label: 'Practices',
-          current: _detailsCount(draft, 'practices') > 0
-              ? '${_detailsCount(draft, 'practices')} selected'
-              : null,
-          placeholder: 'Select practices',
-          onTap: () async {
-            final current = _readPractices(draft);
-            await Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => PracticesScreen(
-                current: current,
-                onChanged: (next) {
-                  _updateDraftField((p) => _writePractices(p, next));
-                },
-              ),
-            ));
-          },
-        ),
-        const SizedBox(height: 24),
-
-        // ── Health ────────────────────────────────────────────────────────
-        _buildSectionHeader(
-            (l10n?.editProfileSectionHealth ?? 'Health').toUpperCase()),
-        const SizedBox(height: 12),
-
-        // HIV Status dropdown (kept inline; the existing test relies on
-        // finding the literal "HIV Status" label and the dropdown widget).
-        _buildLabel('HIV Status'),
-        const SizedBox(height: 4),
-        DropdownButtonFormField<String>(
-          initialValue: _hivStatus,
-          dropdownColor: VibraTheme.kSurface,
-          style: const TextStyle(color: VibraTheme.kTextPrimary),
-          decoration: _inputDecoration('Select status'),
-          items: _hivStatusOptions
-              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-              .toList(),
-          onChanged: (val) => setState(() => _hivStatus = val),
-        ),
-        const SizedBox(height: 16),
-
-        // Last tested on date picker (kept inline — test searches 'Not set').
-        _buildLabel('Last Tested On'),
-        const SizedBox(height: 4),
-        InkWell(
-          onTap: _pickLastTestedDate,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-            decoration: BoxDecoration(
-              color: VibraTheme.kSurface,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: VibraTheme.kDivider),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _lastTestedOn == null
-                        ? 'Not set'
-                        : '${_lastTestedOn!.year.toString().padLeft(4, '0')}-${_lastTestedOn!.month.toString().padLeft(2, '0')}-${_lastTestedOn!.day.toString().padLeft(2, '0')}',
-                    style: TextStyle(
-                      color: _lastTestedOn == null
-                          ? VibraTheme.kTextSecondary
-                          : VibraTheme.kTextPrimary,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                const Icon(Icons.calendar_today,
-                    color: VibraTheme.kTextSecondary, size: 18),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // PrEP switch (kept inline; test uses find.byType(Switch)).
-        Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: VibraTheme.kSurface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: VibraTheme.kDivider),
-          ),
-          child: Row(
+        _CollapsibleSection(
+          title: (l10n?.editProfileSectionBasics ?? 'Basic info').toUpperCase(),
+          collapsed: _collapsedSections['basicInfo']!,
+          onExpansionChanged: (_) {},
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Expanded(
-                child: Text(
-                  'On PrEP',
-                  style: TextStyle(
-                      color: VibraTheme.kTextPrimary, fontSize: 14),
-                ),
+              _buildLabel('Display Name'),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _displayNameController,
+                onChanged: (_) => _pushTextToDraft(),
+                style: const TextStyle(color: VibraTheme.kTextPrimary),
+                decoration: _inputDecoration('Your display name'),
               ),
-              Switch(
-                value: _prep ?? false,
-                onChanged: (val) => setState(() => _prep = val),
+              const SizedBox(height: 12),
+              _buildLabel('Bio'),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _bioController,
+                maxLines: 3,
+                onChanged: (_) => _pushTextToDraft(),
+                style: const TextStyle(color: VibraTheme.kTextPrimary),
+                decoration: _inputDecoration('Tell people about yourself'),
               ),
             ],
           ),
         ),
-        if (_isSavingHealth)
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: SizedBox(
-              height: 16,
-              width: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+        const SizedBox(height: 24),
+
+        // ── Appearance ────────────────────────────────────────────────────
+        _CollapsibleSection(
+          title:
+              (l10n?.editProfileSectionAppearance ?? 'Appearance').toUpperCase(),
+          collapsed: _collapsedSections['appearance']!,
+          onExpansionChanged: (_) {},
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSelectorListTile<String>(
+                label: 'Height',
+                current: draft.heightCm?.toString(),
+                placeholder: 'Select height',
+                onTap: () async {
+                  final picked =
+                      await showHeightSheet(context, currentCm: draft.heightCm);
+                  if (picked != null) {
+                    _updateDraftField((p) => _copyWithHeight(p, picked));
+                  }
+                },
+              ),
+              _buildSelectorListTile<String>(
+                label: 'Weight',
+                current: draft.weightKg?.toString(),
+                placeholder: 'Select weight',
+                onTap: () async {
+                  final picked =
+                      await showWeightSheet(context, currentKg: draft.weightKg);
+                  if (picked != null) {
+                    _updateDraftField((p) => _copyWithWeight(p, picked));
+                  }
+                },
+              ),
+              _buildSelectorListTile<String>(
+                label: 'Body Type',
+                current: draft.bodyType,
+                placeholder: 'Select body type',
+                onTap: () async {
+                  final picked = await showBodyTypeSheet(
+                      context, current: draft.bodyType);
+                  if (picked != null) {
+                    _updateDraftField((p) => _copyWith(p, bodyType: picked));
+                  }
+                },
+              ),
+              _buildSelectorListTile<String>(
+                label: 'Ethnicity',
+                current: draft.ethnicity,
+                placeholder: 'Select ethnicity',
+                onTap: () async {
+                  final picked =
+                      await showEthnicitySheet(context, current: draft.ethnicity);
+                  if (picked != null) {
+                    _updateDraftField((p) => _copyWith(p, ethnicity: picked));
+                  }
+                },
+              ),
+              _buildSelectorListTile<String>(
+                label: 'Pronouns',
+                current: draft.pronouns,
+                placeholder: 'Select pronouns',
+                onTap: () async {
+                  final picked =
+                      await showPronounsSheet(context, current: draft.pronouns);
+                  if (picked != null) {
+                    _updateDraftField((p) => _copyWith(p, pronouns: picked));
+                  }
+                },
+              ),
+            ],
           ),
+        ),
+        const SizedBox(height: 24),
+
+        // ── Tribes ────────────────────────────────────────────────────────
+        _CollapsibleSection(
+          title: (l10n?.editProfileSectionTribes ?? 'Tribes').toUpperCase(),
+          collapsed: _collapsedSections['tribes']!,
+          onExpansionChanged: (v) =>
+              setState(() => _collapsedSections['tribes'] = !v),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ChipMultiSelect(
+                options: _tribeOptions,
+                selected: draft.tribes.toSet(),
+                onChanged: (next) =>
+                    _updateDraftField((p) => _copyWith(p, tribes: next.toList())),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // ── Looking for ───────────────────────────────────────────────────
+        _CollapsibleSection(
+          title:
+              (l10n?.editProfileSectionLookingFor ?? "What I'm looking for")
+                  .toUpperCase(),
+          collapsed: _collapsedSections['lookingFor']!,
+          onExpansionChanged: (v) =>
+              setState(() => _collapsedSections['lookingFor'] = !v),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSelectorListTile<String>(
+                label: 'Looking For',
+                current: draft.lookingFor.isEmpty
+                    ? null
+                    : draft.lookingFor.join(', '),
+                placeholder: 'Select what you are looking for',
+                onTap: () async {
+                  final picked = await showLookingForSheet(
+                    context,
+                    current: draft.lookingFor.toSet(),
+                  );
+                  if (picked != null) {
+                    _updateDraftField(
+                        (p) => _copyWith(p, lookingFor: picked.toList()));
+                  }
+                },
+              ),
+              _buildSelectorListTile<String>(
+                label: 'Meet At',
+                current:
+                    draft.meetAt.isEmpty ? null : draft.meetAt.join(', '),
+                placeholder: 'Select where to meet',
+                onTap: () async {
+                  final picked = await showMeetAtSheet(
+                    context,
+                    current: draft.meetAt.toSet(),
+                  );
+                  if (picked != null) {
+                    _updateDraftField(
+                        (p) => _copyWith(p, meetAt: picked.toList()));
+                  }
+                },
+              ),
+              _buildSelectorListTile<String>(
+                label: 'Position',
+                current: draft.position,
+                placeholder: 'Select position',
+                onTap: () async {
+                  final picked =
+                      await showPositionSheet(context, current: draft.position);
+                  if (picked != null) {
+                    _updateDraftField((p) => _copyWith(p, position: picked));
+                  }
+                },
+              ),
+              _buildSelectorListTile<String>(
+                label: 'Relationship Status',
+                current: draft.relationshipStatus,
+                placeholder: 'Select relationship status',
+                onTap: () async {
+                  final picked = await showRelationshipSheet(
+                    context,
+                    current: draft.relationshipStatus,
+                  );
+                  if (picked != null) {
+                    _updateDraftField(
+                        (p) => _copyWith(p, relationshipStatus: picked));
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // ── Likes ─────────────────────────────────────────────────────────
+        _CollapsibleSection(
+          title: (l10n?.editProfileSectionLikes ?? 'What I like').toUpperCase(),
+          collapsed: _collapsedSections['likes']!,
+          onExpansionChanged: (v) =>
+              setState(() => _collapsedSections['likes'] = !v),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSelectorListTile<String>(
+                label: l10n?.detailsVaccines ?? 'Vaccines',
+                current: _detailsCount(draft, 'vaccines') > 0
+                    ? '${_detailsCount(draft, 'vaccines')} selected'
+                    : null,
+                placeholder: 'Select vaccines',
+                onTap: () async {
+                  final current = _readVaccines(draft);
+                  await Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) => VaccinesScreen(
+                      current: current,
+                      onChanged: (next) {
+                        _updateDraftField((p) => _writeVaccines(p, next));
+                      },
+                    ),
+                  ));
+                },
+              ),
+              _buildSelectorListTile<String>(
+                label: l10n?.detailsTripCount ?? 'Trips',
+                current: _detailsCount(draft, 'trips') > 0
+                    ? '${_detailsCount(draft, 'trips')} trips'
+                    : null,
+                placeholder: 'Add recent trips',
+                onTap: () async {
+                  final current = _readTrips(draft);
+                  await Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) => AddTripScreen(
+                      current: current,
+                      onChanged: (next) {
+                        _updateDraftField((p) => _writeTrips(p, next));
+                      },
+                    ),
+                  ));
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // ── Practices ──────────────────────────────────────────────────────
+        _CollapsibleSection(
+          title: (l10n?.editProfileSectionPractices ?? 'Practices')
+              .toUpperCase(),
+          collapsed: _collapsedSections['practices']!,
+          onExpansionChanged: (v) =>
+              setState(() => _collapsedSections['practices'] = !v),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSelectorListTile<String>(
+                label: 'Practices',
+                current: _detailsCount(draft, 'practices') > 0
+                    ? '${_detailsCount(draft, 'practices')} selected'
+                    : null,
+                placeholder: 'Select practices',
+                onTap: () async {
+                  final current = _readPractices(draft);
+                  await Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) => PracticesScreen(
+                      current: current,
+                      onChanged: (next) {
+                        _updateDraftField((p) => _writePractices(p, next));
+                      },
+                    ),
+                  ));
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // ── Health ────────────────────────────────────────────────────────
+        _CollapsibleSection(
+          title: (l10n?.editProfileSectionHealth ?? 'Health').toUpperCase(),
+          collapsed: _collapsedSections['health']!,
+          onExpansionChanged: (_) {},
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // HIV Status dropdown (kept inline; the existing test relies
+              // on finding the literal "HIV Status" label and the dropdown
+              // widget).
+              _buildLabel('HIV Status'),
+              const SizedBox(height: 4),
+              DropdownButtonFormField<String>(
+                initialValue: _hivStatus,
+                dropdownColor: VibraTheme.kSurface,
+                style: const TextStyle(color: VibraTheme.kTextPrimary),
+                decoration: _inputDecoration('Select status'),
+                items: _hivStatusOptions
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (val) => setState(() => _hivStatus = val),
+              ),
+              const SizedBox(height: 16),
+
+              // Last tested on date picker (kept inline — test searches
+              // 'Not set').
+              _buildLabel('Last Tested On'),
+              const SizedBox(height: 4),
+              InkWell(
+                onTap: _pickLastTestedDate,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: VibraTheme.kSurface,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: VibraTheme.kDivider),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _lastTestedOn == null
+                              ? 'Not set'
+                              : '${_lastTestedOn!.year.toString().padLeft(4, '0')}-${_lastTestedOn!.month.toString().padLeft(2, '0')}-${_lastTestedOn!.day.toString().padLeft(2, '0')}',
+                          style: TextStyle(
+                            color: _lastTestedOn == null
+                                ? VibraTheme.kTextSecondary
+                                : VibraTheme.kTextPrimary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      const Icon(Icons.calendar_today,
+                          color: VibraTheme.kTextSecondary, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // PrEP switch (kept inline; test uses find.byType(Switch)).
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: VibraTheme.kSurface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: VibraTheme.kDivider),
+                ),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'On PrEP',
+                        style: TextStyle(
+                            color: VibraTheme.kTextPrimary, fontSize: 14),
+                      ),
+                    ),
+                    Switch(
+                      value: _prep ?? false,
+                      onChanged: (val) => setState(() => _prep = val),
+                    ),
+                  ],
+                ),
+              ),
+              if (_isSavingHealth)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+            ],
+          ),
+        ),
         const SizedBox(height: 24),
 
         // ── Privacy ───────────────────────────────────────────────────────
         // Privacy switches live in the dedicated Settings screen (T6). They
         // are read-only here; we surface the current values as a list.
-        _buildSectionHeader(
-            (l10n?.editProfileSectionPrivacy ?? 'Privacy').toUpperCase()),
-        const SizedBox(height: 8),
-        _buildPrivacyRow('Show age', draft.showAge),
-        _buildPrivacyRow('Show role', draft.showRole),
-        _buildPrivacyRow('Show tribes', draft.showTribes),
-        _buildPrivacyRow('Show position', draft.showPosition),
-        _buildPrivacyRow('Show ethnicity', draft.showEthnicity),
-        _buildPrivacyRow('Show relationship status',
-            draft.showRelationshipStatus),
+        _CollapsibleSection(
+          title:
+              (l10n?.editProfileSectionPrivacy ?? 'Privacy').toUpperCase(),
+          collapsed: _collapsedSections['privacy']!,
+          onExpansionChanged: (v) =>
+              setState(() => _collapsedSections['privacy'] = !v),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildPrivacyRow('Show age', draft.showAge),
+              _buildPrivacyRow('Show role', draft.showRole),
+              _buildPrivacyRow('Show tribes', draft.showTribes),
+              _buildPrivacyRow('Show position', draft.showPosition),
+              _buildPrivacyRow('Show ethnicity', draft.showEthnicity),
+              _buildPrivacyRow('Show relationship status',
+                  draft.showRelationshipStatus),
+            ],
+          ),
+        ),
         const SizedBox(height: 48),
       ],
     );
@@ -862,18 +951,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         color: VibraTheme.kTextSecondary,
         fontSize: 13,
         fontWeight: FontWeight.w500,
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: VibraTheme.kTextSecondary,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1.0,
       ),
     );
   }
@@ -1068,5 +1145,52 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final m = Map<String, dynamic>.from(p.details);
     m['trips'] = next.map((e) => e.toJson()).toList();
     return _copyWith(p, details: m);
+  }
+}
+
+/// Wraps a section in an ExpansionTile. Defaults to collapsed state from
+/// the parent's [_EditProfileScreenState._collapsedSections] map; user taps
+/// the header to toggle.
+///
+/// The trailing icon is the standard ExpansionTile chevron — keeps the
+/// look consistent with Material defaults rather than introducing a
+/// custom thumb.
+class _CollapsibleSection extends StatelessWidget {
+  final String title;
+  final bool collapsed;
+  final ValueChanged<bool> onExpansionChanged;
+  final Widget child;
+
+  const _CollapsibleSection({
+    required this.title,
+    required this.collapsed,
+    required this.onExpansionChanged,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      // Strip the default ExpansionTile divider/border so the section
+      // header looks like the existing _buildSectionHeader (kTextSecondary,
+      // 12 sp, CAPS, letterSpacing 1.0).
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: VibraTheme.kTextSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.0,
+          ),
+        ),
+        initiallyExpanded: !collapsed,
+        onExpansionChanged: onExpansionChanged,
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(top: 12),
+        children: [child],
+      ),
+    );
   }
 }

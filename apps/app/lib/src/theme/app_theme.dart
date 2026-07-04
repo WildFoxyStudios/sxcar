@@ -56,6 +56,9 @@ class VibraTheme {
   /// Badge / error red.
   static const Color kBadgeRed = Color(0xFFFF3B30);
 
+  /// Success / positive feedback (snackbar backgrounds, badges).
+  static const Color kSuccess = Color(0xFF2E7D32);
+
   /// Error colour (kept for theme).
   static const Color kError = Color(0xFFCF6679);
 

@@ -605,3 +605,178 @@ class NUEVOBadge extends StatelessWidget {
     );
   }
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// SettingRow
+// Row in the settings screen: leading icon + label + subtitle + trailing
+// widget (toggle / chevron / segmented3).
+// ────────────────────────────────────────────────────────────────────────────
+
+/// One row in the redesigned settings screen.
+///
+/// Layout (matches visual references 1000144717..1000144724):
+///   • Left: optional circle icon (40×40, kChip bg, accent-colored icon)
+///   • Middle: title (bold) + subtitle (gray, optional)
+///   • Right: trailing widget (toggle, chevron, or segmented)
+///
+/// Use [onTap] (without `trailing`) for navigation rows; use [trailing] (without
+/// `onTap`) for inline-control rows. SettingRow does NOT enforce exclusivity —
+/// the caller decides.
+class SettingRow extends StatelessWidget {
+  /// Optional leading icon (renders as 40×40 circle).
+  final IconData? icon;
+  final Color? iconColor;
+
+  /// Title (e.g. "Show distance"). Use [AppLocalizations.of(context)!.foo].
+  final String title;
+  final String? subtitle;
+
+  /// Right-side control. If null + [onTap] provided, shows chevron-right.
+  final Widget? trailing;
+
+  /// Tap action. If provided and [trailing] is null, rows show a chevron.
+  final VoidCallback? onTap;
+
+  const SettingRow({
+    super.key,
+    this.icon,
+    this.iconColor,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final leading = icon != null
+        ? Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: VibraTheme.kChip,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor ?? VibraTheme.kYellow, size: 20),
+          )
+        : null;
+
+    Widget content = Row(
+      children: [
+        if (leading != null) ...[
+          leading,
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  style: const TextStyle(
+                    color: Color(0xFF8E8E8E),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (trailing != null) ...[
+          const SizedBox(width: 12),
+          trailing!,
+        ] else if (onTap != null) ...[
+          const SizedBox(width: 12),
+          const Icon(Icons.chevron_right,
+              color: VibraTheme.kTextSecondary, size: 20),
+        ],
+      ],
+    );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: content,
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: content,
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Segmented3
+// 3-way segmented control. Used for visitor status (Disabled / Enabled / Auto).
+// ────────────────────────────────────────────────────────────────────────────
+
+/// 3-way segmented control.
+///
+/// - Selected segment: kYellow background, black text
+/// - Unselected: transparent, white text
+/// - Pill shape (radius 999), full width of parent
+class Segmented3 extends StatelessWidget {
+  final List<String> options;
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
+
+  const Segmented3({
+    super.key,
+    required this.options,
+    required this.selectedIndex,
+    required this.onChanged,
+  }) : assert(options.length == 3, 'Segmented3 requires exactly 3 options');
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: VibraTheme.kChip,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      padding: const EdgeInsets.all(3),
+      child: Row(
+        children: List.generate(3, (i) {
+          final selected = i == selectedIndex;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChanged(i),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: selected ? VibraTheme.kYellow : Colors.transparent,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Center(
+                  child: Text(
+                    options[i],
+                    style: TextStyle(
+                      color: selected ? Colors.black : Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}

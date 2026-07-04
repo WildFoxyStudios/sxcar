@@ -528,4 +528,108 @@ void main() {
       expect(text.style?.fontSize, 14);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // SettingRow
+  // ---------------------------------------------------------------------------
+
+  group('SettingRow', () {
+    testWidgets('renders title + subtitle', (tester) async {
+      await tester.pumpWidget(_wrap(const SettingRow(
+        title: 'Show distance',
+        subtitle: 'Display your distance to other users',
+      )));
+      expect(find.text('Show distance'), findsOneWidget);
+      expect(find.text('Display your distance to other users'), findsOneWidget);
+    });
+
+    testWidgets('renders leading icon circle when icon provided', (tester) async {
+      await tester.pumpWidget(_wrap(const SettingRow(
+        icon: Icons.location_on_outlined,
+        title: 'Location',
+      )));
+      // Circle container (40x40) + Icon widget present
+      expect(find.byIcon(Icons.location_on_outlined), findsOneWidget);
+    });
+
+    testWidgets('renders chevron-right when onTap provided', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(_wrap(SettingRow(
+        title: 'Privacy',
+        onTap: () => taps++,
+      )));
+      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    });
+
+    testWidgets('hides chevron when trailing widget provided', (tester) async {
+      await tester.pumpWidget(_wrap(SettingRow(
+        title: 'Toggle setting',
+        trailing: Switch(value: false, onChanged: null),
+        onTap: () {}, // onTap set but trailing takes priority
+      )));
+      // Trailing widget (Switch) renders, chevron does NOT.
+      expect(find.byType(Switch), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsNothing);
+    });
+
+    testWidgets('invokes onTap', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(_wrap(SettingRow(
+        title: 'Privacy',
+        onTap: () => taps++,
+      )));
+      await tester.tap(find.text('Privacy'));
+      await tester.pump();
+      expect(taps, 1);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Segmented3
+  // ---------------------------------------------------------------------------
+
+  group('Segmented3', () {
+    testWidgets('renders 3 options', (tester) async {
+      await tester.pumpWidget(_wrap(Segmented3(
+        options: const ['Off', 'On', 'Auto'],
+        selectedIndex: 0,
+        onChanged: (_) {},
+      )));
+      expect(find.text('Off'), findsOneWidget);
+      expect(find.text('On'), findsOneWidget);
+      expect(find.text('Auto'), findsOneWidget);
+    });
+
+    testWidgets('selected option uses yellow background', (tester) async {
+      await tester.pumpWidget(_wrap(Segmented3(
+        options: const ['Off', 'On', 'Auto'],
+        selectedIndex: 1,
+        onChanged: (_) {},
+      )));
+      final containers = tester.widgetList<Container>(find.byType(Container));
+      final hasYellow = containers.any((c) {
+        final dec = c.decoration;
+        if (dec is! BoxDecoration) return false;
+        return dec.color == VibraTheme.kYellow;
+      });
+      expect(hasYellow, true);
+    });
+
+    testWidgets('invokes onChanged when segment tapped', (tester) async {
+      var changed = 0;
+      var lastIdx = -1;
+      await tester.pumpWidget(_wrap(Segmented3(
+        options: const ['Off', 'On', 'Auto'],
+        selectedIndex: 0,
+        onChanged: (i) {
+          changed++;
+          lastIdx = i;
+        },
+      )));
+      await tester.tap(find.text('Auto'));
+      await tester.pump();
+      expect(changed, 1);
+      expect(lastIdx, 2);
+    });
+  });
 }

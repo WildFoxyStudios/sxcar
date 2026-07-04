@@ -223,4 +223,90 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get planActivo => 'Plan activo ✓';
+
+  @override
+  String get cuenta => 'Cuenta';
+
+  @override
+  String get multimedia => 'Multimedia';
+
+  @override
+  String get mostrarActualizacionesAlbumes =>
+      'Mostrar actualizaciones de mis álbumes';
+
+  @override
+  String get mostrarCarruselBandeja => 'Mostrar carrusel en la bandeja';
+
+  @override
+  String get centroSeguridad => 'Centro de seguridad';
+
+  @override
+  String get iconoAplicacionDiscreto => 'Icono de aplicación discreto';
+
+  @override
+  String get pin => 'PIN';
+
+  @override
+  String get desbloquearUsuarios => 'Desbloquear usuarios';
+
+  @override
+  String get dejarOcultarUsuarios => 'Dejar de ocultar usuarios';
+
+  @override
+  String get preferenciasConsentimiento => 'Preferencias de consentimiento';
+
+  @override
+  String get descargarDatos => 'Descargar mis datos';
+
+  @override
+  String get noMolestar => 'No molestar';
+
+  @override
+  String get marcarConQuienChateeado => 'Marcar con quién he chateado';
+
+  @override
+  String get sincronizacionMensajes => 'Sincronización de mensajes';
+
+  @override
+  String get ubicacion => 'Ubicación';
+
+  @override
+  String get inicio => 'Inicio';
+
+  @override
+  String get estadoVisitante => 'Estado de visitante';
+
+  @override
+  String get desactivada => 'Desactivada';
+
+  @override
+  String get activado => 'Activado';
+
+  @override
+  String get automatico => 'Automático';
+
+  @override
+  String get preferenciasPantalla => 'Preferencias de pantalla';
+
+  @override
+  String get mantenerPantallaDesbloqueada =>
+      'Mantener la pantalla desbloqueada';
+
+  @override
+  String get sistemaUnidades => 'Sistema de unidades';
+
+  @override
+  String get metrico => 'Métrico';
+
+  @override
+  String get imperial => 'Imperial';
+
+  @override
+  String get siguenos => 'Síguenos';
+
+  @override
+  String get eliminarCuenta => 'Eliminar cuenta';
+
+  @override
+  String get confirmarEliminar => '¿Eliminar cuenta?';
 }

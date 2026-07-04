@@ -224,4 +224,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planActivo => 'Active plan ✓';
+
+  @override
+  String get cuenta => 'Account';
+
+  @override
+  String get multimedia => 'Multimedia';
+
+  @override
+  String get mostrarActualizacionesAlbumes => 'Show my album updates';
+
+  @override
+  String get mostrarCarruselBandeja => 'Show carousel in inbox';
+
+  @override
+  String get centroSeguridad => 'Security center';
+
+  @override
+  String get iconoAplicacionDiscreto => 'Discreet app icon';
+
+  @override
+  String get pin => 'PIN';
+
+  @override
+  String get desbloquearUsuarios => 'Unblock users';
+
+  @override
+  String get dejarOcultarUsuarios => 'Stop hiding users';
+
+  @override
+  String get preferenciasConsentimiento => 'Consent preferences';
+
+  @override
+  String get descargarDatos => 'Download my data';
+
+  @override
+  String get noMolestar => 'Do not disturb';
+
+  @override
+  String get marcarConQuienChateeado => 'Mark chatted-with';
+
+  @override
+  String get sincronizacionMensajes => 'Message sync';
+
+  @override
+  String get ubicacion => 'Location';
+
+  @override
+  String get inicio => 'Home';
+
+  @override
+  String get estadoVisitante => 'Visitor status';
+
+  @override
+  String get desactivada => 'Disabled';
+
+  @override
+  String get activado => 'Enabled';
+
+  @override
+  String get automatico => 'Automatic';
+
+  @override
+  String get preferenciasPantalla => 'Screen preferences';
+
+  @override
+  String get mantenerPantallaDesbloqueada => 'Keep screen unlocked';
+
+  @override
+  String get sistemaUnidades => 'Unit system';
+
+  @override
+  String get metrico => 'Metric';
+
+  @override
+  String get imperial => 'Imperial';
+
+  @override
+  String get siguenos => 'Follow us';
+
+  @override
+  String get eliminarCuenta => 'Delete account';
+
+  @override
+  String get confirmarEliminar => 'Delete account?';
 }

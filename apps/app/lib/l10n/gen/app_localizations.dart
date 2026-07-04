@@ -517,6 +517,174 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Plan activo ✓'**
   String get planActivo;
+
+  /// Settings → Account section header
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta'**
+  String get cuenta;
+
+  /// Settings → Multimedia section header
+  ///
+  /// In es, this message translates to:
+  /// **'Multimedia'**
+  String get multimedia;
+
+  /// Privacy pref toggle for showing album updates
+  ///
+  /// In es, this message translates to:
+  /// **'Mostrar actualizaciones de mis álbumes'**
+  String get mostrarActualizacionesAlbumes;
+
+  /// Privacy pref toggle for the inbox carousel
+  ///
+  /// In es, this message translates to:
+  /// **'Mostrar carrusel en la bandeja'**
+  String get mostrarCarruselBandeja;
+
+  /// Settings link to Security Center (placeholder)
+  ///
+  /// In es, this message translates to:
+  /// **'Centro de seguridad'**
+  String get centroSeguridad;
+
+  /// Settings toggle for discreet app icon
+  ///
+  /// In es, this message translates to:
+  /// **'Icono de aplicación discreto'**
+  String get iconoAplicacionDiscreto;
+
+  /// Settings row label for PIN lock
+  ///
+  /// In es, this message translates to:
+  /// **'PIN'**
+  String get pin;
+
+  /// Settings link to blocked users list
+  ///
+  /// In es, this message translates to:
+  /// **'Desbloquear usuarios'**
+  String get desbloquearUsuarios;
+
+  /// Hidden users action (companion to blocks)
+  ///
+  /// In es, this message translates to:
+  /// **'Dejar de ocultar usuarios'**
+  String get dejarOcultarUsuarios;
+
+  /// Settings link to consent preferences (placeholder)
+  ///
+  /// In es, this message translates to:
+  /// **'Preferencias de consentimiento'**
+  String get preferenciasConsentimiento;
+
+  /// Settings link to data export (placeholder)
+  ///
+  /// In es, this message translates to:
+  /// **'Descargar mis datos'**
+  String get descargarDatos;
+
+  /// DND pref label
+  ///
+  /// In es, this message translates to:
+  /// **'No molestar'**
+  String get noMolestar;
+
+  /// Privacy pref toggle for chat-mark-chatted
+  ///
+  /// In es, this message translates to:
+  /// **'Marcar con quién he chateado'**
+  String get marcarConQuienChateeado;
+
+  /// Privacy pref toggle for message sync
+  ///
+  /// In es, this message translates to:
+  /// **'Sincronización de mensajes'**
+  String get sincronizacionMensajes;
+
+  /// Settings → Location section header
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación'**
+  String get ubicacion;
+
+  /// Settings → Home section header (or sub-section)
+  ///
+  /// In es, this message translates to:
+  /// **'Inicio'**
+  String get inicio;
+
+  /// Settings row for visitor status (off/enabled/auto)
+  ///
+  /// In es, this message translates to:
+  /// **'Estado de visitante'**
+  String get estadoVisitante;
+
+  /// Visitor status: disabled option label
+  ///
+  /// In es, this message translates to:
+  /// **'Desactivada'**
+  String get desactivada;
+
+  /// Visitor status: enabled option label
+  ///
+  /// In es, this message translates to:
+  /// **'Activado'**
+  String get activado;
+
+  /// Visitor status: auto option label
+  ///
+  /// In es, this message translates to:
+  /// **'Automático'**
+  String get automatico;
+
+  /// Settings → Screen preferences section header
+  ///
+  /// In es, this message translates to:
+  /// **'Preferencias de pantalla'**
+  String get preferenciasPantalla;
+
+  /// Privacy pref toggle for screen keep-unlocked
+  ///
+  /// In es, this message translates to:
+  /// **'Mantener la pantalla desbloqueada'**
+  String get mantenerPantallaDesbloqueada;
+
+  /// Settings row for unit system (metric/imperial)
+  ///
+  /// In es, this message translates to:
+  /// **'Sistema de unidades'**
+  String get sistemaUnidades;
+
+  /// Unit system: metric option
+  ///
+  /// In es, this message translates to:
+  /// **'Métrico'**
+  String get metrico;
+
+  /// Unit system: imperial option
+  ///
+  /// In es, this message translates to:
+  /// **'Imperial'**
+  String get imperial;
+
+  /// Settings → Social section header
+  ///
+  /// In es, this message translates to:
+  /// **'Síguenos'**
+  String get siguenos;
+
+  /// Settings link to delete account (placeholder)
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar cuenta'**
+  String get eliminarCuenta;
+
+  /// Delete account confirmation dialog title
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar cuenta?'**
+  String get confirmarEliminar;
 }
 
 class _AppLocalizationsDelegate

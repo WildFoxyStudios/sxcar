@@ -90,6 +90,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "sqlx",
+ "thiserror 1.0.69",
  "time",
  "tokio",
  "totp-rs",
@@ -280,22 +281,6 @@ name = "base64ct"
 version = "1.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
-
-[[package]]
-name = "billing"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "api",
- "axum",
- "db",
- "serde",
- "serde_json",
- "sqlx",
- "thiserror 1.0.69",
- "tokio",
- "tracing",
-]
 
 [[package]]
 name = "bitflags"

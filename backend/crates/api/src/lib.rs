@@ -1,6 +1,7 @@
 pub mod admin;
 pub mod albums;
 pub mod auth;
+pub mod billing;
 pub mod chat;
 pub mod config;
 pub mod cors;
@@ -120,6 +121,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .merge(admin::router(state.clone()))
         .merge(tier2::router())
         .merge(tier3::router())
+        .merge(billing::router())
         .merge(media::router());
     for path in tarpit::HONEYPOT_PATHS {
         router = router.route(path, any(tarpit::handler));

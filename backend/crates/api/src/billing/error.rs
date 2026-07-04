@@ -10,7 +10,13 @@ pub enum BillingError {
     #[error("unauthorized")]
     Unauthorized,
     #[error("database error: {0}")]
-    Db(#[from] sqlx::Error),
+    Db(#[from] anyhow::Error),
+}
+
+impl From<sqlx::Error> for BillingError {
+    fn from(err: sqlx::Error) -> Self {
+        BillingError::Db(anyhow::Error::from(err))
+    }
 }
 
 impl IntoResponse for BillingError {

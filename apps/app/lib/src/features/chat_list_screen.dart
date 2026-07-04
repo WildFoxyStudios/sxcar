@@ -125,8 +125,8 @@ class _BandejaTabState extends ConsumerState<_BandejaTab> {
                 return const Center(child: CircularProgressIndicator());
               }
               if (snapshot.hasError) {
-                return const _ErrorRetry(
-                    message: 'Error cargando conversaciones');
+                return _ErrorRetry(
+                    message: l10n.errorCargandoConversaciones);
               }
               final conversations = snapshot.data ?? const [];
               if (conversations.isEmpty) {
@@ -304,12 +304,13 @@ class _AlbumsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final sharedAlbumsAsync = ref.watch(sharedAlbumsProvider);
 
     return sharedAlbumsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (_, _) => _ErrorRetry(
-        message: 'Error cargando álbumes compartidos',
+        message: l10n.errorCargandoAlbumesCompartidos,
         onRetry: () {
           // Provider invalidation is best done in a callback that has the ref.
           // The Retry button itself just signals; actual reload is via
@@ -340,14 +341,15 @@ class _BoostFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return FloatingActionButton.extended(
       backgroundColor: Colors.black,
       foregroundColor: VibraTheme.kYellow,
       onPressed: () {/* TODO: trigger boost */},
       icon: const Icon(Icons.bolt),
-      label: const Text(
-        'Boost',
-        style: TextStyle(fontWeight: FontWeight.w700),
+      label: Text(
+        l10n.boost,
+        style: const TextStyle(fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -365,6 +367,7 @@ class _ErrorRetry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -374,7 +377,7 @@ class _ErrorRetry extends StatelessWidget {
           if (onRetry != null)
             TextButton(
               onPressed: onRetry,
-              child: const Text('Reintentar'),
+              child: Text(l10n.reintentar),
             ),
         ],
       ),

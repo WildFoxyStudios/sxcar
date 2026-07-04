@@ -942,10 +942,11 @@ class AlbumUpdateBanner extends StatelessWidget {
   }
 
   String _label(BuildContext context, int count) {
+    final l10n = AppLocalizations.of(context)!;
     if (count == 1) {
-      return '1 álbum actualizado';
+      return l10n.albumActualizadoSingular;
     }
-    return '$count álbumes actualizados';
+    return l10n.albumesActualizadosPlural(count);
   }
 }
 

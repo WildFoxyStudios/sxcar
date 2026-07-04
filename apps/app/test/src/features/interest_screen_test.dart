@@ -186,19 +186,43 @@ Widget _wrap({
   );
 }
 
+/// Pumps [child] with the providers + locale, and returns the resolved
+/// [AppLocalizations]. All InterestScreen tests route through this helper so
+/// their assertions can switch from hardcoded strings to `l10n.X` references.
+Future<AppLocalizations> _pumpAndL10n(
+  WidgetTester tester, {
+  required Widget child,
+  required Dio dio,
+  AuthNotifier? authNotifier,
+}) async {
+  await tester.pumpWidget(
+    _wrap(
+      child: child,
+      dio: dio,
+      authNotifier: authNotifier,
+    ),
+  );
+  await tester.pumpAndSettle();
+  // Localizations aren't yet initialised on MaterialApp's own element, so we
+  // capture from inside the InterestScreen (or its child) subtree instead.
+  return AppLocalizations.of(
+    tester.element(find.byType(InterestScreen)),
+  )!;
+}
+
 void main() {
   group('InterestScreen', () {
     testWidgets('title is 32 sp white', (tester) async {
       final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
 
-      await tester.pumpWidget(
-        _wrap(child: const InterestScreen(), dio: dio),
+      final l10n = await _pumpAndL10n(
+        tester,
+        child: const InterestScreen(),
+        dio: dio,
       );
 
-      await tester.pumpAndSettle();
-
       // The "Interest" title should be rendered with fontSize 32.
-      final titleFinder = find.text('Interest');
+      final titleFinder = find.text(l10n.interest);
       expect(titleFinder, findsOneWidget);
       final titleWidget = tester.widget<Text>(titleFinder);
       expect(titleWidget.style?.fontSize, 32);
@@ -209,14 +233,14 @@ void main() {
         (tester) async {
       final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
 
-      await tester.pumpWidget(
-        _wrap(child: const InterestScreen(), dio: dio),
+      final l10n = await _pumpAndL10n(
+        tester,
+        child: const InterestScreen(),
+        dio: dio,
       );
 
-      await tester.pumpAndSettle();
-
-      expect(find.text('Views 0'), findsOneWidget);
-      expect(find.text('Taps 0'), findsOneWidget);
+      expect(find.text('${l10n.views} 0'), findsOneWidget);
+      expect(find.text('${l10n.taps} 0'), findsOneWidget);
     });
 
     testWidgets('NUEVO badge appears when count > 6 and no entitlement',
@@ -224,52 +248,52 @@ void main() {
       final dio = Dio()
         ..httpClientAdapter = _MockTapsAdapter(viewsCount: 7, tapsCount: 0);
 
-      await tester.pumpWidget(
-        _wrap(child: const InterestScreen(), dio: dio),
+      final l10n = await _pumpAndL10n(
+        tester,
+        child: const InterestScreen(),
+        dio: dio,
       );
 
-      await tester.pumpAndSettle();
-
-      expect(find.text('Unlock FREE'), findsOneWidget);
+      expect(find.text(l10n.desbloquearGratis), findsOneWidget);
     });
 
     testWidgets('NUEVO badge hidden when count <= 6', (tester) async {
       final dio = Dio()
         ..httpClientAdapter = _MockTapsAdapter(viewsCount: 3, tapsCount: 3);
 
-      await tester.pumpWidget(
-        _wrap(child: const InterestScreen(), dio: dio),
+      final l10n = await _pumpAndL10n(
+        tester,
+        child: const InterestScreen(),
+        dio: dio,
       );
 
-      await tester.pumpAndSettle();
-
-      expect(find.text('Unlock FREE'), findsNothing);
+      expect(find.text(l10n.desbloquearGratis), findsNothing);
     });
 
     testWidgets('Boost FAB renders with icon', (tester) async {
       final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
 
-      await tester.pumpWidget(
-        _wrap(child: const InterestScreen(), dio: dio),
+      final l10n = await _pumpAndL10n(
+        tester,
+        child: const InterestScreen(),
+        dio: dio,
       );
 
-      await tester.pumpAndSettle();
-
       expect(find.byIcon(Icons.bolt), findsOneWidget);
-      expect(find.text('Boost your Interest'), findsOneWidget);
+      expect(find.text(l10n.boostTuInterest), findsOneWidget);
     });
 
     testWidgets('Taps tab shows received taps', (tester) async {
       final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
 
-      await tester.pumpWidget(
-        _wrap(child: const InterestScreen(), dio: dio),
+      final l10n = await _pumpAndL10n(
+        tester,
+        child: const InterestScreen(),
+        dio: dio,
       );
 
-      await tester.pumpAndSettle();
-
       // Tabs are: Views, Taps. Switch to Taps.
-      await tester.tap(find.text('Taps 0'));
+      await tester.tap(find.text('${l10n.taps} 0'));
       await tester.pumpAndSettle();
 
       expect(find.text('Bob'), findsOneWidget);
@@ -279,11 +303,14 @@ void main() {
     testWidgets('Views tab shows received viewers', (tester) async {
       final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
 
-      await tester.pumpWidget(
-        _wrap(child: const InterestScreen(), dio: dio),
+      final l10n = await _pumpAndL10n(
+        tester,
+        child: const InterestScreen(),
+        dio: dio,
       );
-
-      await tester.pumpAndSettle();
+      // Reference l10n so the analyzer does not strip the variable if unused
+      // (this test relies on the default Views tab content).
+      expect(l10n.views, isNotNull);
 
       // Views is the default tab — content should be visible.
       expect(find.text('Vicky Viewer'), findsOneWidget);
@@ -301,6 +328,8 @@ void main() {
       final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
       final notifier = _LoadingThenAuthNotifier();
 
+      // Pump directly with the loading notifier — we don't pumpAndSettle
+      // because that would resolve the future and trigger the fetcher.
       await tester.pumpWidget(
         _wrap(
           child: const InterestScreen(),
@@ -308,13 +337,20 @@ void main() {
           authNotifier: notifier,
         ),
       );
+      // Capture l10n from the widget tree now (the notifier is just the
+      // auth state — the localizations delegates always load). Pull from
+      // the InterestScreen widget's element since Localizations are wired
+      // in further down the tree.
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(InterestScreen)),
+      )!;
 
       // Pump a few frames — the auth token is still null so the
       // fetcher must be waiting. The tab shows its loading state.
       // No exception (no 401 printed).
       await tester.pump();
       await tester.pump();
-      await tester.tap(find.text('Taps 0'));
+      await tester.tap(find.text('${l10n.taps} 0'));
       await tester.pump();
       expect(tester.takeException(), isNull);
 

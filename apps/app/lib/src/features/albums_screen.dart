@@ -92,6 +92,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
   }
 
   Future<void> _showCreateDialog() async {
+    final l10n = AppLocalizations.of(context)!;
     final nameController = TextEditingController();
     final descriptionController = TextEditingController();
     bool isPrivate = false;
@@ -134,7 +135,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancelar),
             ),
             FilledButton(
               onPressed: () {
@@ -224,9 +225,9 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
               TextField(
                 controller: controller,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'user_id (UUID)',
-                  hintStyle: TextStyle(color: VibraTheme.kTextTertiary),
+                decoration: InputDecoration(
+                  hintText: l10n.userIdHint,
+                  hintStyle: const TextStyle(color: VibraTheme.kTextTertiary),
                 ),
               ),
               const SizedBox(height: 16),
@@ -261,7 +262,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              'Error al compartir: ${e.response?.statusCode ?? e.message}'),
+              '${l10n.errorAlCompartir}: ${e.response?.statusCode ?? e.message}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -274,15 +275,15 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.eliminarAlbum),
-        content: const Text('¿Eliminar este álbum?'),
+        content: Text(l10n.confirmarEliminarAlbum),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: Text(l10n.cancelar),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.eliminarAlbum),
+            child: Text(l10n.eliminar),
           ),
         ],
       ),
@@ -298,7 +299,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              'Error al eliminar: ${e.response?.statusCode ?? e.message}'),
+              '${l10n.errorAlEliminar}: ${e.response?.statusCode ?? e.message}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -381,7 +382,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
-                'Mis álbumes',
+                l10n.misAlbumesHeader,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -420,7 +421,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: _loadAlbums,
-                  child: const Text('Reintentar'),
+                  child: Text(l10n.reintentar),
                 ),
               ],
             ),
@@ -441,17 +442,17 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
                 const Icon(Icons.photo_album,
                     size: 64, color: VibraTheme.kTextSecondary),
                 const SizedBox(height: 16),
-                const Text(
-                  'No tienes álbumes aún',
-                  style: TextStyle(
+                Text(
+                  l10n.noTienesAlbumes,
+                  style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
                       fontSize: 16),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Toca + para crear tu primer álbum',
-                  style: TextStyle(color: VibraTheme.kTextSecondary),
+                Text(
+                  l10n.tocaMasParaCrearAlbum,
+                  style: const TextStyle(color: VibraTheme.kTextSecondary),
                   textAlign: TextAlign.center,
                 ),
               ],

@@ -40,21 +40,6 @@ class ReceivedTap {
   }
 }
 
-String _tapTypeDisplay(String tapType) {
-  switch (tapType) {
-    case 'fire':
-      return 'Sent a fire! 🔥';
-    case 'wave':
-      return 'Sent a wave! 👋';
-    case 'smile':
-      return 'Sent a smile! 😊';
-    case 'hello':
-      return 'Said hello! 👋';
-    default:
-      return 'Sent $tapType';
-  }
-}
-
 /// Interest screen — combines Tabs (Views N / Taps N) with a sticky
 /// upsell CTA + Boost FAB. Matches the Grindr Interest IA.
 ///
@@ -227,7 +212,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
               child: SizedBox(
                 width: double.infinity,
                 child: YellowPillButton(
-                  label: 'Desbloquear sin límites', // T3.10 i18n cleanup
+                  label: l10n.desbloquearSinLimites,
                   onPressed: () => context.push('/tienda'),
                 ),
               ),
@@ -257,6 +242,7 @@ class _ViewsListTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final viewersAsync = ref.watch(viewedMeProvider);
     return viewersAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -264,14 +250,14 @@ class _ViewsListTab extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Error cargando vistas',
-              style: TextStyle(color: Colors.red),
+            Text(
+              l10n.errorCargandoVistas,
+              style: const TextStyle(color: Colors.red),
             ),
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => ref.invalidate(viewedMeProvider),
-              child: const Text('Reintentar'),
+              child: Text(l10n.reintentar),
             ),
           ],
         ),
@@ -282,7 +268,7 @@ class _ViewsListTab extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Text(
-                'Nadie ha visto tu perfil aún',
+                l10n.nadieHaVistoPerfil,
                 style: const TextStyle(color: VibraTheme.kTextSecondary),
               ),
             ),
@@ -318,7 +304,7 @@ class _ViewsListTab extends ConsumerWidget {
                 style: const TextStyle(color: Colors.white),
               ),
               subtitle: Text(
-                'Visto: ${v.viewedAt.substring(0, 10)}',
+                l10n.vistoEl(v.viewedAt.substring(0, 10)),
                 style: const TextStyle(
                   color: VibraTheme.kTextSecondary,
                   fontSize: 12,
@@ -347,6 +333,7 @@ class _TapsListTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return FutureBuilder<List<ReceivedTap>>(
       future: tapsFuture,
       builder: (context, snapshot) {
@@ -358,14 +345,14 @@ class _TapsListTab extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Error cargando taps',
-                  style: TextStyle(color: Colors.red),
+                Text(
+                  l10n.errorCargandoTaps,
+                  style: const TextStyle(color: Colors.red),
                 ),
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: onRetry,
-                  child: const Text('Reintentar'),
+                  child: Text(l10n.reintentar),
                 ),
               ],
             ),
@@ -377,7 +364,7 @@ class _TapsListTab extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Text(
-                'Sin taps aún',
+                l10n.sinTaps,
                 style: const TextStyle(color: VibraTheme.kTextSecondary),
               ),
             ),
@@ -413,7 +400,7 @@ class _TapsListTab extends StatelessWidget {
                 style: const TextStyle(color: Colors.white),
               ),
               subtitle: Text(
-                _tapTypeDisplay(t.tapType),
+                l10n.tipoTap(t.tapType),
                 style: const TextStyle(
                   color: VibraTheme.kTextMuted,
                   fontSize: 12,

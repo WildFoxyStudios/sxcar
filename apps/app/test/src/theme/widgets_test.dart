@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:app/src/theme/widgets.dart';
 import 'package:app/src/theme/app_theme.dart';
 import 'package:app/src/albums/shared_albums_provider.dart';
@@ -9,10 +11,20 @@ import 'package:app/src/albums/shared_albums_provider.dart';
 // ---------------------------------------------------------------------------
 
 /// Wraps [child] in a minimal MaterialApp with the Vibra dark theme so
-/// widgets can look up Theme, MediaQuery, Directionality, etc.
+/// widgets can look up Theme, MediaQuery, Directionality, etc. Also wires up
+/// the localization delegates with `Locale('es')` so that widgets using
+/// `AppLocalizations.of(context)` resolve to the Spanish ARB.
 Widget _wrap(Widget child) {
   return MaterialApp(
     theme: VibraTheme.dark(),
+    locale: const Locale('es'),
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -711,13 +723,21 @@ void main() {
     testWidgets('renders singular label for count = 1', (tester) async {
       await tester.pumpWidget(_wrap(
           AlbumUpdateBanner(count: 1, onTap: () {})));
-      expect(find.textContaining('1 álbum'), findsOneWidget);
+      await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(AlbumUpdateBanner)),
+      )!;
+      expect(find.text(l10n.albumActualizadoSingular), findsOneWidget);
     });
 
     testWidgets('renders plural label for count > 1', (tester) async {
       await tester.pumpWidget(_wrap(
           AlbumUpdateBanner(count: 3, onTap: () {})));
-      expect(find.textContaining('3 álbumes'), findsOneWidget);
+      await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(AlbumUpdateBanner)),
+      )!;
+      expect(find.text(l10n.albumesActualizadosPlural(3)), findsOneWidget);
     });
 
     testWidgets('invokes onTap', (tester) async {

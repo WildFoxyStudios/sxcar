@@ -344,5 +344,51 @@
   "ver": "Ver",
   "@ver": { "description": "View action button (album / share)" },
   "hacer": "Hacer",
-  "@hacer": { "description": "Generic 'do' action button (e.g. 'Hacer tap')" }
+  "@hacer": { "description": "Generic 'do' action button (e.g. 'Hacer tap')" },
+
+  "albumActualizadoSingular": "1 álbum actualizado",
+  "@albumActualizadoSingular": { "description": "AlbumUpdateBanner label for count = 1" },
+  "albumesActualizadosPlural": "{count} álbumes actualizados",
+  "@albumesActualizadosPlural": {
+    "description": "AlbumUpdateBanner label for count > 1",
+    "placeholders": { "count": { "type": "int", "example": "3" } }
+  },
+  "errorCargandoConversaciones": "Error cargando conversaciones",
+  "@errorCargandoConversaciones": { "description": "ChatListScreen Bandeja error state message" },
+  "errorCargandoAlbumesCompartidos": "Error cargando álbumes compartidos",
+  "@errorCargandoAlbumesCompartidos": { "description": "ChatListScreen Álbumes error state message" },
+  "desbloquearSinLimites": "Desbloquear sin límites",
+  "@desbloquearSinLimites": { "description": "Interest screen sticky CTA label" },
+  "errorCargandoVistas": "Error cargando vistas",
+  "@errorCargandoVistas": { "description": "Interest screen Views tab error message" },
+  "sinTaps": "Sin taps aún",
+  "@sinTaps": { "description": "Interest screen Taps tab empty state" },
+  "errorCargandoTaps": "Error cargando taps",
+  "@errorCargandoTaps": { "description": "Interest screen Taps tab error message" },
+  "vistoEl": "Visto el {fecha}",
+  "@vistoEl": {
+    "description": "Interest screen Views row subtitle (placeholder fecha is YYYY-MM-DD)",
+    "placeholders": { "fecha": { "type": "String", "example": "2026-07-04" } }
+  },
+  "tipoTap": "Tipo: {tipo}",
+  "@tipoTap": {
+    "description": "Interest screen Taps row subtitle",
+    "placeholders": { "tipo": { "type": "String", "example": "wave" } }
+  },
+  "nadieHaVistoPerfil": "Nadie ha visto tu perfil aún",
+  "@nadieHaVistoPerfil": { "description": "Interest screen Views tab empty state" },
+  "noTienesAlbumes": "No tienes álbumes aún",
+  "@noTienesAlbumes": { "description": "Albums screen empty state title" },
+  "tocaMasParaCrearAlbum": "Toca + para crear tu primer álbum",
+  "@tocaMasParaCrearAlbum": { "description": "Albums screen empty state subtitle" },
+  "errorAlCompartir": "Error al compartir",
+  "@errorAlCompartir": { "description": "Albums screen share error snackbar prefix" },
+  "errorAlEliminar": "Error al eliminar",
+  "@errorAlEliminar": { "description": "Albums screen delete error snackbar prefix" },
+  "confirmarEliminarAlbum": "¿Eliminar este álbum?",
+  "@confirmarEliminarAlbum": { "description": "Albums screen delete confirmation dialog body" },
+  "userIdHint": "user_id (UUID)",
+  "@userIdHint": { "description": "Albums screen share sheet TextField hint" },
+  "misAlbumesHeader": "Mis álbumes",
+  "@misAlbumesHeader": { "description": "Albums screen 'my albums' section header (separate from AppBar misShares title)" }
 }

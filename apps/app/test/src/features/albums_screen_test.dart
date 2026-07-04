@@ -247,7 +247,7 @@ class _AuthenticatedNotifier extends AuthNotifier {
   Future<void> logout() async {}
 }
 
-Future<void> _pumpScreen(WidgetTester tester, Dio dio) async {
+Future<AppLocalizations> _pumpScreen(WidgetTester tester, Dio dio) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -272,6 +272,12 @@ Future<void> _pumpScreen(WidgetTester tester, Dio dio) async {
   // Let the album GET request resolve
   await tester.pump(const Duration(milliseconds: 50));
   await tester.pumpAndSettle();
+  // Capture l10n from inside the screen's subtree so the Localizations
+  // ancestor is in scope (MaterialApp itself has not yet descended through
+  // Localizations at its own element).
+  return AppLocalizations.of(
+    tester.element(find.byType(AlbumsScreen)),
+  )!;
 }
 
 void main() {
@@ -294,18 +300,18 @@ void main() {
 
     testWidgets('shows empty state when no albums', (tester) async {
       final emptyDio = Dio()..httpClientAdapter = _EmptyMockAdapter();
-      await _pumpScreen(tester, emptyDio);
+      final l10n = await _pumpScreen(tester, emptyDio);
 
-      expect(find.text('No tienes álbumes aún'), findsOneWidget);
+      expect(find.text(l10n.noTienesAlbumes), findsOneWidget);
     });
 
     testWidgets('shows error state on failure', (tester) async {
       final errorDio = Dio()..httpClientAdapter = _ErrorMockAdapter();
-      await _pumpScreen(tester, errorDio);
+      final l10n = await _pumpScreen(tester, errorDio);
 
       // Should show error message and retry button.
       expect(find.textContaining('Failed to load albums'), findsOneWidget);
-      expect(find.text('Reintentar'), findsOneWidget);
+      expect(find.text(l10n.reintentar), findsOneWidget);
     });
 
     // ── 6 new tests below ──────────────────────────────────────────────────
@@ -345,7 +351,7 @@ void main() {
     testWidgets('long-press opens action sheet with Compartir + Eliminar',
         (tester) async {
       final dio = Dio()..httpClientAdapter = _MockAdapter();
-      await _pumpScreen(tester, dio);
+      final l10n = await _pumpScreen(tester, dio);
 
       expect(find.text('Vacation'), findsOneWidget);
       expect(find.text('Private'), findsOneWidget);
@@ -363,26 +369,26 @@ void main() {
       await tester.longPress(privateTile, warnIfMissed: false);
       await tester.pump(const Duration(milliseconds: 800));
 
-      expect(find.text('Compartir álbum'), findsOneWidget);
-      expect(find.text('Eliminar álbum'), findsOneWidget);
+      expect(find.text(l10n.compartirAlbum), findsOneWidget);
+      expect(find.text(l10n.eliminarAlbum), findsOneWidget);
     });
 
     testWidgets('Compartir sheet calls POST /albums/:id/share with user_id',
         (tester) async {
       final adapter = _MockAdapter();
       final dio = Dio()..httpClientAdapter = adapter;
-      await _pumpScreen(tester, dio);
+      final l10n = await _pumpScreen(tester, dio);
 
       await tester.longPress(find.byIcon(Icons.lock));
       await tester.pumpAndSettle();
       // Tap the menu entry "Compartir álbum" (list tile, not the sheet title).
-      await tester.tap(find.text('Compartir álbum').last);
+      await tester.tap(find.text(l10n.compartirAlbum).last);
       await tester.pumpAndSettle();
 
       await tester.enterText(
           find.byType(TextField), '11111111-1111-1111-1111-111111111111');
       // Tap the bottom-sheet "Compartir álbum" pill button (also last in tree).
-      await tester.tap(find.text('Compartir álbum').last);
+      await tester.tap(find.text(l10n.compartirAlbum).last);
       await tester.pumpAndSettle();
 
       expect(adapter.shareCalledWithAlbumId,
@@ -394,15 +400,16 @@ void main() {
     testWidgets('Eliminar action calls DELETE /albums/:id', (tester) async {
       final adapter = _MockAdapter();
       final dio = Dio()..httpClientAdapter = adapter;
-      await _pumpScreen(tester, dio);
+      final l10n = await _pumpScreen(tester, dio);
 
       await tester.longPress(find.byIcon(Icons.lock));
       await tester.pumpAndSettle();
       // Tap the menu entry "Eliminar álbum".
-      await tester.tap(find.text('Eliminar álbum'));
+      await tester.tap(find.text(l10n.eliminarAlbum));
       await tester.pumpAndSettle();
-      // Confirm dialog → tap the delete action (last "Eliminar álbum").
-      await tester.tap(find.text('Eliminar álbum').last);
+      // Confirm dialog → tap the delete action (uses the standalone
+      // "Eliminar" label, not the "Eliminar álbum" menu/title label).
+      await tester.tap(find.text(l10n.eliminar));
       await tester.pumpAndSettle();
 
       expect(adapter.deleteCalledWithAlbumId,

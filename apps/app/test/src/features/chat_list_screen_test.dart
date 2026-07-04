@@ -42,7 +42,7 @@ class _AuthNotifier extends AuthNotifier {
   Future<void> logout() async {}
 }
 
-Widget _wrap(Dio dio) => ProviderScope(
+Widget _wrapWithLocale(Dio dio) => ProviderScope(
       overrides: [
         authStateProvider.overrideWith(_AuthNotifier.new),
         dioProvider.overrideWithValue(dio),
@@ -60,6 +60,21 @@ Widget _wrap(Dio dio) => ProviderScope(
       ),
     );
 
+/// Pumps the wrapped widget and captures the `AppLocalizations` for the
+/// locale used (`es`). Tests can use `l10n.X` lookups instead of the
+/// previously-hardcoded Spanish literals.
+Future<AppLocalizations> _pumpAndL10n(
+    WidgetTester tester, Dio dio) async {
+  await tester.pumpWidget(_wrapWithLocale(dio));
+  await tester.pumpAndSettle();
+  // Localizations aren't initialized on MaterialApp's own element; pull them
+  // from a descendant of the screen (the ChatListScreen widget) where the
+  // Localizations ancestor is wired up.
+  return AppLocalizations.of(
+    tester.element(find.byType(ChatListScreen)),
+  )!;
+}
+
 void main() {
   group('ChatListScreen (Buzón)', () {
     testWidgets('renders TabBar with Bandeja + Álbumes tabs', (tester) async {
@@ -67,13 +82,12 @@ void main() {
       dio.options.baseUrl = 'http://test';
       dio.httpClientAdapter = _StubAdapter();
 
-      await tester.pumpWidget(_wrap(dio));
-      await tester.pumpAndSettle();
+      final l10n = await _pumpAndL10n(tester, dio);
 
-      // AppBar title + first Tab label both render "Bandeja de entrada"
-      expect(find.text('Bandeja de entrada'), findsWidgets);
-      // Second tab is "Álbumes"
-      expect(find.text('Álbumes'), findsOneWidget);
+      // AppBar title + first Tab label both render the Bandeja string
+      expect(find.text(l10n.bandejaDeEntrada), findsWidgets);
+      // Second tab is the albumes label
+      expect(find.text(l10n.albumes), findsOneWidget);
     });
 
     testWidgets('Bandeja tab shows conversations from /chat/conversations',
@@ -99,8 +113,7 @@ void main() {
         ),
       });
 
-      await tester.pumpWidget(_wrap(dio));
-      await tester.pumpAndSettle();
+      await _pumpAndL10n(tester, dio);
 
       // Bob appears in the conversation tile
       expect(find.text('Bob'), findsOneWidget);
@@ -115,12 +128,11 @@ void main() {
       dio.options.baseUrl = 'http://test';
       dio.httpClientAdapter = _StubAdapter();
 
-      await tester.pumpWidget(_wrap(dio));
-      await tester.pumpAndSettle();
+      final l10n = await _pumpAndL10n(tester, dio);
 
-      // Both filter chip labels are present
-      expect(find.text('No leído'), findsOneWidget);
-      expect(find.text('En línea'), findsOneWidget);
+      // Both filter chip labels are present (resolved through l10n)
+      expect(find.text(l10n.noLeido), findsOneWidget);
+      expect(find.text(l10n.enLineaFiltro), findsOneWidget);
       // At least one FilterChipPill rendered
       expect(find.byType(FilterChipPill), findsNWidgets(2));
     });
@@ -131,11 +143,10 @@ void main() {
       dio.options.baseUrl = 'http://test';
       dio.httpClientAdapter = _StubAdapter();
 
-      await tester.pumpWidget(_wrap(dio));
-      await tester.pumpAndSettle();
+      final l10n = await _pumpAndL10n(tester, dio);
 
       // Switch to Álbumes tab
-      await tester.tap(find.text('Álbumes'));
+      await tester.tap(find.text(l10n.albumes));
       await tester.pumpAndSettle();
 
       // Empty-state widget shown
@@ -165,11 +176,10 @@ void main() {
         ),
       });
 
-      await tester.pumpWidget(_wrap(dio));
-      await tester.pumpAndSettle();
+      final l10n = await _pumpAndL10n(tester, dio);
 
       // Switch to Álbumes tab
-      await tester.tap(find.text('Álbumes'));
+      await tester.tap(find.text(l10n.albumes));
       await tester.pumpAndSettle();
 
       // Carousel rendered (and empty state is absent)

@@ -847,6 +847,114 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Hacer'**
   String get hacer;
+
+  /// AlbumUpdateBanner label for count = 1
+  ///
+  /// In es, this message translates to:
+  /// **'1 álbum actualizado'**
+  String get albumActualizadoSingular;
+
+  /// AlbumUpdateBanner label for count > 1
+  ///
+  /// In es, this message translates to:
+  /// **'{count} álbumes actualizados'**
+  String albumesActualizadosPlural(int count);
+
+  /// ChatListScreen Bandeja error state message
+  ///
+  /// In es, this message translates to:
+  /// **'Error cargando conversaciones'**
+  String get errorCargandoConversaciones;
+
+  /// ChatListScreen Álbumes error state message
+  ///
+  /// In es, this message translates to:
+  /// **'Error cargando álbumes compartidos'**
+  String get errorCargandoAlbumesCompartidos;
+
+  /// Interest screen sticky CTA label
+  ///
+  /// In es, this message translates to:
+  /// **'Desbloquear sin límites'**
+  String get desbloquearSinLimites;
+
+  /// Interest screen Views tab error message
+  ///
+  /// In es, this message translates to:
+  /// **'Error cargando vistas'**
+  String get errorCargandoVistas;
+
+  /// Interest screen Taps tab empty state
+  ///
+  /// In es, this message translates to:
+  /// **'Sin taps aún'**
+  String get sinTaps;
+
+  /// Interest screen Taps tab error message
+  ///
+  /// In es, this message translates to:
+  /// **'Error cargando taps'**
+  String get errorCargandoTaps;
+
+  /// Interest screen Views row subtitle (placeholder fecha is YYYY-MM-DD)
+  ///
+  /// In es, this message translates to:
+  /// **'Visto el {fecha}'**
+  String vistoEl(String fecha);
+
+  /// Interest screen Taps row subtitle
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo: {tipo}'**
+  String tipoTap(String tipo);
+
+  /// Interest screen Views tab empty state
+  ///
+  /// In es, this message translates to:
+  /// **'Nadie ha visto tu perfil aún'**
+  String get nadieHaVistoPerfil;
+
+  /// Albums screen empty state title
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes álbumes aún'**
+  String get noTienesAlbumes;
+
+  /// Albums screen empty state subtitle
+  ///
+  /// In es, this message translates to:
+  /// **'Toca + para crear tu primer álbum'**
+  String get tocaMasParaCrearAlbum;
+
+  /// Albums screen share error snackbar prefix
+  ///
+  /// In es, this message translates to:
+  /// **'Error al compartir'**
+  String get errorAlCompartir;
+
+  /// Albums screen delete error snackbar prefix
+  ///
+  /// In es, this message translates to:
+  /// **'Error al eliminar'**
+  String get errorAlEliminar;
+
+  /// Albums screen delete confirmation dialog body
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar este álbum?'**
+  String get confirmarEliminarAlbum;
+
+  /// Albums screen share sheet TextField hint
+  ///
+  /// In es, this message translates to:
+  /// **'user_id (UUID)'**
+  String get userIdHint;
+
+  /// Albums screen 'my albums' section header (separate from AppBar misShares title)
+  ///
+  /// In es, this message translates to:
+  /// **'Mis álbumes'**
+  String get misAlbumesHeader;
 }
 
 class _AppLocalizationsDelegate

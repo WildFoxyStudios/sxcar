@@ -390,4 +390,65 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get hacer => 'Hacer';
+
+  @override
+  String get albumActualizadoSingular => '1 álbum actualizado';
+
+  @override
+  String albumesActualizadosPlural(int count) {
+    return '$count álbumes actualizados';
+  }
+
+  @override
+  String get errorCargandoConversaciones => 'Error cargando conversaciones';
+
+  @override
+  String get errorCargandoAlbumesCompartidos =>
+      'Error cargando álbumes compartidos';
+
+  @override
+  String get desbloquearSinLimites => 'Desbloquear sin límites';
+
+  @override
+  String get errorCargandoVistas => 'Error cargando vistas';
+
+  @override
+  String get sinTaps => 'Sin taps aún';
+
+  @override
+  String get errorCargandoTaps => 'Error cargando taps';
+
+  @override
+  String vistoEl(String fecha) {
+    return 'Visto el $fecha';
+  }
+
+  @override
+  String tipoTap(String tipo) {
+    return 'Tipo: $tipo';
+  }
+
+  @override
+  String get nadieHaVistoPerfil => 'Nadie ha visto tu perfil aún';
+
+  @override
+  String get noTienesAlbumes => 'No tienes álbumes aún';
+
+  @override
+  String get tocaMasParaCrearAlbum => 'Toca + para crear tu primer álbum';
+
+  @override
+  String get errorAlCompartir => 'Error al compartir';
+
+  @override
+  String get errorAlEliminar => 'Error al eliminar';
+
+  @override
+  String get confirmarEliminarAlbum => '¿Eliminar este álbum?';
+
+  @override
+  String get userIdHint => 'user_id (UUID)';
+
+  @override
+  String get misAlbumesHeader => 'Mis álbumes';
 }

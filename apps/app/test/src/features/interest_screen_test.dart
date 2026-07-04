@@ -2,12 +2,31 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/features/interest_screen.dart';
+import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Path-keyed mock adapter for InterestScreen tests.
+///
+/// Handles the endpoints the Interest screen hits:
+///   - `/taps/received` -> list of taps
+///   - `/profile/views` -> list of viewers
+///   - `/profile/views/count` -> `{count: int}`
+///   - `/taps/count` -> `{count: int, types: {...}}`
+///   - `/billing/me` -> `{subscription: obj|null}` (entitlement check)
 class _MockTapsAdapter implements HttpClientAdapter {
+  /// Override-able stub counters; default 0 each.
+  int viewsCount;
+  int tapsCount;
+
+  _MockTapsAdapter({
+    this.viewsCount = 0,
+    this.tapsCount = 0,
+  });
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -23,7 +42,7 @@ class _MockTapsAdapter implements HttpClientAdapter {
             'sender_id': 'user-1',
             'sender_display_name': 'Bob',
             'sender_photo_url': null,
-            'kind': '👋',
+            'tap_type': 'wave',
             'created_at': '2025-01-01T00:00:00Z',
           },
           {
@@ -31,7 +50,7 @@ class _MockTapsAdapter implements HttpClientAdapter {
             'sender_id': 'user-2',
             'sender_display_name': 'Alice',
             'sender_photo_url': null,
-            'kind': '🔥',
+            'tap_type': 'fire',
             'created_at': '2025-01-01T01:00:00Z',
           },
         ],
@@ -42,16 +61,45 @@ class _MockTapsAdapter implements HttpClientAdapter {
         headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
       );
     }
-    if (uri.contains('/favorites')) {
+    if (uri.contains('/profile/views/count')) {
+      final body = jsonEncode({'count': viewsCount});
+      return ResponseBody.fromString(
+        body,
+        200,
+        headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+      );
+    }
+    if (uri.contains('/taps/count')) {
       final body = jsonEncode({
-        'favorites': [
+        'count': tapsCount,
+        'types': {'fire': tapsCount},
+      });
+      return ResponseBody.fromString(
+        body,
+        200,
+        headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+      );
+    }
+    if (uri.contains('/profile/views')) {
+      final body = jsonEncode({
+        'viewers': [
           {
-            'id': 'fav-1',
-            'user_id': 'user-3',
-            'display_name': 'Charlie',
-            'photo_url': null,
+            'viewer_id': 'viewer-1',
+            'viewed_at': '2025-01-01T00:00:00Z',
+            'display_name': 'Vicky Viewer',
+            'profile_photo_url': null,
           },
         ],
+      });
+      return ResponseBody.fromString(
+        body,
+        200,
+        headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+      );
+    }
+    if (uri.contains('/billing/me')) {
+      final body = jsonEncode({
+        'subscription': null,
       });
       return ResponseBody.fromString(
         body,
@@ -86,8 +134,8 @@ class _AuthenticatedNotifier extends AuthNotifier {
 
 /// Notifier that starts with `loading` (no token) and is later updated
 /// to `authenticated` with a token. Used to reproduce the race where
-/// InterestScreen runs `_fetchTaps` / `_fetchFavorites` before the
-/// secure-storage token is loaded.
+/// InterestScreen runs `_fetchTaps` before the secure-storage token is
+/// loaded.
 class _LoadingThenAuthNotifier extends AuthNotifier {
   _LoadingThenAuthNotifier() : super();
 
@@ -110,93 +158,174 @@ class _LoadingThenAuthNotifier extends AuthNotifier {
   Future<void> logout() async {}
 }
 
+/// Wraps the widget under test with the localizations delegates +
+/// Riverpod overrides. All InterestScreen tests use this so they get
+/// `AppLocalizations.of(context)!` to resolve.
+Widget _wrap({
+  required Widget child,
+  required Dio dio,
+  AuthNotifier? authNotifier,
+}) {
+  return ProviderScope(
+    overrides: [
+      authStateProvider
+          .overrideWith(() => authNotifier ?? _AuthenticatedNotifier()),
+      dioProvider.overrideWithValue(dio),
+    ],
+    child: MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: child,
+    ),
+  );
+}
+
 void main() {
   group('InterestScreen', () {
-    testWidgets('shows Taps and Favorites tabs', (tester) async {
+    testWidgets('title is 32 sp white', (tester) async {
       final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: InterestScreen()),
-        ),
+        _wrap(child: const InterestScreen(), dio: dio),
       );
 
       await tester.pumpAndSettle();
 
-      // Should show tab labels
-      expect(find.text('Taps'), findsWidgets);
-      expect(find.text('Favorites'), findsWidgets);
+      // The "Interest" title should be rendered with fontSize 32.
+      final titleFinder = find.text('Interest');
+      expect(titleFinder, findsOneWidget);
+      final titleWidget = tester.widget<Text>(titleFinder);
+      expect(titleWidget.style?.fontSize, 32);
+      expect(titleWidget.style?.color, Colors.white);
+    });
 
-      // Should show tap senders
+    testWidgets('renders tab labels with counts Views 0 / Taps 0',
+        (tester) async {
+      final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
+
+      await tester.pumpWidget(
+        _wrap(child: const InterestScreen(), dio: dio),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Views 0'), findsOneWidget);
+      expect(find.text('Taps 0'), findsOneWidget);
+    });
+
+    testWidgets('NUEVO badge appears when count > 6 and no entitlement',
+        (tester) async {
+      final dio = Dio()
+        ..httpClientAdapter = _MockTapsAdapter(viewsCount: 7, tapsCount: 0);
+
+      await tester.pumpWidget(
+        _wrap(child: const InterestScreen(), dio: dio),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Unlock FREE'), findsOneWidget);
+    });
+
+    testWidgets('NUEVO badge hidden when count <= 6', (tester) async {
+      final dio = Dio()
+        ..httpClientAdapter = _MockTapsAdapter(viewsCount: 3, tapsCount: 3);
+
+      await tester.pumpWidget(
+        _wrap(child: const InterestScreen(), dio: dio),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Unlock FREE'), findsNothing);
+    });
+
+    testWidgets('Boost FAB renders with icon', (tester) async {
+      final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
+
+      await tester.pumpWidget(
+        _wrap(child: const InterestScreen(), dio: dio),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.bolt), findsOneWidget);
+      expect(find.text('Boost your Interest'), findsOneWidget);
+    });
+
+    testWidgets('Taps tab shows received taps', (tester) async {
+      final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
+
+      await tester.pumpWidget(
+        _wrap(child: const InterestScreen(), dio: dio),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Tabs are: Views, Taps. Switch to Taps.
+      await tester.tap(find.text('Taps 0'));
+      await tester.pumpAndSettle();
+
       expect(find.text('Bob'), findsOneWidget);
       expect(find.text('Alice'), findsOneWidget);
     });
 
-    testWidgets('shows Favorites tab content when tapped', (tester) async {
+    testWidgets('Views tab shows received viewers', (tester) async {
       final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: InterestScreen()),
-        ),
+        _wrap(child: const InterestScreen(), dio: dio),
       );
 
       await tester.pumpAndSettle();
 
-      // Tap on Favorites tab
-      await tester.tap(find.text('Favorites').last);
-      await tester.pumpAndSettle();
-
-      // Should show Charlie in favorites
-      expect(find.text('Charlie'), findsOneWidget);
+      // Views is the default tab — content should be visible.
+      expect(find.text('Vicky Viewer'), findsOneWidget);
     });
 
     testWidgets(
-        'Favorites and Taps requests WAIT for authReadyProvider when the '
-        'notifier is still loading (regression for 401 on /favorites)', (tester) async {
-      // The original bug: _fetchFavorites / _fetchTaps ran in initState
-      // and fired immediately. The Dio interceptor then read the secure
-      // storage cache (still empty mid-boot) and the request went out
-      // without an Authorization header, producing the 401 we saw in
-      // logcat. The fix: AuthNotifier.build() hydrates from storage
-      // synchronously, and authReadyProvider lets the screen wait until
-      // the auth status is anything other than loading.
+        'Taps request WAITS for authReadyProvider when the notifier is still '
+        'loading (regression for 401 on /taps/received)', (tester) async {
+      // The original bug: `_fetchTaps` ran in initState and fired
+      // immediately. The Dio interceptor then read the secure-storage
+      // cache (still empty mid-boot) and the request went out without
+      // an Authorization header, producing the 401 we saw in logcat.
+      // The fix: the screen's `_waitForAuth` polls the token before
+      // firing the request, so the fetcher blocks until auth resolves.
       final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
       final notifier = _LoadingThenAuthNotifier();
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => notifier),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: InterestScreen()),
+        _wrap(
+          child: const InterestScreen(),
+          dio: dio,
+          authNotifier: notifier,
         ),
       );
 
       // Pump a few frames — the auth token is still null so the
-      // fetcher must be waiting on authReadyProvider. The tab shows
-      // its loading state. No exception (no 401 printed).
+      // fetcher must be waiting. The tab shows its loading state.
+      // No exception (no 401 printed).
       await tester.pump();
       await tester.pump();
-      await tester.tap(find.text('Favorites').last);
+      await tester.tap(find.text('Taps 0'));
       await tester.pump();
       expect(tester.takeException(), isNull);
 
-      // Now become authenticated — authReadyProvider resolves and the
+      // Now become authenticated — _waitForAuth resolves and the
       // fetcher fires.
       notifier.becomeAuthed();
       await tester.pumpAndSettle();
 
-      expect(find.text('Charlie'), findsOneWidget,
+      // After auth resolves the taps list is fetched — Bob should be
+      // visible in the Taps tab.
+      expect(find.text('Bob'), findsOneWidget,
           reason: 'fetch should have fired once the token arrived');
     });
   });

@@ -449,6 +449,8 @@
   "@detailsVaccines": { "description": "Profile details sub-field label: Vaccines (HIV PrEP / vaccine list)" },
   "detailsTripCount": "Viajes",
   "@detailsTripCount": { "description": "Profile details sub-field label: Trip count" },
+  "detailsPractices": "Prácticas",
+  "@detailsPractices": { "description": "Profile details sub-field label: Sexual practices selection" },
   "detailsSocial": "Redes sociales",
   "@detailsSocial": { "description": "Profile details sub-field label: Social links" },
 

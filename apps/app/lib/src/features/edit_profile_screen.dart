@@ -742,7 +742,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSelectorListTile<String>(
-                label: 'Practices',
+                label: l10n?.detailsPractices ?? 'Practices',
                 current: _detailsCount(draft, 'practices') > 0
                     ? '${_detailsCount(draft, 'practices')} selected'
                     : null,

@@ -532,6 +532,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get detailsTripCount => 'Trips';
 
   @override
+  String get detailsPractices => 'Practices';
+
+  @override
   String get detailsSocial => 'Social links';
 
   @override

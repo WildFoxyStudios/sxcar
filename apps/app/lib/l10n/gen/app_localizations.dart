@@ -1118,6 +1118,12 @@ abstract class AppLocalizations {
   /// **'Viajes'**
   String get detailsTripCount;
 
+  /// Profile details sub-field label: Sexual practices selection
+  ///
+  /// In es, this message translates to:
+  /// **'Prácticas'**
+  String get detailsPractices;
+
   /// Profile details sub-field label: Social links
   ///
   /// In es, this message translates to:

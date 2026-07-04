@@ -534,6 +534,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get detailsTripCount => 'Viajes';
 
   @override
+  String get detailsPractices => 'Prácticas';
+
+  @override
   String get detailsSocial => 'Redes sociales';
 
   @override

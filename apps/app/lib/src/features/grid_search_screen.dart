@@ -6,6 +6,7 @@ import '../location/location_service.dart';
 import '../places/places_service.dart';
 import '../places/roam_service.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../settings/settings_providers.dart';
 import '../theme/app_theme.dart';
 import 'cascade_screen.dart' show NearbyUser;
 
@@ -374,7 +375,11 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final user = users[index];
-                            return _ExploreUserCard(user: user);
+                            // T5.10: read units once per build, pass to every
+                            // tile. Using `ref` is fine here — this is inside a
+                            // `ConsumerStatefulWidget` State.build.
+                            final units = ref.watch(unitsProvider);
+                            return _ExploreUserCard(user: user, units: units);
                           },
                           childCount: users.length,
                         ),
@@ -397,11 +402,13 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
 /// since Explore shows global users where real-time status is less relevant).
 class _ExploreUserCard extends StatelessWidget {
   final NearbyUser user;
+  final int units; // 0=metric, 1=imperial (from unitsProvider)
 
-  const _ExploreUserCard({required this.user});
+  const _ExploreUserCard({required this.user, required this.units});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: () => context.push('/profile/${user.id}'),
       child: ClipRRect(
@@ -463,7 +470,7 @@ class _ExploreUserCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 1),
                   Text(
-                    user.distanceText,
+                    user.distanceLabel(units),
                     style: const TextStyle(
                       color: VibraTheme.kTextSecondary,
                       fontSize: 9,
@@ -486,6 +493,34 @@ class _ExploreUserCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.check, color: Colors.black, size: 11),
+                ),
+              ),
+
+            // NUEVO badge (top left) — T5.10: shown for accounts < 7 days old.
+            // Style matches the cascade tile adaptation (T5.9) — small
+            // surface, fontSize 9, padding (6, 2), radius 10.
+            if (user.isNew)
+              Positioned(
+                top: 5,
+                left: 5,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: VibraTheme.kYellow,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    l10n.badgeNew,
+                    style: const TextStyle(
+                      color: VibraTheme.kBg,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
               ),
           ],

@@ -385,10 +385,12 @@ void main() {
 
     testWidgets('navevar_distance_label_uses_units_provider', (tester) async {
       // Adapter that returns one user at 500 m (sub-1km, exercises units branch).
-      // We assert on the `distanceText` getter directly because the cascade
+      // We assert on `distanceLabel(int units)` directly because the cascade
       // tile overlay does not display the distance label (only the name
       // overlay is shown in the grid). This is still a meaningful exercise
       // of T5.6's formatDistance unit-handling through the model.
+      // (T5.10 dropped the legacy no-arg `distanceText` getter — pass
+      // `units` explicitly: 0 for metric.)
       const u500 = NearbyUser(
         id: 'u-500',
         email: 'closer@test.com',
@@ -396,7 +398,6 @@ void main() {
         distanceM: 500,
       );
       // Metric (0) → "500 m".
-      expect(u500.distanceText, '500 m');
       expect(u500.distanceLabel(0), '500 m');
       // Imperial (1) → "1640 ft" (500 m × 3.28084 ≈ 1640 ft).
       expect(u500.distanceLabel(1), '1640 ft');

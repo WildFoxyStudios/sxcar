@@ -7,13 +7,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _MockExploreAdapter implements HttpClientAdapter {
   final List<Map<String, dynamic>> places;
   final Map<String, dynamic>? roamLocation;
   final List<String> paths = [];
 
-  _MockExploreAdapter({this.places = const [], this.roamLocation});
+  /// Optional ISO 8601 string injected as `created_at` on the canned user-1.
+  /// If null, `created_at` is omitted from the response (preserves T5.10's
+  /// pre-existing test fixture shape — no NUEVO badge by default).
+  final String? user1CreatedAt;
+
+  _MockExploreAdapter({
+    this.places = const [],
+    this.roamLocation,
+    this.user1CreatedAt,
+  });
 
   @override
   Future<ResponseBody> fetch(
@@ -24,16 +34,18 @@ class _MockExploreAdapter implements HttpClientAdapter {
     paths.add('${options.method} ${options.path}');
 
     if (options.path == '/grid/nearby') {
+      final user1 = <String, dynamic>{
+        'id': 'user-1',
+        'email': 'global1@test.com',
+        'display_name': 'GlobalUser1',
+        'bio': 'Far away',
+        'profile_photo_id': null,
+        'distance_m': 250000,
+      };
+      if (user1CreatedAt != null) user1['created_at'] = user1CreatedAt;
       final body = jsonEncode({
         'users': [
-          {
-            'id': 'user-1',
-            'email': 'global1@test.com',
-            'display_name': 'GlobalUser1',
-            'bio': 'Far away',
-            'profile_photo_id': null,
-            'distance_m': 250000,
-          },
+          user1,
           {
             'id': 'user-2',
             'email': 'global2@test.com',
@@ -235,6 +247,99 @@ void main() {
 
       // Title should show the persisted location name.
       expect(find.textContaining('NYC'), findsOneWidget);
+    });
+
+    // T5.10: first end-to-end unitsProvider round-trip. Seeds the
+    // SharedPreferences value (the only seam into the real
+    // `UnitsNotifier.build()`), then pumps the screen and asserts the
+    // rendered distance label switches units with the seed.
+    testWidgets(
+        'explore_card_uses_units_provider_for_distance_label',
+        (tester) async {
+      // Seed imperial (1). UnitsNotifier.build() will hydrate from prefs
+      // and emit 1 → grid_search passes it into _ExploreUserCard → the
+      // 250 000 m / 500 000 m canned fixtures render as miles.
+      SharedPreferences.setMockInitialValues({'settings_units': 1});
+      final dio = Dio()..httpClientAdapter = _MockExploreAdapter();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: Locale('es'),
+            home: GridSearchScreen(),
+          ),
+        ),
+      );
+      // Hydration is async — pump until the pref-read settles.
+      await tester.pumpAndSettle();
+      // 250 km / 1.609 ≈ 155 mi; 500 km / 1.609 ≈ 310 mi.
+      expect(find.textContaining('mi'), findsWidgets,
+          reason: 'imperial units must render "mi" suffixes');
+      // No metric units in the labels.
+      expect(find.textContaining(' km'), findsNothing,
+          reason: 'imperial units must not render "km" suffixes');
+    });
+
+    testWidgets('explore_card_shows_nuevo_badge_for_recent_user',
+        (tester) async {
+      // Account created 1 day ago — within the <7d "isNew" window.
+      final created = DateTime.now()
+          .subtract(const Duration(days: 1))
+          .toUtc()
+          .toIso8601String();
+      final dio = Dio()
+        ..httpClientAdapter = _MockExploreAdapter(user1CreatedAt: created);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: Locale('es'),
+            home: GridSearchScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // 'NUEVO' is the es-locale badgeNew string.
+      expect(find.text('NUEVO'), findsOneWidget,
+          reason: 'account <7d old must render the NUEVO badge');
+    });
+
+    testWidgets('explore_card_hides_nuevo_badge_for_old_user',
+        (tester) async {
+      // Account created 30 days ago — outside the <7d "isNew" window.
+      final created = DateTime.now()
+          .subtract(const Duration(days: 30))
+          .toUtc()
+          .toIso8601String();
+      final dio = Dio()
+        ..httpClientAdapter = _MockExploreAdapter(user1CreatedAt: created);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: Locale('es'),
+            home: GridSearchScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('NUEVO'), findsNothing,
+          reason: 'account ≥7d old must NOT render the NUEVO badge');
     });
   });
 }

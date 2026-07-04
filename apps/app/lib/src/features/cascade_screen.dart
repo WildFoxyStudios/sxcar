@@ -64,12 +64,9 @@ class NearbyUser {
 
   /// Distance label — delegates to the shared `formatDistance` utility
   /// (T5.6) so the cascade, grid search, and any future screen stay consistent.
-  /// Backward-compatible no-arg getter defaults to metric (units=0) so other
-  /// call sites (e.g. grid_search_screen) keep compiling without changes.
-  String get distanceText => formatDistance(distanceM.round(), 0);
-
-  /// Units-aware variant: caller passes the units int (0=metric, 1=imperial)
-  /// from `unitsProvider` (T5.6 + T5.9).
+  /// Caller passes the units int (0=metric, 1=imperial) from
+  /// `unitsProvider` (T5.6 + T5.9). T5.10 removed the legacy no-arg
+  /// `distanceText` getter; all callers now thread `units` explicitly.
   String distanceLabel(int units) => formatDistance(distanceM.round(), units);
 }
 

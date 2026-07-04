@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/src/theme/widgets.dart';
 import 'package:app/src/theme/app_theme.dart';
+import 'package:app/src/albums/shared_albums_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -630,6 +631,113 @@ void main() {
       await tester.pump();
       expect(changed, 1);
       expect(lastIdx, 2);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // AlbumCarousel
+  // ---------------------------------------------------------------------------
+
+  group('AlbumCarousel', () {
+    testWidgets('renders nothing for empty list', (tester) async {
+      await tester.pumpWidget(_wrap(AlbumCarousel(
+        albums: const [],
+        onTap: (_) {},
+      )));
+      expect(find.byType(AlbumCarousel), findsOneWidget);
+      expect(find.byType(GestureDetector), findsNothing);
+    });
+
+    testWidgets('renders one tile per album', (tester) async {
+      final albums = [
+        SharedAlbum(
+          id: 'a1',
+          name: 'Beach',
+          description: null,
+          coverPhotoUrl: null,
+          photoCount: 3,
+          isPrivate: false,
+          createdAt: '',
+        ),
+        SharedAlbum(
+          id: 'a2',
+          name: 'Party',
+          description: null,
+          coverPhotoUrl: null,
+          photoCount: 5,
+          isPrivate: false,
+          createdAt: '',
+        ),
+      ];
+      await tester.pumpWidget(_wrap(AlbumCarousel(
+        albums: albums,
+        onTap: (_) {},
+      )));
+      expect(find.text('Beach'), findsOneWidget);
+      expect(find.text('Party'), findsOneWidget);
+    });
+
+    testWidgets('invokes onTap with album id', (tester) async {
+      String? tappedId;
+      final album = SharedAlbum(
+        id: 'a1',
+        name: 'Beach',
+        description: null,
+        coverPhotoUrl: null,
+        photoCount: 3,
+        isPrivate: false,
+        createdAt: '',
+      );
+      await tester.pumpWidget(_wrap(AlbumCarousel(
+        albums: [album],
+        onTap: (id) => tappedId = id,
+      )));
+      await tester.tap(find.text('Beach'));
+      expect(tappedId, 'a1');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // AlbumUpdateBanner
+  // ---------------------------------------------------------------------------
+
+  group('AlbumUpdateBanner', () {
+    testWidgets('renders nothing for count = 0', (tester) async {
+      await tester.pumpWidget(_wrap(
+          AlbumUpdateBanner(count: 0, onTap: () {})));
+      expect(find.byType(InkWell), findsNothing);
+    });
+
+    testWidgets('renders singular label for count = 1', (tester) async {
+      await tester.pumpWidget(_wrap(
+          AlbumUpdateBanner(count: 1, onTap: () {})));
+      expect(find.textContaining('1 álbum'), findsOneWidget);
+    });
+
+    testWidgets('renders plural label for count > 1', (tester) async {
+      await tester.pumpWidget(_wrap(
+          AlbumUpdateBanner(count: 3, onTap: () {})));
+      expect(find.textContaining('3 álbumes'), findsOneWidget);
+    });
+
+    testWidgets('invokes onTap', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(_wrap(
+          AlbumUpdateBanner(count: 2, onTap: () => taps++)));
+      await tester.tap(find.byType(InkWell));
+      expect(taps, 1);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // AlbumUpdatesEmptyState
+  // ---------------------------------------------------------------------------
+
+  group('AlbumUpdatesEmptyState', () {
+    testWidgets('renders icon + message', (tester) async {
+      await tester.pumpWidget(_wrap(const AlbumUpdatesEmptyState()));
+      expect(find.byIcon(Icons.collections_outlined), findsOneWidget);
+      expect(find.textContaining('actualizaciones'), findsOneWidget);
     });
   });
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:app/src/albums/shared_albums_provider.dart';
+import 'package:app/l10n/gen/app_localizations.dart';
 import 'app_theme.dart';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -776,6 +778,221 @@ class Segmented3 extends StatelessWidget {
             ),
           );
         }),
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// AlbumCarousel
+//
+// Horizontal scrollable carousel of album thumbnails for the chat list screen.
+// Renders above the conversation list when the user has at least one shared
+// album with new photos. Tapping a tile calls [onTap] (e.g. navigate to album
+// detail).
+// ────────────────────────────────────────────────────────────────────────────
+
+class AlbumCarousel extends StatelessWidget {
+  /// List of shared albums to display.
+  final List<SharedAlbum> albums;
+
+  /// Tap handler for an album tile (receives the album id).
+  final ValueChanged<String> onTap;
+
+  /// Optional height override; default 96 dp.
+  final double height;
+
+  const AlbumCarousel({
+    super.key,
+    required this.albums,
+    required this.onTap,
+    this.height = 96,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (albums.isEmpty) return const SizedBox.shrink();
+    return Container(
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      color: VibraTheme.kBg,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: albums.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final album = albums[i];
+          return GestureDetector(
+            onTap: () => onTap(album.id),
+            child: Container(
+              width: 96,
+              decoration: BoxDecoration(
+                color: VibraTheme.kSurface,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: album.coverPhotoUrl != null
+                        ? Image.network(
+                            album.coverPhotoUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                const _AlbumPlaceholder(),
+                          )
+                        : const _AlbumPlaceholder(),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 4),
+                    child: Text(
+                      album.name ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _AlbumPlaceholder extends StatelessWidget {
+  const _AlbumPlaceholder();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: VibraTheme.kChip,
+      child: const Icon(Icons.photo_album_outlined,
+          color: VibraTheme.kTextSecondary, size: 28),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// AlbumUpdateBanner
+//
+// Yellow inline banner shown on the chat list when a recipient has new photos
+// in one or more shared albums. Single-row tap → calls [onTap] (open the
+// carousel / first album detail).
+// ────────────────────────────────────────────────────────────────────────────
+
+class AlbumUpdateBanner extends StatelessWidget {
+  /// Number of albums with new photos.
+  final int count;
+
+  /// Tap handler.
+  final VoidCallback onTap;
+
+  const AlbumUpdateBanner({
+    super.key,
+    required this.count,
+    required this.onTap,
+  }) : assert(count >= 0, 'count must be non-negative');
+
+  @override
+  Widget build(BuildContext context) {
+    if (count == 0) return const SizedBox.shrink();
+    return Material(
+      color: VibraTheme.kYellow,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              const Icon(Icons.auto_awesome, color: Colors.black, size: 18),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _label(context, count),
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              Text(
+                AppLocalizations.of(context)?.ver ?? 'Ver',
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right, color: Colors.black, size: 18),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _label(BuildContext context, int count) {
+    if (count == 1) {
+      return '1 álbum actualizado';
+    }
+    return '$count álbumes actualizados';
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// AlbumUpdatesEmptyState
+//
+// Centered empty state shown when the user has no shared album updates.
+// Mirrors the visual style of BlocksListScreen's empty state.
+// ────────────────────────────────────────────────────────────────────────────
+
+class AlbumUpdatesEmptyState extends StatelessWidget {
+  const AlbumUpdatesEmptyState({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                color: VibraTheme.kSurface,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.collections_outlined,
+                color: VibraTheme.kTextSecondary,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              AppLocalizations.of(context)?.noHayActualizaciones ??
+                  'No hay actualizaciones de álbum',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,0 +1,129 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// ────────────────────────────────────────────────────────────────────────────
+// unitsProvider
+//
+// 0 = Metric (km, °C)
+// 1 = Imperial (mi, °F)
+// ────────────────────────────────────────────────────────────────────────────
+
+const _kUnitsKey = 'settings_units';
+
+class UnitsNotifier extends Notifier<int> {
+  @override
+  int build() {
+    _hydrate();
+    return 0; // default metric
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final v = prefs.getInt(_kUnitsKey) ?? 0;
+    if (state != v && (v == 0 || v == 1)) state = v;
+  }
+
+  Future<void> setUnits(int v) async {
+    assert(v == 0 || v == 1, 'units must be 0 or 1');
+    state = v;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kUnitsKey, v);
+  }
+}
+
+final unitsProvider = NotifierProvider<UnitsNotifier, int>(UnitsNotifier.new);
+
+// ────────────────────────────────────────────────────────────────────────────
+// discreetIconProvider
+//
+// bool — true if user has enabled the discreet (alternate) app icon.
+// ────────────────────────────────────────────────────────────────────────────
+
+const _kDiscreetIconKey = 'settings_discreet_icon';
+
+class DiscreetIconNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    _hydrate();
+    return false;
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final v = prefs.getBool(_kDiscreetIconKey) ?? false;
+    if (state != v) state = v;
+  }
+
+  Future<void> setDiscreetIcon(bool v) async {
+    state = v;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kDiscreetIconKey, v);
+  }
+}
+
+final discreetIconProvider =
+    NotifierProvider<DiscreetIconNotifier, bool>(DiscreetIconNotifier.new);
+
+// ────────────────────────────────────────────────────────────────────────────
+// pinEnabledProvider
+//
+// bool — true if user has a PIN lock on app launch.
+// ────────────────────────────────────────────────────────────────────────────
+
+const _kPinEnabledKey = 'settings_pin_enabled';
+
+class PinEnabledNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    _hydrate();
+    return false;
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final v = prefs.getBool(_kPinEnabledKey) ?? false;
+    if (state != v) state = v;
+  }
+
+  Future<void> setPinEnabled(bool v) async {
+    state = v;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kPinEnabledKey, v);
+  }
+}
+
+final pinEnabledProvider =
+    NotifierProvider<PinEnabledNotifier, bool>(PinEnabledNotifier.new);
+
+// ────────────────────────────────────────────────────────────────────────────
+// visitorStatusProvider
+//
+// int — 0=disabled, 1=enabled, 2=auto (mirrors backend visitor_status column
+// from T2.1, but kept LOCAL for now — no backend sync in this task).
+// ────────────────────────────────────────────────────────────────────────────
+
+const _kVisitorStatusKey = 'settings_visitor_status';
+
+class VisitorStatusNotifier extends Notifier<int> {
+  @override
+  int build() {
+    _hydrate();
+    return 0; // default disabled
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final v = prefs.getInt(_kVisitorStatusKey) ?? 0;
+    if (state != v && (v == 0 || v == 1 || v == 2)) state = v;
+  }
+
+  Future<void> setVisitorStatus(int v) async {
+    assert(v >= 0 && v <= 2, 'visitor_status must be 0, 1, or 2');
+    state = v;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kVisitorStatusKey, v);
+  }
+}
+
+final visitorStatusProvider =
+    NotifierProvider<VisitorStatusNotifier, int>(VisitorStatusNotifier.new);

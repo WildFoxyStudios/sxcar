@@ -8,6 +8,7 @@ import '../chat/chat_service.dart';
 import '../presence/presence_service.dart';
 import '../reports/report_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/widgets.dart';
 import 'cascade_screen.dart' show NearbyUser;
 import 'profile_screen.dart' show UserProfile;
 
@@ -534,7 +535,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                             // T5.8 — NUEVO badge when user is recent.
                             if (_isRecentlyCreated(p.createdAt)) ...[
                               const SizedBox(width: 10),
-                              const _NuevoBadge(),
+                              const NUEVOBadge(),
                             ],
                           ],
                         ),
@@ -990,7 +991,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                   const Positioned(
                     top: 8,
                     left: 8,
-                    child: _NuevoBadge(),
+                    child: NUEVOBadge(),
                   ),
                 // Name overlay (bottom-left)
                 Positioned(
@@ -1250,34 +1251,4 @@ Widget _buildSocialSection(Map<String, dynamic> details, UserProfile p) {
       ),
     ],
   );
-}
-
-/// Small NUEVO pill — shown when the user's `created_at` is within the last
-/// 7 days. Driven by [AppLocalizations.badgeNew] added in T5.7.
-///
-/// Renders as a yellow pill with black bold text — matches the existing
-/// "NUEVO" chip used in front of the TE PODRÍA INTERESAR section.
-class _NuevoBadge extends StatelessWidget {
-  const _NuevoBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: VibraTheme.kYellow,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        l.badgeNew,
-        style: const TextStyle(
-          color: VibraTheme.kBg,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
 }

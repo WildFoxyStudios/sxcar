@@ -8,6 +8,7 @@ import '../places/roam_service.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../settings/settings_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/widgets.dart';
 import 'cascade_screen.dart' show NearbyUser;
 
 /// Explore — global user grid with Roam support backed by real places.
@@ -408,7 +409,6 @@ class _ExploreUserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: () => context.push('/profile/${user.id}'),
       child: ClipRRect(
@@ -497,31 +497,12 @@ class _ExploreUserCard extends StatelessWidget {
               ),
 
             // NUEVO badge (top left) — T5.10: shown for accounts < 7 days old.
-            // Style matches the cascade tile adaptation (T5.9) — small
-            // surface, fontSize 9, padding (6, 2), radius 10.
+            // Shared widget (T5.13) — see apps/app/lib/src/theme/widgets.dart.
             if (user.isNew)
               Positioned(
                 top: 5,
                 left: 5,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: VibraTheme.kYellow,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    l10n.badgeNew,
-                    style: const TextStyle(
-                      color: VibraTheme.kBg,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+                child: const NUEVOBadge.small(),
               ),
           ],
         ),

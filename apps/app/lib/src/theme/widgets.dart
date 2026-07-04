@@ -572,35 +572,54 @@ class PlanDurationCard extends StatelessWidget {
 
 // ────────────────────────────────────────────────────────────────────────────
 // NUEVOBadge
-// Small yellow rounded badge with text "NUEVO". Used in PODRÍA INTERESAR
-// suggestions and other new-content indicators.
+// Small yellow rounded badge with the localized "NUEVO" label, indicating
+// that a user account is < 7 days old (or, in the .small variant, that the
+// tile they're shown on is for a recent account).
+//
+// Two presets:
+//   • NUEVOBadge()      — full size, used on profile detail hero + suggestion
+//                          row (default fontSize 10, radius 12, padding 8×2)
+//   • NUEVOBadge.small() — compact size, used inside Cascade + Explore tiles
+//                          (fontSize 9, radius 10, padding 6×2)
+//
+// Localized via AppLocalizations.badgeNew (es="NUEVO", en="NEW"). The Spanish
+// ARB value matches the legacy hardcoded text — that is why the existing
+// _wrap(test)->expect find.text('NUEVO') tests still pass.
 // ────────────────────────────────────────────────────────────────────────────
 
-/// Yellow "NUEVO" badge.
-///
-/// - Background: kYellow
-/// - Text: black, bold, [size] (default 11 sp)
-/// - Padding: horizontal 8, vertical 2
-/// - Radius: 6
 class NUEVOBadge extends StatelessWidget {
   final double size;
+  final double radius;
+  final EdgeInsetsGeometry padding;
 
-  const NUEVOBadge({super.key, this.size = 11});
+  const NUEVOBadge({
+    super.key,
+    this.size = 10,
+    this.radius = 12,
+    this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+  });
+
+  /// Compact tile preset: smaller font + radius, tighter padding (6×2).
+  const NUEVOBadge.small({super.key})
+      : size = 9,
+        radius = 10,
+        padding = const EdgeInsets.symmetric(horizontal: 6, vertical: 2);
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: padding,
       decoration: BoxDecoration(
         color: VibraTheme.kYellow,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(radius),
       ),
       child: Text(
-        'NUEVO',
+        l.badgeNew,
         style: TextStyle(
-          color: Colors.black,
-          fontWeight: FontWeight.w700,
+          color: VibraTheme.kBg,
           fontSize: size,
+          fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
         ),
       ),

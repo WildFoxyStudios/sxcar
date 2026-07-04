@@ -1117,31 +1117,12 @@ class _UserCard extends ConsumerWidget {
               ),
 
             // NUEVO badge (top left) — T5.9: shown for accounts < 7 days old.
-            // Duplicates the inline badge in profile_detail_screen.dart
-            // (T5.10 will extract a shared widget if a 3rd caller shows up).
+            // Shared widget (T5.13) — see apps/app/lib/src/theme/widgets.dart.
             if (user.isNew)
               Positioned(
                 top: 5,
                 left: 5,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: VibraTheme.kYellow,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    AppLocalizations.of(context)!.badgeNew,
-                    style: const TextStyle(
-                      color: VibraTheme.kBg,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+                child: const NUEVOBadge.small(),
               ),
           ],
         ),

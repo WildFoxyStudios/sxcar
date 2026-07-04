@@ -524,21 +524,37 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('NUEVOBadge', () {
-    testWidgets('renders NUEVO text', (tester) async {
+    testWidgets('renders localized NUEVO text', (tester) async {
       await tester.pumpWidget(_wrap(const NUEVOBadge()));
+      // _wrap uses Locale('es') → badgeNew == 'NUEVO'.
       expect(find.text('NUEVO'), findsOneWidget);
     });
 
-    testWidgets('uses default size 11', (tester) async {
+    testWidgets('uses default size 10', (tester) async {
       await tester.pumpWidget(_wrap(const NUEVOBadge()));
       final text = tester.widget<Text>(find.text('NUEVO'));
-      expect(text.style?.fontSize, 11);
+      expect(text.style?.fontSize, 10);
     });
 
     testWidgets('respects custom size', (tester) async {
       await tester.pumpWidget(_wrap(const NUEVOBadge(size: 14)));
       final text = tester.widget<Text>(find.text('NUEVO'));
       expect(text.style?.fontSize, 14);
+    });
+
+    testWidgets('.small preset renders compact tile badge', (tester) async {
+      await tester.pumpWidget(_wrap(const NUEVOBadge.small()));
+      final text = tester.widget<Text>(find.text('NUEVO'));
+      expect(text.style?.fontSize, 9);
+    });
+
+    testWidgets('default uses kYellow background and kBg text', (tester) async {
+      await tester.pumpWidget(_wrap(const NUEVOBadge()));
+      final container = tester.widget<Container>(find.byType(Container).first);
+      final box = container.decoration as BoxDecoration;
+      expect(box.color, equals(VibraTheme.kYellow));
+      final text = tester.widget<Text>(find.text('NUEVO'));
+      expect(text.style?.color, equals(VibraTheme.kBg));
     });
   });
 

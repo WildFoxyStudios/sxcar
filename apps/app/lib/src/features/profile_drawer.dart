@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../auth/auth_provider.dart';
+import '../billing/billing_providers.dart';
+import '../billing/models.dart';
 import '../boost/boost_service.dart';
 import '../presence/presence_mode_provider.dart';
 import '../theme/app_theme.dart';
@@ -49,6 +51,9 @@ class ProfileDrawer extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final profileAsync = ref.watch(ownProfileProvider);
     final isIncognito = ref.watch(presenceModeProvider);
+    final mySubAsync = ref.watch(mySubscriptionProvider);
+    final Subscription? activeSub =
+        mySubAsync is AsyncData<Subscription?> ? mySubAsync.value : null;
 
     return Drawer(
       backgroundColor: VibraTheme.kBg,
@@ -170,6 +175,53 @@ class ProfileDrawer extends ConsumerWidget {
               },
             ),
 
+            // Active sub banner (only when user has a current subscription).
+            // Per brief: placed ABOVE the ELEGIR UN PLAN SectionBand.
+            if (activeSub != null) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.push('/tienda');
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: VibraTheme.kYellow.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border:
+                            Border.all(color: VibraTheme.kYellow, width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle,
+                              color: VibraTheme.kYellow, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${activeSub.planName} — Plan activo',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right,
+                              color: VibraTheme.kTextSecondary, size: 18),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
             // ── ELEGIR UN PLAN ────────────────────────────────────────────
             const SizedBox(height: 8),
             SectionBand(
@@ -178,57 +230,40 @@ class ProfileDrawer extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
 
-            // Yellow CTA plan card → /tienda
+            // Yellow CTA plan card → /tienda (UpsellCard).
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pop();
-                  context.push('/tienda');
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: VibraTheme.kYellow,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.obtenerPremium,
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              l10n.chatearMasLugarenos,
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    context.push('/tienda');
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: UpsellCard(
+                    highlighted: true,
+                    content: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l10n.obtenerPremium,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: const BoxDecoration(
-                          color: Colors.black,
-                          shape: BoxShape.circle,
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.chatearMasLugarenos,
+                          style: const TextStyle(
+                              color: Colors.black87, fontSize: 13),
                         ),
-                        child: const Icon(Icons.arrow_forward,
-                            color: Colors.white, size: 18),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -236,27 +271,26 @@ class ProfileDrawer extends ConsumerWidget {
 
             const SizedBox(height: 10),
 
-            // Dark "See plans" card → /tienda
+            // Dark "See plans" card → /tienda (UpsellCard).
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pop();
-                  context.push('/tienda');
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: VibraTheme.kSurface,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    l10n.verPlanes,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    context.push('/tienda');
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: UpsellCard(
+                    content: Text(
+                      l10n.verPlanes,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
                 ),

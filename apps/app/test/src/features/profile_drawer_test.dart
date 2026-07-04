@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:app/src/auth/auth_provider.dart';
+import 'package:app/src/billing/billing_providers.dart';
+import 'package:app/src/billing/models.dart';
 import 'package:app/src/features/profile_drawer.dart';
+import 'package:app/src/theme/widgets.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,11 +85,17 @@ class _AuthenticatedNotifier extends AuthNotifier {
 // Widget helper
 // ---------------------------------------------------------------------------
 
-Widget _buildDrawer(Dio dio) {
+Widget _buildDrawer(
+  Dio dio, {
+  Subscription? subscription,
+}) {
   return ProviderScope(
     overrides: [
       authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
       dioProvider.overrideWithValue(dio),
+      // Default: no active subscription (T1.10).
+      mySubscriptionProvider
+          .overrideWith((ref) async => subscription),
     ],
     child: MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -184,6 +193,72 @@ void main() {
       // State changed (no assertion on exact visual since SharedPreferences
       // is mocked) — just verify no exception.
       expect(tester.takeException(), isNull);
+    });
+
+    // ── T1.10: UpsellCard + active sub banner ────────────────────────────
+
+    testWidgets('drawer renders UpsellCards without active sub',
+        (tester) async {
+      final dio = Dio()..httpClientAdapter = _MockProfileAdapter();
+
+      await tester.pumpWidget(_buildDrawer(dio));
+      await tester.pumpAndSettle();
+
+      // Open the drawer.
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      // Scroll within the drawer's ListView so both UpsellCards are mounted.
+      await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+      await tester.pumpAndSettle();
+
+      // Two UpsellCards are visible: highlighted yellow + dark "Ver planes".
+      expect(find.byType(UpsellCard), findsNWidgets(2));
+      expect(find.text('Obtener Premium'), findsOneWidget);
+      expect(find.text('Ver planes'), findsOneWidget);
+
+      // No active sub banner when subscription is null.
+      expect(find.textContaining('Plan activo'), findsNothing);
+    });
+
+    testWidgets('drawer shows active sub banner when subscription present',
+        (tester) async {
+      final dio = Dio()..httpClientAdapter = _MockProfileAdapter();
+
+      final sub = Subscription(
+        id: 'sub-x',
+        planCode: 'vibra_plus',
+        planName: 'Vibra+',
+        priceId: 'price-1',
+        period: 'monthly',
+        periodDays: 30,
+        status: 'active',
+        source: 'simulated',
+        startedAt: DateTime.utc(2026),
+        expiresAt: DateTime.utc(2026, 8),
+        daysRemaining: 30,
+      );
+
+      await tester.pumpWidget(_buildDrawer(
+        dio,
+        subscription: sub,
+      ));
+      await tester.pumpAndSettle();
+
+      // Open the drawer.
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      // Active sub banner shows plan name + "Plan activo".
+      expect(find.textContaining('Vibra+'), findsOneWidget);
+      expect(find.textContaining('Plan activo'), findsOneWidget);
+
+      // Scroll within the drawer's ListView so both UpsellCards are mounted.
+      await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+      await tester.pumpAndSettle();
+
+      // Both UpsellCards still render below the banner.
+      expect(find.byType(UpsellCard), findsNWidgets(2));
     });
   });
 }

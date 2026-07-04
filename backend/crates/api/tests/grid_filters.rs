@@ -628,3 +628,129 @@ async fn filters_are_optional_and_default_to_no_filter() {
     let users = body["users"].as_array().unwrap();
     assert!(!users.is_empty(), "no filters should return users");
 }
+
+// ---------------------------------------------------------------------------
+// T5.4: favorites_only, online_only, right_now filters
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn filter_favorites_only() {
+    let app = test_app().await;
+    let pool = db::connect(&test_db_url()).await.unwrap();
+
+    let seeker_token = seed_seeker(&app, &pool).await;
+    let seeker_id = user_id_from_token(&seeker_token);
+
+    // Two candidates near Mexico City.
+    let (_token_a, uid_a) = seed_user(
+        &app, &pool,
+        &unique_email(), "FavUserA", "Favorite target",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+    let (_token_b, uid_b) = seed_user(
+        &app, &pool,
+        &unique_email(), "FavUserB", "Not favorite",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+
+    // Seeker favorites ONLY candidate A. Plain sqlx::query (no macro) avoids
+    // needing the new SQL in the offline cache.
+    sqlx::query("INSERT INTO favorites (user_id, target_id) VALUES ($1, $2)")
+        .bind(seeker_id)
+        .bind(uid_a)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    let (st, body) = get(
+        &app,
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999&favorites_only=true",
+        &seeker_token,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(user_in_results(&body, uid_a), "favorited A must be in results");
+    assert!(!user_in_results(&body, uid_b), "non-favorited B must NOT be in results");
+}
+
+#[tokio::test]
+async fn filter_online_only() {
+    let app = test_app().await;
+    let pool = db::connect(&test_db_url()).await.unwrap();
+
+    let seeker_token = seed_seeker(&app, &pool).await;
+
+    // Two candidates: A recent, B stale (1h ago).
+    let (_token_a, uid_a) = seed_user(
+        &app, &pool,
+        &unique_email(), "OnlineUserA", "Online now",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+    let (_token_b, uid_b) = seed_user(
+        &app, &pool,
+        &unique_email(), "OnlineUserB", "Online 1h ago",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+
+    sqlx::query("UPDATE users SET last_seen_at = now() WHERE id = $1")
+        .bind(uid_a)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE users SET last_seen_at = now() - interval '1 hour' WHERE id = $1")
+        .bind(uid_b)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    let (st, body) = get(
+        &app,
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999&online_only=true",
+        &seeker_token,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(user_in_results(&body, uid_a), "recent A must be in results");
+    assert!(!user_in_results(&body, uid_b), "stale B must NOT be in results");
+}
+
+#[tokio::test]
+async fn filter_right_now() {
+    let app = test_app().await;
+    let pool = db::connect(&test_db_url()).await.unwrap();
+
+    let seeker_token = seed_seeker(&app, &pool).await;
+
+    // Two candidates: A within 30-min window, B outside (2h ago).
+    let (_token_a, uid_a) = seed_user(
+        &app, &pool,
+        &unique_email(), "RightNowA", "Seen 10min ago",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+    let (_token_b, uid_b) = seed_user(
+        &app, &pool,
+        &unique_email(), "RightNowB", "Seen 2h ago",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+
+    sqlx::query("UPDATE users SET last_seen_at = now() - interval '10 minutes' WHERE id = $1")
+        .bind(uid_a)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE users SET last_seen_at = now() - interval '2 hours' WHERE id = $1")
+        .bind(uid_b)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    let (st, body) = get(
+        &app,
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999&right_now=true",
+        &seeker_token,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(user_in_results(&body, uid_a), "within-30min A must be in results");
+    assert!(!user_in_results(&body, uid_b), "outside-30min B must NOT be in results");
+}

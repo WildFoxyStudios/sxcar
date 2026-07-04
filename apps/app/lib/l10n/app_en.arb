@@ -114,5 +114,19 @@
   "ok": "OK",
   "cancelar": "Cancel",
   "eliminar": "Delete",
-  "accionNoSePuedeDeshacer": "This action cannot be undone."
+  "accionNoSePuedeDeshacer": "This action cannot be undone.",
+  "distancia": "Distance",
+  "enLineaFiltro": "Online",
+  "noHayActualizaciones": "No album updates",
+  "desbloquearGratis": "Unlock FREE",
+  "desbloquearTodoSinLimites": "Unlock everything, no limits",
+  "boostTuInterest": "Boost your Interest",
+  "ahoraMismo": "Right now",
+  "compartirAlbum": "Share album",
+  "seleccionarUsuarios": "Select users",
+  "archivoCompartido": "Shared album",
+  "eliminarAlbum": "Delete album",
+  "misShares": "My shares",
+  "ver": "View",
+  "hacer": "Do"
 }

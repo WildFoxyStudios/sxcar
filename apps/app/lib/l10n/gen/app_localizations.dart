@@ -763,6 +763,90 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Esta acción no se puede deshacer.'**
   String get accionNoSePuedeDeshacer;
+
+  /// Distance label used in chat list / interest rows
+  ///
+  /// In es, this message translates to:
+  /// **'Distancia'**
+  String get distancia;
+
+  /// Online-only filter chip on chat list
+  ///
+  /// In es, this message translates to:
+  /// **'En línea'**
+  String get enLineaFiltro;
+
+  /// Empty state for AlbumUpdatesEmptyState widget
+  ///
+  /// In es, this message translates to:
+  /// **'No hay actualizaciones de álbum'**
+  String get noHayActualizaciones;
+
+  /// NUEVO badge CTA on Interest screen when count > 6
+  ///
+  /// In es, this message translates to:
+  /// **'Desbloquear GRATIS'**
+  String get desbloquearGratis;
+
+  /// Tienda upsell subtitle on Interest screen
+  ///
+  /// In es, this message translates to:
+  /// **'Desbloquea todo sin límites'**
+  String get desbloquearTodoSinLimites;
+
+  /// Boost FAB on Interest screen
+  ///
+  /// In es, this message translates to:
+  /// **'Boost tu Interest'**
+  String get boostTuInterest;
+
+  /// Right-now filter chip / state label
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora mismo'**
+  String get ahoraMismo;
+
+  /// Share album action in albums grid
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir álbum'**
+  String get compartirAlbum;
+
+  /// User picker prompt when sharing album
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar usuarios'**
+  String get seleccionarUsuarios;
+
+  /// Success toast when album is shared
+  ///
+  /// In es, this message translates to:
+  /// **'Álbum compartido'**
+  String get archivoCompartido;
+
+  /// Delete-album action in album options
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar álbum'**
+  String get eliminarAlbum;
+
+  /// Albums-screen section header for albums I have shared
+  ///
+  /// In es, this message translates to:
+  /// **'Mis compartidos'**
+  String get misShares;
+
+  /// View action button (album / share)
+  ///
+  /// In es, this message translates to:
+  /// **'Ver'**
+  String get ver;
+
+  /// Generic 'do' action button (e.g. 'Hacer tap')
+  ///
+  /// In es, this message translates to:
+  /// **'Hacer'**
+  String get hacer;
 }
 
 class _AppLocalizationsDelegate

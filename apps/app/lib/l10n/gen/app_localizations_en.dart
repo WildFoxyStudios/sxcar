@@ -347,4 +347,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accionNoSePuedeDeshacer => 'This action cannot be undone.';
+
+  @override
+  String get distancia => 'Distance';
+
+  @override
+  String get enLineaFiltro => 'Online';
+
+  @override
+  String get noHayActualizaciones => 'No album updates';
+
+  @override
+  String get desbloquearGratis => 'Unlock FREE';
+
+  @override
+  String get desbloquearTodoSinLimites => 'Unlock everything, no limits';
+
+  @override
+  String get boostTuInterest => 'Boost your Interest';
+
+  @override
+  String get ahoraMismo => 'Right now';
+
+  @override
+  String get compartirAlbum => 'Share album';
+
+  @override
+  String get seleccionarUsuarios => 'Select users';
+
+  @override
+  String get archivoCompartido => 'Shared album';
+
+  @override
+  String get eliminarAlbum => 'Delete album';
+
+  @override
+  String get misShares => 'My shares';
+
+  @override
+  String get ver => 'View';
+
+  @override
+  String get hacer => 'Do';
 }

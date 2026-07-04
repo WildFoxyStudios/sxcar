@@ -28,6 +28,14 @@ class UserProfile {
   final List<String> lookingFor;
   final List<String> meetAt;
   final List<String> tags;
+  final Map<String, dynamic> details;
+  final bool showAge;
+  final bool showRole;
+  final bool showTribes;
+  final bool showPosition;
+  final bool showEthnicity;
+  final bool showRelationshipStatus;
+  final bool showSocialLinks;
 
   const UserProfile({
     required this.id,
@@ -53,6 +61,14 @@ class UserProfile {
     this.lookingFor = const [],
     this.meetAt = const [],
     this.tags = const [],
+    this.details = const {},
+    this.showAge = true,
+    this.showRole = true,
+    this.showTribes = true,
+    this.showPosition = true,
+    this.showEthnicity = true,
+    this.showRelationshipStatus = true,
+    this.showSocialLinks = true,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -92,6 +108,14 @@ class UserProfile {
               ?.map((e) => e as String)
               .toList() ??
           [],
+      details: (json['details'] as Map<String, dynamic>?) ?? const {},
+      showAge: json['show_age'] != false,
+      showRole: json['show_role'] != false,
+      showTribes: json['show_tribes'] != false,
+      showPosition: json['show_position'] != false,
+      showEthnicity: json['show_ethnicity'] != false,
+      showRelationshipStatus: json['show_relationship_status'] != false,
+      showSocialLinks: json['show_social_links'] != false,
     );
   }
 

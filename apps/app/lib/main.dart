@@ -9,12 +9,15 @@ import 'src/chat/unread_count_provider.dart';
 import 'src/presence/presence_service.dart';
 import 'src/features/album_detail_screen.dart';
 import 'src/features/albums_screen.dart';
+import 'src/features/blocks_list_screen.dart';
 import 'src/features/cascade_screen.dart';
 import 'src/features/chat_list_screen.dart';
 import 'src/features/grid_search_screen.dart';
 import 'src/features/chat_screen.dart';
+import 'src/features/discreet_icon_picker_screen.dart';
 import 'src/features/interest_screen.dart';
 import 'src/features/login_screen.dart';
+import 'src/features/pin_screen.dart';
 import 'src/features/profile_detail_screen.dart';
 import 'src/features/profile_drawer.dart';
 import 'src/features/register_screen.dart';
@@ -202,7 +205,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (_, state) => SettingsScreen(
-        initialTab: state.uri.queryParameters['tab'] ?? 'notifications',
+        initialTab: state.uri.queryParameters['tab'],
       ),
     ),
     GoRoute(
@@ -212,6 +215,18 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/sessions',
       builder: (_, _) => const SessionsScreen(),
+    ),
+    GoRoute(
+      path: '/settings/discreet-icon',
+      builder: (_, _) => const DiscreetIconPickerScreen(),
+    ),
+    GoRoute(
+      path: '/settings/pin',
+      builder: (_, _) => const PinScreen(),
+    ),
+    GoRoute(
+      path: '/settings/blocks',
+      builder: (_, _) => const BlocksListScreen(),
     ),
     GoRoute(
       path: '/albums',

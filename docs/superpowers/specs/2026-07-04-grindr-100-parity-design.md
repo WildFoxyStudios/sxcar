@@ -87,8 +87,18 @@ Que `apps/app` se vea, navegue y comporte como Grindr real: paridad 100% visual 
   - `tienda_service.dart` — BillingService con `getPlans()`, `getMySubscription()`, `simulatePurchase(int)`
   - `providers.dart` — `billingPlansProvider` (FutureProvider), `activeSubscriptionProvider` (FutureProvider keepAlive), `simulatePurchaseProvider`
   - `tier_features.dart` — contenido estático features por tier (l10n)
-- `apps/app/lib/src/tienda/tienda_screen.dart` (NUEVO): estructura detallada en Chunk 2 del chat.
-- Componentes nuevos en `theme/widgets.dart`: `UpsellCard`, `PlanDurationCard`, `NUEVOBadge`.
+- `apps/app/lib/src/tienda/tienda_screen.dart` (NUEVO):
+  - AppBar transparente, body negro
+  - Título centrado 32 w800 "Elija la actualización" + subtítulo gris 15
+  - `VibraSegmented` con tiers únicos desde `billingPlansProvider` (dinámico; fallback `[Vibra+, Unlimited]` si endpoint falla)
+  - Hero card gradiente kBg→kSurface radius 24 padding 24 con lockup "Vibra+ premium" + subtítulo l10n
+  - Fila horizontal de `PlanDurationCard` 128×150 radius 16 borde 2px (kYellow + tinte kYellow.withOpacity(0.15) si seleccionada, kDivider si no). Contenido: duración w700 / precio / "POPULAR" badge gris opcional / "Ahorra n%" calculado runtime vs plan más barato del tier. Tap selecciona.
+  - Lista features (`FeaturesBulletList`): 6-8 filas icono círculo 24 kYellow + título w700 + subtítulo gris. Contenido estático en `lib/src/billing/tier_features.dart` (l10n) — claves `masConexiones`, `masAccesoPerfiles`, `destacate`, `forYouChats`, `chatIlimitados`, `fotosIlimitadasSinCaducidad`, `traduccionChat`, `estadoEscribiendo`, `funcionesIlimitadas`, `perfilesIlimitados`, `navegarIncognito`, `sinInterrupciones`, `quienMeHaVisto`. Cada tier muestra un subset (bajo 6, alto 8).
+  - Resumen: "€X.XX/día · Total $Y.YY € · Renovación automática" gris 13
+  - `YellowPillButton` "Continuar" → `simulatePurchase(planId)`. Loading: Spinner. Success: SnackBar "Plan activo ✓" + invalidar `activeSubscriptionProvider`. Error 409: AlertDialog "Ya tienes un plan activo" → /settings?tab=subscription. Error general: SnackBar rojo.
+  - Si `activeSubscriptionProvider.value != null`: Banner kSurface "Ya tienes [name]" + botón Continuar disabled.
+  - Disclaimer legal 12 gris: "Compra simulada — sin cargo real. Esta integración se conectará a Google Play Billing en el futuro."
+- Componentes nuevos en `theme/widgets.dart`: `UpsellCard`, `PlanDurationCard`, `NUEVOBadge`, `StatRow`.
 - Drawer (`profile_drawer.dart`) modificaciones:
   - Sección NUEVAS OPCIONES (Container amarillo claro) con 2 features rotando
   - ELEGIR UN PLAN: card amarilla (UpsellCard) destacada + 2 cards oscuras (Pase de día, 7 días)
@@ -270,10 +280,10 @@ Que `apps/app` se vea, navegue y comporte como Grindr real: paridad 100% visual 
 1. **Commit del WIP actual** en `profile_detail_screen.dart` (PageController, _photoIndex, _details wiring) con tests verdes ANTES de añadir nada más. Si rompe, fix primero. Commit: `feat(app): T4 PageView + details wiring (closes T4)`.
 
 2. **Profile detail extensions**:
-   - Edad: si `details.birthdate` o response.user.dob disponible, mostrar "🎂 X años" en fila de stats. Si `details.show_age === false`, mostrar "(oculto)" en gris.
-   - Relationship status: row en stats rápidos si `details.relationship` existe.
-   - Red social: leer `details.social.{instagram,x,facebook,spotify}`, renderizar como row de iconos tappables (url_launcher). Si todo vacío, no renderizar el row.
-   - NUEVO badge en sugerencias "Te podría interesar": si `user.created_at` o `details.created_at` <7 días, mostrar chip kYellow "NUEVO" (el `NUEVOBadge` añadido en E1).
+   - Edad: leer `response.user.birthdate` o `details.birthdate` (string ISO). Mostrar "🎂 X años" en fila de stats. **Importante**: el backend E3 YA filtra age del GET público cuando `show_age=false`, por lo tanto si no aparece en response, NO renderizar el row (no se puede mostrar "(oculto)" porque no tenemos el dato).
+   - Relationship status: row en stats rápidos si `details.relationship` no es null/vacío (el backend NO lo filtra por ahora; futuro: añadir flag `show_relationship`).
+   - Red social: leer `details.social.{instagram,x,facebook,spotify}`. Renderizar row de iconos tappables (url_launcher); si todos vacíos/nulos, no renderizar el row.
+   - NUEVO badge en sugerencias "Te podría interesar": si `user.created_at` (de la respuesta del /profile/:id) <7 días, mostrar chip kYellow "NUEVO" (usa el componente `NUEVOBadge` añadido en E1).
 
 3. **Navegar (`cascade_screen.dart` + `grid_search_screen.dart`)**:
    - Etiqueta distancia: " · X km" añadido al overlay inferior (gris, formatDistance helper con `unitsProvider`).
@@ -290,6 +300,12 @@ Que `apps/app` se vea, navegue y comporte como Grindr real: paridad 100% visual 
    - Aplicar en profile_detail (E3 coord), interest (E4), cascade (E5)
 
 **i18n**: ~10 keys (miEdad, estadoRelacion, sigueloEn, abrirEnlaceExterno, kilometros, millas, filtroFavoritos, filtroEnLinea, filtroRightNow, nuevo).
+
+**Tests Flutter:**
+- `profile_detail_screen_test.dart` ampliado: render con NUEVO badge en sugerencias (mock created_at <7d), render con age derivado, render con social row (con y sin datos)
+- `cascade_screen_test.dart` ampliado: NUEVO badge aparece en tile <7d, etiqueta distancia aparece, chip ⭐ togglea filtro server-side (fake service)
+- `grid_search_screen_test.dart` ampliado: NUEVO badge aplica aquí también
+- `format_distance_test.dart`: cubre métrico/imperial/null/zero
 
 **Checkpoint "hecho":**
 - `cargo test -p api --test grid_filters` 3/3 verde

@@ -206,5 +206,32 @@
   "@sinInterrupciones": { "description": "Ad-free feature bullet" },
 
   "quienMeHaVisto": "Ver quién me ha visto",
-  "@quienMeHaVisto": { "description": "See who viewed me feature bullet" }
+  "@quienMeHaVisto": { "description": "See who viewed me feature bullet" },
+
+  "precioContinuar": "{price}/día por {days} días",
+  "@precioContinuar": {
+    "description": "TiendaScreen summary line under the plan hero (e.g. €0.30/día por 30 días)",
+    "placeholders": {
+      "price": { "type": "String", "example": "€0.30" },
+      "days": { "type": "int", "example": "30" }
+    }
+  },
+
+  "precioTotal": "Total {total}",
+  "@precioTotal": {
+    "description": "TiendaScreen total price label (e.g. Total €8.99)",
+    "placeholders": {
+      "total": { "type": "String", "example": "€8.99" }
+    }
+  },
+
+  "compraSimulada": "Compra simulada (sin cargo)",
+  "@compraSimulada": {
+    "description": "TiendaScreen fine-print disclaimer under the Continue CTA"
+  },
+
+  "planActivo": "Plan activo ✓",
+  "@planActivo": {
+    "description": "Short label for active subscription banner (drawer + Tienda top)"
+  }
 }

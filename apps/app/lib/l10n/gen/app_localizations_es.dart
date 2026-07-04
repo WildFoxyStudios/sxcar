@@ -207,4 +207,20 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get quienMeHaVisto => 'Ver quién me ha visto';
+
+  @override
+  String precioContinuar(String price, int days) {
+    return '$price/día por $days días';
+  }
+
+  @override
+  String precioTotal(String total) {
+    return 'Total $total';
+  }
+
+  @override
+  String get compraSimulada => 'Compra simulada (sin cargo)';
+
+  @override
+  String get planActivo => 'Plan activo ✓';
 }

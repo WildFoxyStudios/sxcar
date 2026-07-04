@@ -67,5 +67,10 @@
   "perfilesIlimitados": "Unlimited profiles",
   "navegarIncognito": "Browse in incognito mode",
   "sinInterrupciones": "No ad interruptions",
-  "quienMeHaVisto": "See who viewed me"
+  "quienMeHaVisto": "See who viewed me",
+
+  "precioContinuar": "{price}/day for {days} days",
+  "precioTotal": "Total {total}",
+  "compraSimulada": "Simulated purchase (no charge)",
+  "planActivo": "Active plan ✓"
 }

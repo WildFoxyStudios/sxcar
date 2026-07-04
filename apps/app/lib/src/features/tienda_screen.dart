@@ -158,7 +158,7 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Plan activo ✓ — ${activeSub.planName}',
+                    '${l10n.planActivo} — ${activeSub.planName}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -305,7 +305,7 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
 
         // ── Summary + Continue CTA ───────────────────────────────
         Text(
-          _summaryLine(selectedPrice),
+          _summaryLine(l10n, selectedPrice),
           textAlign: TextAlign.center,
           style: const TextStyle(color: Colors.white70, fontSize: 13),
         ),
@@ -319,7 +319,7 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Compra simulada — sin cargo real',
+          l10n.compraSimulada,
           textAlign: TextAlign.center,
           style: const TextStyle(color: VibraTheme.kTextTertiary, fontSize: 11),
         ),
@@ -327,18 +327,18 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
     );
   }
 
-  /// "{price}/día por {days}" — formatted inline since there's no
-  /// `precioContinuar` l10n key in the current arb.
-  String _summaryLine(PlanPrice price) {
+  /// "{price}/día por {days}" — localized via `precioContinuar`.
+  String _summaryLine(AppLocalizations l10n, PlanPrice price) {
     final days = price.period == 'monthly'
         ? 30
         : price.period == 'yearly'
             ? 365
             : 7;
-    return '${price.formatted}/día por $days días';
+    return l10n.precioContinuar(price.formatted, days);
   }
 
   Future<void> _purchase(BuildContext context, String priceId) async {
+    final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _purchasing = true);
     try {
@@ -347,7 +347,7 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
       ref.invalidate(mySubscriptionProvider);
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Plan activo ✓')),
+        SnackBar(content: Text(l10n.planActivo)),
       );
     } on DioException catch (e) {
       if (!mounted) return;

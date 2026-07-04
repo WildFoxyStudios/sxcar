@@ -493,6 +493,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ver quién me ha visto'**
   String get quienMeHaVisto;
+
+  /// TiendaScreen summary line under the plan hero (e.g. €0.30/día por 30 días)
+  ///
+  /// In es, this message translates to:
+  /// **'{price}/día por {days} días'**
+  String precioContinuar(String price, int days);
+
+  /// TiendaScreen total price label (e.g. Total €8.99)
+  ///
+  /// In es, this message translates to:
+  /// **'Total {total}'**
+  String precioTotal(String total);
+
+  /// TiendaScreen fine-print disclaimer under the Continue CTA
+  ///
+  /// In es, this message translates to:
+  /// **'Compra simulada (sin cargo)'**
+  String get compraSimulada;
+
+  /// Short label for active subscription banner (drawer + Tienda top)
+  ///
+  /// In es, this message translates to:
+  /// **'Plan activo ✓'**
+  String get planActivo;
 }
 
 class _AppLocalizationsDelegate

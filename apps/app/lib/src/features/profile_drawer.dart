@@ -204,7 +204,7 @@ class ProfileDrawer extends ConsumerWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              '${activeSub.planName} — Plan activo',
+                              '${activeSub.planName} — ${l10n.planActivo}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,

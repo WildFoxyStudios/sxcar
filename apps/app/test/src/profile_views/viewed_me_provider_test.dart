@@ -113,4 +113,66 @@ void main() {
       );
     });
   });
+
+  group('ViewedMeCountService', () {
+    test('fetchCount returns parsed count', () async {
+      final dio = Dio()
+        ..httpClientAdapter = _MockViewsAdapter()
+        ..options.baseUrl = 'http://test';
+      // Override the response body for the count endpoint.
+      dio.httpClientAdapter = _CountStubAdapter(count: 42);
+
+      final service = ViewedMeCountService(dio);
+      final count = await service.fetchCount();
+
+      expect(count, equals(42));
+    });
+
+    test('fetchCount rethrows on error', () async {
+      final dio = Dio()
+        ..options.baseUrl = 'http://test'
+        ..httpClientAdapter = _CountStubAdapter(errorStatus: 500);
+
+      final service = ViewedMeCountService(dio);
+
+      expect(
+        () => service.fetchCount(),
+        throwsA(isA<DioException>()),
+      );
+    });
+  });
+}
+
+class _CountStubAdapter implements HttpClientAdapter {
+  final int? count;
+  final int? errorStatus;
+
+  _CountStubAdapter({this.count, this.errorStatus});
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    if (errorStatus != null) {
+      return ResponseBody.fromString(
+        '{"error":"server"}',
+        errorStatus!,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
+    return ResponseBody.fromString(
+      jsonEncode({'count': count ?? 0}),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }

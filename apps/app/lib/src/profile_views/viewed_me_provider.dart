@@ -55,3 +55,32 @@ final viewedMeProvider = FutureProvider<List<ProfileViewer>>((ref) async {
   final service = ref.watch(viewedMeServiceProvider);
   return service.fetchViewers();
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// profileViewsCountProvider
+//
+// Wraps GET /profile/views/count → {count: N}. Returns the number of DISTINCT
+// users who viewed the current user's profile. Used by Interest screen header.
+// ────────────────────────────────────────────────────────────────────────────
+
+class ViewedMeCountService {
+  final Dio _dio;
+
+  ViewedMeCountService(this._dio);
+
+  Future<int> fetchCount() async {
+    final response = await _dio.get<Map<String, dynamic>>('/profile/views/count');
+    final data = response.data!;
+    return (data['count'] as num).toInt();
+  }
+}
+
+final viewedMeCountServiceProvider = Provider<ViewedMeCountService>((ref) {
+  final dio = ref.watch(dioProvider);
+  return ViewedMeCountService(dio);
+});
+
+final profileViewsCountProvider = FutureProvider<int>((ref) async {
+  final service = ref.watch(viewedMeCountServiceProvider);
+  return service.fetchCount();
+});

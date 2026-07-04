@@ -1,4 +1,5 @@
 use crate::Pool;
+use serde_json::Value as JsonValue;
 use time::{Date, OffsetDateTime};
 
 #[derive(Debug)]
@@ -290,6 +291,15 @@ pub struct UserFullRow {
     pub profile_photo_id: Option<uuid::Uuid>,
     pub profile_photo_url: Option<String>,
     pub verified: bool,
+    // NEW (T4.2):
+    pub details: JsonValue,
+    pub show_age: bool,
+    pub show_role: bool,
+    pub show_tribes: bool,
+    pub show_position: bool,
+    pub show_ethnicity: bool,
+    pub show_relationship_status: bool,
+    pub show_social_links: bool,
 }
 
 #[derive(Debug)]
@@ -365,7 +375,15 @@ pub async fn find_user_full(
                   p.ethnicity, p.pronouns, p.profile_photo_id,
                   (SELECT r2_key FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1)
                     as "profile_photo_url",
-                  COALESCE(p.verified, false) as "verified!"
+                  COALESCE(p.verified, false) as "verified!",
+                  COALESCE(p.details, '{}'::jsonb) as "details!",
+                  COALESCE(p.show_age, true)                  as "show_age!",
+                  COALESCE(p.show_role, true)                as "show_role!",
+                  COALESCE(p.show_tribes, true)              as "show_tribes!",
+                  COALESCE(p.show_position, true)            as "show_position!",
+                  COALESCE(p.show_ethnicity, true)           as "show_ethnicity!",
+                  COALESCE(p.show_relationship_status, true) as "show_relationship_status!",
+                  COALESCE(p.show_social_links, true)        as "show_social_links!"
            FROM users u
            LEFT JOIN profiles p ON p.user_id = u.id
            WHERE u.id = $1"#,

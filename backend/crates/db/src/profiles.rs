@@ -1,5 +1,85 @@
 use crate::Pool;
 
+/// Patch details jsonb + show_* privacy flags. Each Option is independently
+/// applied (None = no change). Sequential single-column UPDATEs to keep the
+/// SQL simple and avoid a dynamic query builder. Errors from sqlx propagate.
+pub async fn patch_profile_meta(
+    pool: &Pool,
+    user_id: uuid::Uuid,
+    details: Option<&serde_json::Value>,
+    show_role: Option<bool>,
+    show_tribes: Option<bool>,
+    show_position: Option<bool>,
+    show_ethnicity: Option<bool>,
+    show_relationship_status: Option<bool>,
+    show_social_links: Option<bool>,
+) -> anyhow::Result<()> {
+    if let Some(d) = details {
+        sqlx::query!(
+            "UPDATE profiles SET details = $2 WHERE user_id = $1",
+            user_id,
+            d,
+        )
+        .execute(pool)
+        .await?;
+    }
+    if let Some(v) = show_role {
+        sqlx::query!(
+            "UPDATE profiles SET show_role = $2 WHERE user_id = $1",
+            user_id,
+            v,
+        )
+        .execute(pool)
+        .await?;
+    }
+    if let Some(v) = show_tribes {
+        sqlx::query!(
+            "UPDATE profiles SET show_tribes = $2 WHERE user_id = $1",
+            user_id,
+            v,
+        )
+        .execute(pool)
+        .await?;
+    }
+    if let Some(v) = show_position {
+        sqlx::query!(
+            "UPDATE profiles SET show_position = $2 WHERE user_id = $1",
+            user_id,
+            v,
+        )
+        .execute(pool)
+        .await?;
+    }
+    if let Some(v) = show_ethnicity {
+        sqlx::query!(
+            "UPDATE profiles SET show_ethnicity = $2 WHERE user_id = $1",
+            user_id,
+            v,
+        )
+        .execute(pool)
+        .await?;
+    }
+    if let Some(v) = show_relationship_status {
+        sqlx::query!(
+            "UPDATE profiles SET show_relationship_status = $2 WHERE user_id = $1",
+            user_id,
+            v,
+        )
+        .execute(pool)
+        .await?;
+    }
+    if let Some(v) = show_social_links {
+        sqlx::query!(
+            "UPDATE profiles SET show_social_links = $2 WHERE user_id = $1",
+            user_id,
+            v,
+        )
+        .execute(pool)
+        .await?;
+    }
+    Ok(())
+}
+
 /// UPSERT into profiles table. Only sets fields that are `Some(...)`.
 /// Fields set to `None` keep their current DB value.
 pub async fn upsert_profile(

@@ -313,3 +313,234 @@ async fn unauthenticated_returns_401() {
         .unwrap();
     assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
 }
+
+// ─── T4.3: details + show_* privacy flags ─────────────────────────────────
+
+#[tokio::test]
+async fn put_details_persists_and_get_own_returns_full() {
+    let app = test_app().await;
+    let (_email, token) = register_and_login(&app).await;
+    let custom_details = serde_json::json!({
+        "vaccines": ["covid", "hepb"],
+        "social": {"instagram": "@me"},
+        "trip_count": 3
+    });
+
+    let (put_status, _) = put_auth(
+        &app,
+        "/profile",
+        &token,
+        serde_json::json!({ "details": custom_details }),
+    ).await;
+    assert_eq!(put_status, StatusCode::OK);
+
+    // GET /profile returns unfiltered — owner sees full details
+    let (get_status, body) = get_auth(&app, "/profile", &token).await;
+    assert_eq!(get_status, StatusCode::OK);
+    assert_eq!(body["user"]["details"], custom_details);
+}
+
+#[tokio::test]
+async fn get_public_filters_show_age_when_false() {
+    let app = test_app().await;
+    let (_email1, token1) = register_and_login(&app).await;
+    let (_email2, token2) = register_and_login(&app).await;
+
+    // Owner sets show_age=false via PUT /profile
+    let (s, _) = put_auth(
+        &app,
+        "/profile",
+        &token1,
+        serde_json::json!({ "birthdate": "1995-06-15", "show_age": false }),
+    ).await;
+    assert_eq!(s, StatusCode::OK);
+
+    // Get owner id
+    let (_, body1) = get_auth(&app, "/profile", &token1).await;
+    let owner_id = body1["user"]["id"].as_str().unwrap();
+
+    // Other user views owner's profile — birthdate must be stripped
+    let (_, body) = get_auth(&app, &format!("/profile/{owner_id}"), &token2).await;
+    assert!(
+        body["user"].get("birthdate").is_none(),
+        "birthdate must be absent when show_age=false, got: {body}"
+    );
+}
+
+#[tokio::test]
+async fn get_public_filters_show_role_when_false() {
+    let app = test_app().await;
+    let (_email1, token1) = register_and_login(&app).await;
+    let (_email2, token2) = register_and_login(&app).await;
+
+    let (s, _) = put_auth(
+        &app,
+        "/profile",
+        &token1,
+        serde_json::json!({ "show_role": false }),
+    ).await;
+    assert_eq!(s, StatusCode::OK);
+
+    let (_, body1) = get_auth(&app, "/profile", &token1).await;
+    let owner_id = body1["user"]["id"].as_str().unwrap();
+
+    let (_, body) = get_auth(&app, &format!("/profile/{owner_id}"), &token2).await;
+    assert!(body["user"].get("role").is_none(), "role must be absent when show_role=false");
+}
+
+#[tokio::test]
+async fn get_public_filters_show_tribes_when_false() {
+    let app = test_app().await;
+    let (_email1, token1) = register_and_login(&app).await;
+    let (_email2, token2) = register_and_login(&app).await;
+
+    // Set tribes + show_tribes=false
+    let (s, _) = put_auth(
+        &app,
+        "/profile",
+        &token1,
+        serde_json::json!({
+            "tribes": ["twink", "bear"],
+            "show_tribes": false,
+        }),
+    ).await;
+    assert_eq!(s, StatusCode::OK);
+
+    let (_, body1) = get_auth(&app, "/profile", &token1).await;
+    let owner_id = body1["user"]["id"].as_str().unwrap();
+
+    let (_, body) = get_auth(&app, &format!("/profile/{owner_id}"), &token2).await;
+    // Per spec: when show_tribes=false, tribes is removed (not just emptied)
+    assert!(
+        body["user"].get("tribes").is_none(),
+        "tribes must be absent when show_tribes=false"
+    );
+}
+
+#[tokio::test]
+async fn get_public_strips_all_six_show_flags_simultaneously() {
+    let app = test_app().await;
+    let (_email1, token1) = register_and_login(&app).await;
+    let (_email2, token2) = register_and_login(&app).await;
+
+    let (s, _) = put_auth(
+        &app,
+        "/profile",
+        &token1,
+        serde_json::json!({
+            "birthdate": "1990-01-01",
+            "role": "top",
+            "position": "top",
+            "ethnicity": "latino",
+            "relationship_status": "single",
+            "show_age": false,
+            "show_role": false,
+            "show_position": false,
+            "show_ethnicity": false,
+            "show_relationship_status": false,
+            "show_tribes": false,
+        }),
+    ).await;
+    assert_eq!(s, StatusCode::OK);
+
+    let (_, body1) = get_auth(&app, "/profile", &token1).await;
+    let owner_id = body1["user"]["id"].as_str().unwrap();
+
+    let (_, body) = get_auth(&app, &format!("/profile/{owner_id}"), &token2).await;
+    let user = &body["user"];
+    for field in &["birthdate", "role", "position", "ethnicity", "relationship_status"] {
+        assert!(
+            user.get(field).is_none(),
+            "{field} must be absent, got: {user}"
+        );
+    }
+    // tribes is always present (empty array if no tribes set + show_tribes=false strips it; here
+    // owner didn't set tribes, so the spec strips it too)
+    assert!(user.get("tribes").is_none(), "tribes must also be absent");
+    // details is always present (client-side gates social links via show_social_links)
+    assert!(user.get("details").is_some(), "details must remain visible");
+}
+
+#[tokio::test]
+async fn put_rejects_details_not_an_object() {
+    let app = test_app().await;
+    let (_email, token) = register_and_login(&app).await;
+
+    // Array is not an object — should 422
+    let (s, _) = put_auth(
+        &app,
+        "/profile",
+        &token,
+        serde_json::json!({ "details": [1, 2, 3] }),
+    ).await;
+    assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY);
+
+    // Scalar is not an object — should 422
+    let (s, _) = put_auth(
+        &app,
+        "/profile",
+        &token,
+        serde_json::json!({ "details": "a string" }),
+    ).await;
+    assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY);
+
+    // null is not an object — should 422
+    let (s, _) = put_auth(
+        &app,
+        "/profile",
+        &token,
+        serde_json::json!({ "details": null }),
+    ).await;
+    assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY);
+}
+
+#[tokio::test]
+async fn put_rejects_details_over_8kb() {
+    let app = test_app().await;
+    let (_email, token) = register_and_login(&app).await;
+
+    // Build a JSON object whose serialized form is > 8192 bytes.
+    // A single long string value of ~8100 chars wrapped in an object yields ~8120 bytes.
+    let big_string = "x".repeat(8200);
+    let (s, _) = put_auth(
+        &app,
+        "/profile",
+        &token,
+        serde_json::json!({ "details": { "big": big_string } }),
+    ).await;
+    assert_eq!(s, StatusCode::PAYLOAD_TOO_LARGE);
+}
+
+#[tokio::test]
+async fn put_accepts_details_exactly_8kb() {
+    let app = test_app().await;
+    let (_email, token) = register_and_login(&app).await;
+
+    // Build a JSON object whose serialized form is exactly 8192 bytes.
+    // The skeleton `{"details":{"big":"..."}}` is ~21 bytes overhead;
+    // the value field "big":"<N chars>" takes 8 + N chars; brackets add a few.
+    // Calculate precisely: total = N (chars) + skeleton overhead.
+    // 8192 - 19 (skeleton overhead after the value) = 8173 chars in value.
+    // Easiest: build candidate, serialize, adjust, retry until exact.
+    let mut payload_chars = 8100;
+    let mut details = serde_json::json!({ "big": "x".repeat(payload_chars) });
+    let mut body = serde_json::json!({ "details": details });
+    let serialized_len = serde_json::to_vec(&body).unwrap().len();
+    // Adjust to hit exactly 8192
+    let diff = 8192_i64 - serialized_len as i64;
+    if diff != 0 {
+        payload_chars = (payload_chars as i64 + diff) as usize;
+        details = serde_json::json!({ "big": "x".repeat(payload_chars) });
+        body = serde_json::json!({ "details": details });
+    }
+    // Final sanity
+    let final_len = serde_json::to_vec(&body).unwrap().len();
+    assert!(
+        final_len <= 8192,
+        "test setup error: payload is {} bytes (want <= 8192)",
+        final_len
+    );
+
+    let (s, _) = put_auth(&app, "/profile", &token, body).await;
+    assert_eq!(s, StatusCode::OK, "exactly-8KB payload must be accepted");
+}

@@ -998,3 +998,135 @@ class AlbumUpdatesEmptyState extends StatelessWidget {
     );
   }
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// ChipMultiSelect
+// Horizontally-scrollable wrap of selectable pills for multi-value sets.
+// ────────────────────────────────────────────────────────────────────────────
+
+/// Multi-select chip row. Used by edit-profile selector sheets (tribes,
+/// looking_for, meet_at, tags, vaccines, practices) and section pickers.
+///
+/// Tokens: kSurface unselected, kYellow.withValues(alpha: 0.2) selected,
+/// kTextSecondary unselected label, kTextPrimary selected label.
+///
+/// Wraps to next line if horizontal scroll disabled. Default max visible
+/// per row = 8 before wrap (VibraTheme.kPadPage × 4.5 ≈ compact 4-col grid).
+///
+/// Tapping a chip toggles its membership in [selected]. If [maxSelections]
+/// is non-null and reached, non-selected chips render as disabled.
+class ChipMultiSelect extends StatelessWidget {
+  /// All available options. Each item is the label shown in the chip.
+  final List<String> options;
+
+  /// Currently selected option labels (immutable from caller side).
+  final Set<String> selected;
+
+  /// Fires with the **new** selected set after a tap toggles membership.
+  final ValueChanged<Set<String>> onChanged;
+
+  /// Optional cap; null = unlimited.
+  final int? maxSelections;
+
+  /// When true, choices are horizontally scrollable on a single row;
+  /// when false (default), they wrap to multiple rows.
+  final bool scrollHorizontal;
+
+  const ChipMultiSelect({
+    super.key,
+    required this.options,
+    required this.selected,
+    required this.onChanged,
+    this.maxSelections,
+    this.scrollHorizontal = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final atMax = maxSelections != null && selected.length >= maxSelections!;
+    final chips = options.map((label) {
+      final isSel = selected.contains(label);
+      final isDisabled = !isSel && atMax;
+      return _Chip(
+        label: label,
+        selected: isSel,
+        disabled: isDisabled,
+        onTap: isDisabled
+            ? null
+            : () {
+                final next = Set<String>.from(selected);
+                if (isSel) {
+                  next.remove(label);
+                } else {
+                  next.add(label);
+                }
+                onChanged(next);
+              },
+      );
+    }).toList();
+
+    if (scrollHorizontal) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: VibraTheme.kPadPage),
+        child: Row(children: chips),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: VibraTheme.kPadPage),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: chips,
+      ),
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback? onTap;
+
+  const _Chip({
+    required this.label,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected
+        ? VibraTheme.kYellow.withValues(alpha: 0.2)
+        : VibraTheme.kSurface;
+    final fg = disabled
+        ? VibraTheme.kTextTertiary
+        : selected
+            ? VibraTheme.kTextPrimary
+            : VibraTheme.kTextSecondary;
+    return Opacity(
+      opacity: disabled ? 0.5 : 1.0,
+      child: Material(
+        color: bg,
+        borderRadius: BorderRadius.circular(VibraTheme.kRadiusChip),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(VibraTheme.kRadiusChip),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: fg,
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

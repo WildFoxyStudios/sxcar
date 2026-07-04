@@ -760,4 +760,74 @@ void main() {
       expect(find.textContaining('actualizaciones'), findsOneWidget);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // ChipMultiSelect
+  // ---------------------------------------------------------------------------
+
+  group('ChipMultiSelect', () {
+    testWidgets('renders one chip per option', (tester) async {
+      await tester.pumpWidget(_wrap(const SizedBox.shrink()));
+      // Reuse _wrap with a real ChipMultiSelect
+      await tester.pumpWidget(
+        _wrap(ChipMultiSelect(
+          options: const ['twink', 'bear', 'otter'],
+          selected: const <String>{},
+          onChanged: (_) {},
+        )),
+      );
+      expect(find.text('twink'), findsOneWidget);
+      expect(find.text('bear'), findsOneWidget);
+      expect(find.text('otter'), findsOneWidget);
+    });
+
+    testWidgets('tap on unselected chip adds it to selection', (tester) async {
+      Set<String>? captured;
+      await tester.pumpWidget(_wrap(
+        ChipMultiSelect(
+          options: const ['a', 'b', 'c'],
+          selected: const <String>{},
+          onChanged: (s) => captured = s,
+        ),
+      ));
+      await tester.tap(find.text('bear').evaluate().isEmpty
+          ? find.text('a')
+          : find.text('a'));
+      expect(captured, isNotNull);
+      expect(captured!.contains('a'), isTrue);
+      expect(captured!.length, 1);
+    });
+
+    testWidgets('tap on already-selected chip removes it from selection',
+        (tester) async {
+      Set<String>? captured;
+      await tester.pumpWidget(_wrap(
+        ChipMultiSelect(
+          options: const ['a', 'b', 'c'],
+          selected: const <String>{'a'},
+          onChanged: (s) => captured = s,
+        ),
+      ));
+      await tester.tap(find.text('a'));
+      expect(captured, isNotNull);
+      expect(captured!.contains('a'), isFalse);
+    });
+
+    testWidgets('respects maxSelections cap (others disabled at cap)',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        ChipMultiSelect(
+          options: const ['a', 'b', 'c', 'd'],
+          selected: const <String>{'a', 'b'},
+          maxSelections: 2,
+          onChanged: (_) {},
+        ),
+      ));
+      // 'a' and 'b' are selected (kYellow selected style).
+      // 'c' and 'd' must be disabled — opacity 0.5 wrapper means InkWell is
+      // still in tree but onTap is null. The label color should be muted.
+      final cText = tester.widget<Text>(find.text('c'));
+      expect(cText.style!.color, equals(VibraTheme.kTextTertiary));
+    });
+  });
 }

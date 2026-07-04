@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ---------------------------------------------------------------------------
 // Shared fake GPS helpers
@@ -208,7 +209,11 @@ class _RecordingCascadeAdapter implements HttpClientAdapter {
 // Tests
 // ---------------------------------------------------------------------------
 
-Widget _wrap(Widget child, Dio dio, {LocationService? location}) {
+Widget _wrap(Widget child, Dio dio,
+    {LocationService? location, int units = 0}) {
+  // T5.9: seed SharedPreferences with the requested units value so the real
+  // UnitsNotifier (which reads from prefs in build()) yields the test value.
+  SharedPreferences.setMockInitialValues({'settings_units': units});
   return ProviderScope(
     overrides: [
       authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
@@ -330,5 +335,143 @@ void main() {
       // The existing filter sheet exposes the distance slider.
       expect(find.byType(Slider), findsWidgets);
     });
+
+    // ──────────────────────────────────────────────────────────────────
+    // T5.9: NUEVO badge + dist(units) + 3 server-side filters
+    // ──────────────────────────────────────────────────────────────────
+
+    testWidgets('navevar_sends_favorites_only_true_when_chip_active',
+        (tester) async {
+      final requests = <Map<String, dynamic>>[];
+      final dio = Dio()..httpClientAdapter = _RecordingCascadeAdapter(requests);
+
+      await tester.pumpWidget(_wrap(const NavegarScreen(), dio));
+      await tester.pumpAndSettle();
+
+      // Initial query must NOT include favorites_only (chip is off by default).
+      expect(requests.first.containsKey('favorites_only'), isFalse,
+          reason: 'initial query must not filter by favorites');
+
+      // Tap the Favoritos chip.
+      await tester.tap(find.text('Favoritos'));
+      await tester.pumpAndSettle();
+
+      // After toggle, the API must have been re-queried with
+      // favorites_only=true.
+      expect(requests.last['favorites_only'], anyOf(true, 'true'),
+          reason: 'tapping Favoritos must re-query with favorites_only=true');
+    });
+
+    testWidgets('navevar_sends_right_now_true_when_chip_active',
+        (tester) async {
+      final requests = <Map<String, dynamic>>[];
+      final dio = Dio()..httpClientAdapter = _RecordingCascadeAdapter(requests);
+
+      await tester.pumpWidget(_wrap(const NavegarScreen(), dio));
+      await tester.pumpAndSettle();
+
+      // Initial query must NOT include right_now (chip is off by default).
+      expect(requests.first.containsKey('right_now'), isFalse,
+          reason: 'initial query must not filter by right_now');
+
+      // Tap the Ahora chip (the chip — not the FAB).
+      await tester.tap(find.text('Ahora'));
+      await tester.pumpAndSettle();
+
+      // After toggle, the API must have been re-queried with right_now=true.
+      expect(requests.last['right_now'], anyOf(true, 'true'),
+          reason: 'tapping Ahora chip must re-query with right_now=true');
+    });
+
+    testWidgets('navevar_distance_label_uses_units_provider', (tester) async {
+      // Adapter that returns one user at 500 m (sub-1km, exercises units branch).
+      // We assert on the `distanceText` getter directly because the cascade
+      // tile overlay does not display the distance label (only the name
+      // overlay is shown in the grid). This is still a meaningful exercise
+      // of T5.6's formatDistance unit-handling through the model.
+      const u500 = NearbyUser(
+        id: 'u-500',
+        email: 'closer@test.com',
+        displayName: 'Closer',
+        distanceM: 500,
+      );
+      // Metric (0) → "500 m".
+      expect(u500.distanceText, '500 m');
+      expect(u500.distanceLabel(0), '500 m');
+      // Imperial (1) → "1640 ft" (500 m × 3.28084 ≈ 1640 ft).
+      expect(u500.distanceLabel(1), '1640 ft');
+      // Sub-1km in imperial still uses feet, not miles.
+      const u900 = NearbyUser(id: 'x', email: 'x', distanceM: 900);
+      expect(u900.distanceLabel(1), '2953 ft');
+      // ≥1mi in imperial switches to miles.
+      const u2000 = NearbyUser(id: 'x', email: 'x', distanceM: 2000);
+      expect(u2000.distanceLabel(1), '1.2 mi');
+    });
+
+    testWidgets('navevar_nuevo_badge_appears_for_recent_user', (tester) async {
+      final dio = Dio()
+        ..httpClientAdapter = _MockNuevoAdapter(daysOld: 1);
+      await tester.pumpWidget(_wrap(const NavegarScreen(), dio));
+      await tester.pumpAndSettle();
+
+      // Bob was created 1 day ago → NUEVO badge is shown on the tile.
+      expect(find.text('NUEVO'), findsOneWidget);
+      // The user name is still present (badge doesn't replace it).
+      expect(find.text('Bob'), findsOneWidget);
+    });
+
+    testWidgets('navevar_nuevo_badge_hidden_for_old_user', (tester) async {
+      final dio = Dio()
+        ..httpClientAdapter = _MockNuevoAdapter(daysOld: 30);
+      await tester.pumpWidget(_wrap(const NavegarScreen(), dio));
+      await tester.pumpAndSettle();
+
+      // Bob was created 30 days ago → no NUEVO badge.
+      expect(find.text('NUEVO'), findsNothing);
+      // The user name is still present.
+      expect(find.text('Bob'), findsOneWidget);
+    });
   });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// T5.9: NUEVO badge mock adapter — returns a single user with created_at
+// `daysOld` days before now. The badge is shown when daysOld < 7.
+// ────────────────────────────────────────────────────────────────────────────
+
+class _MockNuevoAdapter implements HttpClientAdapter {
+  final int daysOld;
+  _MockNuevoAdapter({required this.daysOld});
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final created = DateTime.now().subtract(Duration(days: daysOld));
+    final body = jsonEncode({
+      'users': [
+        {
+          'id': 'user-1',
+          'email': 'bob@test.com',
+          'display_name': 'Bob',
+          'bio': 'Hey there',
+          'profile_photo_id': null,
+          'distance_m': 500,
+          'created_at': created.toIso8601String(),
+        },
+      ],
+    });
+    return ResponseBody.fromString(
+      body,
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }

@@ -11,6 +11,7 @@ import '../location/location_service.dart';
 import '../presence/presence_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
+import '../utils/distance_format.dart';
 import 'profile_drawer.dart' show ownProfileProvider;
 import 'profile_screen.dart' show UserProfile;
 
@@ -24,6 +25,7 @@ class NearbyUser {
   final String? profilePhotoUrl;
   final double distanceM;
   final bool isVerified;
+  final String? createdAt; // ISO 8601 from /grid/nearby users[i].created_at (T5.2 idx, T5.8 M1)
 
   const NearbyUser({
     required this.id,
@@ -34,6 +36,7 @@ class NearbyUser {
     this.profilePhotoUrl,
     required this.distanceM,
     this.isVerified = false,
+    this.createdAt,
   });
 
   factory NearbyUser.fromJson(Map<String, dynamic> json) {
@@ -46,15 +49,28 @@ class NearbyUser {
       profilePhotoUrl: json['profile_photo_url'] as String?,
       distanceM: (json['distance_m'] as num).toDouble(),
       isVerified: json['verified'] == true,
+      createdAt: json['created_at'] as String?,
     );
   }
 
-  String get distanceText {
-    if (distanceM < 1000) {
-      return '${distanceM.round()} m';
-    }
-    return '${(distanceM / 1000).toStringAsFixed(1)} km';
+  /// True when the user account is < 7 days old (NUEVO badge gate).
+  bool get isNew {
+    final iso = createdAt;
+    if (iso == null || iso.isEmpty) return false;
+    final parsed = DateTime.tryParse(iso);
+    if (parsed == null) return false;
+    return DateTime.now().difference(parsed).inDays < 7;
   }
+
+  /// Distance label — delegates to the shared `formatDistance` utility
+  /// (T5.6) so the cascade, grid search, and any future screen stay consistent.
+  /// Backward-compatible no-arg getter defaults to metric (units=0) so other
+  /// call sites (e.g. grid_search_screen) keep compiling without changes.
+  String get distanceText => formatDistance(distanceM.round(), 0);
+
+  /// Units-aware variant: caller passes the units int (0=metric, 1=imperial)
+  /// from `unitsProvider` (T5.6 + T5.9).
+  String distanceLabel(int units) => formatDistance(distanceM.round(), units);
 }
 
 /// Common tribe options for filter chips.
@@ -100,6 +116,12 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   bool _showFavoritesOnly = false;
   bool _onlineOnly = false;
   Set<String> _favoriteIds = {};
+
+  // ── New state (T5.9) ───────────────────────────────────────────────────────
+  // heartbeats-based "right now" filter (last_seen_at < now-30min).
+  // Distinct from the /right-now PAGE (a separate feature) which stays
+  // reachable from the Boost/Right Now FAB.
+  bool _rightNow = false;
 
   @override
   void initState() {
@@ -168,7 +190,9 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       queryParams['looking_for'] = _lookingFor;
     }
     if (_searchQuery.isNotEmpty) queryParams['q'] = _searchQuery;
+    if (_showFavoritesOnly) queryParams['favorites_only'] = true; // T5.9: server-side
     if (_onlineOnly) queryParams['online_only'] = true;
+    if (_rightNow) queryParams['right_now'] = true; // T5.9: heartbeats-based filter
 
     final response = await dio.get<Map<String, dynamic>>(
       '/grid/nearby',
@@ -197,17 +221,32 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       _searchQuery.isNotEmpty ||
       _distanceKm != 5 ||
       _showFavoritesOnly ||
-      _onlineOnly;
+      _onlineOnly ||
+      _rightNow; // T5.9: chip-active state propagates to filtros-band highlight
 
   void _toggleFavorites() {
     setState(() {
       _showFavoritesOnly = !_showFavoritesOnly;
+      // T5.9: refetch so the server-side `favorites_only=true` actually runs.
+      // Without this, the chip flips but the API still returns the full set
+      // (the old client-side filter via _favoriteIds was the only path).
+      _nearbyUsersFuture = _fetchNearbyUsers();
     });
   }
 
   void _toggleOnlineOnly() {
     setState(() {
       _onlineOnly = !_onlineOnly;
+      _nearbyUsersFuture = _fetchNearbyUsers();
+    });
+  }
+
+  // T5.9: toggles the heartbeats-based "right now" filter (last_seen_at
+  // within 30min). Distinct from the `/right-now` page, which is reachable
+  // from the FAB and is for posting explicit `right_now_intents`.
+  void _toggleRightNow() {
+    setState(() {
+      _rightNow = !_rightNow;
       _nearbyUsersFuture = _fetchNearbyUsers();
     });
   }
@@ -526,9 +565,10 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
           ),
           const SizedBox(width: 8),
           FilterChipPill(
-            label: l10n.rightNow,
-            active: false,
-            onTap: () => context.go('/right-now'),
+            icon: Icons.bolt,
+            label: l10n.filterRightNow, // T5.7 key: 'Ahora' / 'Right now'
+            active: _rightNow,
+            onTap: _toggleRightNow,
           ),
         ],
       ),
@@ -1075,6 +1115,34 @@ class _UserCard extends ConsumerWidget {
                     Icons.check,
                     color: Colors.black,
                     size: 11,
+                  ),
+                ),
+              ),
+
+            // NUEVO badge (top left) — T5.9: shown for accounts < 7 days old.
+            // Duplicates the inline badge in profile_detail_screen.dart
+            // (T5.10 will extract a shared widget if a 3rd caller shows up).
+            if (user.isNew)
+              Positioned(
+                top: 5,
+                left: 5,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: VibraTheme.kYellow,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    AppLocalizations.of(context)!.badgeNew,
+                    style: const TextStyle(
+                      color: VibraTheme.kBg,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),

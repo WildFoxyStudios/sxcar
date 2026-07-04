@@ -596,3 +596,31 @@ async fn unauthorized_returns_401() {
         .unwrap();
     assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
 }
+
+#[tokio::test]
+async fn shared_empty_for_new_user() {
+    let app = test_app().await;
+
+    // Register a fresh user — no shares exist for them.
+    let email = unique_email();
+    let (st, body) = post(
+        &app,
+        "/auth/register",
+        serde_json::json!({
+            "email": email,
+            "password": "secret123",
+            "dob": "1990-01-01",
+            "consents": ["tos", "privacy"]
+        }),
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED);
+    let token = body["access"].as_str().unwrap().to_string();
+
+    // GET /albums/shared → 200 with empty list.
+    let (st, body) = get(&app, "/albums/shared", &token).await;
+    assert_eq!(st, StatusCode::OK);
+    let albums = body["albums"].as_array().unwrap();
+    assert_eq!(albums.len(), 0, "new user has no shared albums");
+}

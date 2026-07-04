@@ -7,6 +7,7 @@ pub async fn patch_profile_meta(
     pool: &Pool,
     user_id: uuid::Uuid,
     details: Option<&serde_json::Value>,
+    show_age: Option<bool>,
     show_role: Option<bool>,
     show_tribes: Option<bool>,
     show_position: Option<bool>,
@@ -19,6 +20,15 @@ pub async fn patch_profile_meta(
             "UPDATE profiles SET details = $2 WHERE user_id = $1",
             user_id,
             d,
+        )
+        .execute(pool)
+        .await?;
+    }
+    if let Some(v) = show_age {
+        sqlx::query!(
+            "UPDATE profiles SET show_age = $2 WHERE user_id = $1",
+            user_id,
+            v,
         )
         .execute(pool)
         .await?;

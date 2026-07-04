@@ -1,8 +1,19 @@
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use serde_json::{json, Value};
+
+/// Tri-state deserializer for `details`: distinguishes JSON `null` from absent.
+/// serde's default `Option<Option<T>>` flattens JSON `null` to `None` (outer),
+/// collapsing the two states we need to differentiate for PUT validation.
+fn deserialize_tri_state<'de, D>(de: D) -> Result<Option<Option<Value>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let opt: Option<Value> = Option::deserialize(de)?;
+    Ok(Some(opt))
+}
 
 use crate::auth::AuthUser;
 use crate::AppState;
@@ -145,7 +156,9 @@ pub struct UpdateProfileReq {
     pub meet_at: Option<Vec<String>>,
     pub tags: Option<Vec<String>>,
     // NEW (T4.2):
-    pub details: Option<Value>,
+    #[serde(default, deserialize_with = "deserialize_tri_state")]
+    pub details: Option<Option<Value>>,
+    pub show_age: Option<bool>,
     pub show_role: Option<bool>,
     pub show_tribes: Option<bool>,
     pub show_position: Option<bool>,
@@ -173,9 +186,14 @@ pub async fn update_own(
     };
 
     // Validate details: must be a JSON object (not array/scalar) and <= 8 KB
-    // serialized. Returns 422 if not an object, 413 if too large.
-    let details = match &body.details {
-        Some(v) => {
+    // serialized. Returns 422 if not an object or if explicit null, 413 if too large.
+    // We use `Option<Option<Value>>` so that "field omitted" (outer None) and
+    // "field set to null" (Some(None)) are distinguishable: omitted is a no-op,
+    // explicit null is a validation error.
+    let details: Option<&Value> = match &body.details {
+        None => None,
+        Some(None) => return Err(StatusCode::UNPROCESSABLE_ENTITY),
+        Some(Some(v)) => {
             if !v.is_object() {
                 return Err(StatusCode::UNPROCESSABLE_ENTITY);
             }
@@ -183,9 +201,8 @@ pub async fn update_own(
             if serialized.len() > DETAILS_MAX_BYTES {
                 return Err(StatusCode::PAYLOAD_TOO_LARGE);
             }
-            Some(v.clone())
+            Some(v)
         }
-        None => None,
     };
 
     db::profiles::upsert_profile(
@@ -246,7 +263,8 @@ pub async fn update_own(
     db::profiles::patch_profile_meta(
         &state.pool,
         user_id,
-        details.as_ref(),
+        details,
+        body.show_age,
         body.show_role,
         body.show_tribes,
         body.show_position,

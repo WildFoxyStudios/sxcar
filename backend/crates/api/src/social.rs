@@ -8,6 +8,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::auth::AuthUser;
@@ -157,6 +158,28 @@ pub async fn list_taps_sent(
         .collect();
 
     Ok(Json(TapListResponse { taps }))
+}
+
+/// GET /taps/count
+///
+/// Returns `{count: N, types: {fire: n, wave: n, smile: n, hello: n}}`.
+/// `count` is the total taps received by the caller. `types` is a breakdown
+/// by `tap_type` (omits types with zero count).
+/// Used by the Interest screen taps counter and the chat banner.
+pub async fn get_taps_count(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+) -> Result<Json<Value>, StatusCode> {
+    let (count, types) = db::social::count_taps(&state.pool, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("count_taps error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(Json(json!({
+        "count": count,
+        "types": types,
+    })))
 }
 
 // ---------------------------------------------------------------------------

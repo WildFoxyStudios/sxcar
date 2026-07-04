@@ -100,6 +100,37 @@ pub async fn list_taps_sent(
     Ok(rows)
 }
 
+/// Total taps received by `target_id`, optionally broken down by type.
+/// Returns `(total, types_breakdown)` where types_breakdown maps
+/// `tap_type` -> count (e.g. {"fire": 2, "wave": 1}).
+/// Used by the Interest screen taps counter and chat banner.
+pub async fn count_taps(
+    pool: &sqlx::PgPool,
+    target_id: Uuid,
+) -> anyhow::Result<(i64, std::collections::HashMap<String, i64>)> {
+    let total: i64 = sqlx::query_scalar(
+        r#"SELECT COUNT(*) FROM taps WHERE to_user = $1"#,
+    )
+    .bind(target_id)
+    .fetch_one(pool)
+    .await?;
+
+    let type_rows: Vec<(String, i64)> = sqlx::query_as(
+        r#"SELECT tap_type, COUNT(*)
+           FROM taps WHERE to_user = $1
+           GROUP BY tap_type"#,
+    )
+    .bind(target_id)
+    .fetch_all(pool)
+    .await?;
+
+    let mut types = std::collections::HashMap::new();
+    for (k, v) in type_rows {
+        types.insert(k, v);
+    }
+    Ok((total, types))
+}
+
 // ---------------------------------------------------------------------------
 // Favorites
 // ---------------------------------------------------------------------------

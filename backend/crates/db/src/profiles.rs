@@ -252,6 +252,24 @@ pub async fn log_profile_view(
     Ok(())
 }
 
+/// Total number of distinct users who viewed this profile.
+/// Used by the Interest screen header counter.
+/// `COUNT(DISTINCT viewer_id)` because the same user may view many times.
+pub async fn count_profile_views(
+    pool: &Pool,
+    target_id: uuid::Uuid,
+) -> anyhow::Result<i64> {
+    let count: i64 = sqlx::query_scalar(
+        r#"SELECT COUNT(DISTINCT viewer_id)
+           FROM profile_views
+           WHERE target_id = $1"#,
+    )
+    .bind(target_id)
+    .fetch_one(pool)
+    .await?;
+    Ok(count)
+}
+
 /// List recent profile viewers for `target_id` ("Viewed Me"), newest first.
 pub async fn list_profile_views(
     pool: &Pool,

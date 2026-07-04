@@ -105,10 +105,12 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/notifications/preferences", get(notifications::get_preferences).put(notifications::update_preferences))
         .route("/privacy/preferences", get(privacy::get_preferences).put(privacy::update_preferences))
         .route("/taps", post(social::create_tap))
+        .route("/taps/count", get(social::get_taps_count))
         // Grindr Tier 1 endpoints
         .route("/heartbeat", post(grindr_t1::heartbeat))
         .route("/users/:id/status", get(grindr_t1::user_status))
         .route("/profile/views", get(grindr_t1::list_profile_views))
+        .route("/profile/views/count", get(profile::get_profile_views_count))
         .route("/profile/health", get(grindr_t1::get_health).put(grindr_t1::update_health))
         .route("/profile/verify", post(grindr_t1::submit_verification))
         .route("/profile/verify/status", get(grindr_t1::verification_status))

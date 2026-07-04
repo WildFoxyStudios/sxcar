@@ -279,3 +279,25 @@ pub async fn get_by_id(
         "user": user_full_to_json(user, tribes, looking_for, meet_at, tags)
     })))
 }
+
+// ---------------------------------------------------------------------------
+// GET /profile/views/count
+// ---------------------------------------------------------------------------
+
+/// GET /profile/views/count
+///
+/// Returns the number of distinct users who viewed the authenticated user's profile.
+/// `COUNT(DISTINCT viewer_id)` — a single user viewing many times counts as 1.
+/// Used by the Interest screen header counter.
+pub async fn get_profile_views_count(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+) -> Result<Json<Value>, StatusCode> {
+    let count = db::profiles::count_profile_views(&state.pool, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("count_profile_views error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(Json(json!({ "count": count })))
+}

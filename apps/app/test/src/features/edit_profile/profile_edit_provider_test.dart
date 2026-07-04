@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/src/features/edit_profile/profile_edit_provider.dart';
@@ -22,32 +21,6 @@ UserProfile _makeProfile({
       tribes: tribes,
       details: details,
     );
-
-class _FakeDioInterceptor extends Interceptor {
-  final Map<String, dynamic>? responseBody;
-  final int statusCode;
-  _FakeDioInterceptor(this.responseBody, {this.statusCode = 200});
-
-  @override
-  void onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) {
-    if (responseBody != null) {
-      handler.resolve(Response(
-        requestOptions: options,
-        data: responseBody,
-        statusCode: statusCode,
-      ));
-    } else {
-      handler.next(options);
-    }
-  }
-}
-
-Dio _fakeDio(Map<String, dynamic>? body, {int statusCode = 200}) {
-  final dio = Dio();
-  dio.interceptors.add(_FakeDioInterceptor(body, statusCode: statusCode));
-  return dio;
-}
 
 void main() {
   group('ProfileEditNotifier', () {

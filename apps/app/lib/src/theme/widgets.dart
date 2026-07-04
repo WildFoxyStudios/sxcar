@@ -379,3 +379,229 @@ class FilterChipPill extends StatelessWidget {
     );
   }
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// UpsellCard
+// Pill-shaped card for upsell blocks. Default style = dark gradient; pass
+// `highlighted: true` for the yellow primary CTA style.
+// ────────────────────────────────────────────────────────────────────────────
+
+/// Upsell card used in the drawer and Tienda screen.
+///
+/// - Default: dark linear gradient (kSurface → kChip), radius 16
+/// - Highlighted: yellow linear gradient (kYellow → Color(0xFFFFD633))
+/// - Optional CTA pill at the bottom (highlighted → black bg + yellow text;
+///   default → yellow bg + black text)
+class UpsellCard extends StatelessWidget {
+  final Widget content;
+  final String? ctaLabel;
+  final VoidCallback? onTap;
+  final bool highlighted;
+
+  const UpsellCard({
+    super.key,
+    required this.content,
+    this.ctaLabel,
+    this.onTap,
+    this.highlighted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: highlighted
+            ? const LinearGradient(
+                colors: [VibraTheme.kYellow, Color(0xFFFFD633)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : const LinearGradient(
+                colors: [Color(0xFF1A1A1A), Color(0xFF2A2A2A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          content,
+          if (ctaLabel != null && onTap != null) ...[
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: highlighted ? Colors.black : VibraTheme.kYellow,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  ctaLabel!,
+                  style: TextStyle(
+                    color: highlighted ? VibraTheme.kYellow : Colors.black,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// PlanDurationCard
+// Duration card used in Tienda screen. Selected = yellow border; popular = grey
+// POPULAR tag; savings shown only when provided.
+// ────────────────────────────────────────────────────────────────────────────
+
+/// Plan duration card.
+///
+/// - Shape: rounded 14, padding 12
+/// - Unselected: kSurface bg, kDivider border
+/// - Selected: kYellow 2 px border, yellow tint overlay (Color(0x33FFCC00))
+/// - Optional savings badge "Ahorra N%" (or local equivalent) when [savingsPercent]
+///   is non-null
+/// - Optional popular badge (grey background, "POPULAR" label) when [popular]
+class PlanDurationCard extends StatelessWidget {
+  final String duration;
+  final String price;
+  final String? savingsPercent;
+  final bool popular;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  const PlanDurationCard({
+    super.key,
+    required this.duration,
+    required this.price,
+    this.savingsPercent,
+    this.popular = false,
+    this.selected = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        decoration: BoxDecoration(
+          color: selected
+              ? const Color(0x33FFCC00) // kYellow @ ~20% over kSurface
+              : VibraTheme.kSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? VibraTheme.kYellow : const Color(0xFF333333),
+            width: selected ? 2 : 1,
+          ),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  duration,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  price,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
+                ),
+                if (savingsPercent != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Ahorra $savingsPercent%',
+                    style: const TextStyle(
+                      color: Color(0xFF8E8E8E),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (popular)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF666666),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'POPULAR',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// NUEVOBadge
+// Small yellow rounded badge with text "NUEVO". Used in PODRÍA INTERESAR
+// suggestions and other new-content indicators.
+// ────────────────────────────────────────────────────────────────────────────
+
+/// Yellow "NUEVO" badge.
+///
+/// - Background: kYellow
+/// - Text: black, bold, [size] (default 11 sp)
+/// - Padding: horizontal 8, vertical 2
+/// - Radius: 6
+class NUEVOBadge extends StatelessWidget {
+  final double size;
+
+  const NUEVOBadge({super.key, this.size = 11});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: VibraTheme.kYellow,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        'NUEVO',
+        style: TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.w700,
+          fontSize: size,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}

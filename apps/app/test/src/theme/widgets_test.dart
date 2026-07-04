@@ -371,4 +371,161 @@ void main() {
       expect(decoration?.color, equals(VibraTheme.kChip));
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // UpsellCard
+  // ---------------------------------------------------------------------------
+
+  group('UpsellCard', () {
+    testWidgets('renders content', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const UpsellCard(
+          content: Text('Inner content'),
+        ),
+      ));
+      expect(find.text('Inner content'), findsOneWidget);
+    });
+
+    testWidgets('shows CTA when ctaLabel + onTap provided', (tester) async {
+      await tester.pumpWidget(_wrap(
+        UpsellCard(
+          content: const Text('Body'),
+          ctaLabel: 'Ver planes',
+          onTap: () {},
+        ),
+      ));
+      expect(find.text('Ver planes'), findsOneWidget);
+    });
+
+    testWidgets('hides CTA when ctaLabel is null', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const UpsellCard(content: Text('Body')),
+      ));
+      expect(find.byType(InkWell), findsNothing);
+    });
+
+    testWidgets('invokes onTap when CTA pressed', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(_wrap(
+        UpsellCard(
+          content: const Text('Body'),
+          ctaLabel: 'Tap me',
+          onTap: () => taps++,
+        ),
+      ));
+      await tester.tap(find.text('Tap me'));
+      await tester.pump();
+      expect(taps, 1);
+    });
+
+    testWidgets('highlighted variant uses yellow gradient', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const UpsellCard(
+          content: Text('Body'),
+          highlighted: true,
+        ),
+      ));
+      // Find a Container that has a LinearGradient with yellow stop.
+      final container = tester.widget<Container>(find.descendant(
+        of: find.byType(UpsellCard),
+        matching: find.byType(Container),
+      ).first);
+      final decoration = container.decoration as BoxDecoration;
+      final gradient = decoration.gradient as LinearGradient;
+      expect(gradient.colors.first, VibraTheme.kYellow);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // PlanDurationCard
+  // ---------------------------------------------------------------------------
+
+  group('PlanDurationCard', () {
+    testWidgets('renders duration + price', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const PlanDurationCard(
+          duration: '30 DÍAS',
+          price: '€8.99',
+        ),
+      ));
+      expect(find.text('30 DÍAS'), findsOneWidget);
+      expect(find.text('€8.99'), findsOneWidget);
+    });
+
+    testWidgets('shows savings when provided', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const PlanDurationCard(
+          duration: '1 AÑO',
+          price: '€49.99',
+          savingsPercent: '55',
+        ),
+      ));
+      expect(find.text('Ahorra 55%'), findsOneWidget);
+    });
+
+    testWidgets('shows POPULAR badge when popular', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const PlanDurationCard(
+          duration: '30 DÍAS',
+          price: '€8.99',
+          popular: true,
+        ),
+      ));
+      expect(find.text('POPULAR'), findsOneWidget);
+    });
+
+    testWidgets('selected uses yellow border', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const PlanDurationCard(
+          duration: '30 DÍAS',
+          price: '€8.99',
+          selected: true,
+        ),
+      ));
+      final container = tester.widget<Container>(find.descendant(
+        of: find.byType(PlanDurationCard),
+        matching: find.byType(Container),
+      ).first);
+      final decoration = container.decoration as BoxDecoration;
+      final border = decoration.border as Border;
+      expect(border.top.color, VibraTheme.kYellow);
+    });
+
+    testWidgets('invokes onTap', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(_wrap(
+        PlanDurationCard(
+          duration: '30 DÍAS',
+          price: '€8.99',
+          onTap: () => taps++,
+        ),
+      ));
+      await tester.tap(find.byType(PlanDurationCard));
+      await tester.pump();
+      expect(taps, 1);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // NUEVOBadge
+  // ---------------------------------------------------------------------------
+
+  group('NUEVOBadge', () {
+    testWidgets('renders NUEVO text', (tester) async {
+      await tester.pumpWidget(_wrap(const NUEVOBadge()));
+      expect(find.text('NUEVO'), findsOneWidget);
+    });
+
+    testWidgets('uses default size 11', (tester) async {
+      await tester.pumpWidget(_wrap(const NUEVOBadge()));
+      final text = tester.widget<Text>(find.text('NUEVO'));
+      expect(text.style?.fontSize, 11);
+    });
+
+    testWidgets('respects custom size', (tester) async {
+      await tester.pumpWidget(_wrap(const NUEVOBadge(size: 14)));
+      final text = tester.widget<Text>(find.text('NUEVO'));
+      expect(text.style?.fontSize, 14);
+    });
+  });
 }

@@ -13,6 +13,7 @@ pub mod health;
 pub mod media;
 pub mod msgpack;
 pub mod notifications;
+pub mod privacy;
 pub mod profile;
 pub mod chat_broker;
 pub mod ratelimit;
@@ -102,6 +103,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/albums/:id/share/:user_id", delete(albums::unshare))
         .route("/notifications/register", post(notifications::register_device))
         .route("/notifications/preferences", get(notifications::get_preferences).put(notifications::update_preferences))
+        .route("/privacy/preferences", get(privacy::get_preferences).put(privacy::update_preferences))
         .route("/taps", post(social::create_tap))
         // Grindr Tier 1 endpoints
         .route("/heartbeat", post(grindr_t1::heartbeat))

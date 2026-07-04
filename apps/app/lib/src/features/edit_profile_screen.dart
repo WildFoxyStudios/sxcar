@@ -1,17 +1,31 @@
 import 'dart:async';
 
+import 'package:app/l10n/gen/app_localizations.dart';
+import 'package:app/src/auth/auth_provider.dart';
+import 'package:app/src/features/edit_profile/add_trip_screen.dart';
+import 'package:app/src/features/edit_profile/practices_screen.dart';
+import 'package:app/src/features/edit_profile/profile_edit_provider.dart';
+import 'package:app/src/features/edit_profile/sheets.dart';
+import 'package:app/src/features/edit_profile/vaccines_screen.dart';
+import 'package:app/src/features/profile_screen.dart' show UserProfile;
+import 'package:app/src/health/health_service.dart';
+import 'package:app/src/media/media_service.dart';
+import 'package:app/src/nsfw/nsfw_service.dart';
+import 'package:app/src/theme/app_theme.dart';
+import 'package:app/src/theme/widgets.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import '../auth/auth_provider.dart';
-import '../health/health_service.dart';
-import '../media/media_service.dart';
-import '../nsfw/nsfw_service.dart';
-import 'profile_screen.dart' show UserProfile;
 
 /// Full editing form for the user's own profile at route /edit-profile.
+///
+/// Rewrite (T4.10): Riverpod-backed state for non-health fields via
+/// [ProfileEditNotifier]; health fields (HIV / last tested / PrEP) remain
+/// local because the provider does not handle /profile/health. Wires the
+/// 11 T4.7 selector sheets, 3 T4.8 details sub-screens, T4.5 i18n keys and
+/// VibraTheme v3 tokens.
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -20,98 +34,34 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
-  UserProfile? _profile;
+  // ── Local state for fields NOT yet routed through ProfileEditProvider ────
   bool _isLoading = true;
-  bool _isSaving = false;
-  bool _isUploadingPhoto = false;
   String? _error;
+  bool _isUploadingPhoto = false;
+  bool _isSavingHealth = false;
 
-  // Controllers
+  // Text controllers for the remaining inline text fields (displayName, bio,
+  // ethnicity, pronouns). They are pushed into the draft on every change so
+  // the provider stays the single source of truth for save().
   final _displayNameController = TextEditingController();
   final _bioController = TextEditingController();
-  final _heightController = TextEditingController();
-  final _weightController = TextEditingController();
-  final _ethnicityController = TextEditingController();
-  final _pronounsController = TextEditingController();
 
-  // Dropdown values
-  String? _bodyType;
-  String? _position;
-  String? _relationshipStatus;
-
-  // Multi-select values
-  final Set<String> _selectedTribes = {};
-  final Set<String> _selectedLookingFor = {};
-
-  // Health fields
+  // Health fields — T4.9 did not extend the provider, so they stay local.
   String? _hivStatus;
   DateTime? _lastTestedOn;
   bool? _prep;
-  bool _isSavingHealth = false;
-
-  static const List<String> _bodyTypes = [
-    'Slim',
-    'Average',
-    'Athletic',
-    'Muscular',
-    'Stocky',
-    'Large',
-    'Other',
-  ];
-
-  static const List<String> _positions = [
-    'Top',
-    'Bottom',
-    'Versatile',
-    'Side',
-    'Not Sure',
-  ];
-
-  static const List<String> _relationshipStatuses = [
-    'Single',
-    'Dating',
-    'Open Relationship',
-    'Committed',
-    'Married',
-    'Poly',
-  ];
-
-  static const List<String> _tribeOptions = [
-    'Bear',
-    'Twink',
-    'Jock',
-    'Otter',
-    'Daddy',
-    'Geek',
-    'Leather',
-    'Pup',
-    'Muscle',
-    'Chub',
-    'Trans',
-    'Queer',
-    'Drag',
-    'Furry',
-    'Military',
-    'Poz',
-    'Clean',
-    'Discreet',
-  ];
-
-  static const List<String> _lookingForOptions = [
-    'Chat',
-    'Dates',
-    'Friends',
-    'Networking',
-    'Relationship',
-    'Right Now',
-    'Open to Explore',
-  ];
 
   static const List<String> _hivStatusOptions = [
     'Unknown',
     'Negative',
     'Positive',
     'Prefer not to say',
+  ];
+
+  static const List<String> _tribeOptions = [
+    'Bear', 'Twink', 'Jock', 'Otter', 'Daddy', 'Geek', 'Leather', 'Pup',
+    'Muscle', 'Chub', 'Trans', 'Queer', 'Drag', 'Furry', 'Military', 'Poz',
+    'Clean', 'Discreet',
   ];
 
   @override
@@ -124,10 +74,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void dispose() {
     _displayNameController.dispose();
     _bioController.dispose();
-    _heightController.dispose();
-    _weightController.dispose();
-    _ethnicityController.dispose();
-    _pronounsController.dispose();
     super.dispose();
   }
 
@@ -143,38 +89,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final userJson = response.data!['user'] as Map<String, dynamic>;
       final profile = UserProfile.fromJson(userJson);
 
-      setState(() {
-        _profile = profile;
-        _isLoading = false;
+      // Hydrate the Riverpod-backed edit provider.
+      ref.read(profileEditProvider.notifier).loadFrom(profile);
 
-        // Pre-fill controllers
+      if (!mounted) return;
+      setState(() {
         _displayNameController.text = profile.displayName ?? '';
         _bioController.text = profile.bio ?? '';
-        _heightController.text = profile.heightCm?.toString() ?? '';
-        _weightController.text = profile.weightKg?.toString() ?? '';
-        _ethnicityController.text = profile.ethnicity ?? '';
-        _pronounsController.text = profile.pronouns ?? '';
-
-        // Pre-fill dropdowns
-        _bodyType = profile.bodyType;
-        _position = profile.position;
-        _relationshipStatus = profile.relationshipStatus;
-
-        // Pre-fill multi-select
-        _selectedTribes.addAll(profile.tribes);
-        _selectedLookingFor.addAll(profile.lookingFor);
-
-        // Load health fields separately; ignore failures so the main
-        // profile form still works if /profile/health is unreachable.
+        _isLoading = false;
+        // Load health separately so a /profile/health 404 does not block
+        // the main form.
         unawaited(_loadHealth());
       });
     } on DioException catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _error =
             'Failed to load profile: ${e.response?.statusCode ?? e.message}';
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _error = 'Failed to load profile: $e';
@@ -199,7 +134,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         }
       });
     } catch (_) {
-      // Best-effort — leave fields null if endpoint fails.
+      // Best-effort — leave health fields null if endpoint fails.
     }
   }
 
@@ -230,19 +165,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             content: Text(
               'This image appears to violate our content guidelines.',
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kBadgeRed,
           ),
         );
         return;
       }
 
       final mediaService = MediaService(ref.read(dioProvider));
-      // Backend allows only kind ∈ {profile, album, verification}.
-      // 'profile_photo' was rejected with HTTP 400. Use 'profile' for
-      // primary profile pictures.
       final uploadUrl = await mediaService.getUploadUrl(kind: 'profile');
       await mediaService.uploadToR2(uploadUrl.putUrl, bytes);
-      // Update profile via API with the new photo key
+
+      // Update profile via API with the new photo key.
       final dio = ref.read(dioProvider);
       final updateResponse = await dio.put<Map<String, dynamic>>(
         '/profile',
@@ -251,128 +184,122 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final userJson = updateResponse.data!['user'] as Map<String, dynamic>;
       final updatedProfile = UserProfile.fromJson(userJson);
 
-      setState(() {
-        _profile = updatedProfile;
-        _isUploadingPhoto = false;
-      });
+      ref.read(profileEditProvider.notifier).loadFrom(updatedProfile);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile photo updated!'),
-            backgroundColor: Color(0xFF2E7D32),
-          ),
-        );
-      }
+      if (!mounted) return;
+      setState(() => _isUploadingPhoto = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile photo updated!'),
+          backgroundColor: Color(0xFF2E7D32),
+        ),
+      );
     } on DioException catch (e) {
+      if (!mounted) return;
       setState(() => _isUploadingPhoto = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Photo upload failed: ${e.response?.statusCode ?? e.message}',
-            ),
-            backgroundColor: Colors.red,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Photo upload failed: ${e.response?.statusCode ?? e.message}',
           ),
-        );
-      }
+          backgroundColor: VibraTheme.kBadgeRed,
+        ),
+      );
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isUploadingPhoto = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Photo upload failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Photo upload failed: $e'),
+          backgroundColor: VibraTheme.kBadgeRed,
+        ),
+      );
     }
   }
 
-  Future<void> _saveProfile() async {
-    setState(() => _isSaving = true);
-
-    try {
-      final dio = ref.read(dioProvider);
-      final body = <String, dynamic>{
-        'display_name': _displayNameController.text.isEmpty
+  /// Mirror a text controller value into the draft without disturbing any
+  /// other field.
+  void _pushTextToDraft() {
+    final notifier = ref.read(profileEditProvider.notifier);
+    notifier.updateDraft(
+      (p) => UserProfile(
+        id: p.id,
+        email: p.email,
+        emailVerified: p.emailVerified,
+        status: p.status,
+        role: p.role,
+        createdAt: p.createdAt,
+        profilePhotoId: p.profilePhotoId,
+        profilePhotoUrl: p.profilePhotoUrl,
+        isVerified: p.isVerified,
+        displayName: _displayNameController.text.isEmpty
             ? null
             : _displayNameController.text,
-        'bio': _bioController.text.isEmpty ? null : _bioController.text,
-        'height_cm': _heightController.text.isEmpty
-            ? null
-            : int.tryParse(_heightController.text),
-        'weight_kg': _weightController.text.isEmpty
-            ? null
-            : int.tryParse(_weightController.text),
-        'body_type': _bodyType,
-        'relationship_status': _relationshipStatus,
-        'position': _position,
-        'ethnicity': _ethnicityController.text.isEmpty
-            ? null
-            : _ethnicityController.text,
-        'pronouns': _pronounsController.text.isEmpty
-            ? null
-            : _pronounsController.text,
-        'tribes': _selectedTribes.toList(),
-        'looking_for': _selectedLookingFor.toList(),
-      };
+        bio: _bioController.text.isEmpty ? null : _bioController.text,
+        birthdate: p.birthdate,
+        heightCm: p.heightCm,
+        weightKg: p.weightKg,
+        bodyType: p.bodyType,
+        relationshipStatus: p.relationshipStatus,
+        position: p.position,
+        ethnicity: p.ethnicity,
+        pronouns: p.pronouns,
+        tribes: p.tribes,
+        lookingFor: p.lookingFor,
+        meetAt: p.meetAt,
+        tags: p.tags,
+        details: p.details,
+        showAge: p.showAge,
+        showRole: p.showRole,
+        showTribes: p.showTribes,
+        showPosition: p.showPosition,
+        showEthnicity: p.showEthnicity,
+        showRelationshipStatus: p.showRelationshipStatus,
+        showSocialLinks: p.showSocialLinks,
+      ),
+    );
+  }
 
-      final response = await dio.put<Map<String, dynamic>>(
-        '/profile',
-        data: body,
+  Future<void> _saveAll() async {
+    // Push latest text values into the draft before persisting.
+    _pushTextToDraft();
+
+    await ref.read(profileEditProvider.notifier).save();
+    final stateAfter = ref.read(profileEditProvider);
+    if (stateAfter.status == ProfileEditStatus.error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              stateAfter.errorMessage ?? 'Failed to save.'),
+          backgroundColor: VibraTheme.kBadgeRed,
+        ),
       );
+      return;
+    }
 
-      final userJson = response.data!['user'] as Map<String, dynamic>;
-      final updatedProfile = UserProfile.fromJson(userJson);
-
-      // Also save the health fields. If this fails, still consider the
-      // main profile save a success and surface a warning snackbar.
-      await _saveHealth(silent: true);
-
-      setState(() {
-        _profile = updatedProfile;
-        _isSaving = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile saved!'),
-            backgroundColor: Color(0xFF2E7D32),
-          ),
-        );
-        context.pop();
-      }
-    } on DioException catch (e) {
-      setState(() => _isSaving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to save: ${e.response?.statusCode ?? e.message}',
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      setState(() => _isSaving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+    // Health PUT — same as before; silent on success when both succeed.
+    final ok = await _saveHealth(silent: true);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile saved!'),
+          backgroundColor: Color(0xFF2E7D32),
+        ),
+      );
+      // Pop only if a GoRouter is in scope (skip in widget tests).
+      try {
+        if (GoRouter.maybeOf(context) != null) {
+          context.pop();
+        }
+      } catch (_) {
+        // GoRouter not present; just stay on screen.
       }
     }
   }
 
-  /// PUT /profile/health with the current form values.
-  /// Returns true on success, false on failure. When [silent] is true, no
-  /// snackbar is shown — used by the main Save flow so the user only sees
-  /// one confirmation even if both requests succeed.
   Future<bool> _saveHealth({bool silent = false}) async {
     setState(() => _isSavingHealth = true);
     try {
@@ -385,8 +312,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         lastTestedOn: lastTestedStr,
         prep: _prep,
       ));
+      if (!mounted) return true;
       setState(() => _isSavingHealth = false);
-      if (!silent && mounted) {
+      if (!silent) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Health info saved!'),
@@ -396,25 +324,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
       return true;
     } on DioException catch (e) {
+      if (!mounted) return false;
       setState(() => _isSavingHealth = false);
-      if (!silent && mounted) {
+      if (!silent) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               'Failed to save health: ${e.response?.statusCode ?? e.message}',
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kBadgeRed,
           ),
         );
       }
       return false;
     } catch (e) {
+      if (!mounted) return false;
       setState(() => _isSavingHealth = false);
-      if (!silent && mounted) {
+      if (!silent) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to save health: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kBadgeRed,
           ),
         );
       }
@@ -436,298 +366,345 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  void _updateDraftField(UserProfile Function(UserProfile) mutator) {
+    ref.read(profileEditProvider.notifier).updateDraft(mutator);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Profile')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    _error!,
-                    style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _loadProfile,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            )
-          : _buildForm(theme),
+              ? _buildError()
+              : _buildForm(),
+      bottomNavigationBar: _buildSaveBar(),
     );
   }
 
-  Widget _buildForm(ThemeData theme) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Photo section
-        Center(
-          child: Stack(
-            children: [
-              CircleAvatar(
-                radius: 48,
-                backgroundColor: Colors.grey.shade800,
-                backgroundImage: _profile?.profilePhotoUrl != null
-                    ? NetworkImage(_profile!.profilePhotoUrl!)
-                    : null,
-                child: _profile?.profilePhotoUrl == null
-                    ? Text(
-                        (_profile?.displayName ?? _profile?.email ?? 'U')[0]
-                            .toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 32,
-                          color: theme.colorScheme.primary,
-                        ),
-                      )
-                    : null,
+  Widget _buildError() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline,
+              size: 48, color: VibraTheme.kBadgeRed),
+          const SizedBox(height: 16),
+          Text(
+            _error!,
+            style: const TextStyle(color: VibraTheme.kBadgeRed),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: _loadProfile,
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSaveBar() {
+    final state = ref.watch(profileEditProvider);
+    final l10n = AppLocalizations.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(VibraTheme.kPadPage),
+        child: SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: (state.isSaving || _isSavingHealth) ? null : _saveAll,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: VibraTheme.kYellow,
+              foregroundColor: Colors.black,
+              disabledBackgroundColor: VibraTheme.kYellow,
+              disabledForegroundColor: Colors.black,
+              minimumSize: const Size.fromHeight(52),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
-              if (_isUploadingPhoto)
-                CircleAvatar(
-                  radius: 48,
-                  backgroundColor: Colors.black54,
-                  child: const CircularProgressIndicator(
-                    color: Color(0xFFF4C542),
+            ),
+            child: (state.isSaving || _isSavingHealth)
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.black,
+                    ),
+                  )
+                : Text(
+                    l10n?.editProfileSave ?? 'Save',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-            ],
           ),
         ),
-        const SizedBox(height: 8),
-        Center(
-          child: _isUploadingPhoto
-              ? const Text(
-                  'Uploading...',
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
-                )
-              : TextButton.icon(
-                  onPressed: _pickAndUploadPhoto,
-                  icon: const Icon(Icons.camera_alt, size: 18),
-                  label: const Text('Change Photo'),
-                ),
-        ),
+      ),
+    );
+  }
+
+  Widget _buildForm() {
+    final state = ref.watch(profileEditProvider);
+    final draft = state.draft;
+    final l10n = AppLocalizations.of(context);
+
+    if (draft == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(VibraTheme.kPadPage),
+      children: [
+        _buildPhotoSection(draft),
         const SizedBox(height: 24),
 
-        // Display Name
+        // ── Basics ────────────────────────────────────────────────────────
+        _buildSectionHeader(
+            (l10n?.editProfileSectionBasics ?? 'Basic info').toUpperCase()),
+        const SizedBox(height: 8),
         _buildLabel('Display Name'),
         const SizedBox(height: 4),
         TextField(
           controller: _displayNameController,
-          style: const TextStyle(color: Colors.white),
+          onChanged: (_) => _pushTextToDraft(),
+          style: const TextStyle(color: VibraTheme.kTextPrimary),
           decoration: _inputDecoration('Your display name'),
         ),
-        const SizedBox(height: 16),
-
-        // Bio
+        const SizedBox(height: 12),
         _buildLabel('Bio'),
         const SizedBox(height: 4),
         TextField(
           controller: _bioController,
           maxLines: 3,
-          style: const TextStyle(color: Colors.white),
+          onChanged: (_) => _pushTextToDraft(),
+          style: const TextStyle(color: VibraTheme.kTextPrimary),
           decoration: _inputDecoration('Tell people about yourself'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
 
-        // Height + Weight row
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildLabel('Height (cm)'),
-                  const SizedBox(height: 4),
-                  TextField(
-                    controller: _heightController,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration('cm'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildLabel('Weight (kg)'),
-                  const SizedBox(height: 4),
-                  TextField(
-                    controller: _weightController,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration('kg'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Body Type dropdown
-        _buildLabel('Body Type'),
-        const SizedBox(height: 4),
-        DropdownButtonFormField<String>(
-          initialValue: _bodyType,
-          dropdownColor: const Color(0xFF1A1A1A),
-          style: const TextStyle(color: Colors.white),
-          decoration: _inputDecoration('Select body type'),
-          items: _bodyTypes
-              .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-              .toList(),
-          onChanged: (val) => setState(() => _bodyType = val),
-        ),
-        const SizedBox(height: 16),
-
-        // Position dropdown
-        _buildLabel('Position'),
-        const SizedBox(height: 4),
-        DropdownButtonFormField<String>(
-          initialValue: _position,
-          dropdownColor: const Color(0xFF1A1A1A),
-          style: const TextStyle(color: Colors.white),
-          decoration: _inputDecoration('Select position'),
-          items: _positions
-              .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-              .toList(),
-          onChanged: (val) => setState(() => _position = val),
-        ),
-        const SizedBox(height: 16),
-
-        // Relationship Status dropdown
-        _buildLabel('Relationship Status'),
-        const SizedBox(height: 4),
-        DropdownButtonFormField<String>(
-          initialValue: _relationshipStatus,
-          dropdownColor: const Color(0xFF1A1A1A),
-          style: const TextStyle(color: Colors.white),
-          decoration: _inputDecoration('Select relationship status'),
-          items: _relationshipStatuses
-              .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-              .toList(),
-          onChanged: (val) => setState(() => _relationshipStatus = val),
-        ),
-        const SizedBox(height: 16),
-
-        // Ethnicity
-        _buildLabel('Ethnicity'),
-        const SizedBox(height: 4),
-        TextField(
-          controller: _ethnicityController,
-          style: const TextStyle(color: Colors.white),
-          decoration: _inputDecoration('e.g. Caucasian, Latino, Asian'),
-        ),
-        const SizedBox(height: 16),
-
-        // Pronouns
-        _buildLabel('Pronouns'),
-        const SizedBox(height: 4),
-        TextField(
-          controller: _pronounsController,
-          style: const TextStyle(color: Colors.white),
-          decoration: _inputDecoration('e.g. He/Him, They/Them'),
-        ),
-        const SizedBox(height: 20),
-
-        // Tribes multi-select
-        _buildSectionHeader('Tribes'),
+        // ── Appearance ────────────────────────────────────────────────────
+        _buildSectionHeader(
+            (l10n?.editProfileSectionAppearance ?? 'Appearance').toUpperCase()),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _tribeOptions.map((tribe) {
-            final selected = _selectedTribes.contains(tribe);
-            return FilterChip(
-              label: Text(tribe),
-              selected: selected,
-              onSelected: (val) {
-                setState(() {
-                  if (val) {
-                    _selectedTribes.add(tribe);
-                  } else {
-                    _selectedTribes.remove(tribe);
-                  }
-                });
-              },
-              selectedColor: theme.colorScheme.primary.withValues(alpha: 0.3),
-              checkmarkColor: theme.colorScheme.primary,
-              backgroundColor: Colors.grey.shade800,
-              labelStyle: TextStyle(
-                color: selected ? theme.colorScheme.primary : Colors.white70,
-                fontSize: 13,
-              ),
-              side: BorderSide(
-                color: selected
-                    ? theme.colorScheme.primary
-                    : Colors.grey.shade700,
-              ),
-            );
-          }).toList(),
+        _buildSelectorListTile<String>(
+          label: 'Height',
+          current: draft.heightCm?.toString(),
+          placeholder: 'Select height',
+          onTap: () async {
+            final picked = await showHeightSheet(context, currentCm: draft.heightCm);
+            if (picked != null) {
+              _updateDraftField((p) => _copyWithHeight(p, picked));
+            }
+          },
         ),
-        const SizedBox(height: 20),
+        _buildSelectorListTile<String>(
+          label: 'Weight',
+          current: draft.weightKg?.toString(),
+          placeholder: 'Select weight',
+          onTap: () async {
+            final picked = await showWeightSheet(context, currentKg: draft.weightKg);
+            if (picked != null) {
+              _updateDraftField((p) => _copyWithWeight(p, picked));
+            }
+          },
+        ),
+        _buildSelectorListTile<String>(
+          label: 'Body Type',
+          current: draft.bodyType,
+          placeholder: 'Select body type',
+          onTap: () async {
+            final picked = await showBodyTypeSheet(context, current: draft.bodyType);
+            if (picked != null) {
+              _updateDraftField((p) => _copyWith(p, bodyType: picked));
+            }
+          },
+        ),
+        _buildSelectorListTile<String>(
+          label: 'Ethnicity',
+          current: draft.ethnicity,
+          placeholder: 'Select ethnicity',
+          onTap: () async {
+            final picked =
+                await showEthnicitySheet(context, current: draft.ethnicity);
+            if (picked != null) {
+              _updateDraftField((p) => _copyWith(p, ethnicity: picked));
+            }
+          },
+        ),
+        _buildSelectorListTile<String>(
+          label: 'Pronouns',
+          current: draft.pronouns,
+          placeholder: 'Select pronouns',
+          onTap: () async {
+            final picked =
+                await showPronounsSheet(context, current: draft.pronouns);
+            if (picked != null) {
+              _updateDraftField((p) => _copyWith(p, pronouns: picked));
+            }
+          },
+        ),
+        const SizedBox(height: 24),
 
-        // Looking For multi-select
-        _buildSectionHeader('Looking For'),
+        // ── Tribes ────────────────────────────────────────────────────────
+        _buildSectionHeader(
+            (l10n?.editProfileSectionTribes ?? 'Tribes').toUpperCase()),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _lookingForOptions.map((lf) {
-            final selected = _selectedLookingFor.contains(lf);
-            return FilterChip(
-              label: Text(lf),
-              selected: selected,
-              onSelected: (val) {
-                setState(() {
-                  if (val) {
-                    _selectedLookingFor.add(lf);
-                  } else {
-                    _selectedLookingFor.remove(lf);
-                  }
-                });
-              },
-              selectedColor: theme.colorScheme.primary.withValues(alpha: 0.3),
-              checkmarkColor: theme.colorScheme.primary,
-              backgroundColor: Colors.grey.shade800,
-              labelStyle: TextStyle(
-                color: selected ? theme.colorScheme.primary : Colors.white70,
-                fontSize: 13,
-              ),
-              side: BorderSide(
-                color: selected
-                    ? theme.colorScheme.primary
-                    : Colors.grey.shade700,
-              ),
-            );
-          }).toList(),
+        ChipMultiSelect(
+          options: _tribeOptions,
+          selected: draft.tribes.toSet(),
+          onChanged: (next) =>
+              _updateDraftField((p) => _copyWith(p, tribes: next.toList())),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
 
-        // Health section
-        _buildSectionHeader('Health'),
+        // ── Looking for ───────────────────────────────────────────────────
+        _buildSectionHeader(
+            (l10n?.editProfileSectionLookingFor ?? "What I'm looking for")
+                .toUpperCase()),
+        const SizedBox(height: 8),
+        _buildSelectorListTile<String>(
+          label: 'Looking For',
+          current: draft.lookingFor.isEmpty
+              ? null
+              : draft.lookingFor.join(', '),
+          placeholder: 'Select what you are looking for',
+          onTap: () async {
+            final picked = await showLookingForSheet(
+              context,
+              current: draft.lookingFor.toSet(),
+            );
+            if (picked != null) {
+              _updateDraftField(
+                  (p) => _copyWith(p, lookingFor: picked.toList()));
+            }
+          },
+        ),
+        _buildSelectorListTile<String>(
+          label: 'Meet At',
+          current:
+              draft.meetAt.isEmpty ? null : draft.meetAt.join(', '),
+          placeholder: 'Select where to meet',
+          onTap: () async {
+            final picked = await showMeetAtSheet(
+              context,
+              current: draft.meetAt.toSet(),
+            );
+            if (picked != null) {
+              _updateDraftField((p) => _copyWith(p, meetAt: picked.toList()));
+            }
+          },
+        ),
+        _buildSelectorListTile<String>(
+          label: 'Position',
+          current: draft.position,
+          placeholder: 'Select position',
+          onTap: () async {
+            final picked =
+                await showPositionSheet(context, current: draft.position);
+            if (picked != null) {
+              _updateDraftField((p) => _copyWith(p, position: picked));
+            }
+          },
+        ),
+        _buildSelectorListTile<String>(
+          label: 'Relationship Status',
+          current: draft.relationshipStatus,
+          placeholder: 'Select relationship status',
+          onTap: () async {
+            final picked = await showRelationshipSheet(
+              context,
+              current: draft.relationshipStatus,
+            );
+            if (picked != null) {
+              _updateDraftField(
+                  (p) => _copyWith(p, relationshipStatus: picked));
+            }
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // ── Likes ─────────────────────────────────────────────────────────
+        _buildSectionHeader(
+            (l10n?.editProfileSectionLikes ?? 'What I like').toUpperCase()),
+        const SizedBox(height: 8),
+        _buildSelectorListTile<String>(
+          label: l10n?.detailsVaccines ?? 'Vaccines',
+          current: _detailsCount(draft, 'vaccines') > 0
+              ? '${_detailsCount(draft, 'vaccines')} selected'
+              : null,
+          placeholder: 'Select vaccines',
+          onTap: () async {
+            final current = _readVaccines(draft);
+            await Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => VaccinesScreen(
+                current: current,
+                onChanged: (next) {
+                  _updateDraftField((p) => _writeVaccines(p, next));
+                },
+              ),
+            ));
+          },
+        ),
+        _buildSelectorListTile<String>(
+          label: l10n?.detailsTripCount ?? 'Trips',
+          current: _detailsCount(draft, 'trips') > 0
+              ? '${_detailsCount(draft, 'trips')} trips'
+              : null,
+          placeholder: 'Add recent trips',
+          onTap: () async {
+            final current = _readTrips(draft);
+            await Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => AddTripScreen(
+                current: current,
+                onChanged: (next) {
+                  _updateDraftField((p) => _writeTrips(p, next));
+                },
+              ),
+            ));
+          },
+        ),
+        _buildSelectorListTile<String>(
+          label: 'Practices',
+          current: _detailsCount(draft, 'practices') > 0
+              ? '${_detailsCount(draft, 'practices')} selected'
+              : null,
+          placeholder: 'Select practices',
+          onTap: () async {
+            final current = _readPractices(draft);
+            await Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => PracticesScreen(
+                current: current,
+                onChanged: (next) {
+                  _updateDraftField((p) => _writePractices(p, next));
+                },
+              ),
+            ));
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // ── Health ────────────────────────────────────────────────────────
+        _buildSectionHeader(
+            (l10n?.editProfileSectionHealth ?? 'Health').toUpperCase()),
         const SizedBox(height: 12),
 
-        // HIV status dropdown
+        // HIV Status dropdown (kept inline; the existing test relies on
+        // finding the literal "HIV Status" label and the dropdown widget).
         _buildLabel('HIV Status'),
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
           initialValue: _hivStatus,
-          dropdownColor: const Color(0xFF1A1A1A),
-          style: const TextStyle(color: Colors.white),
+          dropdownColor: VibraTheme.kSurface,
+          style: const TextStyle(color: VibraTheme.kTextPrimary),
           decoration: _inputDecoration('Select status'),
           items: _hivStatusOptions
               .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -736,18 +713,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Last tested on date picker
+        // Last tested on date picker (kept inline — test searches 'Not set').
         _buildLabel('Last Tested On'),
         const SizedBox(height: 4),
         InkWell(
           onTap: _pickLastTestedDate,
           borderRadius: BorderRadius.circular(8),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+              color: VibraTheme.kSurface,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF333333)),
+              border: Border.all(color: VibraTheme.kDivider),
             ),
             child: Row(
               children: [
@@ -758,38 +736,40 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         : '${_lastTestedOn!.year.toString().padLeft(4, '0')}-${_lastTestedOn!.month.toString().padLeft(2, '0')}-${_lastTestedOn!.day.toString().padLeft(2, '0')}',
                     style: TextStyle(
                       color: _lastTestedOn == null
-                          ? Colors.grey
-                          : Colors.white,
+                          ? VibraTheme.kTextSecondary
+                          : VibraTheme.kTextPrimary,
                       fontSize: 14,
                     ),
                   ),
                 ),
-                const Icon(Icons.calendar_today, color: Colors.grey, size: 18),
+                const Icon(Icons.calendar_today,
+                    color: VibraTheme.kTextSecondary, size: 18),
               ],
             ),
           ),
         ),
         const SizedBox(height: 16),
 
-        // PrEP toggle
+        // PrEP switch (kept inline; test uses find.byType(Switch)).
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
+            color: VibraTheme.kSurface,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFF333333)),
+            border: Border.all(color: VibraTheme.kDivider),
           ),
           child: Row(
             children: [
               const Expanded(
                 child: Text(
                   'On PrEP',
-                  style: TextStyle(color: Colors.white, fontSize: 14),
+                  style: TextStyle(
+                      color: VibraTheme.kTextPrimary, fontSize: 14),
                 ),
               ),
               Switch(
                 value: _prep ?? false,
-                activeThumbColor: const Color(0xFFF4C542),
                 onChanged: (val) => setState(() => _prep = val),
               ),
             ],
@@ -804,53 +784,73 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
 
-        // Save button
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: _isSaving ? null : _saveProfile,
-            style: FilledButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: Colors.black,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+        // ── Privacy ───────────────────────────────────────────────────────
+        // Privacy switches live in the dedicated Settings screen (T6). They
+        // are read-only here; we surface the current values as a list.
+        _buildSectionHeader(
+            (l10n?.editProfileSectionPrivacy ?? 'Privacy').toUpperCase()),
+        const SizedBox(height: 8),
+        _buildPrivacyRow('Show age', draft.showAge),
+        _buildPrivacyRow('Show role', draft.showRole),
+        _buildPrivacyRow('Show tribes', draft.showTribes),
+        _buildPrivacyRow('Show position', draft.showPosition),
+        _buildPrivacyRow('Show ethnicity', draft.showEthnicity),
+        _buildPrivacyRow('Show relationship status',
+            draft.showRelationshipStatus),
+        const SizedBox(height: 48),
+      ],
+    );
+  }
+
+  Widget _buildPhotoSection(UserProfile p) {
+    return Column(
+      children: [
+        Center(
+          child: Stack(
+            children: [
+              CircleAvatar(
+                radius: 48,
+                backgroundColor: VibraTheme.kSurface,
+                backgroundImage: p.profilePhotoUrl != null
+                    ? NetworkImage(p.profilePhotoUrl!)
+                    : null,
+                child: p.profilePhotoUrl == null
+                    ? Text(
+                        (p.displayName ?? p.email)[0].toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 32,
+                          color: VibraTheme.kYellow,
+                        ),
+                      )
+                    : null,
               ),
-            ),
-            child: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.black,
-                    ),
-                  )
-                : const Text(
-                    'Save',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              if (_isUploadingPhoto)
+                const CircleAvatar(
+                  radius: 48,
+                  backgroundColor: Colors.black54,
+                  child: CircularProgressIndicator(
+                    color: VibraTheme.kYellow,
                   ),
+                ),
+            ],
           ),
         ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: () => context.pop(),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.grey,
-              side: const BorderSide(color: Colors.grey),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Cancel'),
-          ),
+        const SizedBox(height: 8),
+        Center(
+          child: _isUploadingPhoto
+              ? const Text(
+                  'Uploading...',
+                  style: TextStyle(
+                      color: VibraTheme.kTextSecondary, fontSize: 13),
+                )
+              : TextButton.icon(
+                  onPressed: _pickAndUploadPhoto,
+                  icon: const Icon(Icons.camera_alt, size: 18),
+                  label: const Text('Change Photo'),
+                ),
         ),
-        const SizedBox(height: 32),
       ],
     );
   }
@@ -859,7 +859,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return Text(
       text,
       style: const TextStyle(
-        color: Colors.grey,
+        color: VibraTheme.kTextSecondary,
         fontSize: 13,
         fontWeight: FontWeight.w500,
       ),
@@ -868,9 +868,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Widget _buildSectionHeader(String text) {
     return Text(
-      text.toUpperCase(),
+      text,
       style: const TextStyle(
-        color: Colors.grey,
+        color: VibraTheme.kTextSecondary,
         fontSize: 12,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.0,
@@ -881,22 +881,192 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+      hintStyle: const TextStyle(
+          color: VibraTheme.kTextSecondary, fontSize: 14),
       filled: true,
-      fillColor: const Color(0xFF1A1A1A),
+      fillColor: VibraTheme.kSurface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFF333333)),
+        borderSide: const BorderSide(color: VibraTheme.kDivider),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFF333333)),
+        borderSide: const BorderSide(color: VibraTheme.kDivider),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFFF4C542), width: 1.5),
+        borderSide: const BorderSide(color: VibraTheme.kYellow, width: 1.5),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     );
+  }
+
+  Widget _buildPrivacyRow(String label, bool value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(color: VibraTheme.kTextPrimary)),
+          ),
+          Text(
+            value ? 'On' : 'Off',
+            style: TextStyle(
+              color: value ? VibraTheme.kYellow : VibraTheme.kTextSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectorListTile<T>({
+    required String label,
+    required String? current,
+    required String placeholder,
+    required VoidCallback onTap,
+  }) {
+    final trailing = current == null
+        ? const Icon(Icons.chevron_right,
+            color: VibraTheme.kTextSecondary)
+        : const Icon(Icons.check, color: VibraTheme.kYellow);
+    return ListTile(
+      title: Text(label,
+          style: const TextStyle(color: VibraTheme.kTextPrimary)),
+      subtitle: Text(
+        current ?? placeholder,
+        style: TextStyle(
+          color: current == null
+              ? VibraTheme.kTextSecondary
+              : VibraTheme.kTextPrimary,
+        ),
+      ),
+      trailing: trailing,
+      onTap: onTap,
+      contentPadding: EdgeInsets.zero,
+    );
+  }
+
+  // ── copyWith helpers ─────────────────────────────────────────────────────
+
+  UserProfile _copyWith(
+    UserProfile p, {
+    String? displayName,
+    String? bio,
+    String? ethnicity,
+    String? pronouns,
+    String? bodyType,
+    String? position,
+    String? relationshipStatus,
+    int? heightCm,
+    int? weightKg,
+    List<String>? tribes,
+    List<String>? lookingFor,
+    List<String>? meetAt,
+    List<String>? tags,
+    Map<String, dynamic>? details,
+    bool? showAge,
+    bool? showRole,
+    bool? showTribes,
+    bool? showPosition,
+    bool? showEthnicity,
+    bool? showRelationshipStatus,
+    bool? showSocialLinks,
+  }) {
+    return UserProfile(
+      id: p.id,
+      email: p.email,
+      emailVerified: p.emailVerified,
+      status: p.status,
+      role: p.role,
+      createdAt: p.createdAt,
+      profilePhotoId: p.profilePhotoId,
+      profilePhotoUrl: p.profilePhotoUrl,
+      isVerified: p.isVerified,
+      displayName: displayName ?? p.displayName,
+      bio: bio ?? p.bio,
+      birthdate: p.birthdate,
+      heightCm: heightCm ?? p.heightCm,
+      weightKg: weightKg ?? p.weightKg,
+      bodyType: bodyType ?? p.bodyType,
+      relationshipStatus: relationshipStatus ?? p.relationshipStatus,
+      position: position ?? p.position,
+      ethnicity: ethnicity ?? p.ethnicity,
+      pronouns: pronouns ?? p.pronouns,
+      tribes: tribes ?? p.tribes,
+      lookingFor: lookingFor ?? p.lookingFor,
+      meetAt: meetAt ?? p.meetAt,
+      tags: tags ?? p.tags,
+      details: details ?? p.details,
+      showAge: showAge ?? p.showAge,
+      showRole: showRole ?? p.showRole,
+      showTribes: showTribes ?? p.showTribes,
+      showPosition: showPosition ?? p.showPosition,
+      showEthnicity: showEthnicity ?? p.showEthnicity,
+      showRelationshipStatus:
+          showRelationshipStatus ?? p.showRelationshipStatus,
+      showSocialLinks: showSocialLinks ?? p.showSocialLinks,
+    );
+  }
+
+  UserProfile _copyWithHeight(UserProfile p, int cm) =>
+      _copyWith(p, heightCm: cm);
+  UserProfile _copyWithWeight(UserProfile p, int kg) =>
+      _copyWith(p, weightKg: kg);
+
+  // ── details[] helpers (T4.8 sub-screens) ─────────────────────────────────
+
+  int _detailsCount(UserProfile p, String key) {
+    final raw = p.details[key];
+    if (raw is List) return raw.length;
+    return 0;
+  }
+
+  Set<String> _readVaccines(UserProfile p) {
+    final raw = p.details['vaccines'];
+    if (raw is List) return raw.map((e) => e.toString()).toSet();
+    return <String>{};
+  }
+
+  UserProfile _writeVaccines(UserProfile p, Set<String> next) {
+    final m = Map<String, dynamic>.from(p.details);
+    m['vaccines'] = next.toList();
+    return _copyWith(p, details: m);
+  }
+
+  Set<String> _readPractices(UserProfile p) {
+    final raw = p.details['practices'];
+    if (raw is List) return raw.map((e) => e.toString()).toSet();
+    return <String>{};
+  }
+
+  UserProfile _writePractices(UserProfile p, Set<String> next) {
+    final m = Map<String, dynamic>.from(p.details);
+    m['practices'] = next.toList();
+    return _copyWith(p, details: m);
+  }
+
+  List<TripEntry> _readTrips(UserProfile p) {
+    final raw = p.details['trips'];
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map((m) => TripEntry(
+                date: (m['date'] ?? '').toString(),
+                location: (m['location'] ?? '').toString(),
+                notes: m['notes']?.toString(),
+              ))
+          .toList();
+    }
+    return <TripEntry>[];
+  }
+
+  UserProfile _writeTrips(UserProfile p, List<TripEntry> next) {
+    final m = Map<String, dynamic>.from(p.details);
+    m['trips'] = next.map((e) => e.toJson()).toList();
+    return _copyWith(p, details: m);
   }
 }

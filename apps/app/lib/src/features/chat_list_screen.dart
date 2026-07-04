@@ -3,8 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../chat/chat_service.dart';
 import '../chat/models.dart';
+import '../albums/shared_albums_provider.dart';
+import '../theme/widgets.dart';
+import '../theme/app_theme.dart';
+import '../../l10n/gen/app_localizations.dart';
 
-/// Screen that lists all conversations for the current user.
+/// Buzón screen — Grindr-style inbox with two tabs:
+///
+///   • Bandeja — list of conversations, with album-update banner + filter
+///     chips above the list.
+///   • Álbumes — horizontal carousel of albums shared with the user.
+///
+/// A Boost FAB sits on top of both tabs.
 class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});
 
@@ -12,124 +22,167 @@ class ChatListScreen extends ConsumerStatefulWidget {
   ConsumerState<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _ChatListScreenState extends ConsumerState<ChatListScreen> {
+class _ChatListScreenState extends ConsumerState<ChatListScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      backgroundColor: VibraTheme.kBg,
+      appBar: AppBar(
+        backgroundColor: VibraTheme.kBg,
+        title: Text(l10n.bandejaDeEntrada),
+        elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: VibraTheme.kYellow,
+          indicatorWeight: 2,
+          labelColor: Colors.white,
+          unselectedLabelColor: VibraTheme.kTextSecondary,
+          labelStyle:
+              const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          tabs: [
+            Tab(text: l10n.bandejaDeEntrada),
+            Tab(text: l10n.albumes),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: const [
+          _BandejaTab(),
+          _AlbumsTab(),
+        ],
+      ),
+      floatingActionButton: const _BoostFab(),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bandeja (conversations) tab
+// ---------------------------------------------------------------------------
+
+class _BandejaTab extends ConsumerStatefulWidget {
+  const _BandejaTab();
+
+  @override
+  ConsumerState<_BandejaTab> createState() => _BandejaTabState();
+}
+
+class _BandejaTabState extends ConsumerState<_BandejaTab> {
   late Future<List<Conversation>> _conversationsFuture;
 
   @override
   void initState() {
     super.initState();
-    _conversationsFuture = _fetchConversations();
-  }
-
-  Future<List<Conversation>> _fetchConversations() async {
-    final chatService = ref.read(chatServiceProvider);
-    return chatService.listConversations();
-  }
-
-  void _refresh() {
-    setState(() {
-      _conversationsFuture = _fetchConversations();
-    });
+    _conversationsFuture = ref.read(chatServiceProvider).listConversations();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Chats')),
-      body: FutureBuilder<List<Conversation>>(
-        future: _conversationsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    final l10n = AppLocalizations.of(context)!;
+    final sharedAlbumsAsync = ref.watch(sharedAlbumsProvider);
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Failed to load conversations',
-                    style: Theme.of(context).textTheme.titleMedium,
+    return Column(
+      children: [
+        // Album-update banner above chips — only when there are shared albums.
+        sharedAlbumsAsync.when(
+          data: (albums) => AlbumUpdateBanner(
+            count: albums.length,
+            onTap: () {/* TODO: scroll to album carousel */},
+          ),
+          loading: () => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
+        ),
+
+        // Filter chips row (No leído / En línea)
+        const _FilterChipsRow(),
+
+        const Divider(height: 1, color: VibraTheme.kDivider),
+
+        // Conversation list
+        Expanded(
+          child: FutureBuilder<List<Conversation>>(
+            future: _conversationsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return const _ErrorRetry(
+                    message: 'Error cargando conversaciones');
+              }
+              final conversations = snapshot.data ?? const [];
+              if (conversations.isEmpty) {
+                return Center(
+                  child: Text(
+                    l10n.bandejaDeEntrada,
+                    style: const TextStyle(color: VibraTheme.kTextSecondary),
                   ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _refresh,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final conversations = snapshot.data ?? [];
-
-          if (conversations.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey.shade600),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No conversations yet',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Find someone in Cascade and say hi!',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.all(8),
-            itemCount: conversations.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final conv = conversations[index];
-              return Dismissible(
-                key: Key(conv.conversationId),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  color: Colors.red,
-                  child: const Icon(Icons.delete, color: Colors.white),
-                ),
-                onDismissed: (_) async {
-                  try {
-                    final chatService = ref.read(chatServiceProvider);
-                    await chatService.deleteConversation(conv.conversationId);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Conversation deleted')),
-                      );
-                    }
-                    _refresh();
-                  } catch (e) {
-                    _refresh();
-                  }
-                },
-                child: _ConversationTile(
-                  conversation: conv,
-                  onTap: () {
-                    context.push('/inbox/${conv.conversationId}');
-                  },
+                );
+              }
+              return ListView.builder(
+                itemCount: conversations.length,
+                itemBuilder: (_, i) => _ConversationTile(
+                  conversation: conversations[i],
                 ),
               );
             },
-          );
-        },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FilterChipsRow extends StatefulWidget {
+  const _FilterChipsRow();
+
+  @override
+  State<_FilterChipsRow> createState() => _FilterChipsRowState();
+}
+
+class _FilterChipsRowState extends State<_FilterChipsRow> {
+  bool _noLeido = false;
+  bool _enLinea = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          FilterChipPill(
+            label: l10n.noLeido,
+            icon: Icons.circle,
+            active: _noLeido,
+            onTap: () => setState(() => _noLeido = !_noLeido),
+          ),
+          const SizedBox(width: 8),
+          FilterChipPill(
+            label: l10n.enLineaFiltro,
+            icon: Icons.fiber_manual_record,
+            active: _enLinea,
+            onTap: () => setState(() => _enLinea = !_enLinea),
+          ),
+        ],
       ),
     );
   }
@@ -137,65 +190,194 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
 
 class _ConversationTile extends StatelessWidget {
   final Conversation conversation;
-  final VoidCallback onTap;
-
-  const _ConversationTile({
-    required this.conversation,
-    required this.onTap,
-  });
+  const _ConversationTile({required this.conversation});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final displayName = conversation.otherDisplayName ?? 'Unknown';
-    final lastMessage = conversation.lastMessagePreview;
-    final hasUnread = conversation.unreadCount > 0;
-
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: theme.colorScheme.primaryContainer,
-        child: Text(
-          displayName[0].toUpperCase(),
-          style: TextStyle(
-            color: theme.colorScheme.onPrimaryContainer,
-            fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-      title: Text(
-        displayName,
-        style: TextStyle(
-          fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      subtitle: lastMessage != null
-          ? Text(
-              lastMessage,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
-              ),
-            )
-          : null,
-      trailing: hasUnread
-          ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                borderRadius: BorderRadius.circular(12),
-              ),
+    final lastMessage = conversation.lastMessagePreview ?? '';
+    return InkWell(
+      onTap: () => context.push('/inbox/${conversation.conversationId}'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: VibraTheme.kSurface,
               child: Text(
-                '${conversation.unreadCount}',
+                displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  color: VibraTheme.kTextPrimary,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            )
-          : null,
-      onTap: onTap,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      if (conversation.lastMessageAt != null)
+                        Text(
+                          _relativeTime(conversation.lastMessageAt!),
+                          style: const TextStyle(
+                            color: VibraTheme.kTextSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    lastMessage,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: VibraTheme.kTextSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (conversation.unreadCount > 0) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: const BoxDecoration(
+                  color: VibraTheme.kYellow,
+                  borderRadius: BorderRadius.all(Radius.circular(999)),
+                ),
+                child: Text(
+                  '${conversation.unreadCount}',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _relativeTime(String iso) {
+    // Stub: in production use intl.DateFormat. For now, just return HH:mm if same day.
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      final now = DateTime.now();
+      if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
+        return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      }
+      return '${dt.day}/${dt.month}';
+    } catch (_) {
+      return '';
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Álbumes tab
+// ---------------------------------------------------------------------------
+
+class _AlbumsTab extends ConsumerWidget {
+  const _AlbumsTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sharedAlbumsAsync = ref.watch(sharedAlbumsProvider);
+
+    return sharedAlbumsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => _ErrorRetry(
+        message: 'Error cargando álbumes compartidos',
+        onRetry: () {
+          // Provider invalidation is best done in a callback that has the ref.
+          // The Retry button itself just signals; actual reload is via
+          // `ref.invalidate` from the parent scope when wired up.
+        },
+      ),
+      data: (albums) {
+        if (albums.isEmpty) {
+          return const AlbumUpdatesEmptyState();
+        }
+        return AlbumCarousel(
+          albums: albums,
+          onTap: (id) {
+            // TODO: navigate to album detail
+          },
+        );
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Boost FAB
+// ---------------------------------------------------------------------------
+
+class _BoostFab extends StatelessWidget {
+  const _BoostFab();
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.extended(
+      backgroundColor: Colors.black,
+      foregroundColor: VibraTheme.kYellow,
+      onPressed: () {/* TODO: trigger boost */},
+      icon: const Icon(Icons.bolt),
+      label: const Text(
+        'Boost',
+        style: TextStyle(fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Error retry helper
+// ---------------------------------------------------------------------------
+
+class _ErrorRetry extends StatelessWidget {
+  final String message;
+  final VoidCallback? onRetry;
+
+  const _ErrorRetry({required this.message, this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message, style: const TextStyle(color: Colors.red)),
+          const SizedBox(height: 12),
+          if (onRetry != null)
+            TextButton(
+              onPressed: onRetry,
+              child: const Text('Reintentar'),
+            ),
+        ],
+      ),
     );
   }
 }

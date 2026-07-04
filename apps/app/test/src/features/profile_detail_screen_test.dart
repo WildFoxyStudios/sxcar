@@ -14,8 +14,16 @@ import 'package:go_router/go_router.dart';
 class _FullMockAdapter implements HttpClientAdapter {
   /// Records '$METHOD $PATH' for each request.
   final List<String> calls;
+  final bool showAge;
+  final bool showRelationshipStatus;
+  final bool showSocialLinks;
 
-  _FullMockAdapter({required this.calls});
+  _FullMockAdapter({
+    required this.calls,
+    this.showAge = true,
+    this.showRelationshipStatus = true,
+    this.showSocialLinks = true,
+  });
 
   @override
   Future<ResponseBody> fetch(
@@ -128,7 +136,15 @@ class _FullMockAdapter implements HttpClientAdapter {
         'looking_for': ['chat', 'friends'],
         'meet_at': ['bar'],
         'tags': ['fitness'],
+        'show_age': showAge,
+        'show_relationship_status': showRelationshipStatus,
+        'show_social_links': showSocialLinks,
       },
+      'details': showSocialLinks
+          ? {
+              'social': {'instagram': '@bob'},
+            }
+          : <String, dynamic>{},
       'health': {
         'hiv_status': 'negative',
         'last_tested_at': '2025-10',
@@ -220,7 +236,24 @@ void main() {
       // Bottom bar "Di algo..." hint is present
       expect(find.textContaining('Di algo'), findsOneWidget);
 
-      // No unhandled exceptions
+      // ── Section headers (may be below the fold — use skipOffstage: false) ──
+      expect(find.text('ACERCA DE MÍ', skipOffstage: false), findsOneWidget);
+      expect(find.text('ESTADÍSTICAS', skipOffstage: false), findsOneWidget);
+      expect(find.text('EXPECTATIVAS', skipOffstage: false), findsOneWidget);
+      expect(find.text('SALUD', skipOffstage: false), findsOneWidget);
+      expect(
+          find.text('TE PODRÍA INTERESAR', skipOffstage: false), findsOneWidget);
+
+      // Bio text
+      expect(
+          find.text('Hey there! I like hiking', skipOffstage: false),
+          findsOneWidget);
+
+      // NUEVO badge next to TE PODRÍA INTERESAR
+      expect(find.text('NUEVO', skipOffstage: false), findsOneWidget);
+
+      // At least one suggestion tile name renders
+      expect(find.text('Alice', skipOffstage: false), findsOneWidget);
     });
 
     // ── Test 2 ────────────────────────────────────────────────────────────────
@@ -332,6 +365,57 @@ void main() {
       // Basic sanity: loading state resolves and no crash
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.text('Failed to load profile'), findsNothing);
+    });
+
+    // ── Test 5 ────────────────────────────────────────────────────────────────
+    testWidgets('hides age when show_age=false', (tester) async {
+      final calls = <String>[];
+      final dio = Dio()
+        ..httpClientAdapter = _FullMockAdapter(calls: calls, showAge: false);
+
+      await tester.pumpWidget(
+        _withProviders(const ProfileDetailScreen(userId: 'user-1'), dio),
+      );
+      await tester.pumpAndSettle();
+
+      // No age text in the hero (gated out)
+      expect(find.textContaining('años'), findsNothing);
+    });
+
+    // ── Test 6 ────────────────────────────────────────────────────────────────
+    testWidgets('hides relationship status when show_relationship_status=false',
+        (tester) async {
+      final calls = <String>[];
+      final dio = Dio()
+        ..httpClientAdapter =
+            _FullMockAdapter(calls: calls, showRelationshipStatus: false);
+
+      await tester.pumpWidget(
+        _withProviders(const ProfileDetailScreen(userId: 'user-1'), dio),
+      );
+      await tester.pumpAndSettle();
+
+      // Scroll the body far enough to make the stats section offstage-by-now
+      // assertable: with the gate off there must be no "single" text anywhere.
+      // Use offstage: true so we don't fail on widgets below the fold.
+      expect(find.text('single', skipOffstage: true), findsNothing);
+    });
+
+    // ── Test 7 ────────────────────────────────────────────────────────────────
+    testWidgets('hides social block when show_social_links=false',
+        (tester) async {
+      final calls = <String>[];
+      final dio = Dio()
+        ..httpClientAdapter =
+            _FullMockAdapter(calls: calls, showSocialLinks: false);
+
+      await tester.pumpWidget(
+        _withProviders(const ProfileDetailScreen(userId: 'user-1'), dio),
+      );
+      await tester.pumpAndSettle();
+
+      // No social block header rendered
+      expect(find.text('REDES SOCIALES'), findsNothing);
     });
   });
 }

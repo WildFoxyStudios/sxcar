@@ -33,6 +33,9 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
   Map<String, dynamic>? _healthData;
   List<NearbyUser> _suggestions = [];
   final TextEditingController _messageController = TextEditingController();
+  Map<String, dynamic> _details = {};
+  int _photoIndex = 0;
+  final _pageController = PageController();
 
   @override
   void initState() {
@@ -43,6 +46,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
   @override
   void dispose() {
     _messageController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -59,11 +63,14 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
       final userJson = response.data!['user'] as Map<String, dynamic>;
       final profile = UserProfile.fromJson(userJson);
       final health = response.data!['health'] as Map<String, dynamic>?;
+      final details =
+          (response.data!['details'] as Map<String, dynamic>?) ?? {};
 
       if (!mounted) return;
       setState(() {
         _profile = profile;
         _healthData = health;
+        _details = details;
         _isLoading = false;
       });
 
@@ -252,6 +259,13 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch presence unconditionally so the collapsed title dot is reactive.
+    final statusAsync = ref.watch(userStatusProvider(widget.userId));
+    final isOnline = statusAsync.maybeWhen(
+      data: (s) => s.isOnline,
+      orElse: () => false,
+    );
+
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: VibraTheme.kBg,
@@ -301,6 +315,8 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     final p = _profile!;
     final l10n = AppLocalizations.of(context)!;
     final screenHeight = MediaQuery.of(context).size.height;
+    // Build photo list — single URL today, structure supports N.
+    final photos = [if (p.profilePhotoUrl != null) p.profilePhotoUrl!];
 
     return Scaffold(
       backgroundColor: VibraTheme.kBg,
@@ -324,7 +340,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                   actions: [
                     IconButton(
                       icon: const Icon(
-                        Icons.person_off_outlined,
+                        Icons.flag_outlined,
                         color: Colors.white,
                       ),
                       onPressed: _showReportSheet,
@@ -341,15 +357,17 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                   title: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: VibraTheme.kOnline,
-                          shape: BoxShape.circle,
+                      if (isOnline) ...[
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: VibraTheme.kOnline,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
+                        const SizedBox(width: 6),
+                      ],
                       Text(
                         p.displayName ?? p.email,
                         style: const TextStyle(
@@ -365,16 +383,22 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                     background: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // Photo or letter placeholder
-                        if (p.profilePhotoUrl != null)
-                          Image.network(
-                            p.profilePhotoUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) =>
-                                _buildPhotoPlaceholder(p),
-                          )
+                        // Fix 2: PageView.builder over photo list (N-photo ready)
+                        if (photos.isEmpty)
+                          _buildPhotoPlaceholder(p)
                         else
-                          _buildPhotoPlaceholder(p),
+                          PageView.builder(
+                            controller: _pageController,
+                            itemCount: photos.length,
+                            onPageChanged: (i) =>
+                                setState(() => _photoIndex = i),
+                            itemBuilder: (_, i) => Image.network(
+                              photos[i],
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) =>
+                                  _buildPhotoPlaceholder(p),
+                            ),
+                          ),
                         // Bottom gradient → fades into kBg
                         const Positioned(
                           left: 0,
@@ -394,6 +418,42 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                             ),
                           ),
                         ),
+                        // Vertical pill indicator — right edge, only when >1 photo
+                        if (photos.length > 1)
+                          Positioned(
+                            right: 12,
+                            top: 0,
+                            bottom: 0,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: List.generate(photos.length, (i) {
+                                    final active = i == _photoIndex;
+                                    return Container(
+                                      width: 5,
+                                      height: active ? 16 : 5,
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: active
+                                            ? Colors.white
+                                            : Colors.white38,
+                                        borderRadius:
+                                            BorderRadius.circular(3),
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ),
+                            ),
+                          ),
                         // Verified badge (top-right of photo)
                         if (p.isVerified)
                           Positioned(
@@ -451,8 +511,23 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                         _PresenceBadge(userId: p.id),
                         const SizedBox(height: 8),
 
+                        // Age display (gated by showAge flag)
+                        if (p.birthdate != null &&
+                            p.birthdate!.isNotEmpty &&
+                            p.showAge) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            _ageFromBirthdate(p.birthdate!),
+                            style: const TextStyle(
+                              color: VibraTheme.kTextSecondary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+
                         // Quick stats row (position | height | weight | bodyType)
-                        _QuickStatsRow(profile: p),
+                        _QuickStatsRow(profile: p, details: _details),
 
                         // ── ACERCA DE MÍ ────────────────────────────────────
                         if (p.bio != null && p.bio!.isNotEmpty) ...[
@@ -490,6 +565,10 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                           const SizedBox(height: 12),
                           _buildExpectativasSection(p, l10n),
                         ],
+
+                        // ── REDES SOCIALES (gated by show_social_links) ────
+                        const SizedBox(height: 20),
+                        _buildSocialSection(_details, p),
 
                         // ── SALUD ───────────────────────────────────────────
                         if (_hasHealthData()) ...[
@@ -624,38 +703,50 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
   }
 
   Widget _buildStatsSection(UserProfile p) {
+    // Fix 4: defensive details override — falls back to profile fields
+    final position = (_details['position'] as String?) ?? p.position;
+    final heightCm = (_details['height_cm'] as int?) ?? p.heightCm;
+    final weightKg = (_details['weight_kg'] as int?) ?? p.weightKg;
+    final bodyType = (_details['body_type'] as String?) ?? p.bodyType;
+    final ethnicity = (_details['ethnicity'] as String?) ?? p.ethnicity;
+    final relationshipStatus =
+        (_details['relationship_status'] as String?) ?? p.relationshipStatus;
+    final pronouns = (_details['pronouns'] as String?) ?? p.pronouns;
+
     final rows = <Widget>[];
 
     // Height | Weight | BodyType in one row (only non-null parts)
     final hwbParts = <String>[];
-    if (p.heightCm != null) hwbParts.add('${p.heightCm} cm');
-    if (p.weightKg != null) hwbParts.add('${p.weightKg} kg');
-    if (p.bodyType != null && p.bodyType!.isNotEmpty) {
-      hwbParts.add(p.bodyType!);
+    if (heightCm != null) hwbParts.add('$heightCm cm');
+    if (weightKg != null) hwbParts.add('$weightKg kg');
+    if (bodyType != null && bodyType.isNotEmpty) {
+      hwbParts.add(bodyType);
     }
     if (hwbParts.isNotEmpty) {
       rows.add(_statRow(Icons.straighten, hwbParts.join(' | ')));
     }
 
     // Pronouns with (i) tooltip
-    if (p.pronouns != null && p.pronouns!.isNotEmpty) {
+    if (pronouns != null && pronouns.isNotEmpty) {
       rows.add(_statRowWithTooltip(
-          Icons.person_outline, p.pronouns!, 'Pronombres / Pronouns'));
+          Icons.person_outline, pronouns, 'Pronombres / Pronouns'));
     }
 
-    // Position (role)
-    if (p.position != null && p.position!.isNotEmpty) {
-      rows.add(_statRow(Icons.swap_vert, p.position!));
+    // Position (role) — Fix 5: dynamic directional icon
+    if (position != null && position.isNotEmpty) {
+      rows.add(_statRow(_roleIconFor(position), position));
     }
 
     // Ethnicity
-    if (p.ethnicity != null && p.ethnicity!.isNotEmpty) {
-      rows.add(_statRow(Icons.circle_outlined, p.ethnicity!));
+    if (ethnicity != null && ethnicity.isNotEmpty) {
+      rows.add(_statRow(Icons.circle_outlined, ethnicity));
     }
 
-    // Relationship status
-    if (p.relationshipStatus != null && p.relationshipStatus!.isNotEmpty) {
-      rows.add(_statRow(Icons.people_outline, p.relationshipStatus!));
+    // Relationship status (gated by show_relationship_status)
+    if (relationshipStatus != null &&
+        relationshipStatus.isNotEmpty &&
+        p.showRelationshipStatus) {
+      rows.add(_statRow(Icons.people_outline, relationshipStatus));
     }
 
     if (rows.isEmpty) return const SizedBox.shrink();
@@ -922,23 +1013,31 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
 /// Quick stats row: position icon | height | weight | bodyType, kTextTertiary.
 class _QuickStatsRow extends StatelessWidget {
   final UserProfile profile;
+  final Map<String, dynamic> details;
 
-  const _QuickStatsRow({required this.profile});
+  const _QuickStatsRow({required this.profile, required this.details});
 
   @override
   Widget build(BuildContext context) {
     final p = profile;
+    // Fix 4: details override with profile fallback
+    final position = (details['position'] as String?) ?? p.position;
+    final heightCm = (details['height_cm'] as int?) ?? p.heightCm;
+    final weightKg = (details['weight_kg'] as int?) ?? p.weightKg;
+    final bodyType = (details['body_type'] as String?) ?? p.bodyType;
+
     final parts = <Widget>[];
 
-    if (p.position != null && p.position!.isNotEmpty) {
+    if (position != null && position.isNotEmpty) {
       parts.add(Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.arrow_downward,
+          // Fix 5: dynamic directional role icon
+          Icon(_roleIconFor(position),
               size: 14, color: VibraTheme.kTextTertiary),
           const SizedBox(width: 2),
           Text(
-            p.position!,
+            position,
             style: const TextStyle(
               color: VibraTheme.kTextTertiary,
               fontSize: 15,
@@ -949,10 +1048,10 @@ class _QuickStatsRow extends StatelessWidget {
     }
 
     final hwbParts = <String>[];
-    if (p.heightCm != null) hwbParts.add('${p.heightCm} cm');
-    if (p.weightKg != null) hwbParts.add('${p.weightKg} kg');
-    if (p.bodyType != null && p.bodyType!.isNotEmpty) {
-      hwbParts.add(p.bodyType!);
+    if (heightCm != null) hwbParts.add('$heightCm cm');
+    if (weightKg != null) hwbParts.add('$weightKg kg');
+    if (bodyType != null && bodyType.isNotEmpty) {
+      hwbParts.add(bodyType);
     }
     if (hwbParts.isNotEmpty) {
       if (parts.isNotEmpty) {
@@ -977,6 +1076,23 @@ class _QuickStatsRow extends StatelessWidget {
       children: parts,
     );
   }
+}
+
+/// Maps a role/position string to a directional icon.
+/// bottom/pasivo/receptive → arrow_downward; top/activo → arrow_upward;
+/// anything else (versatile/versátil/etc.) → swap_vert.
+IconData _roleIconFor(String? position) {
+  if (position == null) return Icons.swap_vert;
+  final p = position.toLowerCase();
+  if (p.contains('bottom') ||
+      p.contains('pasivo') ||
+      p.contains('receptive')) {
+    return Icons.arrow_downward;
+  }
+  if (p.contains('top') || p.contains('activo')) {
+    return Icons.arrow_upward;
+  }
+  return Icons.swap_vert;
 }
 
 /// Online / last-seen badge using the presence module.
@@ -1021,4 +1137,67 @@ class _PresenceBadge extends ConsumerWidget {
       },
     );
   }
+}
+
+/// Computes the age string in Spanish ("N años") from an ISO-8601 birthdate.
+/// Returns an empty string if the input cannot be parsed.
+String _ageFromBirthdate(String isoDate) {
+  try {
+    final dob = DateTime.parse(isoDate);
+    final now = DateTime.now();
+    var age = now.year - dob.year;
+    if (now.month < dob.month ||
+        (now.month == dob.month && now.day < dob.day)) {
+      age--;
+    }
+    return '$age años';
+  } catch (_) {
+    return '';
+  }
+}
+
+/// Renders the REDES SOCIALES section. Honors the `show_social_links` privacy
+/// flag and gracefully hides itself when there are no entries to show.
+Widget _buildSocialSection(Map<String, dynamic> details, UserProfile p) {
+  // show_social_links gate (defaults true; honors backend).
+  if (!p.showSocialLinks) return const SizedBox.shrink();
+
+  final social = details['social'] as Map<String, dynamic>?;
+  if (social == null || social.isEmpty) return const SizedBox.shrink();
+
+  final entries = social.entries
+      .where((e) => e.value != null && '${e.value}'.isNotEmpty)
+      .toList();
+  if (entries.isEmpty) return const SizedBox.shrink();
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        'REDES SOCIALES',
+        style: const TextStyle(
+          color: VibraTheme.kTextSecondary,
+          fontSize: 13,
+          letterSpacing: 1.2,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: entries.map((e) {
+          return Chip(
+            backgroundColor: VibraTheme.kSurface,
+            label: Text(
+              '${e.key}: ${e.value}',
+              style: const TextStyle(
+                color: VibraTheme.kTextPrimary,
+                fontSize: 13,
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    ],
+  );
 }

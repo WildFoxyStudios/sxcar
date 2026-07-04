@@ -1123,6 +1123,78 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Redes sociales'**
   String get detailsSocial;
+
+  /// Profile detail age suffix, e.g. '35 años' / '35 yrs'
+  ///
+  /// In es, this message translates to:
+  /// **'años'**
+  String get profileAgeSuffix;
+
+  /// Profile detail label for relationship status row
+  ///
+  /// In es, this message translates to:
+  /// **'Estado civil'**
+  String get profileRelationshipLabel;
+
+  /// Profile detail social block label: Follow me on
+  ///
+  /// In es, this message translates to:
+  /// **'Sígueme en'**
+  String get profileFollowOn;
+
+  /// Profile detail tap action for opening a social link externally
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir enlace externo'**
+  String get profileOpenExternalLink;
+
+  /// Distance unit: kilometers (metric)
+  ///
+  /// In es, this message translates to:
+  /// **'km'**
+  String get unitKilometers;
+
+  /// Distance unit: meters (metric, sub-1km)
+  ///
+  /// In es, this message translates to:
+  /// **'m'**
+  String get unitMeters;
+
+  /// Distance unit: miles (imperial)
+  ///
+  /// In es, this message translates to:
+  /// **'mi'**
+  String get unitMiles;
+
+  /// Distance unit: feet (imperial, sub-1mi)
+  ///
+  /// In es, this message translates to:
+  /// **'ft'**
+  String get unitFeet;
+
+  /// Cascade/GridSearch filter chip: only favorited users
+  ///
+  /// In es, this message translates to:
+  /// **'Favoritos'**
+  String get filterFavoritesOnly;
+
+  /// Cascade/GridSearch filter chip: only recently-online users (last 5min)
+  ///
+  /// In es, this message translates to:
+  /// **'En línea'**
+  String get filterOnlineOnly;
+
+  /// Cascade/GridSearch filter chip: recently active users (last 30min)
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora'**
+  String get filterRightNow;
+
+  /// NUEVO badge on accounts created within the last 7 days
+  ///
+  /// In es, this message translates to:
+  /// **'NUEVO'**
+  String get badgeNew;
 }
 
 class _AppLocalizationsDelegate

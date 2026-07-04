@@ -535,4 +535,40 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get detailsSocial => 'Redes sociales';
+
+  @override
+  String get profileAgeSuffix => 'años';
+
+  @override
+  String get profileRelationshipLabel => 'Estado civil';
+
+  @override
+  String get profileFollowOn => 'Sígueme en';
+
+  @override
+  String get profileOpenExternalLink => 'Abrir enlace externo';
+
+  @override
+  String get unitKilometers => 'km';
+
+  @override
+  String get unitMeters => 'm';
+
+  @override
+  String get unitMiles => 'mi';
+
+  @override
+  String get unitFeet => 'ft';
+
+  @override
+  String get filterFavoritesOnly => 'Favoritos';
+
+  @override
+  String get filterOnlineOnly => 'En línea';
+
+  @override
+  String get filterRightNow => 'Ahora';
+
+  @override
+  String get badgeNew => 'NUEVO';
 }

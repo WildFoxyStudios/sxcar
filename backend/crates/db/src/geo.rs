@@ -39,6 +39,9 @@ pub struct NearbyUserRow {
 /// - `looking_for`: filtro por intenciones (comma-separated, OR)
 /// - `body_type`: filtro por tipo de cuerpo
 /// - `q`: búsqueda ILIKE sobre display_name y bio
+/// - `favorites_only`: si es true, solo usuarios que el viewer ha marcado como favoritos
+/// - `online_only`: si es true, solo usuarios con `last_seen_at` en los últimos 5 minutos
+/// - `right_now`: si es true, solo usuarios con `last_seen_at` en los últimos 30 minutos
 pub async fn find_nearby_users(
     pool: &Pool,
     lon: f64,
@@ -52,6 +55,9 @@ pub async fn find_nearby_users(
     looking_for: Option<&str>,
     body_type: Option<&str>,
     q: Option<&str>,
+    favorites_only: bool,
+    online_only: bool,
+    right_now: bool,
 ) -> anyhow::Result<Vec<NearbyUserRow>> {
     let rows = sqlx::query_as::<_, NearbyUserRow>(
         r#"
@@ -63,6 +69,7 @@ pub async fn find_nearby_users(
         FROM users u
         JOIN profiles p ON p.user_id = u.id
         JOIN locations l ON l.user_id = u.id
+        LEFT JOIN favorites f ON f.user_id = $4 AND f.target_id = u.id
         WHERE u.status = 'active'
           AND ST_DWithin(l.geog, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3::float8)
           AND u.id != $4
@@ -78,6 +85,9 @@ pub async fn find_nearby_users(
           ))
           AND ($10::text IS NULL OR p.body_type = $10)
           AND ($11::text IS NULL OR p.display_name ILIKE '%' || $11 || '%' OR p.about ILIKE '%' || $11 || '%')
+          AND (NOT $12::bool OR f.user_id IS NOT NULL)
+          AND (NOT $13::bool OR u.last_seen_at IS NOT NULL AND u.last_seen_at > now() - interval '5 minutes')
+          AND (NOT $14::bool OR u.last_seen_at IS NOT NULL AND u.last_seen_at > now() - interval '30 minutes')
         ORDER BY distance_m ASC
         LIMIT $5
         "#,
@@ -93,6 +103,9 @@ pub async fn find_nearby_users(
     .bind(looking_for)
     .bind(body_type)
     .bind(q)
+    .bind(favorites_only)
+    .bind(online_only)
+    .bind(right_now)
     .fetch_all(pool)
     .await?;
     Ok(rows)

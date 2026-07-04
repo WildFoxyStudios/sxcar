@@ -20,6 +20,9 @@ pub struct NearbyQuery {
     pub looking_for: Option<String>,
     pub body_type: Option<String>,
     pub q: Option<String>,
+    pub favorites_only: Option<bool>,
+    pub online_only: Option<bool>,
+    pub right_now: Option<bool>,
 }
 
 fn default_radius() -> f64 {
@@ -58,6 +61,9 @@ pub async fn nearby(
         params.looking_for.as_deref(),
         params.body_type.as_deref(),
         params.q.as_deref(),
+        params.favorites_only.unwrap_or(false),
+        params.online_only.unwrap_or(false),
+        params.right_now.unwrap_or(false),
     )
     .await
     .map_err(|e| {

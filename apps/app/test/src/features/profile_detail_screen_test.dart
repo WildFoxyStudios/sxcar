@@ -17,12 +17,17 @@ class _FullMockAdapter implements HttpClientAdapter {
   final bool showAge;
   final bool showRelationshipStatus;
   final bool showSocialLinks;
+  /// Optional override for the profile's `created_at` string. Used by the
+  /// NUEVO badge tests to gate the badge on/off. Defaults to 1 day ago so
+  /// existing tests stay valid (NUEVO visible for the hero).
+  final String? createdAt;
 
   _FullMockAdapter({
     required this.calls,
     this.showAge = true,
     this.showRelationshipStatus = true,
     this.showSocialLinks = true,
+    this.createdAt,
   });
 
   @override
@@ -111,6 +116,9 @@ class _FullMockAdapter implements HttpClientAdapter {
     }
 
     // Full profile with all fields + health data
+    // Default: ~2 years ago (mimics the historical '2025-01-01' value) so
+    // existing tests see NO hero NUEVO badge (stale created_at).
+    final createdAtStr = createdAt ?? '2025-01-01T00:00:00Z';
     return _json({
       'user': {
         'id': 'user-1',
@@ -118,7 +126,7 @@ class _FullMockAdapter implements HttpClientAdapter {
         'email_verified': true,
         'status': 'active',
         'role': 'user',
-        'created_at': '2025-01-01T00:00:00Z',
+        'created_at': createdAtStr,
         'display_name': 'Bob',
         'bio': 'Hey there! I like hiking',
         'birthdate': '1995-06-15',
@@ -416,6 +424,54 @@ void main() {
 
       // No social block header rendered
       expect(find.text('REDES SOCIALES'), findsNothing);
+    });
+
+    // ── Test 8 (T5.8 — NUEVO badge positive) ────────────────────────────────
+    testWidgets(
+        'shows NUEVO badge when user.created_at is within last 7 days',
+        (tester) async {
+      final calls = <String>[];
+      final recent = DateTime.now()
+          .subtract(const Duration(days: 1))
+          .toUtc()
+          .toIso8601String();
+      final dio = Dio()
+        ..httpClientAdapter =
+            _FullMockAdapter(calls: calls, createdAt: recent);
+
+      await tester.pumpWidget(
+        _withProviders(const ProfileDetailScreen(userId: 'user-1'), dio),
+      );
+      await tester.pumpAndSettle();
+
+      // With a recent created_at, the hero MUST render the NUEVO pill
+      // (in addition to the always-present TE PODRÍA INTERESAR header pill).
+      // Skip offstage because the hero badge sits well above the fold —
+      // we only need it to be present somewhere in the rendered tree.
+      expect(find.text('NUEVO', skipOffstage: true), findsNWidgets(2));
+    });
+
+    // ── Test 9 (T5.8 — NUEVO badge negative) ────────────────────────────────
+    testWidgets(
+        'does NOT show NUEVO badge when user.created_at is older than 7 days',
+        (tester) async {
+      final calls = <String>[];
+      final stale = DateTime.now()
+          .subtract(const Duration(days: 30))
+          .toUtc()
+          .toIso8601String();
+      final dio = Dio()
+        ..httpClientAdapter =
+            _FullMockAdapter(calls: calls, createdAt: stale);
+
+      await tester.pumpWidget(
+        _withProviders(const ProfileDetailScreen(userId: 'user-1'), dio),
+      );
+      await tester.pumpAndSettle();
+
+      // With a stale created_at, the hero NUEVO badge is hidden. Only the
+      // TE PODRÍA INTERESAR header pill remains (1 occurrence).
+      expect(find.text('NUEVO', skipOffstage: true), findsOneWidget);
     });
   });
 }

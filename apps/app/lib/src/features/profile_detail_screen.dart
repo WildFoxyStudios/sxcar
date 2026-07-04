@@ -32,6 +32,11 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
   bool _isBlocked = false;
   Map<String, dynamic>? _healthData;
   List<NearbyUser> _suggestions = [];
+  /// Raw `created_at` timestamps for each suggestion, keyed by user id.
+  /// Populated alongside `_suggestions` in `_loadSuggestions` so the NUEVO
+  /// badge (T5.8) can be shown on each suggestion tile when the user is
+  /// recent — without modifying the [NearbyUser] model.
+  final Map<String, DateTime?> _suggestionCreatedAts = {};
   final TextEditingController _messageController = TextEditingController();
   Map<String, dynamic> _details = {};
   int _photoIndex = 0;
@@ -104,8 +109,24 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
           .where((u) => u.id != widget.userId)
           .take(4)
           .toList();
+      // T5.8 — capture each suggestion's `created_at` so the NUEVO badge
+      // can be rendered per-tile without modifying [NearbyUser].
+      final createdAts = <String, DateTime?>{};
+      for (final entry in usersJson.take(4)) {
+        final m = entry as Map<String, dynamic>;
+        final id = m['id'] as String?;
+        if (id == null) continue;
+        final raw = m['created_at'] as String?;
+        createdAts[id] =
+            (raw == null || raw.isEmpty) ? null : DateTime.tryParse(raw);
+      }
       if (mounted) {
-        setState(() => _suggestions = list);
+        setState(() {
+          _suggestions = list;
+          _suggestionCreatedAts
+            ..clear()
+            ..addAll(createdAts);
+        });
       }
     } catch (_) {
       // Silently skip — section is hidden when empty.
@@ -497,13 +518,25 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Display name (34 w800)
-                        Text(
-                          p.displayName ?? p.email,
-                          style: const TextStyle(
-                            color: VibraTheme.kTextPrimary,
-                            fontSize: 34,
-                            fontWeight: FontWeight.w800,
-                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                p.displayName ?? p.email,
+                                style: const TextStyle(
+                                  color: VibraTheme.kTextPrimary,
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            // T5.8 — NUEVO badge when user is recent.
+                            if (_isRecentlyCreated(p.createdAt)) ...[
+                              const SizedBox(width: 10),
+                              const _NuevoBadge(),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 4),
 
@@ -864,6 +897,15 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     );
   }
 
+  /// Returns true when the given ISO-8601 `created_at` string is within the
+  /// last 7 days (T5.8 — gates the NUEVO badge visibility).
+  bool _isRecentlyCreated(String? createdAt) {
+    if (createdAt == null || createdAt.isEmpty) return false;
+    final parsed = DateTime.tryParse(createdAt);
+    if (parsed == null) return false;
+    return DateTime.now().difference(parsed).inDays < 7;
+  }
+
   bool _hasHealthData() {
     final h = _healthData;
     if (h == null) return false;
@@ -942,6 +984,14 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                     ),
                   ),
                 ),
+                // T5.8 — NUEVO badge (top-left) when this suggestion is recent.
+                if (_isRecentlyCreated(
+                    _suggestionCreatedAts[user.id]?.toIso8601String()))
+                  const Positioned(
+                    top: 8,
+                    left: 8,
+                    child: _NuevoBadge(),
+                  ),
                 // Name overlay (bottom-left)
                 Positioned(
                   bottom: 8,
@@ -1200,4 +1250,34 @@ Widget _buildSocialSection(Map<String, dynamic> details, UserProfile p) {
       ),
     ],
   );
+}
+
+/// Small NUEVO pill — shown when the user's `created_at` is within the last
+/// 7 days. Driven by [AppLocalizations.badgeNew] added in T5.7.
+///
+/// Renders as a yellow pill with black bold text — matches the existing
+/// "NUEVO" chip used in front of the TE PODRÍA INTERESAR section.
+class _NuevoBadge extends StatelessWidget {
+  const _NuevoBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: VibraTheme.kYellow,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        l.badgeNew,
+        style: const TextStyle(
+          color: VibraTheme.kBg,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
 }

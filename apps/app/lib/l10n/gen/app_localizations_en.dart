@@ -147,4 +147,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatearMasLugarenos => 'Chat with more locals';
+
+  @override
+  String get elijeLaActualizacion => 'Choose an Upgrade';
+
+  @override
+  String get semana => 'WEEK';
+
+  @override
+  String get mes => 'MONTH';
+
+  @override
+  String get meses => 'MONTHS';
+
+  @override
+  String get compraPaseDia => 'Buy Day Pass';
+
+  @override
+  String get compraIlimitado7Dias => 'Buy Unlimited 7 Days';
+
+  @override
+  String get gratis => 'FREE';
+
+  @override
+  String get encuentraMasMasRapido => 'Find more, faster';
+
+  @override
+  String get masAccesoMasAtencion => 'More access. More attention.';
+
+  @override
+  String get xtra => 'XTRA';
+
+  @override
+  String get unlimited => 'UNLIMITED';
+
+  @override
+  String get chatIlimitados => 'Unlimited chats in Explore';
+
+  @override
+  String get fotosIlimitadasSinCaducidad =>
+      'Unlimited photos without expiration';
+
+  @override
+  String get traduccionChat => 'Chat translation';
+
+  @override
+  String get estadoEscribiendo => 'Typing indicator';
+
+  @override
+  String get funcionesIlimitadas => 'Unlimited features';
+
+  @override
+  String get perfilesIlimitados => 'Unlimited profiles';
+
+  @override
+  String get navegarIncognito => 'Browse in incognito mode';
+
+  @override
+  String get sinInterrupciones => 'No ad interruptions';
+
+  @override
+  String get quienMeHaVisto => 'See who viewed me';
 }

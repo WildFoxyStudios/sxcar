@@ -146,5 +146,65 @@
   "@obtenerPremium": { "description": "Placeholder plan CTA in drawer (T7 wires real plan name)" },
 
   "chatearMasLugarenos": "Chatear con más lugareños",
-  "@chatearMasLugarenos": { "description": "Plan card subtitle in drawer" }
+  "@chatearMasLugarenos": { "description": "Plan card subtitle in drawer" },
+
+  "elijeLaActualizacion": "Elija la actualización",
+  "@elijeLaActualizacion": { "description": "Shop screen title variant - alt spelling (legacy Compat)" },
+
+  "semana": "SEMANA",
+  "@semana": { "description": "Week period label on shop duration cards" },
+
+  "mes": "MES",
+  "@mes": { "description": "Month period label on shop duration cards" },
+
+  "meses": "MESES",
+  "@meses": { "description": "Months period label on shop duration cards" },
+
+  "compraPaseDia": "Compra Pase de día",
+  "@compraPaseDia": { "description": "Purchase a day pass CTA" },
+
+  "compraIlimitado7Dias": "Compra Unlimited 7 días",
+  "@compraIlimitado7Dias": { "description": "Purchase Unlimited 7 days CTA" },
+
+  "gratis": "GRATIS",
+  "@gratis": { "description": "Free tier label" },
+
+  "encuentraMasMasRapido": "Encuentra más, más rápido",
+  "@encuentraMasMasRapido": { "description": "Hero subtitle on Tienda top" },
+
+  "masAccesoMasAtencion": "Más acceso. Más atención.",
+  "@masAccesoMasAtencion": { "description": "Hero subtitle on Tienda for Unlimited tier" },
+
+  "xtra": "XTRA",
+  "@xtra": { "description": "XTRA tier label (legacy / Compat)" },
+
+  "unlimited": "UNLIMITED",
+  "@unlimited": { "description": "Unlimited tier label" },
+
+  "chatIlimitados": "Chats ilimitados en Explorar",
+  "@chatIlimitados": { "description": "Unlimited chats feature bullet" },
+
+  "fotosIlimitadasSinCaducidad": "Fotos ilimitadas sin caducidad",
+  "@fotosIlimitadasSinCaducidad": { "description": "Unlimited photos feature bullet" },
+
+  "traduccionChat": "Traducción en chat",
+  "@traduccionChat": { "description": "Chat translation feature bullet" },
+
+  "estadoEscribiendo": "Indicador \"escribiendo…\"",
+  "@estadoEscribiendo": { "description": "Typing indicator feature bullet" },
+
+  "funcionesIlimitadas": "Funciones ilimitadas",
+  "@funcionesIlimitadas": { "description": "Unlimited features label" },
+
+  "perfilesIlimitados": "Perfiles ilimitados",
+  "@perfilesIlimitados": { "description": "Unlimited profiles feature bullet" },
+
+  "navegarIncognito": "Navegar en modo incógnito",
+  "@navegarIncognito": { "description": "Incognito browsing feature bullet" },
+
+  "sinInterrupciones": "Sin interrupciones de anuncios",
+  "@sinInterrupciones": { "description": "Ad-free feature bullet" },
+
+  "quienMeHaVisto": "Ver quién me ha visto",
+  "@quienMeHaVisto": { "description": "See who viewed me feature bullet" }
 }

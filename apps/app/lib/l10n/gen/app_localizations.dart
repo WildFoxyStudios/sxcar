@@ -373,6 +373,126 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Chatear con más lugareños'**
   String get chatearMasLugarenos;
+
+  /// Shop screen title variant - alt spelling (legacy Compat)
+  ///
+  /// In es, this message translates to:
+  /// **'Elija la actualización'**
+  String get elijeLaActualizacion;
+
+  /// Week period label on shop duration cards
+  ///
+  /// In es, this message translates to:
+  /// **'SEMANA'**
+  String get semana;
+
+  /// Month period label on shop duration cards
+  ///
+  /// In es, this message translates to:
+  /// **'MES'**
+  String get mes;
+
+  /// Months period label on shop duration cards
+  ///
+  /// In es, this message translates to:
+  /// **'MESES'**
+  String get meses;
+
+  /// Purchase a day pass CTA
+  ///
+  /// In es, this message translates to:
+  /// **'Compra Pase de día'**
+  String get compraPaseDia;
+
+  /// Purchase Unlimited 7 days CTA
+  ///
+  /// In es, this message translates to:
+  /// **'Compra Unlimited 7 días'**
+  String get compraIlimitado7Dias;
+
+  /// Free tier label
+  ///
+  /// In es, this message translates to:
+  /// **'GRATIS'**
+  String get gratis;
+
+  /// Hero subtitle on Tienda top
+  ///
+  /// In es, this message translates to:
+  /// **'Encuentra más, más rápido'**
+  String get encuentraMasMasRapido;
+
+  /// Hero subtitle on Tienda for Unlimited tier
+  ///
+  /// In es, this message translates to:
+  /// **'Más acceso. Más atención.'**
+  String get masAccesoMasAtencion;
+
+  /// XTRA tier label (legacy / Compat)
+  ///
+  /// In es, this message translates to:
+  /// **'XTRA'**
+  String get xtra;
+
+  /// Unlimited tier label
+  ///
+  /// In es, this message translates to:
+  /// **'UNLIMITED'**
+  String get unlimited;
+
+  /// Unlimited chats feature bullet
+  ///
+  /// In es, this message translates to:
+  /// **'Chats ilimitados en Explorar'**
+  String get chatIlimitados;
+
+  /// Unlimited photos feature bullet
+  ///
+  /// In es, this message translates to:
+  /// **'Fotos ilimitadas sin caducidad'**
+  String get fotosIlimitadasSinCaducidad;
+
+  /// Chat translation feature bullet
+  ///
+  /// In es, this message translates to:
+  /// **'Traducción en chat'**
+  String get traduccionChat;
+
+  /// Typing indicator feature bullet
+  ///
+  /// In es, this message translates to:
+  /// **'Indicador \"escribiendo…\"'**
+  String get estadoEscribiendo;
+
+  /// Unlimited features label
+  ///
+  /// In es, this message translates to:
+  /// **'Funciones ilimitadas'**
+  String get funcionesIlimitadas;
+
+  /// Unlimited profiles feature bullet
+  ///
+  /// In es, this message translates to:
+  /// **'Perfiles ilimitados'**
+  String get perfilesIlimitados;
+
+  /// Incognito browsing feature bullet
+  ///
+  /// In es, this message translates to:
+  /// **'Navegar en modo incógnito'**
+  String get navegarIncognito;
+
+  /// Ad-free feature bullet
+  ///
+  /// In es, this message translates to:
+  /// **'Sin interrupciones de anuncios'**
+  String get sinInterrupciones;
+
+  /// See who viewed me feature bullet
+  ///
+  /// In es, this message translates to:
+  /// **'Ver quién me ha visto'**
+  String get quienMeHaVisto;
 }
 
 class _AppLocalizationsDelegate

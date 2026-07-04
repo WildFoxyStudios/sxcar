@@ -147,4 +147,64 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get chatearMasLugarenos => 'Chatear con más lugareños';
+
+  @override
+  String get elijeLaActualizacion => 'Elija la actualización';
+
+  @override
+  String get semana => 'SEMANA';
+
+  @override
+  String get mes => 'MES';
+
+  @override
+  String get meses => 'MESES';
+
+  @override
+  String get compraPaseDia => 'Compra Pase de día';
+
+  @override
+  String get compraIlimitado7Dias => 'Compra Unlimited 7 días';
+
+  @override
+  String get gratis => 'GRATIS';
+
+  @override
+  String get encuentraMasMasRapido => 'Encuentra más, más rápido';
+
+  @override
+  String get masAccesoMasAtencion => 'Más acceso. Más atención.';
+
+  @override
+  String get xtra => 'XTRA';
+
+  @override
+  String get unlimited => 'UNLIMITED';
+
+  @override
+  String get chatIlimitados => 'Chats ilimitados en Explorar';
+
+  @override
+  String get fotosIlimitadasSinCaducidad => 'Fotos ilimitadas sin caducidad';
+
+  @override
+  String get traduccionChat => 'Traducción en chat';
+
+  @override
+  String get estadoEscribiendo => 'Indicador \"escribiendo…\"';
+
+  @override
+  String get funcionesIlimitadas => 'Funciones ilimitadas';
+
+  @override
+  String get perfilesIlimitados => 'Perfiles ilimitados';
+
+  @override
+  String get navegarIncognito => 'Navegar en modo incógnito';
+
+  @override
+  String get sinInterrupciones => 'Sin interrupciones de anuncios';
+
+  @override
+  String get quienMeHaVisto => 'Ver quién me ha visto';
 }

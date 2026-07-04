@@ -451,4 +451,88 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get misAlbumesHeader => 'Mis álbumes';
+
+  @override
+  String get editProfileSectionBasics => 'Datos básicos';
+
+  @override
+  String get editProfileSectionAppearance => 'Apariencia';
+
+  @override
+  String get editProfileSectionTribes => 'Tribus';
+
+  @override
+  String get editProfileSectionLookingFor => 'Lo que busco';
+
+  @override
+  String get editProfileSectionLikes => 'Lo que me gusta';
+
+  @override
+  String get editProfileSectionHealth => 'Salud';
+
+  @override
+  String get editProfileSectionPractices => 'Lo que hago';
+
+  @override
+  String get editProfileSectionPrivacy => 'Privacidad';
+
+  @override
+  String get sheetSelectEthnicity => 'Selecciona etnia';
+
+  @override
+  String get sheetSelectBodyType => 'Tipo de cuerpo';
+
+  @override
+  String get sheetSelectPosition => 'Posición';
+
+  @override
+  String get sheetSelectPronouns => 'Pronombres';
+
+  @override
+  String get sheetSelectRelationship => 'Estado civil';
+
+  @override
+  String get sheetSelectRole => 'Rol';
+
+  @override
+  String get sheetSelectLookingFor => 'Busco';
+
+  @override
+  String get sheetSelectMeetAt => 'Quedamos en';
+
+  @override
+  String get sheetSelectTags => 'Intereses';
+
+  @override
+  String get sheetSelectHeight => 'Altura (cm)';
+
+  @override
+  String get sheetSelectWeight => 'Peso (kg)';
+
+  @override
+  String get editProfileSave => 'Guardar';
+
+  @override
+  String get editProfileCancel => 'Cancelar';
+
+  @override
+  String get editProfileAdd => 'Añadir';
+
+  @override
+  String get editProfileRemove => 'Eliminar';
+
+  @override
+  String get editProfileSaveError => 'No se pudo guardar. Inténtalo de nuevo.';
+
+  @override
+  String get editProfileSaved => 'Perfil actualizado';
+
+  @override
+  String get detailsVaccines => 'Vacunas';
+
+  @override
+  String get detailsTripCount => 'Viajes';
+
+  @override
+  String get detailsSocial => 'Redes sociales';
 }

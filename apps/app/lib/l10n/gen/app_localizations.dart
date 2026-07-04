@@ -955,6 +955,174 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Mis álbumes'**
   String get misAlbumesHeader;
+
+  /// Edit profile screen section header: Basic info
+  ///
+  /// In es, this message translates to:
+  /// **'Datos básicos'**
+  String get editProfileSectionBasics;
+
+  /// Edit profile screen section header: Appearance
+  ///
+  /// In es, this message translates to:
+  /// **'Apariencia'**
+  String get editProfileSectionAppearance;
+
+  /// Edit profile screen section header: Tribes
+  ///
+  /// In es, this message translates to:
+  /// **'Tribus'**
+  String get editProfileSectionTribes;
+
+  /// Edit profile screen section header: What I'm looking for
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que busco'**
+  String get editProfileSectionLookingFor;
+
+  /// Edit profile screen section header: What I like
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que me gusta'**
+  String get editProfileSectionLikes;
+
+  /// Edit profile screen section header: Health
+  ///
+  /// In es, this message translates to:
+  /// **'Salud'**
+  String get editProfileSectionHealth;
+
+  /// Edit profile screen section header: What I do (practices)
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que hago'**
+  String get editProfileSectionPractices;
+
+  /// Edit profile screen section header: Privacy
+  ///
+  /// In es, this message translates to:
+  /// **'Privacidad'**
+  String get editProfileSectionPrivacy;
+
+  /// Selector sheet title: choose ethnicity
+  ///
+  /// In es, this message translates to:
+  /// **'Selecciona etnia'**
+  String get sheetSelectEthnicity;
+
+  /// Selector sheet title: choose body type
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo de cuerpo'**
+  String get sheetSelectBodyType;
+
+  /// Selector sheet title: choose sexual position
+  ///
+  /// In es, this message translates to:
+  /// **'Posición'**
+  String get sheetSelectPosition;
+
+  /// Selector sheet title: choose pronouns
+  ///
+  /// In es, this message translates to:
+  /// **'Pronombres'**
+  String get sheetSelectPronouns;
+
+  /// Selector sheet title: choose relationship status
+  ///
+  /// In es, this message translates to:
+  /// **'Estado civil'**
+  String get sheetSelectRelationship;
+
+  /// Selector sheet title: choose role (top/bottom/versatile etc.)
+  ///
+  /// In es, this message translates to:
+  /// **'Rol'**
+  String get sheetSelectRole;
+
+  /// Selector sheet title: choose what user is looking for
+  ///
+  /// In es, this message translates to:
+  /// **'Busco'**
+  String get sheetSelectLookingFor;
+
+  /// Selector sheet title: choose meet-at preference
+  ///
+  /// In es, this message translates to:
+  /// **'Quedamos en'**
+  String get sheetSelectMeetAt;
+
+  /// Selector sheet title: choose interests/tags
+  ///
+  /// In es, this message translates to:
+  /// **'Intereses'**
+  String get sheetSelectTags;
+
+  /// Selector sheet title: enter height in cm
+  ///
+  /// In es, this message translates to:
+  /// **'Altura (cm)'**
+  String get sheetSelectHeight;
+
+  /// Selector sheet title: enter weight in kg
+  ///
+  /// In es, this message translates to:
+  /// **'Peso (kg)'**
+  String get sheetSelectWeight;
+
+  /// Edit profile Save button
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar'**
+  String get editProfileSave;
+
+  /// Edit profile Cancel button
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar'**
+  String get editProfileCancel;
+
+  /// Edit profile Add action (e.g. add tribe / tag)
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir'**
+  String get editProfileAdd;
+
+  /// Edit profile Remove action (e.g. remove tribe / tag)
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar'**
+  String get editProfileRemove;
+
+  /// Edit profile save error snackbar
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo guardar. Inténtalo de nuevo.'**
+  String get editProfileSaveError;
+
+  /// Edit profile saved confirmation snackbar
+  ///
+  /// In es, this message translates to:
+  /// **'Perfil actualizado'**
+  String get editProfileSaved;
+
+  /// Profile details sub-field label: Vaccines (HIV PrEP / vaccine list)
+  ///
+  /// In es, this message translates to:
+  /// **'Vacunas'**
+  String get detailsVaccines;
+
+  /// Profile details sub-field label: Trip count
+  ///
+  /// In es, this message translates to:
+  /// **'Viajes'**
+  String get detailsTripCount;
+
+  /// Profile details sub-field label: Social links
+  ///
+  /// In es, this message translates to:
+  /// **'Redes sociales'**
+  String get detailsSocial;
 }
 
 class _AppLocalizationsDelegate

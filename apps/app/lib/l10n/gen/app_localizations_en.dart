@@ -449,4 +449,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get misAlbumesHeader => 'My albums';
+
+  @override
+  String get editProfileSectionBasics => 'Basic info';
+
+  @override
+  String get editProfileSectionAppearance => 'Appearance';
+
+  @override
+  String get editProfileSectionTribes => 'Tribes';
+
+  @override
+  String get editProfileSectionLookingFor => 'What I\'m looking for';
+
+  @override
+  String get editProfileSectionLikes => 'What I like';
+
+  @override
+  String get editProfileSectionHealth => 'Health';
+
+  @override
+  String get editProfileSectionPractices => 'What I do';
+
+  @override
+  String get editProfileSectionPrivacy => 'Privacy';
+
+  @override
+  String get sheetSelectEthnicity => 'Select ethnicity';
+
+  @override
+  String get sheetSelectBodyType => 'Body type';
+
+  @override
+  String get sheetSelectPosition => 'Position';
+
+  @override
+  String get sheetSelectPronouns => 'Pronouns';
+
+  @override
+  String get sheetSelectRelationship => 'Relationship status';
+
+  @override
+  String get sheetSelectRole => 'Role';
+
+  @override
+  String get sheetSelectLookingFor => 'Looking for';
+
+  @override
+  String get sheetSelectMeetAt => 'Meet at';
+
+  @override
+  String get sheetSelectTags => 'Tags';
+
+  @override
+  String get sheetSelectHeight => 'Height (cm)';
+
+  @override
+  String get sheetSelectWeight => 'Weight (kg)';
+
+  @override
+  String get editProfileSave => 'Save';
+
+  @override
+  String get editProfileCancel => 'Cancel';
+
+  @override
+  String get editProfileAdd => 'Add';
+
+  @override
+  String get editProfileRemove => 'Remove';
+
+  @override
+  String get editProfileSaveError => 'Couldn\'t save. Try again.';
+
+  @override
+  String get editProfileSaved => 'Profile updated';
+
+  @override
+  String get detailsVaccines => 'Vaccines';
+
+  @override
+  String get detailsTripCount => 'Trips';
+
+  @override
+  String get detailsSocial => 'Social links';
 }

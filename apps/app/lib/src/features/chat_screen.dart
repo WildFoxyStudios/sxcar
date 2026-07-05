@@ -309,6 +309,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to send voice message: $e')),
       );
+    } finally {
+      try {
+        await File(path).delete();
+      } catch (_) {
+        // Silently ignore deletion errors.
+      }
     }
   }
 

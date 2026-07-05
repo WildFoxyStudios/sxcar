@@ -90,9 +90,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (emoji != null) {
           newReactions.add(MessageReaction(userId: userId, emoji: emoji));
         }
-        setState(() {
-          _messages[idx] = msg.copyWith(reactions: newReactions);
-        });
+        if (mounted) {
+          setState(() {
+            _messages[idx] = msg.copyWith(reactions: newReactions);
+          });
+        }
       }
     });
   }

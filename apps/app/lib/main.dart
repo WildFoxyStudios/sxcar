@@ -1,10 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
 import 'src/rust/frb_generated.dart';
 import 'src/auth/auth_provider.dart';
+import 'src/notifications/push_service.dart';
 import 'src/chat/unread_count_provider.dart';
 import 'src/presence/presence_service.dart';
 import 'src/features/album_detail_screen.dart';
@@ -81,6 +83,9 @@ String _topLevelPath(String fullPath) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Register the background message handler before runApp so that it is set
+  // up even when the app is launched from a terminated state by a notification.
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await RustLib.init();
   runApp(const ProviderScope(child: VibraApp()));
 }
@@ -478,6 +483,12 @@ class _VibraAppState extends ConsumerState<VibraApp>
     ref.listen<AuthState>(authStateProvider, (prev, next) {
       if (prev?.status != next.status) {
         appRouter.refresh();
+        // Register the FCM token once the user is authenticated. Doing this
+        // post-auth ensures the Bearer token is in the Dio headers when the
+        // request reaches /notifications/register.
+        if (next.status == AuthStatus.authenticated) {
+          ref.read(pushServiceProvider).initAndRegister();
+        }
       }
     });
 

@@ -433,6 +433,7 @@ pub struct MessageJson {
     pub lon: Option<f64>,
     pub read_at: Option<String>,
     pub ephemeral_viewed_at: Option<String>,
+    pub unsent_at: Option<String>,
     pub created_at: String,
     pub reactions: Vec<ReactionJson>,
 }
@@ -512,6 +513,10 @@ pub async fn list_messages(
                         .unwrap_or_default()
                 }),
                 ephemeral_viewed_at: r.ephemeral_viewed_at.map(|t| {
+                    t.format(&time::format_description::well_known::Rfc3339)
+                        .unwrap_or_default()
+                }),
+                unsent_at: r.unsent_at.map(|t| {
                     t.format(&time::format_description::well_known::Rfc3339)
                         .unwrap_or_default()
                 }),
@@ -717,6 +722,43 @@ pub async fn delete_reaction(
         "message_id": message_id.to_string(),
         "user_id": user_id.to_string(),
         "emoji": serde_json::Value::Null,
+    });
+    if let Ok(s) = serde_json::to_string(&payload) {
+        state.chat_broker.publish("chat", &s);
+    }
+
+    Ok(Json(serde_json::json!({ "ok": true })))
+}
+
+// ---------------------------------------------------------------------------
+// REST: unsend message
+// ---------------------------------------------------------------------------
+
+/// POST /chat/messages/:id/unsend
+///
+/// Sender-only enforcement: only the original sender can unsend their own
+/// message. Returns 404 if the message doesn't exist, is already unsent, or
+/// doesn't belong to the caller (avoids leaking existence).
+/// On success, broadcasts an `unsend` event over WebSocket so all clients
+/// in the conversation can update the UI in real time.
+pub async fn unsend_message_handler(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Path(message_id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let row = db::chat::unsend_message(&state.pool, message_id, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("unsend_message error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    // Broadcast unsend event over WebSocket
+    let payload = serde_json::json!({
+        "type": "unsend",
+        "message_id": row.id.to_string(),
+        "conversation_id": row.conversation_id.to_string(),
     });
     if let Ok(s) = serde_json::to_string(&payload) {
         state.chat_broker.publish("chat", &s);

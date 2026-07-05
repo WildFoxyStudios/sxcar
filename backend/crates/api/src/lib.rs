@@ -95,6 +95,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/chat/conversations/:id/read", post(chat::mark_read))
         .route("/chat/conversations/:id/messages/:message_id/viewed", post(chat::mark_ephemeral_viewed))
         .route("/chat/messages/:id/reaction", put(chat::put_reaction).delete(chat::delete_reaction))
+        .route("/chat/messages/:id/unsend", post(chat::unsend_message_handler))
         .route("/ws/chat", get(chat::ws_handler))
         .route("/albums", get(albums::list).post(albums::create))
         .route("/albums/shared", get(albums::shared))

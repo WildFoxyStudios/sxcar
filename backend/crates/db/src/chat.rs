@@ -28,6 +28,7 @@ pub struct MessageRow {
     pub lon: Option<f64>,
     pub read_at: Option<time::OffsetDateTime>,
     pub ephemeral_viewed_at: Option<time::OffsetDateTime>,
+    pub unsent_at: Option<time::OffsetDateTime>,
     pub created_at: time::OffsetDateTime,
 }
 
@@ -134,7 +135,7 @@ pub async fn list_messages(
             r#"
             SELECT id, conversation_id, sender_id, kind, body,
                    media_key, media_type, caption, lat, lon,
-                   read_at, ephemeral_viewed_at, created_at
+                   read_at, ephemeral_viewed_at, unsent_at, created_at
             FROM messages
             WHERE conversation_id = $1 AND created_at < $2
             ORDER BY created_at DESC
@@ -151,7 +152,7 @@ pub async fn list_messages(
             r#"
             SELECT id, conversation_id, sender_id, kind, body,
                    media_key, media_type, caption, lat, lon,
-                   read_at, ephemeral_viewed_at, created_at
+                   read_at, ephemeral_viewed_at, unsent_at, created_at
             FROM messages
             WHERE conversation_id = $1
             ORDER BY created_at DESC
@@ -185,7 +186,7 @@ pub async fn insert_message(
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING id, conversation_id, sender_id, kind, body,
                   media_key, media_type, caption, lat, lon,
-                  read_at, ephemeral_viewed_at, created_at
+                  read_at, ephemeral_viewed_at, unsent_at, created_at
         "#,
     )
     .bind(conversation_id)
@@ -206,6 +207,33 @@ pub async fn insert_message(
         .await?;
 
     tx.commit().await?;
+    Ok(row)
+}
+
+/// Unsend (soft-delete) a message by setting `unsent_at = now()`.
+///
+/// Only the original sender can unsend their own message. Returns the updated
+/// row if successful, or `None` if the message doesn't exist, is already unsent,
+/// or belongs to a different sender.
+pub async fn unsend_message(
+    pool: &sqlx::PgPool,
+    message_id: Uuid,
+    sender_id: Uuid,
+) -> anyhow::Result<Option<MessageRow>> {
+    let row = sqlx::query_as::<_, MessageRow>(
+        r#"
+        UPDATE messages
+        SET unsent_at = now()
+        WHERE id = $1 AND sender_id = $2 AND unsent_at IS NULL
+        RETURNING id, conversation_id, sender_id, kind, body,
+                  media_key, media_type, caption, lat, lon,
+                  read_at, ephemeral_viewed_at, unsent_at, created_at
+        "#,
+    )
+    .bind(message_id)
+    .bind(sender_id)
+    .fetch_optional(pool)
+    .await?;
     Ok(row)
 }
 

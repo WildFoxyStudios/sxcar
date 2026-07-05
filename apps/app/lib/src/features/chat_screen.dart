@@ -95,6 +95,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             _messages[idx] = msg.copyWith(reactions: newReactions);
           });
         }
+      } else if (type == 'unsend') {
+        final messageId = json['message_id'] as String?;
+        if (messageId == null) return;
+        final idx = _messages.indexWhere((m) => m.id == messageId);
+        if (idx == -1) return;
+        if (mounted) {
+          setState(() {
+            _messages[idx] = _messages[idx].copyWith(
+              unsentAt: DateTime.now().toIso8601String(),
+            );
+          });
+        }
       }
     });
   }
@@ -540,6 +552,39 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
     final message = widget.message;
     final isMe = widget.isMe;
 
+    // If the message was unsent, show a placeholder instead of the original
+    // content regardless of kind.
+    if (message.unsentAt != null) {
+      final placeholder = AppLocalizations.of(context)?.chatUnsentMessage ?? '[Message unsent]';
+      return Column(
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Align(
+            alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+            child: Container(
+              margin: _bubbleMargin(isMe),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: VibraTheme.kSurfaceElevated.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: VibraTheme.kDivider.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                placeholder,
+                style: const TextStyle(
+                  color: VibraTheme.kTextSecondary,
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     Widget bubble;
     switch (message.kind) {
       case 'photo':
@@ -558,7 +603,7 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
       mainAxisSize: MainAxisSize.min,
       children: [
         GestureDetector(
-          onLongPress: () => _showReactionPicker(context, ref),
+          onLongPress: () => _showActionPicker(context, ref),
           child: bubble,
         ),
         if (message.reactions.isNotEmpty) _buildReactionChips(context, isMe),
@@ -816,13 +861,14 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
     );
   }
 
-  // ── Reaction picker + chips ────────────────────────────────────────────────
+  // ── Action picker (reactions + unsend) ─────────────────────────────────────
 
   static const _kReactionEmojis = ['❤️', '😂', '👍', '😮', '😢', '🔥'];
 
-  void _showReactionPicker(BuildContext context, WidgetRef ref) {
+  void _showActionPicker(BuildContext context, WidgetRef ref) {
     final myId = ref.read(authStateProvider).userId ?? '';
     final message = widget.message;
+    final isMe = widget.isMe;
     final existing =
         message.reactions.where((r) => r.userId == myId).firstOrNull;
 
@@ -835,37 +881,76 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
       builder: (ctx) {
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: _kReactionEmojis.map((emoji) {
-              final selected = existing?.emoji == emoji;
-              return GestureDetector(
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  final service = ref.read(chatServiceProvider);
-                  if (selected) {
-                    service.removeReaction(message.id);
-                  } else {
-                    service.setReaction(message.id, emoji);
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? VibraTheme.kAccent.withValues(alpha: 0.2)
-                        : null,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(emoji,
-                      style: const TextStyle(fontSize: 28)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Emoji reaction row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: _kReactionEmojis.map((emoji) {
+                  final selected = existing?.emoji == emoji;
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      final service = ref.read(chatServiceProvider);
+                      if (selected) {
+                        service.removeReaction(message.id);
+                      } else {
+                        service.setReaction(message.id, emoji);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? VibraTheme.kAccent.withValues(alpha: 0.2)
+                            : null,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(emoji,
+                          style: const TextStyle(fontSize: 28)),
+                    ),
+                  );
+                }).toList(),
+              ),
+              // Unsend option for own messages (only if not already unsent)
+              if (isMe && message.unsentAt == null) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Divider(color: VibraTheme.kDivider),
                 ),
-              );
-            }).toList(),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      _unsendMessage(context, ref);
+                    },
+                    icon: const Icon(Icons.undo, color: VibraTheme.kError, size: 20),
+                    label: Text(
+                      AppLocalizations.of(context)?.chatUnsend ?? 'Unsend',
+                      style: const TextStyle(color: VibraTheme.kError),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         );
       },
     );
+  }
+
+  void _unsendMessage(BuildContext context, WidgetRef ref) {
+    final message = widget.message;
+    final service = ref.read(chatServiceProvider);
+    service.unsendMessage(message.id).catchError((_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to unsend message')),
+        );
+      }
+    });
   }
 
   Widget _buildReactionChips(BuildContext context, bool isMe) {

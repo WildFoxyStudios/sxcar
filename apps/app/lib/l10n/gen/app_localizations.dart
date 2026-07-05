@@ -1225,6 +1225,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'escribiendo…'**
   String get chatTyping;
+
+  /// Action button to unsend/delete a sent message
+  ///
+  /// In es, this message translates to:
+  /// **'Anular envío'**
+  String get chatUnsend;
+
+  /// Placeholder shown in place of an unsent message
+  ///
+  /// In es, this message translates to:
+  /// **'[Mensaje anulado]'**
+  String get chatUnsentMessage;
 }
 
 class _AppLocalizationsDelegate

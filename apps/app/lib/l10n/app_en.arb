@@ -213,5 +213,11 @@
   "@badgeNew": { "description": "NUEVO badge on accounts created within the last 7 days" },
 
   "chatTyping": "typing…",
-  "@chatTyping": { "description": "Typing indicator shown in chat when the peer is composing a message" }
+  "@chatTyping": { "description": "Typing indicator shown in chat when the peer is composing a message" },
+
+  "chatUnsend": "Unsend",
+  "@chatUnsend": { "description": "Action button to unsend/delete a sent message" },
+
+  "chatUnsentMessage": "[Message unsent]",
+  "@chatUnsentMessage": { "description": "Placeholder shown in place of an unsent message" }
 }

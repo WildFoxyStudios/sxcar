@@ -71,6 +71,10 @@ class Message {
   /// Null for non-ephemeral messages and un-viewed ephemeral ones.
   final String? ephemeralViewedAt;
 
+  /// ISO-8601 timestamp set when the sender unsent this message.
+  /// Null if the message is still active.
+  final String? unsentAt;
+
   /// Reactions from other users on this message (or empty if none).
   ///
   /// Each reaction is a [MessageReaction] with userId + emoji. The server
@@ -88,6 +92,7 @@ class Message {
     this.mediaType,
     this.readAt,
     this.ephemeralViewedAt,
+    this.unsentAt,
     this.reactions = const [],
   });
 
@@ -103,6 +108,7 @@ class Message {
       mediaType: json['media_type'] as String?,
       readAt: json['read_at'] as String?,
       ephemeralViewedAt: json['ephemeral_viewed_at'] as String?,
+      unsentAt: json['unsent_at'] as String?,
       reactions: (json['reactions'] as List<dynamic>?)
               ?.map((r) =>
                   MessageReaction.fromJson(r as Map<String, dynamic>))
@@ -128,6 +134,7 @@ class Message {
       // WS payload does not include viewed/read timestamps — REST-only fields.
       readAt: null,
       ephemeralViewedAt: null,
+      unsentAt: null,
       reactions: const [],
     );
   }
@@ -135,6 +142,7 @@ class Message {
   /// Create a copy with optional field overrides.
   Message copyWith({
     List<MessageReaction>? reactions,
+    String? unsentAt,
   }) {
     return Message(
       id: id,
@@ -147,6 +155,7 @@ class Message {
       mediaType: mediaType,
       readAt: readAt,
       ephemeralViewedAt: ephemeralViewedAt,
+      unsentAt: unsentAt ?? this.unsentAt,
       reactions: reactions ?? this.reactions,
     );
   }

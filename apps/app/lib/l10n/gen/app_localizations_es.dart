@@ -586,4 +586,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get chatTyping => 'escribiendo…';
+
+  @override
+  String get chatUnsend => 'Anular envío';
+
+  @override
+  String get chatUnsentMessage => '[Mensaje anulado]';
 }

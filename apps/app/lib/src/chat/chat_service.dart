@@ -138,6 +138,15 @@ class ChatService {
     await _dio.delete('/chat/messages/$messageId/reaction');
   }
 
+  /// REST: unsend (soft-delete) a message by id.
+  ///
+  /// Only the original sender can unsend their own message. Returns 404
+  /// if the message doesn't exist, is already unsent, or belongs to
+  /// a different sender.
+  Future<void> unsendMessage(String messageId) async {
+    await _dio.post('/chat/messages/$messageId/unsend');
+  }
+
   /// REST: mark an ephemeral photo as viewed by the recipient.
   ///
   /// Returns `true` only on the *first* call for this message. Subsequent

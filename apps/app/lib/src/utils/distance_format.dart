@@ -1,7 +1,7 @@
 // Distance formatter for /grid/nearby `distance_m` field.
 //
 // units: 0 = Metric (km/m), 1 = Imperial (mi/ft)
-// - <1 km returns "350 m" (metric) or "1150 ft" (imperial)
+// - <1 km returns "350 m" (metric) or "1148 ft" (imperial)
 // - ≥1 km returns "1.2 km" (metric) or "0.7 mi" (imperial)
 // - null returns "—" (em-dash) — no distance known (e.g., user opted out of location)
 // - negative values are clamped to 0 (defensive — bad data shouldn't crash UI)

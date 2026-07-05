@@ -38,11 +38,13 @@ pub struct NearbyResponse {
     pub users: Vec<db::geo::NearbyUserRow>,
 }
 
-/// GET /grid/nearby?lat=&lon=&radius_m=5000&limit=50&min_age=&max_age=&tribe=&looking_for=&body_type=&q=
+/// GET /grid/nearby?lat=&lon=&radius_m=5000&limit=50&min_age=&max_age=&tribe=&looking_for=&body_type=&q=&favorites_only=&online_only=&right_now=
 ///
 /// Devuelve los usuarios activos cercanos al punto dado, ordenados por distancia.
 /// Requiere autenticación. Excluye automáticamente al usuario solicitante.
-/// Soporta filtros opcionales: min_age, max_age, tribe, looking_for, body_type, q.
+/// Soporta filtros opcionales: min_age, max_age, tribe, looking_for, body_type, q,
+/// favorites_only (solo favoritos del solicitante), online_only (activos <5min),
+/// right_now (activos <30min).
 pub async fn nearby(
     AuthUser(current_user_id): AuthUser,
     State(state): State<AppState>,

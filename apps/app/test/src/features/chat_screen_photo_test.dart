@@ -14,6 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _FakeChatService extends ChatService {
+  bool sendVoiceMessageCalled = false;
   final List<Message> messages;
 
   bool markViewedCalled = false;
@@ -31,7 +32,7 @@ class _FakeChatService extends ChatService {
       Future.value(List<Message>.from(messages));
 
   @override
-  Future<String> getMediaUrl(String key) async => fakeMediaUrl;
+  Future<String> getMediaUrl(String key, {String kind = 'album'}) async => fakeMediaUrl;
 
   @override
   Future<bool> markEphemeralViewed(
@@ -49,6 +50,17 @@ class _FakeChatService extends ChatService {
     bool ephemeral = false,
   }) async =>
       'fake-msg-id';
+
+  @override
+  Future<String> sendVoiceMessage(
+    String conversationId,
+    String audioFilePath, {
+    String? mimeType,
+    Dio? r2Client,
+  }) async {
+    sendVoiceMessageCalled = true;
+    return 'fake-voice-msg-id';
+  }
 
   @override
   void connectWebSocket() {}
@@ -308,6 +320,36 @@ void main() {
       // No full-screen viewer pushed; bubble immediately shows expired.
       expect(find.text('Photo expired'), findsOneWidget);
       expect(find.text('Tap to view once'), findsNothing);
+    });
+  });
+
+  // ── Voice message bubble ──────────────────────────────────────────────────────
+
+  group('ChatScreen — voice message bubble', () {
+    testWidgets('voice bubble renders play button for audio messages',
+        (tester) async {
+      final message = Message(
+        id: 'msg-voice-1',
+        conversationId: 'conv-1',
+        senderId: 'other-user',
+        kind: 'audio',
+        createdAt: '2025-01-01T12:00:00Z',
+        mediaKey: 'album/test-voice.m4a',
+        mediaType: 'audio/mp4',
+      );
+
+      final fake = _FakeChatService(messages: [message]);
+
+      await tester.pumpWidget(_wrap(
+        const ChatScreen(conversationId: 'conv-1'),
+        fake,
+      ));
+      await tester.pumpAndSettle();
+
+      // Voice bubble should show the play icon
+      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+      // Should show the i18n-friendly label
+      expect(find.text('Voice message'), findsOneWidget);
     });
   });
 }

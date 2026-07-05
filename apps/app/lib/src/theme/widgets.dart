@@ -95,8 +95,7 @@ class VibraSegmented extends StatelessWidget {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeInOut,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               decoration: BoxDecoration(
                 color: isSelected ? Colors.white : Colors.transparent,
                 borderRadius: const BorderRadius.all(Radius.circular(999)),
@@ -105,8 +104,7 @@ class VibraSegmented extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 style: TextStyle(
                   color: isSelected ? Colors.black : VibraTheme.kTextSecondary,
-                  fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   fontSize: 14,
                 ),
                 child: Text(options[index]),
@@ -133,11 +131,7 @@ class SectionBand extends StatelessWidget {
   final IconData icon;
   final String title;
 
-  const SectionBand({
-    super.key,
-    required this.icon,
-    required this.title,
-  });
+  const SectionBand({super.key, required this.icon, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -148,11 +142,7 @@ class SectionBand extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: VibraTheme.kTextSecondary,
-          ),
+          Icon(icon, size: 20, color: VibraTheme.kTextSecondary),
           const SizedBox(width: 8),
           Text(
             title.toUpperCase(),
@@ -242,16 +232,10 @@ class UnderlineField extends StatelessWidget {
               filled: false,
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
               border: const UnderlineInputBorder(
-                borderSide: BorderSide(
-                  color: VibraTheme.kDivider,
-                  width: 1,
-                ),
+                borderSide: BorderSide(color: VibraTheme.kDivider, width: 1),
               ),
               enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(
-                  color: VibraTheme.kDivider,
-                  width: 1,
-                ),
+                borderSide: BorderSide(color: VibraTheme.kDivider, width: 1),
               ),
               focusedBorder: const UnderlineInputBorder(
                 borderSide: BorderSide(
@@ -260,10 +244,7 @@ class UnderlineField extends StatelessWidget {
                 ),
               ),
               disabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(
-                  color: VibraTheme.kDivider,
-                  width: 1,
-                ),
+                borderSide: BorderSide(color: VibraTheme.kDivider, width: 1),
               ),
               // Hide the built-in counter; we draw our own below.
               counterText: '',
@@ -311,10 +292,7 @@ class _CounterRowState extends State<_CounterRow> {
       alignment: Alignment.centerRight,
       child: Text(
         '$current/${widget.maxLength}',
-        style: const TextStyle(
-          fontSize: 12,
-          color: VibraTheme.kTextSecondary,
-        ),
+        style: const TextStyle(fontSize: 12, color: VibraTheme.kTextSecondary),
       ),
     );
   }
@@ -437,7 +415,10 @@ class UpsellCard extends StatelessWidget {
               onTap: onTap,
               borderRadius: BorderRadius.circular(20),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: highlighted ? Colors.black : VibraTheme.kYellow,
                   borderRadius: BorderRadius.circular(20),
@@ -548,7 +529,10 @@ class PlanDurationCard extends StatelessWidget {
                 top: 0,
                 right: 0,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF666666),
                     borderRadius: BorderRadius.circular(8),
@@ -601,9 +585,9 @@ class NUEVOBadge extends StatelessWidget {
 
   /// Compact tile preset: smaller font + radius, tighter padding (6×2).
   const NUEVOBadge.small({super.key})
-      : size = 9,
-        radius = 10,
-        padding = const EdgeInsets.symmetric(horizontal: 6, vertical: 2);
+    : size = 9,
+      radius = 10,
+      padding = const EdgeInsets.symmetric(horizontal: 6, vertical: 2);
 
   @override
   Widget build(BuildContext context) {
@@ -684,10 +668,7 @@ class SettingRow extends StatelessWidget {
 
     Widget content = Row(
       children: [
-        if (leading != null) ...[
-          leading,
-          const SizedBox(width: 12),
-        ],
+        if (leading != null) ...[leading, const SizedBox(width: 12)],
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -718,8 +699,11 @@ class SettingRow extends StatelessWidget {
           trailing!,
         ] else if (onTap != null) ...[
           const SizedBox(width: 12),
-          const Icon(Icons.chevron_right,
-              color: VibraTheme.kTextSecondary, size: 20),
+          const Icon(
+            Icons.chevron_right,
+            color: VibraTheme.kTextSecondary,
+            size: 20,
+          ),
         ],
       ],
     );
@@ -838,7 +822,7 @@ class AlbumCarousel extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: albums.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final album = albums[i];
           return GestureDetector(
@@ -858,14 +842,16 @@ class AlbumCarousel extends StatelessWidget {
                         ? Image.network(
                             album.coverPhotoUrl!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
+                            errorBuilder: (_, _, _) =>
                                 const _AlbumPlaceholder(),
                           )
                         : const _AlbumPlaceholder(),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 4),
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
                     child: Text(
                       album.name ?? '',
                       maxLines: 1,
@@ -893,8 +879,11 @@ class _AlbumPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: VibraTheme.kChip,
-      child: const Icon(Icons.photo_album_outlined,
-          color: VibraTheme.kTextSecondary, size: 28),
+      child: const Icon(
+        Icons.photo_album_outlined,
+        color: VibraTheme.kTextSecondary,
+        size: 28,
+      ),
     );
   }
 }
@@ -914,11 +903,8 @@ class AlbumUpdateBanner extends StatelessWidget {
   /// Tap handler.
   final VoidCallback onTap;
 
-  const AlbumUpdateBanner({
-    super.key,
-    required this.count,
-    required this.onTap,
-  }) : assert(count >= 0, 'count must be non-negative');
+  const AlbumUpdateBanner({super.key, required this.count, required this.onTap})
+    : assert(count >= 0, 'count must be non-negative');
 
   @override
   Widget build(BuildContext context) {
@@ -1093,11 +1079,7 @@ class ChipMultiSelect extends StatelessWidget {
     }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: VibraTheme.kPadPage),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: chips,
-      ),
+      child: Wrap(spacing: 8, runSpacing: 8, children: chips),
     );
   }
 }
@@ -1123,8 +1105,8 @@ class _Chip extends StatelessWidget {
     final fg = disabled
         ? VibraTheme.kTextTertiary
         : selected
-            ? VibraTheme.kTextPrimary
-            : VibraTheme.kTextSecondary;
+        ? VibraTheme.kTextPrimary
+        : VibraTheme.kTextSecondary;
     return Opacity(
       opacity: disabled ? 0.5 : 1.0,
       child: Material(

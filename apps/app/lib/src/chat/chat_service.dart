@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../auth/auth_provider.dart';
 import '../config.dart';
+import '../media/media_service.dart';
 import 'models.dart';
 
 /// Provider for a ChatService instance tied to the auth state.
@@ -113,16 +115,48 @@ class ChatService {
     return response.data!['id'] as String;
   }
 
-  /// REST: get a presigned GET URL for a private album media key.
+  /// REST: get a presigned GET URL for a media key.
   ///
-  /// Calls `GET /media/get-url?key=…&kind=album` and returns the
-  /// `get_url` string (valid for 3600 s).
-  Future<String> getMediaUrl(String key) async {
+  /// Calls `GET /media/get-url?key=…&kind=…` and returns the
+  /// `get_url` string (valid for 3600 s). Default kind is "album".
+  Future<String> getMediaUrl(String key, {String kind = 'album'}) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '/media/get-url',
-      queryParameters: {'key': key, 'kind': 'album'},
+      queryParameters: {'key': key, 'kind': kind},
     );
     return response.data!['get_url'] as String;
+  }
+
+  /// Record audio file, upload to R2, then send as voice message.
+  ///
+  /// Returns the message ID from the server.
+  /// Optionally accepts an [r2Client] Dio for testing (R2 uploads use a
+  /// separate HTTP client).
+  Future<String> sendVoiceMessage(
+    String conversationId,
+    String audioFilePath, {
+    String? mimeType,
+    Dio? r2Client,
+  }) async {
+    final mediaService = MediaService(_dio, r2Client: r2Client);
+    final uploadUrl = await mediaService.getUploadUrl(kind: 'album', ext: 'm4a');
+
+    final file = File(audioFilePath);
+    final bytes = await file.readAsBytes();
+    await mediaService.uploadToR2(
+      uploadUrl.putUrl,
+      bytes,
+      contentType: mimeType ?? 'audio/mp4',
+    );
+
+    final resp = await _dio.post<Map<String, dynamic>>(
+      '/chat/conversations/$conversationId/messages',
+      data: {
+        'media_key': uploadUrl.key,
+        'media_type': 'audio',
+      },
+    );
+    return resp.data!['id'] as String;
   }
 
   /// REST: set (or replace) the caller's reaction on a message.

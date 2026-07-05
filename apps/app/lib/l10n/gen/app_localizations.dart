@@ -1237,6 +1237,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'[Mensaje anulado]'**
   String get chatUnsentMessage;
+
+  /// Label for voice message audio bubble
+  ///
+  /// In es, this message translates to:
+  /// **'Mensaje de voz'**
+  String get chatVoiceMessage;
+
+  /// Label shown while recording a voice message
+  ///
+  /// In es, this message translates to:
+  /// **'Grabando…'**
+  String get chatRecording;
 }
 
 class _AppLocalizationsDelegate

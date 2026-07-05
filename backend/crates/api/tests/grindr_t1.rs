@@ -303,6 +303,52 @@ async fn empty_message_is_rejected() {
 }
 
 #[tokio::test]
+async fn send_audio_message_succeeds() {
+    let app = test_app().await;
+    let (token_a, _user_a, token_b, user_b) = register_two(&app).await;
+
+    let (st, body) = post(
+        &app,
+        "/chat/conversations",
+        serde_json::json!({"participant_id": user_b.to_string()}),
+        Some(&token_a),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED);
+    let conv_id = body["conversation_id"].as_str().unwrap().to_string();
+
+    // A sends an audio message
+    let (st, body) = post(
+        &app,
+        &format!("/chat/conversations/{conv_id}/messages"),
+        serde_json::json!({
+            "media_key": "audio/key1.m4a",
+            "media_type": "audio",
+        }),
+        Some(&token_a),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED);
+    let msg_id = body["id"].as_str().unwrap().to_string();
+
+    // B reads the conversation — should see audio fields populated
+    let (st, body) = get(
+        &app,
+        &format!("/chat/conversations/{conv_id}/messages"),
+        &token_b,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    let msgs = body["messages"].as_array().unwrap();
+    assert_eq!(msgs.len(), 1);
+    let m = &msgs[0];
+    assert_eq!(m["id"].as_str().unwrap(), msg_id);
+    assert_eq!(m["kind"].as_str(), Some("audio"));
+    assert_eq!(m["media_key"].as_str(), Some("audio/key1.m4a"));
+    assert_eq!(m["media_type"].as_str(), Some("audio"));
+}
+
+#[tokio::test]
 async fn read_receipts_set_read_at() {
     let app = test_app().await;
     let (token_a, _a, token_b, user_b) = register_two(&app).await;

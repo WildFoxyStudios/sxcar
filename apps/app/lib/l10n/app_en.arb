@@ -219,5 +219,11 @@
   "@chatUnsend": { "description": "Action button to unsend/delete a sent message" },
 
   "chatUnsentMessage": "[Message unsent]",
-  "@chatUnsentMessage": { "description": "Placeholder shown in place of an unsent message" }
+  "@chatUnsentMessage": { "description": "Placeholder shown in place of an unsent message" },
+
+  "chatVoiceMessage": "Voice message",
+  "@chatVoiceMessage": { "description": "Label for voice message audio bubble" },
+
+  "chatRecording": "Recording…",
+  "@chatRecording": { "description": "Label shown while recording a voice message" }
 }

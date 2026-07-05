@@ -289,6 +289,8 @@ fn classify_kind(req: &SendMessageRequest) -> Option<&'static str> {
         // "view once" photos get kind='ephemeral_photo'; otherwise 'photo'.
         if req.ephemeral == Some(true) {
             Some("ephemeral_photo")
+        } else if req.media_type.as_deref().map(|m| m.starts_with("audio")).unwrap_or(false) {
+            Some("audio")
         } else {
             Some("photo")
         }
@@ -343,7 +345,7 @@ pub async fn send_message(
     // For media messages, validate media_type
     if matches!(kind, "media") {
         let mt = req.media_type.as_deref().unwrap_or("");
-        if !matches!(mt, "photo") {
+        if !matches!(mt, "photo" | "audio") {
             return Err(StatusCode::BAD_REQUEST);
         }
     }

@@ -590,4 +590,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatUnsentMessage => '[Message unsent]';
+
+  @override
+  String get chatVoiceMessage => 'Voice message';
+
+  @override
+  String get chatRecording => 'Recording…';
 }

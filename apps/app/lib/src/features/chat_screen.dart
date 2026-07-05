@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:record/record.dart';
 import '../auth/auth_provider.dart';
 import '../chat/chat_service.dart';
 import '../chat/models.dart';
@@ -33,6 +36,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _peerTyping = false;
   Timer? _peerTypingTimer;
   DateTime? _lastTypingSent;
+
+  // Voice recording state
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  bool _isRecording = false;
+  String? _recordingFilePath;
 
   @override
   void initState() {
@@ -252,6 +260,63 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  /// Start recording a voice message.
+  Future<void> _startRecording() async {
+    final hasPermission = await _audioRecorder.hasPermission();
+    if (!hasPermission) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Microphone permission denied')),
+      );
+      return;
+    }
+
+    final dir = await _tempDir();
+    final path = '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    await _audioRecorder.start(const RecordConfig(), path: path);
+    if (!mounted) return;
+    setState(() {
+      _isRecording = true;
+      _recordingFilePath = path;
+    });
+  }
+
+  /// Stop recording and send the voice message.
+  Future<void> _stopRecording() async {
+    final path = _recordingFilePath;
+    setState(() => _isRecording = false);
+    _recordingFilePath = null;
+
+    if (path == null) return;
+
+    try {
+      final chatService = ref.read(chatServiceProvider);
+      await chatService.sendVoiceMessage(widget.conversationId, path);
+      if (!mounted) return;
+
+      final authState = ref.read(authStateProvider);
+      final optimistic = Message(
+        id: '',
+        conversationId: widget.conversationId,
+        senderId: authState.userId ?? '',
+        kind: 'audio',
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      setState(() => _messages.add(optimistic));
+      _scrollToBottom();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send voice message: $e')),
+      );
+    }
+  }
+
+  /// Get a temporary directory for recording.
+  Future<Directory> _tempDir() async {
+    return Directory.systemTemp.createTemp('voice_');
+  }
+
   String? _currentUserId() {
     return ref.read(authStateProvider).userId;
   }
@@ -441,6 +506,57 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildInputBar(ThemeData theme) {
+    final l10n = AppLocalizations.of(context);
+
+    if (_isRecording) {
+      // Recording state: stop button + red pulsing indicator
+      return Container(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        decoration: const BoxDecoration(
+          color: VibraTheme.kSurface,
+          border: Border(top: BorderSide(color: VibraTheme.kDivider)),
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              // Recording indicator
+              Container(
+                width: 12,
+                height: 12,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l10n?.chatRecording ?? 'Recording…',
+                style: const TextStyle(
+                  color: VibraTheme.kTextPrimary,
+                  fontSize: 14,
+                ),
+              ),
+              const Spacer(),
+              // Stop button
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: VibraTheme.kError,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.stop, color: Colors.white, size: 18),
+                  onPressed: _stopRecording,
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       decoration: const BoxDecoration(
@@ -455,6 +571,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               icon: const Icon(Icons.attach_file,
                   color: VibraTheme.kTextMuted, size: 22),
               onPressed: _pickAndSendPhoto,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            ),
+            // Mic icon — starts voice recording
+            IconButton(
+              icon: const Icon(Icons.mic,
+                  color: VibraTheme.kTextMuted, size: 22),
+              onPressed: _startRecording,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             ),
@@ -535,16 +659,78 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
   /// Cached presigned-URL future for photo bubbles (set once in initState).
   Future<String>? _urlFuture;
 
+  // Voice playback state
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isPlaying = false;
+  Duration _audioDuration = Duration.zero;
+  Duration _audioPosition = Duration.zero;
+  String? _audioUrl;
+  StreamSubscription? _playerStateSub;
+  StreamSubscription? _playerPositionSub;
+
   @override
   void initState() {
     super.initState();
-    if (widget.message.kind == 'photo') {
-      final key = widget.message.mediaKey ?? '';
-      if (key.isNotEmpty) {
-        _urlFuture =
-            ref.read(chatServiceProvider).getMediaUrl(key);
-      }
+    final message = widget.message;
+    final key = message.mediaKey ?? '';
+    if (message.kind == 'photo' && key.isNotEmpty) {
+      _urlFuture =
+          ref.read(chatServiceProvider).getMediaUrl(key);
+    } else if (message.kind == 'audio' && key.isNotEmpty) {
+      _initAudio();
     }
+  }
+
+  @override
+  void dispose() {
+    _playerStateSub?.cancel();
+    _playerPositionSub?.cancel();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initAudio() async {
+    final key = widget.message.mediaKey ?? '';
+    try {
+      final url = await ref.read(chatServiceProvider).getMediaUrl(key, kind: 'album');
+      if (!mounted) return;
+      setState(() => _audioUrl = url);
+
+      // Listen for state changes
+      _playerStateSub = _audioPlayer.onPlayerStateChanged.listen((state) {
+        if (!mounted) return;
+        setState(() => _isPlaying = state == PlayerState.playing);
+      });
+
+      // Listen for position updates
+      _playerPositionSub = _audioPlayer.onPositionChanged.listen((pos) {
+        if (!mounted) return;
+        setState(() => _audioPosition = pos);
+      });
+
+      // Get duration when available
+      final dur = await _audioPlayer.getDuration();
+      if (dur != null && mounted) {
+        setState(() => _audioDuration = dur);
+      }
+    } catch (_) {
+      // Audio URL fetch failed — bubble will show broken state
+    }
+  }
+
+  Future<void> _togglePlayback() async {
+    if (_audioUrl == null) return;
+    if (_isPlaying) {
+      await _audioPlayer.pause();
+    } else {
+      await _audioPlayer.play(UrlSource(_audioUrl!));
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
   }
 
   @override
@@ -592,6 +778,9 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
         break;
       case 'ephemeral_photo':
         bubble = _buildEphemeralBubble(context, isMe);
+        break;
+      case 'audio':
+        bubble = _buildVoiceBubble(isMe);
         break;
       default:
         bubble = _buildTextBubble(isMe);
@@ -692,6 +881,89 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+
+  // ── Voice bubble ─────────────────────────────────────────────────────────────
+
+  Widget _buildVoiceBubble(bool isMe) {
+    final l10n = AppLocalizations.of(context);
+    final displayDuration = _audioDuration > Duration.zero
+        ? _formatDuration(_audioDuration)
+        : _formatDuration(_audioPosition);
+
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: _bubbleMargin(isMe),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isMe
+              ? VibraTheme.kAccent.withValues(alpha: 0.15)
+              : VibraTheme.kSurfaceElevated,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft:
+                isMe ? const Radius.circular(16) : const Radius.circular(4),
+            bottomRight:
+                isMe ? const Radius.circular(4) : const Radius.circular(16),
+          ),
+          border: isMe
+              ? Border.all(
+                  color: VibraTheme.kAccent.withValues(alpha: 0.3), width: 1)
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Play / pause button
+            GestureDetector(
+              onTap: _togglePlayback,
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: isMe
+                      ? VibraTheme.kAccent
+                      : VibraTheme.kAccent.withValues(alpha: 0.8),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _isPlaying ? Icons.pause : Icons.play_arrow,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n?.chatVoiceMessage ?? 'Voice message',
+                  style: TextStyle(
+                    color: isMe ? VibraTheme.kAccent : VibraTheme.kTextPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  displayDuration,
+                  style: TextStyle(
+                    color: isMe
+                        ? VibraTheme.kAccent.withValues(alpha: 0.7)
+                        : VibraTheme.kTextSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

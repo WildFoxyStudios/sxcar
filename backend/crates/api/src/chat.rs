@@ -414,6 +414,12 @@ pub struct ListMessagesResponse {
 }
 
 #[derive(Serialize)]
+pub struct ReactionJson {
+    pub user_id: String,
+    pub emoji: String,
+}
+
+#[derive(Serialize)]
 pub struct MessageJson {
     pub id: String,
     pub conversation_id: String,
@@ -428,6 +434,7 @@ pub struct MessageJson {
     pub read_at: Option<String>,
     pub ephemeral_viewed_at: Option<String>,
     pub created_at: String,
+    pub reactions: Vec<ReactionJson>,
 }
 
 /// GET /chat/conversations/:id/messages?before=&limit=50
@@ -467,31 +474,53 @@ pub async fn list_messages(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
+    // Batch-fetch reactions for all messages in one query.
+    let msg_ids: Vec<Uuid> = rows.iter().map(|r| r.id).collect();
+    let reaction_rows = db::chat::list_reactions_for_messages(&state.pool, &msg_ids)
+        .await
+        .map_err(|e| {
+            tracing::error!("list_reactions_for_messages error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let mut reactions_map: std::collections::HashMap<Uuid, Vec<ReactionJson>> =
+        std::collections::HashMap::new();
+    for rr in reaction_rows {
+        reactions_map.entry(rr.message_id).or_default().push(ReactionJson {
+            user_id: rr.user_id.to_string(),
+            emoji: rr.emoji,
+        });
+    }
+
     let messages = rows
         .into_iter()
-        .map(|r| MessageJson {
-            id: r.id.to_string(),
-            conversation_id: r.conversation_id.to_string(),
-            sender_id: r.sender_id.to_string(),
-            kind: r.kind,
-            body: r.body,
-            media_key: r.media_key,
-            media_type: r.media_type,
-            caption: r.caption,
-            lat: r.lat,
-            lon: r.lon,
-            read_at: r.read_at.map(|t| {
-                t.format(&time::format_description::well_known::Rfc3339)
-                    .unwrap_or_default()
-            }),
-            ephemeral_viewed_at: r.ephemeral_viewed_at.map(|t| {
-                t.format(&time::format_description::well_known::Rfc3339)
-                    .unwrap_or_default()
-            }),
-            created_at: r
-                .created_at
-                .format(&time::format_description::well_known::Rfc3339)
-                .unwrap_or_default(),
+        .map(|r| {
+            let reactions = reactions_map.remove(&r.id).unwrap_or_default();
+            MessageJson {
+                id: r.id.to_string(),
+                conversation_id: r.conversation_id.to_string(),
+                sender_id: r.sender_id.to_string(),
+                kind: r.kind,
+                body: r.body,
+                media_key: r.media_key,
+                media_type: r.media_type,
+                caption: r.caption,
+                lat: r.lat,
+                lon: r.lon,
+                read_at: r.read_at.map(|t| {
+                    t.format(&time::format_description::well_known::Rfc3339)
+                        .unwrap_or_default()
+                }),
+                ephemeral_viewed_at: r.ephemeral_viewed_at.map(|t| {
+                    t.format(&time::format_description::well_known::Rfc3339)
+                        .unwrap_or_default()
+                }),
+                created_at: r
+                    .created_at
+                    .format(&time::format_description::well_known::Rfc3339)
+                    .unwrap_or_default(),
+                reactions,
+            }
         })
         .collect();
 
@@ -583,4 +612,115 @@ pub async fn mark_ephemeral_viewed(
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
     Ok(Json(serde_json::json!({ "viewed": newly_viewed })))
+}
+
+// ---------------------------------------------------------------------------
+// REST: message reactions
+// ---------------------------------------------------------------------------
+
+/// Request body for PUT /chat/messages/:id/reaction
+#[derive(Deserialize)]
+pub struct ReactionRequest {
+    pub emoji: String,
+}
+
+/// PUT /chat/messages/:id/reaction
+///
+/// Sets (or replaces) the caller's reaction on a message. The emoji must be
+/// non-empty and ≤ 16 bytes. Only conversation members can react.
+pub async fn put_reaction(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Path(message_id): Path<Uuid>,
+    Json(req): Json<ReactionRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    // Resolve message → conversation (404 if message not found)
+    let conv_id = db::chat::conversation_id_for_message(&state.pool, message_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("conversation_id_for_message error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    // Membership check (403 if not a member)
+    let member = db::chat::is_member(&state.pool, conv_id, user_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if !member {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    // Validate emoji: non-empty, ≤ 16 bytes
+    let emoji = req.emoji.trim();
+    if emoji.is_empty() || emoji.len() > 16 {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    db::chat::set_reaction(&state.pool, message_id, user_id, emoji)
+        .await
+        .map_err(|e| {
+            tracing::error!("set_reaction error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    // Broadcast reaction event over WebSocket
+    let payload = serde_json::json!({
+        "type": "reaction",
+        "message_id": message_id.to_string(),
+        "user_id": user_id.to_string(),
+        "emoji": emoji,
+    });
+    if let Ok(s) = serde_json::to_string(&payload) {
+        state.chat_broker.publish("chat", &s);
+    }
+
+    Ok(Json(serde_json::json!({ "ok": true })))
+}
+
+/// DELETE /chat/messages/:id/reaction
+///
+/// Removes the caller's reaction from a message. Only conversation members
+/// can call this. No-op if no reaction exists.
+pub async fn delete_reaction(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Path(message_id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    // Resolve message → conversation (404 if message not found)
+    let conv_id = db::chat::conversation_id_for_message(&state.pool, message_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("conversation_id_for_message error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    // Membership check (403 if not a member)
+    let member = db::chat::is_member(&state.pool, conv_id, user_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if !member {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::chat::remove_reaction(&state.pool, message_id, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("remove_reaction error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    // Broadcast reaction-removed event over WebSocket (emoji = null means removed)
+    let payload = serde_json::json!({
+        "type": "reaction",
+        "message_id": message_id.to_string(),
+        "user_id": user_id.to_string(),
+        "emoji": serde_json::Value::Null,
+    });
+    if let Ok(s) = serde_json::to_string(&payload) {
+        state.chat_broker.publish("chat", &s);
+    }
+
+    Ok(Json(serde_json::json!({ "ok": true })))
 }

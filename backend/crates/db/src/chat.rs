@@ -284,6 +284,102 @@ pub async fn mark_ephemeral_viewed(
     Ok(res.rows_affected() > 0)
 }
 
+// ---------------------------------------------------------------------------
+// Reactions
+// ---------------------------------------------------------------------------
+
+/// Row returned by list_reactions_for_messages.
+#[derive(Debug, sqlx::FromRow)]
+pub struct ReactionRow {
+    pub message_id: Uuid,
+    pub user_id: Uuid,
+    pub emoji: String,
+}
+
+/// Upsert a reaction (one per user per message; replaces existing emoji).
+pub async fn set_reaction(
+    pool: &sqlx::PgPool,
+    message_id: Uuid,
+    user_id: Uuid,
+    emoji: &str,
+) -> anyhow::Result<()> {
+    sqlx::query(
+        r#"INSERT INTO message_reactions (message_id, user_id, emoji)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (message_id, user_id) DO UPDATE
+           SET emoji = EXCLUDED.emoji, created_at = now()"#,
+    )
+    .bind(message_id)
+    .bind(user_id)
+    .bind(emoji)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// Remove a reaction (no-op if not present).
+pub async fn remove_reaction(
+    pool: &sqlx::PgPool,
+    message_id: Uuid,
+    user_id: Uuid,
+) -> anyhow::Result<()> {
+    sqlx::query(
+        "DELETE FROM message_reactions WHERE message_id = $1 AND user_id = $2",
+    )
+    .bind(message_id)
+    .bind(user_id)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// Batch-fetch reactions for a set of message ids.
+pub async fn list_reactions_for_messages(
+    pool: &sqlx::PgPool,
+    message_ids: &[Uuid],
+) -> anyhow::Result<Vec<ReactionRow>> {
+    if message_ids.is_empty() {
+        return Ok(vec![]);
+    }
+    let rows = sqlx::query_as::<_, ReactionRow>(
+        "SELECT message_id, user_id, emoji FROM message_reactions WHERE message_id = ANY($1)",
+    )
+    .bind(message_ids)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+/// Resolve the conversation a message belongs to (returns None if message not found).
+pub async fn conversation_id_for_message(
+    pool: &sqlx::PgPool,
+    message_id: Uuid,
+) -> anyhow::Result<Option<Uuid>> {
+    let result: Option<(Uuid,)> = sqlx::query_as(
+        "SELECT conversation_id FROM messages WHERE id = $1",
+    )
+    .bind(message_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(result.map(|r| r.0))
+}
+
+/// Check if a user is a member of a conversation.
+pub async fn is_member(
+    pool: &sqlx::PgPool,
+    conversation_id: Uuid,
+    user_id: Uuid,
+) -> anyhow::Result<bool> {
+    let exists: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM conversation_members WHERE conversation_id = $1 AND user_id = $2)",
+    )
+    .bind(conversation_id)
+    .bind(user_id)
+    .fetch_one(pool)
+    .await?;
+    Ok(exists)
+}
+
 /// Delete a conversation (only if the user is a member).
 /// Also cascades to messages and conversation_members via FK.
 pub async fn delete_conversation(

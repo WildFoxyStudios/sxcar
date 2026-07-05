@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../billing/billing_providers.dart';
 import '../billing/models.dart';
+import '../billing/revenuecat_providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
 
@@ -315,7 +318,7 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
           enabled: activeSub == null && !_purchasing,
           onPressed: _purchasing
               ? null
-              : () => _purchase(context, selectedPrice.id),
+              : () => _purchase(context, _selectedPlanCode, selectedPrice),
         ),
         const SizedBox(height: 8),
         Text(
@@ -337,13 +340,38 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
     return l10n.precioContinuar(price.formatted, days);
   }
 
-  Future<void> _purchase(BuildContext context, String priceId) async {
+  Future<void> _purchase(
+    BuildContext context,
+    String planCode,
+    PlanPrice price,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _purchasing = true);
     try {
-      final svc = ref.read(billingServiceProvider);
-      await svc.simulatePurchase(priceId);
+      if (kDebugMode) {
+        // ── Dev / testing path ────────────────────────────────────
+        // Use the backend simulate-purchase endpoint to avoid real
+        // Platform Channel calls during development.
+        final svc = ref.read(billingServiceProvider);
+        await svc.simulatePurchase(price.id);
+      } else {
+        // ── Production path ────────────────────────────────────────
+        // Find the matching RC package and purchase via RevenueCat.
+        // The backend webhook (G7a) will update the subscriptions table.
+        final rcSvc = ref.read(revenueCatServiceProvider);
+        final pkg = await rcSvc.packageFor(planCode, price.period);
+        if (pkg == null) {
+          throw Exception(
+            'No RC package found for $planCode/${price.period}',
+          );
+        }
+        await rcSvc.purchasePackage(pkg);
+        // Invalidate RC customer info so tierFeaturesFromRCProvider
+        // recalculates and the UI reflects the new entitlement.
+        ref.invalidate(customerInfoProvider);
+      }
+
       ref.invalidate(mySubscriptionProvider);
       if (!mounted) return;
       messenger.showSnackBar(
@@ -353,6 +381,23 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(content: Text('Error: ${e.response?.statusCode ?? e.type}')),
+      );
+    } on PlatformException catch (e) {
+      // RC purchase failure (including user cancellation).
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            e.code == 'purchaseCancelledError'
+                ? 'Compra cancelada'
+                : 'Error: ${e.message ?? e.code}',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Error: $e')),
       );
     } finally {
       if (mounted) setState(() => _purchasing = false);

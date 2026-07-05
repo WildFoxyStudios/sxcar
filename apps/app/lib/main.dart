@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
 import 'src/rust/frb_generated.dart';
 import 'src/auth/auth_provider.dart';
+import 'src/billing/revenuecat_providers.dart';
 import 'src/notifications/push_service.dart';
 import 'src/chat/unread_count_provider.dart';
 import 'src/presence/presence_service.dart';
@@ -488,6 +489,7 @@ class _VibraAppState extends ConsumerState<VibraApp>
         // request reaches /notifications/register.
         if (next.status == AuthStatus.authenticated) {
           ref.read(pushServiceProvider).initAndRegister();
+          ref.read(revenueCatServiceProvider).configure();
         }
       }
     });

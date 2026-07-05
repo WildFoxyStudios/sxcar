@@ -25,6 +25,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// logic without touching native code.
 class PushService {
   final Dio _dio;
+  bool _listenersRegistered = false;
 
   PushService(this._dio);
 
@@ -56,16 +57,21 @@ class PushService {
 
         token = await FirebaseMessaging.instance.getToken();
 
-        // Re-register whenever the token is rotated by FCM.
-        FirebaseMessaging.instance.onTokenRefresh.listen(_registerToken);
+        // Register listeners once — prevent accumulation on re-auth.
+        if (!_listenersRegistered) {
+          // Re-register whenever the token is rotated by FCM.
+          FirebaseMessaging.instance.onTokenRefresh.listen(_registerToken);
 
-        // Foreground message handler: log + (future) in-app banner.
-        // We deliberately do NOT add flutter_local_notifications here
-        // (that is a separate dependency beyond G2 scope).
-        FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-          final n = message.notification;
-          debugPrint('[FCM] foreground: ${n?.title} — ${n?.body}');
-        });
+          // Foreground message handler: log + (future) in-app banner.
+          // We deliberately do NOT add flutter_local_notifications here
+          // (that is a separate dependency beyond G2 scope).
+          FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+            final n = message.notification;
+            debugPrint('[FCM] foreground: ${n?.title} — ${n?.body}');
+          });
+
+          _listenersRegistered = true;
+        }
       }
 
       if (token != null) {

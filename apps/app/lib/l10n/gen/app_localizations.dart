@@ -1219,6 +1219,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'NUEVO'**
   String get badgeNew;
+
+  /// Typing indicator shown in chat when the peer is composing a message
+  ///
+  /// In es, this message translates to:
+  /// **'escribiendo…'**
+  String get chatTyping;
 }
 
 class _AppLocalizationsDelegate

@@ -583,4 +583,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get badgeNew => 'NUEVO';
+
+  @override
+  String get chatTyping => 'escribiendo…';
 }

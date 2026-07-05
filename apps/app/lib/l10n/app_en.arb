@@ -210,5 +210,8 @@
   "filterPosition": "Position",
   "@filterPosition": { "description": "Cascade filter chip: filter by sexual position" },
   "badgeNew": "NEW",
-  "@badgeNew": { "description": "NUEVO badge on accounts created within the last 7 days" }
+  "@badgeNew": { "description": "NUEVO badge on accounts created within the last 7 days" },
+
+  "chatTyping": "typing…",
+  "@chatTyping": { "description": "Typing indicator shown in chat when the peer is composing a message" }
 }

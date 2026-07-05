@@ -9,6 +9,7 @@ import '../chat/models.dart';
 import '../media/media_service.dart';
 import '../nsfw/nsfw_service.dart';
 import '../theme/app_theme.dart';
+import '../../l10n/gen/app_localizations.dart';
 
 /// Real-time chat screen with WebSocket connection.
 class ChatScreen extends ConsumerStatefulWidget {
@@ -28,6 +29,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   String? _error;
   StreamSubscription<Map<String, dynamic>>? _wsSubscription;
 
+  // Typing indicator state
+  bool _peerTyping = false;
+  Timer? _peerTypingTimer;
+  DateTime? _lastTypingSent;
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +44,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void dispose() {
     _wsSubscription?.cancel();
+    _peerTypingTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -57,6 +64,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             _messages.add(message);
           });
           _scrollToBottom();
+        }
+      } else if (type == 'typing') {
+        final convId = json['conversation_id'] as String?;
+        final userId = json['user_id'] as String?;
+        final myId = ref.read(authStateProvider).userId;
+        if (convId == widget.conversationId && userId != myId) {
+          _peerTypingTimer?.cancel();
+          setState(() => _peerTyping = true);
+          _peerTypingTimer = Timer(const Duration(seconds: 4), () {
+            if (mounted) setState(() => _peerTyping = false);
+          });
         }
       }
     });
@@ -207,6 +225,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return ref.read(authStateProvider).userId;
   }
 
+  /// Throttled handler for compose-field changes: fires a typing frame at most
+  /// once every ~3 s while the field is non-empty.
+  void _onTypingChanged(String value) {
+    if (value.isEmpty) return;
+    final now = DateTime.now();
+    if (_lastTypingSent == null ||
+        now.difference(_lastTypingSent!) >= const Duration(seconds: 3)) {
+      _lastTypingSent = now;
+      final chatService = ref.read(chatServiceProvider);
+      chatService.sendTyping(widget.conversationId);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -255,6 +286,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             },
                           ),
           ),
+
+          // ── Typing indicator ──────────────────────────────────────────────
+          if (_peerTyping) _buildTypingIndicator(context),
 
           // ── Input bar ─────────────────────────────────────────────────────
           _buildInputBar(theme),
@@ -361,6 +395,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
+  Widget _buildTypingIndicator(BuildContext context) {
+    final text = AppLocalizations.of(context)?.chatTyping ?? 'typing…';
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, bottom: 4),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: VibraTheme.kTextSecondary,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
   Widget _buildInputBar(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
@@ -402,6 +450,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ),
                   maxLines: null,
                   textInputAction: TextInputAction.send,
+                  onChanged: _onTypingChanged,
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),

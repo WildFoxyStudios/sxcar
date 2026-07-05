@@ -173,6 +173,12 @@ class ChatService {
     _channel?.sink.add(jsonEncode(message));
   }
 
+  /// Notify the server (and thus the peer) that we are typing in [conversationId].
+  /// Fire-and-forget; server broadcasts {"type":"typing", conversation_id, user_id}.
+  void sendTyping(String conversationId) {
+    sendViaWebSocket({'type': 'typing', 'conversation_id': conversationId});
+  }
+
   /// Close the WebSocket connection.
   void disconnectWebSocket() {
     _subscription?.cancel();

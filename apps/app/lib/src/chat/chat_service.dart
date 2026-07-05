@@ -125,6 +125,19 @@ class ChatService {
     return response.data!['get_url'] as String;
   }
 
+  /// REST: set (or replace) the caller's reaction on a message.
+  ///
+  /// The server enforces one reaction per user — a subsequent call with a
+  /// different emoji replaces the previous one.
+  Future<void> setReaction(String messageId, String emoji) async {
+    await _dio.put('/chat/messages/$messageId/reaction', data: {'emoji': emoji});
+  }
+
+  /// REST: remove the caller's reaction from a message.
+  Future<void> removeReaction(String messageId) async {
+    await _dio.delete('/chat/messages/$messageId/reaction');
+  }
+
   /// REST: mark an ephemeral photo as viewed by the recipient.
   ///
   /// Returns `true` only on the *first* call for this message. Subsequent

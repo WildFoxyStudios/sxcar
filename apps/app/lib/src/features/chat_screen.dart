@@ -76,6 +76,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             if (mounted) setState(() => _peerTyping = false);
           });
         }
+      } else if (type == 'reaction') {
+        final messageId = json['message_id'] as String?;
+        final userId = json['user_id'] as String?;
+        final emoji = json['emoji'] as String?;
+        if (messageId == null || userId == null) return;
+        final idx = _messages.indexWhere((m) => m.id == messageId);
+        if (idx == -1) return; // silently ignore unknown messages
+        final msg = _messages[idx];
+        // Remove any existing reaction by this user, then add if non-null
+        final newReactions = List<MessageReaction>.from(msg.reactions)
+          ..removeWhere((r) => r.userId == userId);
+        if (emoji != null) {
+          newReactions.add(MessageReaction(userId: userId, emoji: emoji));
+        }
+        setState(() {
+          _messages[idx] = msg.copyWith(reactions: newReactions);
+        });
       }
     });
   }
@@ -521,14 +538,30 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
     final message = widget.message;
     final isMe = widget.isMe;
 
+    Widget bubble;
     switch (message.kind) {
       case 'photo':
-        return _buildPhotoBubble(context, isMe);
+        bubble = _buildPhotoBubble(context, isMe);
+        break;
       case 'ephemeral_photo':
-        return _buildEphemeralBubble(context, isMe);
+        bubble = _buildEphemeralBubble(context, isMe);
+        break;
       default:
-        return _buildTextBubble(isMe);
+        bubble = _buildTextBubble(isMe);
     }
+
+    return Column(
+      crossAxisAlignment:
+          isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onLongPress: () => _showReactionPicker(context, ref),
+          child: bubble,
+        ),
+        if (message.reactions.isNotEmpty) _buildReactionChips(context, isMe),
+      ],
+    );
   }
 
   // ── Text bubble ────────────────────────────────────────────────────────────
@@ -777,6 +810,115 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => _FullScreenPhotoViewer(url: url),
+      ),
+    );
+  }
+
+  // ── Reaction picker + chips ────────────────────────────────────────────────
+
+  static const _kReactionEmojis = ['❤️', '😂', '👍', '😮', '😢', '🔥'];
+
+  void _showReactionPicker(BuildContext context, WidgetRef ref) {
+    final myId = ref.read(authStateProvider).userId ?? '';
+    final message = widget.message;
+    final existing =
+        message.reactions.where((r) => r.userId == myId).firstOrNull;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: VibraTheme.kSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: _kReactionEmojis.map((emoji) {
+              final selected = existing?.emoji == emoji;
+              return GestureDetector(
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  final service = ref.read(chatServiceProvider);
+                  if (selected) {
+                    service.removeReaction(message.id);
+                  } else {
+                    service.setReaction(message.id, emoji);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? VibraTheme.kAccent.withValues(alpha: 0.2)
+                        : null,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(emoji,
+                      style: const TextStyle(fontSize: 28)),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildReactionChips(BuildContext context, bool isMe) {
+    final myId = ref.read(authStateProvider).userId ?? '';
+
+    // Aggregate reactions: emoji -> list of userIds
+    final Map<String, List<String>> agg = {};
+    for (final r in widget.message.reactions) {
+      agg.putIfAbsent(r.emoji, () => []);
+      agg[r.emoji]!.add(r.userId);
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(
+        top: 2,
+        left: isMe ? 60 : 0,
+        right: isMe ? 0 : 60,
+      ),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 2,
+        direction: Axis.horizontal,
+        children: agg.entries.map((entry) {
+          final emoji = entry.key;
+          final reactors = entry.value;
+          final count = reactors.length;
+          final isMine = reactors.contains(myId);
+
+          return GestureDetector(
+            onTap: isMine
+                ? () {
+                    final service = ref.read(chatServiceProvider);
+                    service.removeReaction(widget.message.id);
+                  }
+                : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isMine
+                    ? VibraTheme.kAccent.withValues(alpha: 0.2)
+                    : VibraTheme.kChip,
+                borderRadius: BorderRadius.circular(12),
+                border: isMine
+                    ? Border.all(
+                        color: VibraTheme.kAccent.withValues(alpha: 0.4),
+                        width: 1)
+                    : null,
+              ),
+              child: Text(
+                count > 1 ? '$emoji $count' : emoji,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

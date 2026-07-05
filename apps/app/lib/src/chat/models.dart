@@ -31,6 +31,22 @@ class Conversation {
   }
 }
 
+/// A single emoji reaction from one user on a message.
+///
+/// The server enforces one reaction per user per message.
+class MessageReaction {
+  final String userId;
+  final String emoji;
+
+  const MessageReaction({required this.userId, required this.emoji});
+
+  factory MessageReaction.fromJson(Map<String, dynamic> j) =>
+      MessageReaction(
+        userId: j['user_id'] as String,
+        emoji: j['emoji'] as String,
+      );
+}
+
 /// A single message within a conversation.
 class Message {
   final String id;
@@ -55,6 +71,12 @@ class Message {
   /// Null for non-ephemeral messages and un-viewed ephemeral ones.
   final String? ephemeralViewedAt;
 
+  /// Reactions from other users on this message (or empty if none).
+  ///
+  /// Each reaction is a [MessageReaction] with userId + emoji. The server
+  /// enforces one reaction per user; the client replaces on re-emoji.
+  final List<MessageReaction> reactions;
+
   const Message({
     required this.id,
     required this.conversationId,
@@ -66,6 +88,7 @@ class Message {
     this.mediaType,
     this.readAt,
     this.ephemeralViewedAt,
+    this.reactions = const [],
   });
 
   factory Message.fromJson(Map<String, dynamic> json) {
@@ -80,6 +103,11 @@ class Message {
       mediaType: json['media_type'] as String?,
       readAt: json['read_at'] as String?,
       ephemeralViewedAt: json['ephemeral_viewed_at'] as String?,
+      reactions: (json['reactions'] as List<dynamic>?)
+              ?.map((r) =>
+                  MessageReaction.fromJson(r as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 
@@ -100,6 +128,26 @@ class Message {
       // WS payload does not include viewed/read timestamps — REST-only fields.
       readAt: null,
       ephemeralViewedAt: null,
+      reactions: const [],
+    );
+  }
+
+  /// Create a copy with optional field overrides.
+  Message copyWith({
+    List<MessageReaction>? reactions,
+  }) {
+    return Message(
+      id: id,
+      conversationId: conversationId,
+      senderId: senderId,
+      kind: kind,
+      body: body,
+      createdAt: createdAt,
+      mediaKey: mediaKey,
+      mediaType: mediaType,
+      readAt: readAt,
+      ephemeralViewedAt: ephemeralViewedAt,
+      reactions: reactions ?? this.reactions,
     );
   }
 }

@@ -432,6 +432,81 @@ void main() {
       // The user name is still present.
       expect(find.text('Bob'), findsOneWidget);
     });
+
+    // ──────────────────────────────────────────────────────────────────
+    // G1: photos_only, not_chatted, position filter chips
+    // ──────────────────────────────────────────────────────────────────
+
+    testWidgets('navegar_sends_photos_only_true_when_chip_active',
+        (tester) async {
+      final requests = <Map<String, dynamic>>[];
+      final dio = Dio()..httpClientAdapter = _RecordingCascadeAdapter(requests);
+
+      await tester.pumpWidget(_wrap(const NavegarScreen(), dio));
+      await tester.pumpAndSettle();
+
+      // Initial query must NOT include photos_only.
+      expect(requests.first.containsKey('photos_only'), isFalse,
+          reason: 'initial query must not filter by photos_only');
+
+      // Tap the "Con foto" chip.
+      await tester.tap(find.text('Con foto'));
+      await tester.pumpAndSettle();
+
+      // After toggle, API must re-query with photos_only=true.
+      expect(requests.last['photos_only'], anyOf(true, 'true'),
+          reason: 'tapping Con foto must re-query with photos_only=true');
+    });
+
+    testWidgets('navegar_sends_not_chatted_true_when_chip_active',
+        (tester) async {
+      final requests = <Map<String, dynamic>>[];
+      final dio = Dio()..httpClientAdapter = _RecordingCascadeAdapter(requests);
+
+      await tester.pumpWidget(_wrap(const NavegarScreen(), dio));
+      await tester.pumpAndSettle();
+
+      // Initial query must NOT include not_chatted.
+      expect(requests.first.containsKey('not_chatted'), isFalse,
+          reason: 'initial query must not filter by not_chatted');
+
+      // The chips row is a horizontal ListView; scroll to reveal "Sin chatear"
+      // (6th chip — may be off-screen in the narrow test viewport).
+      await tester.drag(
+        find.byWidgetPredicate(
+          (w) => w is Scrollable && w.axisDirection == AxisDirection.right,
+        ),
+        const Offset(-400, 0),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap the "Sin chatear" chip.
+      await tester.tap(find.text('Sin chatear'));
+      await tester.pumpAndSettle();
+
+      // After toggle, API must re-query with not_chatted=true.
+      expect(requests.last['not_chatted'], anyOf(true, 'true'),
+          reason: 'tapping Sin chatear must re-query with not_chatted=true');
+    });
+
+    testWidgets('navegar_posicion_chip_visible_and_no_initial_param',
+        (tester) async {
+      final requests = <Map<String, dynamic>>[];
+      final dio = Dio()..httpClientAdapter = _RecordingCascadeAdapter(requests);
+
+      await tester.pumpWidget(_wrap(const NavegarScreen(), dio));
+      await tester.pumpAndSettle();
+
+      // The Posición chip is rendered in the filter row widget tree.
+      // skipOffstage: false because it may be scrolled off in the narrow test
+      // viewport (horizontal ListView).
+      expect(find.text('Posición', skipOffstage: false), findsOneWidget,
+          reason: 'Posición chip must exist in the filter row widget tree');
+
+      // Initial query must NOT include position.
+      expect(requests.first.containsKey('position'), isFalse,
+          reason: 'initial query must not include position when chip is inactive');
+    });
   });
 }
 

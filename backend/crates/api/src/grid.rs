@@ -23,6 +23,9 @@ pub struct NearbyQuery {
     pub favorites_only: Option<bool>,
     pub online_only: Option<bool>,
     pub right_now: Option<bool>,
+    pub photos_only: Option<bool>,
+    pub position: Option<String>,
+    pub not_chatted: Option<bool>,
 }
 
 fn default_radius() -> f64 {
@@ -38,13 +41,15 @@ pub struct NearbyResponse {
     pub users: Vec<db::geo::NearbyUserRow>,
 }
 
-/// GET /grid/nearby?lat=&lon=&radius_m=5000&limit=50&min_age=&max_age=&tribe=&looking_for=&body_type=&q=&favorites_only=&online_only=&right_now=
+/// GET /grid/nearby?lat=&lon=&radius_m=5000&limit=50&min_age=&max_age=&tribe=&looking_for=&body_type=&q=&favorites_only=&online_only=&right_now=&photos_only=&position=&not_chatted=
 ///
 /// Devuelve los usuarios activos cercanos al punto dado, ordenados por distancia.
 /// Requiere autenticación. Excluye automáticamente al usuario solicitante.
 /// Soporta filtros opcionales: min_age, max_age, tribe, looking_for, body_type, q,
 /// favorites_only (solo favoritos del solicitante), online_only (activos <5min),
-/// right_now (activos <30min).
+/// right_now (activos <30min), photos_only (solo usuarios con foto de perfil),
+/// position (posición sexual exacta del perfil), not_chatted (excluye usuarios con los
+/// que el solicitante ya tiene una conversación).
 pub async fn nearby(
     AuthUser(current_user_id): AuthUser,
     State(state): State<AppState>,
@@ -66,6 +71,9 @@ pub async fn nearby(
         params.favorites_only.unwrap_or(false),
         params.online_only.unwrap_or(false),
         params.right_now.unwrap_or(false),
+        params.photos_only.unwrap_or(false),
+        params.position.as_deref(),
+        params.not_chatted.unwrap_or(false),
     )
     .await
     .map_err(|e| {

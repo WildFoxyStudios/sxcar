@@ -1196,6 +1196,24 @@ abstract class AppLocalizations {
   /// **'Ahora'**
   String get filterRightNow;
 
+  /// Cascade filter chip: only users with a profile photo
+  ///
+  /// In es, this message translates to:
+  /// **'Con foto'**
+  String get filterPhotosOnly;
+
+  /// Cascade filter chip: only users not yet chatted with
+  ///
+  /// In es, this message translates to:
+  /// **'Sin chatear'**
+  String get filterNotChatted;
+
+  /// Cascade filter chip: filter by sexual position
+  ///
+  /// In es, this message translates to:
+  /// **'Posición'**
+  String get filterPosition;
+
   /// NUEVO badge on accounts created within the last 7 days
   ///
   /// In es, this message translates to:

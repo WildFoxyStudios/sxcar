@@ -42,6 +42,9 @@ pub struct NearbyUserRow {
 /// - `favorites_only`: si es true, solo usuarios que el viewer ha marcado como favoritos
 /// - `online_only`: si es true, solo usuarios con `last_seen_at` en los últimos 5 minutos
 /// - `right_now`: si es true, solo usuarios con `last_seen_at` en los últimos 30 minutos
+/// - `photos_only`: si es true, solo usuarios con al menos una foto de perfil principal
+/// - `position`: filtra por posición sexual exacta (top, vers_top, versatile, vers_bottom, bottom, side); NULL = sin filtro
+/// - `not_chatted`: si es true, excluye usuarios con los que el viewer ya tiene una conversación
 pub async fn find_nearby_users(
     pool: &Pool,
     lon: f64,
@@ -58,6 +61,9 @@ pub async fn find_nearby_users(
     favorites_only: bool,
     online_only: bool,
     right_now: bool,
+    photos_only: bool,
+    position: Option<&str>,
+    not_chatted: bool,
 ) -> anyhow::Result<Vec<NearbyUserRow>> {
     let rows = sqlx::query_as::<_, NearbyUserRow>(
         r#"
@@ -88,6 +94,13 @@ pub async fn find_nearby_users(
           AND (NOT $12::bool OR f.user_id IS NOT NULL)
           AND (NOT $13::bool OR u.last_seen_at IS NOT NULL AND u.last_seen_at > now() - interval '5 minutes')
           AND (NOT $14::bool OR u.last_seen_at IS NOT NULL AND u.last_seen_at > now() - interval '30 minutes')
+          AND (NOT $15::bool OR EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = u.id AND ph.is_primary = true))
+          AND ($16::text IS NULL OR p.position = $16::text)
+          AND (NOT $17::bool OR NOT EXISTS (
+              SELECT 1 FROM conversation_members cm_self
+              JOIN conversation_members cm_other
+                ON cm_self.conversation_id = cm_other.conversation_id
+              WHERE cm_self.user_id = $4 AND cm_other.user_id = u.id))
         ORDER BY distance_m ASC
         LIMIT $5
         "#,
@@ -106,6 +119,9 @@ pub async fn find_nearby_users(
     .bind(favorites_only)
     .bind(online_only)
     .bind(right_now)
+    .bind(photos_only)
+    .bind(position)
+    .bind(not_chatted)
     .fetch_all(pool)
     .await?;
     Ok(rows)

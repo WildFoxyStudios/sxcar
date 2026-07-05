@@ -476,6 +476,12 @@
   "@filterOnlineOnly": { "description": "Cascade/GridSearch filter chip: only recently-online users (last 5min)" },
   "filterRightNow": "Ahora",
   "@filterRightNow": { "description": "Cascade/GridSearch filter chip: recently active users (last 30min)" },
+  "filterPhotosOnly": "Con foto",
+  "@filterPhotosOnly": { "description": "Cascade filter chip: only users with a profile photo" },
+  "filterNotChatted": "Sin chatear",
+  "@filterNotChatted": { "description": "Cascade filter chip: only users not yet chatted with" },
+  "filterPosition": "Posición",
+  "@filterPosition": { "description": "Cascade filter chip: filter by sexual position" },
   "badgeNew": "NUEVO",
   "@badgeNew": { "description": "NUEVO badge on accounts created within the last 7 days" }
 }

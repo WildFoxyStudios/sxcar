@@ -225,6 +225,49 @@ async fn add_tribe(pool: &db::Pool, user_id: uuid::Uuid, tribe: &str) {
     .unwrap();
 }
 
+/// Helper: set the sexual position in the profiles table for a user.
+async fn set_profile_position(pool: &db::Pool, user_id: uuid::Uuid, pos: &str) {
+    sqlx::query("UPDATE profiles SET position = $1 WHERE user_id = $2")
+        .bind(pos)
+        .bind(user_id)
+        .execute(pool)
+        .await
+        .unwrap();
+}
+
+/// Helper: add a primary photo for a user in the photos table.
+async fn add_primary_photo(pool: &db::Pool, user_id: uuid::Uuid) {
+    sqlx::query(
+        "INSERT INTO photos (user_id, r2_key, is_primary) VALUES ($1, 'fake-r2-key', true)",
+    )
+    .bind(user_id)
+    .execute(pool)
+    .await
+    .unwrap();
+}
+
+/// Helper: create a conversation with both users as members (simulates "chatted").
+async fn create_conversation_between(
+    pool: &db::Pool,
+    user1: uuid::Uuid,
+    user2: uuid::Uuid,
+) {
+    let conv_id: (uuid::Uuid,) =
+        sqlx::query_as("INSERT INTO conversations DEFAULT VALUES RETURNING id")
+            .fetch_one(pool)
+            .await
+            .unwrap();
+    sqlx::query(
+        "INSERT INTO conversation_members (conversation_id, user_id) VALUES ($1, $2), ($1, $3)",
+    )
+    .bind(conv_id.0)
+    .bind(user1)
+    .bind(user2)
+    .execute(pool)
+    .await
+    .unwrap();
+}
+
 /// Helper: add a looking_for entry for a user.
 async fn add_looking_for(pool: &db::Pool, user_id: uuid::Uuid, intent: &str) {
     sqlx::query!(
@@ -753,4 +796,160 @@ async fn filter_right_now() {
     assert_eq!(st, StatusCode::OK);
     assert!(user_in_results(&body, uid_a), "within-30min A must be in results");
     assert!(!user_in_results(&body, uid_b), "outside-30min B must NOT be in results");
+}
+
+// ---------------------------------------------------------------------------
+// G1: photos_only, position, not_chatted filters
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn filter_photos_only() {
+    let app = test_app().await;
+    let pool = db::connect(&test_db_url()).await.unwrap();
+
+    let seeker_token = seed_seeker(&app, &pool).await;
+
+    // User A: has a primary photo.
+    let (_token_a, uid_a) = seed_user(
+        &app, &pool,
+        &unique_email(), "PhotoUser", "Has a photo",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+
+    // User B: no photo.
+    let (_token_b, uid_b) = seed_user(
+        &app, &pool,
+        &unique_email(), "NoPhotoUser", "No photo",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+
+    add_primary_photo(&pool, uid_a).await;
+
+    // photos_only=true → only A
+    let (st, body) = get(
+        &app,
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999&photos_only=true",
+        &seeker_token,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(user_in_results(&body, uid_a), "user with photo must be in photos_only results");
+    assert!(!user_in_results(&body, uid_b), "user without photo must NOT be in photos_only results");
+
+    // photos_only not set → both appear
+    let (st, body) = get(
+        &app,
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999",
+        &seeker_token,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(user_in_results(&body, uid_a), "A must appear without photos_only filter");
+    assert!(user_in_results(&body, uid_b), "B must appear without photos_only filter");
+}
+
+#[tokio::test]
+async fn filter_position() {
+    let app = test_app().await;
+    let pool = db::connect(&test_db_url()).await.unwrap();
+
+    let seeker_token = seed_seeker(&app, &pool).await;
+
+    // User A: position = 'bottom'
+    let (_token_a, uid_a) = seed_user(
+        &app, &pool,
+        &unique_email(), "BottomUser", "I am a bottom",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+
+    // User B: position = 'top'
+    let (_token_b, uid_b) = seed_user(
+        &app, &pool,
+        &unique_email(), "TopUser", "I am a top",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+
+    set_profile_position(&pool, uid_a, "bottom").await;
+    set_profile_position(&pool, uid_b, "top").await;
+
+    // position=bottom → only A
+    let (st, body) = get(
+        &app,
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999&position=bottom",
+        &seeker_token,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(user_in_results(&body, uid_a), "bottom user must be in position=bottom results");
+    assert!(!user_in_results(&body, uid_b), "top user must NOT be in position=bottom results");
+
+    // position=top → only B
+    let (st, body) = get(
+        &app,
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999&position=top",
+        &seeker_token,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(!user_in_results(&body, uid_a), "bottom user must NOT be in position=top results");
+    assert!(user_in_results(&body, uid_b), "top user must be in position=top results");
+
+    // no position filter → both appear
+    let (st, body) = get(
+        &app,
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999",
+        &seeker_token,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(user_in_results(&body, uid_a), "A must appear without position filter");
+    assert!(user_in_results(&body, uid_b), "B must appear without position filter");
+}
+
+#[tokio::test]
+async fn filter_not_chatted() {
+    let app = test_app().await;
+    let pool = db::connect(&test_db_url()).await.unwrap();
+
+    let seeker_token = seed_seeker(&app, &pool).await;
+    let seeker_id = user_id_from_token(&seeker_token);
+
+    // Candidate A: already has a conversation with the seeker.
+    let (_token_a, uid_a) = seed_user(
+        &app, &pool,
+        &unique_email(), "ChattedUser", "We have chatted",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+
+    // Candidate B: never chatted with the seeker.
+    let (_token_b, uid_b) = seed_user(
+        &app, &pool,
+        &unique_email(), "NeverChattedUser", "Never chatted",
+        "1990-01-01", Some("1990-01-01"), None,
+    ).await;
+
+    // Create a conversation between seeker and candidate A.
+    create_conversation_between(&pool, seeker_id, uid_a).await;
+
+    // not_chatted=true → only B (A excluded because seeker has chatted)
+    let (st, body) = get(
+        &app,
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999&not_chatted=true",
+        &seeker_token,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(!user_in_results(&body, uid_a), "chatted A must NOT be in not_chatted=true results");
+    assert!(user_in_results(&body, uid_b), "unchatted B must be in not_chatted=true results");
+
+    // not_chatted not set → both appear
+    let (st, body) = get(
+        &app,
+        "/grid/nearby?lat=19.4326&lon=-99.1332&radius_m=5000&limit=9999",
+        &seeker_token,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(user_in_results(&body, uid_a), "A must appear without not_chatted filter");
+    assert!(user_in_results(&body, uid_b), "B must appear without not_chatted filter");
 }

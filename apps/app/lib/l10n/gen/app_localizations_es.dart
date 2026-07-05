@@ -573,5 +573,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get filterRightNow => 'Ahora';
 
   @override
+  String get filterPhotosOnly => 'Con foto';
+
+  @override
+  String get filterNotChatted => 'Sin chatear';
+
+  @override
+  String get filterPosition => 'Posición';
+
+  @override
   String get badgeNew => 'NUEVO';
 }

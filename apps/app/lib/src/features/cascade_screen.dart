@@ -12,6 +12,7 @@ import '../presence/presence_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
 import '../utils/distance_format.dart';
+import 'edit_profile/sheets.dart' show showPositionSheet;
 import 'profile_drawer.dart' show ownProfileProvider;
 import 'profile_screen.dart' show UserProfile;
 
@@ -120,6 +121,11 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   // reachable from the Boost/Right Now FAB.
   bool _rightNow = false;
 
+  // ── New state (G1) ─────────────────────────────────────────────────────────
+  bool _photosOnly = false;
+  String? _position; // backend enum value (lowercase, e.g. 'bottom', 'top')
+  bool _notChatted = false;
+
   @override
   void initState() {
     super.initState();
@@ -190,6 +196,11 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     if (_showFavoritesOnly) queryParams['favorites_only'] = true; // T5.9: server-side
     if (_onlineOnly) queryParams['online_only'] = true;
     if (_rightNow) queryParams['right_now'] = true; // T5.9: heartbeats-based filter
+    if (_photosOnly) queryParams['photos_only'] = true; // G1
+    if (_position != null && _position!.isNotEmpty) {
+      queryParams['position'] = _position!.toLowerCase(); // G1
+    }
+    if (_notChatted) queryParams['not_chatted'] = true; // G1
 
     final response = await dio.get<Map<String, dynamic>>(
       '/grid/nearby',
@@ -219,7 +230,10 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       _distanceKm != 5 ||
       _showFavoritesOnly ||
       _onlineOnly ||
-      _rightNow; // T5.9: chip-active state propagates to filtros-band highlight
+      _rightNow || // T5.9: chip-active state propagates to filtros-band highlight
+      _photosOnly || // G1
+      _position != null || // G1
+      _notChatted; // G1
 
   void _toggleFavorites() {
     setState(() {
@@ -245,6 +259,43 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     setState(() {
       _rightNow = !_rightNow;
       _nearbyUsersFuture = _fetchNearbyUsers();
+    });
+  }
+
+  // G1: toggles the photos-only filter (only users with a profile photo).
+  void _togglePhotosOnly() {
+    setState(() {
+      _photosOnly = !_photosOnly;
+      _nearbyUsersFuture = _fetchNearbyUsers();
+    });
+  }
+
+  // G1: toggles the not-chatted filter (only users never chatted with).
+  void _toggleNotChatted() {
+    setState(() {
+      _notChatted = !_notChatted;
+      _nearbyUsersFuture = _fetchNearbyUsers();
+    });
+  }
+
+  // G1: opens the position selector sheet.
+  // First tap → opens sheet; if a value is selected, stores it and refetches.
+  // Tapping again when active clears the filter.
+  void _pickPosition(BuildContext context) {
+    if (_position != null) {
+      setState(() {
+        _position = null;
+        _nearbyUsersFuture = _fetchNearbyUsers();
+      });
+      return;
+    }
+    showPositionSheet(context).then((picked) {
+      if (picked != null && mounted) {
+        setState(() {
+          _position = picked;
+          _nearbyUsersFuture = _fetchNearbyUsers();
+        });
+      }
     });
   }
 
@@ -566,6 +617,30 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             label: l10n.filterRightNow, // T5.7 key: 'Ahora' / 'Right now'
             active: _rightNow,
             onTap: _toggleRightNow,
+          ),
+          const SizedBox(width: 8),
+          // G1: Con foto filter chip
+          FilterChipPill(
+            icon: Icons.photo,
+            label: l10n.filterPhotosOnly,
+            active: _photosOnly,
+            onTap: _togglePhotosOnly,
+          ),
+          const SizedBox(width: 8),
+          // G1: Sin chatear filter chip
+          FilterChipPill(
+            label: l10n.filterNotChatted,
+            active: _notChatted,
+            onTap: _toggleNotChatted,
+          ),
+          const SizedBox(width: 8),
+          // G1: Posición filter chip (opens selector sheet; tap again to clear)
+          FilterChipPill(
+            label: _position != null
+                ? '${l10n.filterPosition}: $_position'
+                : l10n.filterPosition,
+            active: _position != null,
+            onTap: () => _pickPosition(context),
           ),
         ],
       ),

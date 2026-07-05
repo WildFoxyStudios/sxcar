@@ -47,6 +47,9 @@ pub struct AppState {
     pub r2: Option<Arc<media::R2Config>>,
     pub chat_broker: chat_broker::ChatBroker,
     pub fcm: Option<Arc<FcmClient>>,
+    /// Shared secret for RevenueCat webhook verification (Authorization header).
+    /// None → endpoint returns 503 (fail closed).
+    pub revenuecat_webhook_secret: Option<String>,
 }
 
 pub struct AppDeps {
@@ -71,6 +74,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         r2: media::R2Config::from_env().map(Arc::new),
         chat_broker,
         fcm: FcmClient::from_env().map(Arc::new),
+        revenuecat_webhook_secret: std::env::var("REVENUECAT_WEBHOOK_SECRET").ok(),
     };
 
     let auth_routes = auth::router().route_layer(axum::middleware::from_fn_with_state(

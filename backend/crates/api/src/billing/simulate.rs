@@ -34,9 +34,15 @@ pub struct SubscriptionDto {
     pub id: Uuid,
     pub plan_code: String,
     pub plan_name: String,
-    pub price_id: Uuid,
-    pub period: String,
-    pub period_days: i32,
+    /// None for RevenueCat subscriptions (no DB price_id available).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub price_id: Option<Uuid>,
+    /// None for RevenueCat subscriptions.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub period: Option<String>,
+    /// None for RevenueCat subscriptions.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub period_days: Option<i32>,
     pub status: String,
     pub source: String,
     /// RFC3339 timestamp string (e.g. "2026-07-04T12:34:56.789Z").
@@ -133,9 +139,9 @@ pub async fn simulate_purchase(
         id: inserted.get("id"),
         plan_code,
         plan_name,
-        price_id: req.price_id,
-        period: period.to_string(),
-        period_days,
+        price_id: Some(req.price_id),
+        period: Some(period.to_string()),
+        period_days: Some(period_days),
         status: "active".to_string(),
         source: "simulated".to_string(),
         started_at: format_rfc3339(inserted.get("started_at")),

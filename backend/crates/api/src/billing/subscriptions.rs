@@ -1,4 +1,4 @@
-//! GET /billing/me — return the user's currently-active subscription, if any.
+//! Billing subscriptions: GET /billing/me + RevenueCat grant/revoke helpers.
 //!
 //! Returns 200 with `{ "subscription": SubscriptionDto | null }`.
 //! Always authenticated (AuthUser extractor).
@@ -56,13 +56,14 @@ pub async fn my_subscription(
     .await
     .map_err(BillingError::from)?;
 
+    // price_id, period, period_days are nullable for RC-sourced subscriptions.
     let dto = row.map(|r| SubscriptionDto {
         id: r.get::<Uuid, _>("id"),
         plan_code: r.get("plan_code"),
         plan_name: r.get("plan_name"),
-        price_id: r.get("price_id"),
-        period: r.get("period"),
-        period_days: r.get("period_days"),
+        price_id: r.try_get::<Uuid, _>("price_id").ok(),
+        period: r.try_get::<String, _>("period").ok(),
+        period_days: r.try_get::<i32, _>("period_days").ok(),
         status: r.get("status"),
         source: r.get("source"),
         started_at: format_rfc3339(r.get::<OffsetDateTime, _>("started_at")),
@@ -71,4 +72,79 @@ pub async fn my_subscription(
     });
 
     Ok(Json(MySubscriptionResponse { subscription: dto }))
+}
+
+// ─── RevenueCat helpers (used by billing/webhook.rs) ─────────────────────────
+
+/// Grant an active `revenuecat` subscription for `(user_id, plan_code)`.
+///
+/// Idempotent: expires any existing active RC row for this user+plan first,
+/// then inserts a fresh active row. A repeated identical event produces 1 active
+/// row (not stacked rows).
+pub async fn grant_revenuecat_subscription(
+    pool: &sqlx::PgPool,
+    user_id: Uuid,
+    plan_code: &str,
+    expires_at: OffsetDateTime,
+) -> Result<(), sqlx::Error> {
+    // Expire existing active RC rows to prevent stacking.
+    sqlx::query(
+        r#"UPDATE subscriptions
+           SET status = 'expired'
+           WHERE user_id    = $1
+             AND plan_code  = $2
+             AND source     = 'revenuecat'
+             AND status     = 'active'"#,
+    )
+    .bind(user_id)
+    .bind(plan_code)
+    .execute(pool)
+    .await?;
+
+    // Insert the new active row.
+    // price_id / period / period_days are left NULL (not available from RC events).
+    sqlx::query(
+        r#"INSERT INTO subscriptions
+             (user_id, plan_code, source, status, started_at, expires_at)
+           VALUES ($1, $2, 'revenuecat', 'active', now(), $3)"#,
+    )
+    .bind(user_id)
+    .bind(plan_code)
+    .bind(expires_at)
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+/// Revoke (cancel or expire) a `revenuecat` subscription for `(user_id, plan_code)`.
+///
+/// `new_status` should be `'cancelled'` (CANCELLATION event — auto-renew off,
+/// access ends immediately in our model) or `'expired'` (EXPIRATION event).
+///
+/// Note on CANCELLATION semantics: we set `status='cancelled'` which means
+/// `/billing/me` (which checks `status='active'`) will no longer return this
+/// subscription. If future product direction requires keeping access until
+/// `expires_at`, change this to a no-op and only act on EXPIRATION.
+pub async fn revoke_revenuecat_subscription(
+    pool: &sqlx::PgPool,
+    user_id: Uuid,
+    plan_code: &str,
+    new_status: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        r#"UPDATE subscriptions
+           SET status = $3
+           WHERE user_id   = $1
+             AND plan_code = $2
+             AND source    = 'revenuecat'
+             AND status    = 'active'"#,
+    )
+    .bind(user_id)
+    .bind(plan_code)
+    .bind(new_status)
+    .execute(pool)
+    .await?;
+
+    Ok(())
 }

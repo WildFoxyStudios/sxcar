@@ -197,6 +197,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final userJson = updateResponse.data!['user'] as Map<String, dynamic>;
       final updatedProfile = UserProfile.fromJson(userJson);
 
+      // Verify the backend actually stored the photo key.
+      if (updatedProfile.profilePhotoKey != uploadUrl.key) {
+        if (!mounted) return;
+        setState(() => _isUploadingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Photo uploaded but could not be linked to profile. Check R2 config.',
+            ),
+            backgroundColor: VibraTheme.kBadgeRed,
+          ),
+        );
+        return;
+      }
+
       ref.read(profileEditProvider.notifier).loadFrom(updatedProfile);
 
       if (!mounted) return;
@@ -244,6 +259,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         role: p.role,
         createdAt: p.createdAt,
         profilePhotoId: p.profilePhotoId,
+        profilePhotoKey: p.profilePhotoKey,
         profilePhotoUrl: p.profilePhotoUrl,
         isVerified: p.isVerified,
         displayName: _displayNameController.text.isEmpty
@@ -292,24 +308,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       return;
     }
 
-    // Health PUT — same as before; silent on success when both succeed.
-    final ok = await _saveHealth(silent: true);
+    // Show confirmation immediately on profile save success.
     if (!mounted) return;
-    if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile saved!'),
-          backgroundColor: VibraTheme.kSuccess,
-        ),
-      );
-      // Pop only if a GoRouter is in scope (skip in widget tests).
-      try {
-        if (GoRouter.maybeOf(context) != null) {
-          context.pop();
-        }
-      } catch (_) {
-        // GoRouter not present; just stay on screen.
+    final l10n = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n?.editProfileSaved ?? 'Profile updated'),
+        backgroundColor: VibraTheme.kSuccess,
+      ),
+    );
+
+    // Health PUT — best-effort, does not block confirmation or pop.
+    unawaited(_saveHealth(silent: true));
+
+    // Pop only if a GoRouter is in scope (skip in widget tests).
+    try {
+      if (GoRouter.maybeOf(context) != null) {
+        context.pop();
       }
+    } catch (_) {
+      // GoRouter not present; just stay on screen.
     }
   }
 
@@ -1061,6 +1079,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       role: p.role,
       createdAt: p.createdAt,
       profilePhotoId: p.profilePhotoId,
+      profilePhotoKey: p.profilePhotoKey,
       profilePhotoUrl: p.profilePhotoUrl,
       isVerified: p.isVerified,
       displayName: displayName ?? p.displayName,

@@ -81,17 +81,17 @@ pub async fn nearby(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    // Generate presigned photo URLs for users with a profile photo.
+    // Generate presigned photo URLs for users with a profile photo key (R2).
     let users_with_photos: Vec<serde_json::Value> = users
         .iter()
         .map(|u| {
             let mut j = serde_json::to_value(u).unwrap_or_default();
-            if let Some(ref photo_id) = u.profile_photo_id {
+            if let Some(ref key) = u.profile_photo_key {
                 if let Some(ref r2) = state.r2 {
                     let now = time::OffsetDateTime::now_utc();
                     let url = crate::media::presign(
                         r2, "GET", &r2.bucket_media,
-                        &photo_id.to_string(), 604800, now,
+                        key, 604800, now,
                     );
                     j["profile_photo_url"] = serde_json::Value::String(url);
                 }

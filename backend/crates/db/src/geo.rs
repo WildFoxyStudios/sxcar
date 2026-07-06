@@ -23,6 +23,8 @@ pub struct NearbyUserRow {
     pub display_name: Option<String>,
     pub bio: Option<String>,
     pub profile_photo_id: Option<uuid::Uuid>,
+    #[sqlx(default)]
+    pub profile_photo_key: Option<String>,
     pub distance_m: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[sqlx(default)]
@@ -74,6 +76,7 @@ pub async fn find_nearby_users(
                p.display_name,
                p.about AS bio,
                (SELECT id FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1) AS profile_photo_id,
+               p.profile_photo_key,
                ST_Distance(l.geog, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography)::float8 AS distance_m
         FROM users u
         JOIN profiles p ON p.user_id = u.id

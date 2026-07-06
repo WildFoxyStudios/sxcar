@@ -22,6 +22,7 @@ class UserProfile {
   final String? ethnicity;
   final String? pronouns;
   final String? profilePhotoId;
+  final String? profilePhotoKey;
   final String? profilePhotoUrl;
   final bool isVerified;
   final List<String> tribes;
@@ -55,6 +56,7 @@ class UserProfile {
     this.ethnicity,
     this.pronouns,
     this.profilePhotoId,
+    this.profilePhotoKey,
     this.profilePhotoUrl,
     this.isVerified = false,
     this.tribes = const [],
@@ -90,6 +92,7 @@ class UserProfile {
       ethnicity: json['ethnicity'] as String?,
       pronouns: json['pronouns'] as String?,
       profilePhotoId: json['profile_photo_id'] as String?,
+      profilePhotoKey: json['profile_photo_key'] as String?,
       profilePhotoUrl: json['profile_photo_url'] as String?,
       isVerified: json['verified'] == true,
       tribes: (json['tribes'] as List<dynamic>?)

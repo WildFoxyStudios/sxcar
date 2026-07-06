@@ -34,8 +34,21 @@ fn user_full_to_json(
     looking_for: Vec<String>,
     meet_at: Vec<String>,
     tags: Vec<String>,
+    r2: Option<&crate::media::R2Config>,
     apply_privacy_filter: bool,
 ) -> Value {
+    // Generate a fresh presigned URL from profile_photo_key (R2 text key)
+    // if available — this covers photos uploaded via the edit-profile flow.
+    // Falls back to profile_photo_url (derived from legacy photos table).
+    let photo_url = if let Some(ref key) = u.profile_photo_key {
+        r2.map(|cfg| {
+            let now = time::OffsetDateTime::now_utc();
+            crate::media::presign(cfg, "GET", &cfg.bucket_media, key, 604800, now)
+        })
+    } else {
+        u.profile_photo_url.clone()
+    };
+
     let mut user = json!({
         "id": u.id,
         "email": u.email,
@@ -55,7 +68,8 @@ fn user_full_to_json(
         "ethnicity": u.ethnicity,
         "pronouns": u.pronouns,
         "profile_photo_id": u.profile_photo_id,
-        "profile_photo_url": u.profile_photo_url,
+        "profile_photo_key": u.profile_photo_key,
+        "profile_photo_url": photo_url,
         "tribes": tribes,
         "looking_for": looking_for,
         "meet_at": meet_at,
@@ -130,7 +144,7 @@ pub async fn get_own(
         })?;
 
     Ok(Json(json!({
-        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, false)
+        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, state.r2.as_deref(), false)
     })))
 }
 
@@ -260,17 +274,17 @@ pub async fn update_own(
             })?;
     }
 
-    // Profile photo upload: store the R2 key and generate a presigned URL.
+    // Profile photo upload: store the R2 key in profiles.profile_photo_key
+    // and also set profiles.profile_photo_url for backwards-compat reads.
     if let Some(ref key) = body.profile_photo_key {
         if let Some(ref r2) = state.r2 {
             let now = time::OffsetDateTime::now_utc();
             // 7-day presigned URL — regenerated on each profile update.
             let url = crate::media::presign(r2, "GET", &r2.bucket_media, key, 604800, now);
             sqlx::query(
-                "UPDATE users SET profile_photo_id = $1, profile_photo_url = $2 WHERE id = $3",
+                "UPDATE profiles SET profile_photo_key = $1 WHERE user_id = $2",
             )
             .bind(key)
-            .bind(&url)
             .bind(user_id)
             .execute(&state.pool)
             .await
@@ -338,7 +352,7 @@ pub async fn update_own(
         })?;
 
     Ok(Json(json!({
-        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, false)
+        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, state.r2.as_deref(), false)
     })))
 }
 
@@ -391,7 +405,7 @@ pub async fn get_by_id(
         })?;
 
     Ok(Json(json!({
-        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, true)
+        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, state.r2.as_deref(), true)
     })))
 }
 

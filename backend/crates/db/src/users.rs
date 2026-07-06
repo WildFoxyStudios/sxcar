@@ -290,6 +290,7 @@ pub struct UserFullRow {
     pub pronouns: Option<String>,
     pub profile_photo_id: Option<uuid::Uuid>,
     pub profile_photo_url: Option<String>,
+    pub profile_photo_key: Option<String>,
     pub verified: bool,
     // NEW (T4.2):
     pub details: JsonValue,
@@ -373,6 +374,7 @@ pub async fn find_user_full(
                   p.birthdate, p.height_cm, p.weight_kg,
                   p.body_type, p.relationship_status, p.position,
                   p.ethnicity, p.pronouns, p.profile_photo_id,
+                  p.profile_photo_key,
                   (SELECT r2_key FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1)
                     as "profile_photo_url",
                   COALESCE(p.verified, false) as "verified!",

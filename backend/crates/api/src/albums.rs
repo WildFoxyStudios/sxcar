@@ -77,6 +77,7 @@ pub struct AddPhotosResponse {
 pub struct AlbumPhotoResponse {
     pub id: Uuid,
     pub r2_key: String,
+    pub photo_url: String,
     pub blur_key: Option<String>,
     pub is_nsfw: bool,
     pub position: i32,
@@ -115,7 +116,20 @@ pub async fn list(
             tracing::error!("list_albums error: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
-    let albums: Vec<AlbumResponse> = rows.into_iter().map(AlbumResponse::from_row).collect();
+    let albums: Vec<AlbumResponse> = rows.into_iter().map(|row| {
+        let mut album = AlbumResponse::from_row(row);
+        if let Some(ref cover) = album.cover_photo_url {
+            if !cover.starts_with("http") {
+                if let Some(ref r2) = state.r2 {
+                    let now = time::OffsetDateTime::now_utc();
+                    album.cover_photo_url = Some(crate::media::presign(
+                        r2, "GET", &r2.bucket_media, cover, 604800, now,
+                    ));
+                }
+            }
+        }
+        album
+    }).collect();
     Ok(Json(ListAlbumsResponse { albums }))
 }
 
@@ -221,12 +235,18 @@ pub async fn get(
 
     let photos_resp: Vec<AlbumPhotoResponse> = photos
         .into_iter()
-        .map(|p| AlbumPhotoResponse {
-            id: p.id,
-            r2_key: p.r2_key,
-            blur_key: p.blur_key,
-            is_nsfw: p.is_nsfw,
-            position: p.position,
+        .map(|p| {
+            let photo_url = state.r2.as_ref().map(|r2| {
+                crate::media::presign(r2, "GET", &r2.bucket_media, &p.r2_key, 604800, time::OffsetDateTime::now_utc())
+            }).unwrap_or_default();
+            AlbumPhotoResponse {
+                id: p.id,
+                r2_key: p.r2_key,
+                photo_url,
+                blur_key: p.blur_key,
+                is_nsfw: p.is_nsfw,
+                position: p.position,
+            }
         })
         .collect();
 
@@ -385,6 +405,19 @@ pub async fn shared(
             tracing::error!("list_shared_albums error: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
-    let albums: Vec<AlbumResponse> = rows.into_iter().map(AlbumResponse::from_row).collect();
+    let albums: Vec<AlbumResponse> = rows.into_iter().map(|row| {
+        let mut album = AlbumResponse::from_row(row);
+        if let Some(ref cover) = album.cover_photo_url {
+            if !cover.starts_with("http") {
+                if let Some(ref r2) = state.r2 {
+                    let now = time::OffsetDateTime::now_utc();
+                    album.cover_photo_url = Some(crate::media::presign(
+                        r2, "GET", &r2.bucket_media, cover, 604800, now,
+                    ));
+                }
+            }
+        }
+        album
+    }).collect();
     Ok(Json(ListAlbumsResponse { albums }))
 }

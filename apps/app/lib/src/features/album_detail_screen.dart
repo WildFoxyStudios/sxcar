@@ -12,6 +12,7 @@ class AlbumPhoto {
   final String? blurKey;
   final bool isNsfw;
   final int position;
+  final String photoUrl;
 
   const AlbumPhoto({
     required this.id,
@@ -19,12 +20,14 @@ class AlbumPhoto {
     this.blurKey,
     required this.isNsfw,
     required this.position,
+    required this.photoUrl,
   });
 
   factory AlbumPhoto.fromJson(Map<String, dynamic> json) {
     return AlbumPhoto(
       id: json['id'] as String,
       r2Key: json['r2_key'] as String,
+      photoUrl: json['photo_url'] as String,
       blurKey: json['blur_key'] as String?,
       isNsfw: json['is_nsfw'] as bool? ?? false,
       position: json['position'] as int? ?? 0,
@@ -257,7 +260,7 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
         return GestureDetector(
           onTap: () => _showPhotoPreview(photo),
           child: Image.network(
-            photo.r2Key,
+            photo.photoUrl,
             fit: BoxFit.cover,
             errorBuilder: (_, _, _) => Container(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -289,7 +292,7 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                photo.r2Key,
+                photo.photoUrl,
                 fit: BoxFit.contain,
                 errorBuilder: (_, _, _) => const Icon(
                   Icons.broken_image,

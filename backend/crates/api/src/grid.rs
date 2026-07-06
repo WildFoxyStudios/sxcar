@@ -54,7 +54,7 @@ pub async fn nearby(
     AuthUser(current_user_id): AuthUser,
     State(state): State<AppState>,
     Query(params): Query<NearbyQuery>,
-) -> Result<axum::Json<NearbyResponse>, StatusCode> {
+) -> Result<axum::Json<serde_json::Value>, StatusCode> {
     let users = db::geo::find_nearby_users(
         &state.pool,
         params.lon,

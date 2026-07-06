@@ -33,7 +33,7 @@ class _AgeCardState extends State<AgeCard> {
     try {
       final age = int.tryParse(_ctrl.text);
       if (age == null || age < 18 || age > 120) {
-        throw Exception('Please enter a valid age (18-120)');
+        throw Exception(AppLocalizations.of(context)!.onboarding_error_required);
       }
       await widget.provider.completeCard('age', {'age': age});
       widget.onComplete(true);
@@ -64,9 +64,9 @@ class _AgeCardState extends State<AgeCard> {
           TextField(
             controller: _ctrl,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Age',
-              hintText: 'Enter your age',
+            decoration: InputDecoration(
+              labelText: l10n.onboarding_card_age_label,
+              hintText: l10n.onboarding_card_age_cta,
             ),
             onChanged: (_) => setState(() {}),
           ),

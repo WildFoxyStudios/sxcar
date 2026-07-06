@@ -46,8 +46,8 @@ class _GenderPositionCardState extends State<GenderPositionCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Gender',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(l10n.onboarding_card_gender_position_label,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
           ..._genders.map((g) => RadioListTile<String>(
                 title: Text(g),
@@ -56,8 +56,8 @@ class _GenderPositionCardState extends State<GenderPositionCard> {
                 onChanged: (v) => setState(() => _selectedGender = v),
               )),
           const Divider(height: 24),
-          const Text('Position',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(l10n.onboarding_card_position_preference_label,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
           ...['Top', 'Bottom', 'Versatile', 'Side'].map((p) =>
               RadioListTile<String>(

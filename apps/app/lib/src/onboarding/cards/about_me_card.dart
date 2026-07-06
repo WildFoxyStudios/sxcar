@@ -61,9 +61,9 @@ class _AboutMeCardState extends State<AboutMeCard> {
           TextField(
             controller: _ctrl,
             maxLines: 5,
-            decoration: const InputDecoration(
-              labelText: 'About me',
-              hintText: 'Write a short bio...',
+            decoration: InputDecoration(
+              labelText: l10n.onboarding_card_about_me_label,
+              hintText: l10n.onboarding_card_about_me_cta,
             ),
             onChanged: (_) => setState(() {}),
           ),

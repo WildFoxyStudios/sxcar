@@ -31,7 +31,7 @@ pub struct CreateStoryResponse {
     pub id: Uuid,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct StoryJson {
     pub id: Uuid,
     pub user_id: Uuid,

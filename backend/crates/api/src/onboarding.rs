@@ -360,17 +360,22 @@ pub async fn complete_card(
                 return Err(StatusCode::BAD_REQUEST);
             };
             if looking_for.is_empty() { return Err(StatusCode::BAD_REQUEST); }
-            // Replace all entries.
+            // Replace all entries in a transaction so a mid-way failure
+            // rolls back the DELETE.
+            let mut tx = state.pool.begin().await
+                .map_err(|e| { tracing::error!("begin tx looking_for: {e}"); StatusCode::INTERNAL_SERVER_ERROR })?;
             sqlx::query("DELETE FROM profile_looking_for WHERE user_id = $1")
                 .bind(user_id)
-                .execute(&state.pool).await
+                .execute(&mut *tx).await
                 .map_err(|e| { tracing::error!("clear looking_for: {e}"); StatusCode::INTERNAL_SERVER_ERROR })?;
             for intent in &looking_for {
                 sqlx::query("INSERT INTO profile_looking_for (user_id, intent) VALUES ($1, $2)")
                     .bind(user_id).bind(intent)
-                    .execute(&state.pool).await
+                    .execute(&mut *tx).await
                     .map_err(|e| { tracing::error!("insert looking_for: {e}"); StatusCode::INTERNAL_SERVER_ERROR })?;
             }
+            tx.commit().await
+                .map_err(|e| { tracing::error!("commit tx looking_for: {e}"); StatusCode::INTERNAL_SERVER_ERROR })?;
             Ok(())
         }
         "tribes" => {
@@ -380,16 +385,22 @@ pub async fn complete_card(
                 return Err(StatusCode::BAD_REQUEST);
             };
             if tribes.is_empty() { return Err(StatusCode::BAD_REQUEST); }
+            // Replace all entries in a transaction so a mid-way failure
+            // rolls back the DELETE.
+            let mut tx = state.pool.begin().await
+                .map_err(|e| { tracing::error!("begin tx tribes: {e}"); StatusCode::INTERNAL_SERVER_ERROR })?;
             sqlx::query("DELETE FROM profile_tribes WHERE user_id = $1")
                 .bind(user_id)
-                .execute(&state.pool).await
+                .execute(&mut *tx).await
                 .map_err(|e| { tracing::error!("clear tribes: {e}"); StatusCode::INTERNAL_SERVER_ERROR })?;
             for tribe in &tribes {
                 sqlx::query("INSERT INTO profile_tribes (user_id, tribe) VALUES ($1, $2)")
                     .bind(user_id).bind(tribe)
-                    .execute(&state.pool).await
+                    .execute(&mut *tx).await
                     .map_err(|e| { tracing::error!("insert tribe: {e}"); StatusCode::INTERNAL_SERVER_ERROR })?;
             }
+            tx.commit().await
+                .map_err(|e| { tracing::error!("commit tx tribes: {e}"); StatusCode::INTERNAL_SERVER_ERROR })?;
             Ok(())
         }
         "vaccines" => {

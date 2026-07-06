@@ -1,0 +1,901 @@
+{
+  "stats": {
+    "generated_at": "2026-07-06",
+    "rust": {
+      "nodes": 1461,
+      "links": 3217,
+      "communities": 72
+    },
+    "flutter": {
+      "nodes": 989,
+      "links": 1254,
+      "communities": 60
+    },
+    "admin": {
+      "nodes": 482,
+      "links": 603,
+      "communities": 22
+    },
+    "docs": {
+      "nodes": 42,
+      "links": 55,
+      "communities": 11
+    }
+  },
+  "cross_index": [
+    {
+      "docs_label": "NSFW On-Device Detection (nsfw_detector_flutter + TFLite)",
+      "docs_id": "nsfw_client_side",
+      "docs_community": 6,
+      "rust_implementations": [
+        {
+          "label": "mod.rs",
+          "source_file": "api/src/admin/mod.rs",
+          "community": 59,
+          "id": "api_src_admin_mod_rs"
+        },
+        {
+          "label": "mod.rs",
+          "source_file": "api/src/auth/mod.rs",
+          "community": 1,
+          "id": "api_src_auth_mod_rs"
+        },
+        {
+          "label": "mod.rs",
+          "source_file": "api/src/billing/mod.rs",
+          "community": 68,
+          "id": "api_src_billing_mod_rs"
+        },
+        {
+          "label": "mod.rs",
+          "source_file": "db/tests/common/mod.rs",
+          "community": 14,
+          "id": "db_tests_common_mod_rs"
+        }
+      ],
+      "flutter_implementations": [
+        {
+          "label": "../nsfw/nsfw_service.dart",
+          "source_file": "src/features/chat_screen.dart",
+          "community": 0,
+          "id": "nsfw_nsfw_service_dart"
+        },
+        {
+          "label": "package:app/src/nsfw/nsfw_service.dart",
+          "source_file": "src/features/edit_profile_screen.dart",
+          "community": 1,
+          "id": "package_app_src_nsfw_nsfw_service_dart"
+        },
+        {
+          "label": "nsfw_service.dart",
+          "source_file": "src/nsfw/nsfw_service.dart",
+          "community": 43,
+          "id": "src_nsfw_nsfw_service_dart"
+        },
+        {
+          "label": "NsfwResult",
+          "source_file": "src/nsfw/nsfw_service.dart",
+          "community": 43,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_nsfw_nsfw_service_dart_nsfwresult"
+        }
+      ],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "NSFW Migration (tract+ONNX -> nsfw_detector_flutter)",
+      "docs_id": "nsfw_migration_tract_onnx_nsfw_detector_flutter",
+      "docs_community": 6,
+      "rust_implementations": [],
+      "flutter_implementations": [
+        {
+          "label": "../nsfw/nsfw_service.dart",
+          "source_file": "src/features/chat_screen.dart",
+          "community": 0,
+          "id": "nsfw_nsfw_service_dart"
+        },
+        {
+          "label": "package:app/src/nsfw/nsfw_service.dart",
+          "source_file": "src/features/edit_profile_screen.dart",
+          "community": 1,
+          "id": "package_app_src_nsfw_nsfw_service_dart"
+        },
+        {
+          "label": "nsfw_service.dart",
+          "source_file": "src/nsfw/nsfw_service.dart",
+          "community": 43,
+          "id": "src_nsfw_nsfw_service_dart"
+        },
+        {
+          "label": "NsfwResult",
+          "source_file": "src/nsfw/nsfw_service.dart",
+          "community": 43,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_nsfw_nsfw_service_dart_nsfwresult"
+        }
+      ],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "Cloudflare R2 Media Storage",
+      "docs_id": "cloudflare_r2",
+      "docs_community": 1,
+      "rust_implementations": [
+        {
+          "label": "media.rs",
+          "source_file": "api/src/media.rs",
+          "community": 21,
+          "id": "api_src_media_rs"
+        },
+        {
+          "label": "media_urls.rs",
+          "source_file": "api/tests/media_urls.rs",
+          "community": 50,
+          "id": "api_tests_media_urls_rs"
+        },
+        {
+          "label": "create_story_rejects_invalid_media_type()",
+          "source_file": "api/tests/stories.rs",
+          "community": 5,
+          "id": "tests_stories_create_story_rejects_invalid_media_type"
+        },
+        {
+          "label": "create_story_rejects_empty_media_key()",
+          "source_file": "api/tests/stories.rs",
+          "community": 5,
+          "id": "tests_stories_create_story_rejects_empty_media_key"
+        }
+      ],
+      "flutter_implementations": [
+        {
+          "label": "AlbumPhoto",
+          "source_file": "src/features/album_detail_screen.dart",
+          "community": 13,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_features_album_detail_screen_dart_albumphoto"
+        },
+        {
+          "label": "_showPhotoPreview",
+          "source_file": "src/features/album_detail_screen.dart",
+          "community": 13,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_features_album_detail_screen_dart_showphotopreview"
+        },
+        {
+          "label": "_togglePhotosOnly",
+          "source_file": "src/features/cascade_screen.dart",
+          "community": 2,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_features_cascade_screen_dart_togglephotosonly"
+        },
+        {
+          "label": "_PhotoSendSheet",
+          "source_file": "src/features/chat_screen.dart",
+          "community": 0,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_features_chat_screen_dart_photosendsheet"
+        }
+      ],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "Profile Photo Fix (R2 key storage + presigned URL)",
+      "docs_id": "profile_photo_fix_r2_key_storage_presigned_url",
+      "docs_community": 4,
+      "rust_implementations": [
+        {
+          "label": "list_profile_views()",
+          "source_file": "api/src/grindr_t1.rs",
+          "community": 3,
+          "id": "src_grindr_t1_list_profile_views"
+        },
+        {
+          "label": "list_profile_views()",
+          "source_file": "db/src/profiles.rs",
+          "community": 3,
+          "id": "src_profiles_list_profile_views"
+        },
+        {
+          "label": "profile.rs",
+          "source_file": "api/src/profile.rs",
+          "community": 3,
+          "id": "api_src_profile_rs"
+        },
+        {
+          "label": "profile.rs",
+          "source_file": "api/tests/profile.rs",
+          "community": 28,
+          "id": "api_tests_profile_rs"
+        }
+      ],
+      "flutter_implementations": [
+        {
+          "label": "edit_profile_screen.dart",
+          "source_file": "src/features/edit_profile_screen.dart",
+          "community": 1,
+          "id": "src_features_edit_profile_screen_dart"
+        },
+        {
+          "label": "edit_profile/sheets.dart",
+          "source_file": "src/features/cascade_screen.dart",
+          "community": 2,
+          "id": "edit_profile_sheets_dart"
+        },
+        {
+          "label": "package:app/src/features/edit_profile/add_trip_screen.dart",
+          "source_file": "src/features/edit_profile_screen.dart",
+          "community": 1,
+          "id": "package_app_src_features_edit_profile_add_trip_screen_dart"
+        },
+        {
+          "label": "package:app/src/features/edit_profile/practices_screen.dart",
+          "source_file": "src/features/edit_profile_screen.dart",
+          "community": 1,
+          "id": "package_app_src_features_edit_profile_practices_screen_dart"
+        }
+      ],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "Cloudflare Tunnel + Tailscale Home VPS (casero-wildfox, $0/mo)",
+      "docs_id": "aws_ec2_vps",
+      "docs_community": 1,
+      "rust_implementations": [
+        {
+          "label": "main.rs",
+          "source_file": "api/src/main.rs",
+          "community": 2,
+          "id": "api_src_main_rs"
+        },
+        {
+          "label": "config.rs",
+          "source_file": "api/src/config.rs",
+          "community": 62,
+          "id": "api_src_config_rs"
+        },
+        {
+          "label": "config.rs",
+          "source_file": "db/src/config.rs",
+          "community": 37,
+          "id": "db_src_config_rs"
+        },
+        {
+          "label": "Config",
+          "source_file": "api/src/config.rs",
+          "community": 62,
+          "id": "src_config_config"
+        }
+      ],
+      "flutter_implementations": [],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "VPS Deploy Pipeline (docker save -> scp -> load -> migrate -> up)",
+      "docs_id": "vps_deploy_pipeline_docker_save_scp_load_migrate_up",
+      "docs_community": 1,
+      "rust_implementations": [
+        {
+          "label": "migrate()",
+          "source_file": "db/src/lib.rs",
+          "community": 2,
+          "id": "src_lib_migrate"
+        }
+      ],
+      "flutter_implementations": [],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "F0.3 Auth System Design Spec",
+      "docs_id": "f03_spec",
+      "docs_community": 8,
+      "rust_implementations": [
+        {
+          "label": "auth_limiter()",
+          "source_file": "api/src/ratelimit.rs",
+          "community": 38,
+          "id": "src_ratelimit_auth_limiter"
+        },
+        {
+          "label": "StaffAuth",
+          "source_file": "api/src/admin/extractors.rs",
+          "community": 65,
+          "id": "admin_extractors_staffauth"
+        },
+        {
+          "label": "authenticated()",
+          "source_file": "api/src/admin/mod.rs",
+          "community": 59,
+          "id": "admin_mod_authenticated"
+        },
+        {
+          "label": "OAuthReq",
+          "source_file": "api/src/auth/handlers.rs",
+          "community": 30,
+          "id": "auth_handlers_oauthreq"
+        }
+      ],
+      "flutter_implementations": [
+        {
+          "label": "login_screen.dart",
+          "source_file": "src/features/login_screen.dart",
+          "community": 9,
+          "id": "src_features_login_screen_dart"
+        },
+        {
+          "label": "LoginData",
+          "source_file": "src/auth/models.dart",
+          "community": 44,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_auth_models_dart_logindata"
+        },
+        {
+          "label": "LoginScreen",
+          "source_file": "src/features/login_screen.dart",
+          "community": 9,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_features_login_screen_dart_loginscreen"
+        },
+        {
+          "label": "_LoginScreenState",
+          "source_file": "src/features/login_screen.dart",
+          "community": 9,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_features_login_screen_dart_loginscreenstate"
+        }
+      ],
+      "admin_implementations": [
+        {
+          "label": "admin_auth_provider.dart",
+          "source_file": "src/auth/admin_auth_provider.dart",
+          "community": 18,
+          "id": "src_auth_admin_auth_provider_dart"
+        },
+        {
+          "label": "AuthState",
+          "source_file": "src/auth/admin_auth_provider.dart",
+          "community": 18,
+          "id": "c_users_echev_desktop_proyecto_x_apps_admin_lib_src_auth_admin_auth_provider_dart_authstate"
+        },
+        {
+          "label": "AuthNotifier",
+          "source_file": "src/auth/admin_auth_provider.dart",
+          "community": 18,
+          "id": "c_users_echev_desktop_proyecto_x_apps_admin_lib_src_auth_admin_auth_provider_dart_authnotifier"
+        },
+        {
+          "label": "_unauthorizedLogout",
+          "source_file": "src/auth/admin_auth_provider.dart",
+          "community": 18,
+          "id": "c_users_echev_desktop_proyecto_x_apps_admin_lib_src_auth_admin_auth_provider_dart_unauthorizedlogout"
+        }
+      ]
+    },
+    {
+      "docs_label": "Admin RBAC + Immutable Audit Log + TOTP 2FA",
+      "docs_id": "admin_rbac_audit",
+      "docs_community": 4,
+      "rust_implementations": [
+        {
+          "label": "rbac_check()",
+          "source_file": "api/src/admin/handlers_enterprise.rs",
+          "community": 8,
+          "id": "admin_handlers_enterprise_rbac_check"
+        },
+        {
+          "label": "rbac.rs",
+          "source_file": "api/src/admin/rbac.rs",
+          "community": 59,
+          "id": "api_src_admin_rbac_rs"
+        },
+        {
+          "label": "audit.rs",
+          "source_file": "api/src/admin/audit.rs",
+          "community": 15,
+          "id": "api_src_admin_audit_rs"
+        },
+        {
+          "label": "AuditTarget",
+          "source_file": "api/src/admin/audit.rs",
+          "community": 15,
+          "id": "admin_audit_audittarget"
+        }
+      ],
+      "flutter_implementations": [],
+      "admin_implementations": [
+        {
+          "label": "audit_screen.dart",
+          "source_file": "src/features/audit/audit_screen.dart",
+          "community": 11,
+          "id": "src_features_audit_audit_screen_dart"
+        },
+        {
+          "label": "AuditEntry",
+          "source_file": "src/features/audit/audit_screen.dart",
+          "community": 11,
+          "id": "c_users_echev_desktop_proyecto_x_apps_admin_lib_src_features_audit_audit_screen_dart_auditentry"
+        },
+        {
+          "label": "AuditScreen",
+          "source_file": "src/features/audit/audit_screen.dart",
+          "community": 11,
+          "id": "c_users_echev_desktop_proyecto_x_apps_admin_lib_src_features_audit_audit_screen_dart_auditscreen"
+        },
+        {
+          "label": "_AuditRow",
+          "source_file": "src/features/audit/audit_screen.dart",
+          "community": 11,
+          "id": "c_users_echev_desktop_proyecto_x_apps_admin_lib_src_features_audit_audit_screen_dart_auditrow"
+        }
+      ]
+    },
+    {
+      "docs_label": "RevenueCat IAP Integration",
+      "docs_id": "revenuecat_integration",
+      "docs_community": 3,
+      "rust_implementations": [
+        {
+          "label": "BillingError",
+          "source_file": "api/src/billing/error.rs",
+          "community": 5,
+          "id": "billing_error_billingerror"
+        },
+        {
+          "label": "billing.rs",
+          "source_file": "api/tests/billing.rs",
+          "community": 39,
+          "id": "api_tests_billing_rs"
+        },
+        {
+          "label": "billing_webhook.rs",
+          "source_file": "api/tests/billing_webhook.rs",
+          "community": 43,
+          "id": "api_tests_billing_webhook_rs"
+        },
+        {
+          "label": "grant_revenuecat_subscription()",
+          "source_file": "api/src/billing/subscriptions.rs",
+          "community": 53,
+          "id": "billing_subscriptions_grant_revenuecat_subscription"
+        }
+      ],
+      "flutter_implementations": [
+        {
+          "label": "billing_providers.dart",
+          "source_file": "src/billing/billing_providers.dart",
+          "community": 33,
+          "id": "src_billing_billing_providers_dart"
+        },
+        {
+          "label": "BillingService",
+          "source_file": "src/billing/billing_providers.dart",
+          "community": 33,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_billing_billing_providers_dart_billingservice"
+        },
+        {
+          "label": "BillingService",
+          "source_file": "src/billing/billing_service.dart",
+          "community": 33,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_billing_billing_service_dart_billingservice"
+        },
+        {
+          "label": "billing_service.dart",
+          "source_file": "src/billing/billing_providers.dart",
+          "community": 33,
+          "id": "billing_service_dart"
+        }
+      ],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "Neon PostgreSQL 16 + PostGIS",
+      "docs_id": "neon_postgresql",
+      "docs_community": 1,
+      "rust_implementations": [
+        {
+          "label": "migrate()",
+          "source_file": "db/src/lib.rs",
+          "community": 2,
+          "id": "src_lib_migrate"
+        },
+        {
+          "label": "geo.rs",
+          "source_file": "db/src/geo.rs",
+          "community": 3,
+          "id": "db_src_geo_rs"
+        }
+      ],
+      "flutter_implementations": [],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "Redis for presence, pub/sub, geo, rate-limit",
+      "docs_id": "redis_infra",
+      "docs_community": 3,
+      "rust_implementations": [
+        {
+          "label": "RedisChatBroker",
+          "source_file": "api/src/chat_broker.rs",
+          "community": 46,
+          "id": "src_chat_broker_redischatbroker"
+        },
+        {
+          "label": "redis_chat_broker_from_env_returns_none_by_default()",
+          "source_file": "api/src/chat_broker.rs",
+          "community": 46,
+          "id": "src_chat_broker_redis_chat_broker_from_env_returns_none_by_default"
+        },
+        {
+          "label": "chat_broker_from_env_creates_in_memory_when_no_redis()",
+          "source_file": "api/src/chat_broker.rs",
+          "community": 46,
+          "id": "src_chat_broker_chat_broker_from_env_creates_in_memory_when_no_redis"
+        },
+        {
+          "label": "RedisRateLimiter",
+          "source_file": "api/src/ratelimit.rs",
+          "community": 38,
+          "id": "src_ratelimit_redisratelimiter"
+        }
+      ],
+      "flutter_implementations": [],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "flutter_rust_bridge v2 (REMOVED 2026-07-06 - replaced by direct Dart packages)",
+      "docs_id": "frb_v2",
+      "docs_community": 2,
+      "rust_implementations": [],
+      "flutter_implementations": [
+        {
+          "label": "jwt_utils.dart",
+          "source_file": "src/auth/auth_provider.dart",
+          "community": 8,
+          "id": "jwt_utils_dart"
+        },
+        {
+          "label": "jwt_utils.dart",
+          "source_file": "src/auth/jwt_utils.dart",
+          "community": 8,
+          "id": "src_auth_jwt_utils_dart"
+        },
+        {
+          "label": "../utils/distance_format.dart",
+          "source_file": "src/features/cascade_screen.dart",
+          "community": 2,
+          "id": "utils_distance_format_dart"
+        },
+        {
+          "label": "../utils/email_validator.dart",
+          "source_file": "src/features/register_screen.dart",
+          "community": 9,
+          "id": "utils_email_validator_dart"
+        }
+      ],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "Core Shared Crate (backend+app models/validation)",
+      "docs_id": "core_crate",
+      "docs_community": 7,
+      "rust_implementations": [
+        {
+          "label": "validation.rs",
+          "source_file": "px_core/src/validation.rs",
+          "community": 52,
+          "id": "px_core_src_validation_rs"
+        }
+      ],
+      "flutter_implementations": [
+        {
+          "label": "models.dart",
+          "source_file": "src/chat/models.dart",
+          "community": 47,
+          "id": "src_chat_models_dart"
+        },
+        {
+          "label": "models.dart",
+          "source_file": "src/chat/chat_service.dart",
+          "community": 8,
+          "id": "models_dart"
+        },
+        {
+          "label": "models.dart",
+          "source_file": "src/auth/models.dart",
+          "community": 44,
+          "id": "src_auth_models_dart"
+        },
+        {
+          "label": "models.dart",
+          "source_file": "src/billing/models.dart",
+          "community": 50,
+          "id": "src_billing_models_dart"
+        }
+      ],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "Thin Waist Architecture (Rust core + Dart UI)",
+      "docs_id": "thin_waist_arch",
+      "docs_community": 7,
+      "rust_implementations": [
+        {
+          "label": "CreateApiKeyRequest",
+          "source_file": "api/src/admin/handlers_enterprise.rs",
+          "community": 8,
+          "id": "admin_handlers_enterprise_createapikeyrequest"
+        },
+        {
+          "label": "CreateApiKeyResponse",
+          "source_file": "api/src/admin/handlers_enterprise.rs",
+          "community": 8,
+          "id": "admin_handlers_enterprise_createapikeyresponse"
+        },
+        {
+          "label": "list_api_keys()",
+          "source_file": "api/src/admin/handlers_enterprise.rs",
+          "community": 8,
+          "id": "admin_handlers_enterprise_list_api_keys"
+        },
+        {
+          "label": "list_api_keys()",
+          "source_file": "db/src/enterprise.rs",
+          "community": 6,
+          "id": "src_enterprise_list_api_keys"
+        }
+      ],
+      "flutter_implementations": [
+        {
+          "label": "../../main.dart",
+          "source_file": "src/features/cascade_screen.dart",
+          "community": 28,
+          "id": "main_dart"
+        },
+        {
+          "label": "MainShell",
+          "source_file": "main.dart",
+          "community": 28,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_main_dart_mainshell"
+        },
+        {
+          "label": "SliverFillRemaining",
+          "source_file": "src/features/albums_screen.dart",
+          "community": 16,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_features_albums_screen_dart_sliverfillremaining"
+        }
+      ],
+      "admin_implementations": [
+        {
+          "label": "main.dart",
+          "source_file": "main.dart",
+          "community": 0,
+          "id": "main_dart"
+        },
+        {
+          "label": "main",
+          "source_file": "main.dart",
+          "community": 0,
+          "id": "c_users_echev_desktop_proyecto_x_apps_admin_lib_main_dart_main"
+        }
+      ]
+    },
+    {
+      "docs_label": "Server-Authoritative Feature Gating",
+      "docs_id": "server_auth_gating",
+      "docs_community": 4,
+      "rust_implementations": [
+        {
+          "label": "ManageEntitlementRequest",
+          "source_file": "api/src/admin/handlers.rs",
+          "community": 7,
+          "id": "admin_handlers_manageentitlementrequest"
+        },
+        {
+          "label": "list_entitlements()",
+          "source_file": "api/src/admin/handlers.rs",
+          "community": 23,
+          "id": "admin_handlers_list_entitlements"
+        },
+        {
+          "label": "list_entitlements()",
+          "source_file": "db/src/support.rs",
+          "community": 23,
+          "id": "src_support_list_entitlements"
+        },
+        {
+          "label": "manage_entitlement()",
+          "source_file": "api/src/admin/handlers.rs",
+          "community": 23,
+          "id": "admin_handlers_manage_entitlement"
+        }
+      ],
+      "flutter_implementations": [
+        {
+          "label": "_hasEntitlement",
+          "source_file": "src/features/interest_screen.dart",
+          "community": 20,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_features_interest_screen_dart_hasentitlement"
+        },
+        {
+          "label": "Subscription",
+          "source_file": "src/billing/models.dart",
+          "community": 50,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_billing_models_dart_subscription"
+        },
+        {
+          "label": "fromSubscription",
+          "source_file": "src/billing/tier_features.dart",
+          "community": 8,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_billing_tier_features_dart_fromsubscription"
+        }
+      ],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "Maximum Client Load Principle",
+      "docs_id": "max_client_load",
+      "docs_community": 6,
+      "rust_implementations": [
+        {
+          "label": "grid.rs",
+          "source_file": "api/src/grid.rs",
+          "community": 3,
+          "id": "api_src_grid_rs"
+        },
+        {
+          "label": "grid.rs",
+          "source_file": "api/tests/grid.rs",
+          "community": 2,
+          "id": "api_tests_grid_rs"
+        },
+        {
+          "label": "grid_filters.rs",
+          "source_file": "api/tests/grid_filters.rs",
+          "community": 4,
+          "id": "api_tests_grid_filters_rs"
+        },
+        {
+          "label": "blocked_user_not_in_grid()",
+          "source_file": "api/tests/social.rs",
+          "community": 26,
+          "id": "tests_social_blocked_user_not_in_grid"
+        }
+      ],
+      "flutter_implementations": [
+        {
+          "label": "grid_search_screen.dart",
+          "source_file": "src/features/grid_search_screen.dart",
+          "community": 3,
+          "id": "src_features_grid_search_screen_dart"
+        },
+        {
+          "label": "SliverGridDelegateWithFixedCrossAxisCount",
+          "source_file": "src/features/cascade_screen.dart",
+          "community": 2,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_features_cascade_screen_dart_slivergriddelegatewithfixedcrossaxiscount"
+        },
+        {
+          "label": "SliverGridDelegateWithFixedCrossAxisCount",
+          "source_file": "src/features/grid_search_screen.dart",
+          "community": 3,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_features_grid_search_screen_dart_slivergriddelegatewithfixedcrossaxiscount"
+        },
+        {
+          "label": "GridSearchScreen",
+          "source_file": "src/features/grid_search_screen.dart",
+          "community": 3,
+          "id": "c_users_echev_desktop_proyecto_x_apps_app_lib_src_features_grid_search_screen_dart_gridsearchscreen"
+        }
+      ],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "MessagePack Protocol with JSON Fallback",
+      "docs_id": "messagepack_proto",
+      "docs_community": 2,
+      "rust_implementations": [],
+      "flutter_implementations": [],
+      "admin_implementations": []
+    },
+    {
+      "docs_label": "VibraTheme v3 Design Tokens",
+      "docs_id": "vibra_theme_v3",
+      "docs_community": 0,
+      "rust_implementations": [],
+      "flutter_implementations": [
+        {
+          "label": "app_theme.dart",
+          "source_file": "src/theme/app_theme.dart",
+          "community": 42,
+          "id": "src_theme_app_theme_dart"
+        },
+        {
+          "label": "app_theme.dart",
+          "source_file": "src/theme/widgets.dart",
+          "community": 4,
+          "id": "app_theme_dart"
+        },
+        {
+          "label": "../theme/app_theme.dart",
+          "source_file": "src/features/you_screen.dart",
+          "community": 41,
+          "id": "theme_app_theme_dart"
+        },
+        {
+          "label": "../theme/widgets.dart",
+          "source_file": "src/features/tienda_screen.dart",
+          "community": 26,
+          "id": "theme_widgets_dart"
+        }
+      ],
+      "admin_implementations": [
+        {
+          "label": "admin_theme.dart",
+          "source_file": "src/theme/admin_theme.dart",
+          "community": 0,
+          "id": "src_theme_admin_theme_dart"
+        },
+        {
+          "label": "../theme/admin_theme.dart",
+          "source_file": "src/widgets/admin_layout.dart",
+          "community": 0,
+          "id": "theme_admin_theme_dart"
+        },
+        {
+          "label": "ThemeData",
+          "source_file": "src/theme/admin_theme.dart",
+          "community": 0,
+          "id": "c_users_echev_desktop_proyecto_x_apps_admin_lib_src_theme_admin_theme_dart_themedata"
+        }
+      ]
+    },
+    {
+      "docs_label": "100% Grindr Parity Achieved (12 Oleadas, 454 tests, 37 migrations)",
+      "docs_id": "100_grindr_parity_achieved_12_oleadas_454_tests_37_migrations",
+      "docs_community": 0,
+      "rust_implementations": [
+        {
+          "label": "list_profile_views()",
+          "source_file": "api/src/grindr_t1.rs",
+          "community": 3,
+          "id": "src_grindr_t1_list_profile_views"
+        },
+        {
+          "label": "list_profile_views()",
+          "source_file": "db/src/profiles.rs",
+          "community": 3,
+          "id": "src_profiles_list_profile_views"
+        },
+        {
+          "label": "profile.rs",
+          "source_file": "api/src/profile.rs",
+          "community": 3,
+          "id": "api_src_profile_rs"
+        },
+        {
+          "label": "profile.rs",
+          "source_file": "api/tests/profile.rs",
+          "community": 28,
+          "id": "api_tests_profile_rs"
+        }
+      ],
+      "flutter_implementations": [
+        {
+          "label": "profile_detail_screen.dart",
+          "source_file": "src/features/profile_detail_screen.dart",
+          "community": 5,
+          "id": "src_features_profile_detail_screen_dart"
+        },
+        {
+          "label": "profile_drawer.dart",
+          "source_file": "src/features/profile_drawer.dart",
+          "community": 18,
+          "id": "src_features_profile_drawer_dart"
+        },
+        {
+          "label": "profile_drawer.dart",
+          "source_file": "src/features/cascade_screen.dart",
+          "community": 2,
+          "id": "profile_drawer_dart"
+        },
+        {
+          "label": "edit_profile_screen.dart",
+          "source_file": "src/features/edit_profile_screen.dart",
+          "community": 1,
+          "id": "src_features_edit_profile_screen_dart"
+        }
+      ],
+      "admin_implementations": []
+    }
+  ]
+}

@@ -1,0 +1,470 @@
+{
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\albums.rs": {
+    "mtime": 1783318754.7534955,
+    "hash": "145c652d4253a22c82968c87f1827817"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\chat.rs": {
+    "mtime": 1783302502.8634496,
+    "hash": "d8dbe262f71c6b1f436727059b6a1b33"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\chat_broker.rs": {
+    "mtime": 1782782930.162758,
+    "hash": "057c3c71b49514bd69965d292eb0aea0"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\config.rs": {
+    "mtime": 1782464807.319111,
+    "hash": "ac93cf4ac11eaf762eba7d74849f0f2d"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\cors.rs": {
+    "mtime": 1782754766.630348,
+    "hash": "d10032fa5de53770d9e643edf57987d9"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\dev.rs": {
+    "mtime": 1782868762.877188,
+    "hash": "e7850a84d10d5b8da1f5a9834e201f14"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\fcm.rs": {
+    "mtime": 1782781375.7797277,
+    "hash": "5194b06fdb0b15a8e6950bba580fe612"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\grid.rs": {
+    "mtime": 1783344381.2349753,
+    "hash": "d6f9e39b4fa99dfc54e9ecf0f541051d"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\grindr_t1.rs": {
+    "mtime": 1782969212.2321105,
+    "hash": "06dd7c6de85b39f4e9b4733d3a933397"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\health.rs": {
+    "mtime": 1782764292.3773565,
+    "hash": "4009b8f65b05d00a19beacc62049bd79"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\lib.rs": {
+    "mtime": 1783345073.7937279,
+    "hash": "13d8bc16d67ec5e1206267bb2347bec4"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\main.rs": {
+    "mtime": 1783345073.7940576,
+    "hash": "8307f908fd1124881ec6129b38dde469"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\me.rs": {
+    "mtime": 1783313245.1522925,
+    "hash": "b48670ba4a9b121155e304e6f3458238"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\media.rs": {
+    "mtime": 1783302751.6746182,
+    "hash": "9937eac04e5178e73a8bd2a6a7be2351"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\msgpack.rs": {
+    "mtime": 1782765070.2513964,
+    "hash": "22979c6f0c970e2ba7a88da9a026f581"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\notifications.rs": {
+    "mtime": 1782772573.1359284,
+    "hash": "2915f06ef7e78547466911da00d01393"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\privacy.rs": {
+    "mtime": 1783134194.9878676,
+    "hash": "db47155e94bebf5f4df65c99136d2142"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\profile.rs": {
+    "mtime": 1783345484.008134,
+    "hash": "ee690397b6e28386c6e356d8b088b490"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\ratelimit.rs": {
+    "mtime": 1782782159.8914762,
+    "hash": "0a5ba0776793195577f46c2c08b7cf42"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\social.rs": {
+    "mtime": 1783139062.8062706,
+    "hash": "1eb1c68dae50849bb1f89de1bd018057"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\stories.rs": {
+    "mtime": 1783303985.534055,
+    "hash": "9fc5f911610cfc4814a4324a196ed96f"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\tarpit.rs": {
+    "mtime": 1782464807.3271105,
+    "hash": "a2364780a87213051fef03f05a54200d"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\tier2.rs": {
+    "mtime": 1782893807.0517683,
+    "hash": "3d369024d4ecf7724ef2365b88c6c103"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\tier3.rs": {
+    "mtime": 1782922059.248659,
+    "hash": "1efdbeae180d21afce92ec7851b99915"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\well_known.rs": {
+    "mtime": 1782783086.1379282,
+    "hash": "8c0f48e20aeb3b928c9238f2342cc3f5"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\admin\\audit.rs": {
+    "mtime": 1782754766.6098704,
+    "hash": "36c59ee7db44e3bd30ab7559e63110b3"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\admin\\extractors.rs": {
+    "mtime": 1782754766.6123965,
+    "hash": "7e7763abaa0a0ef4b7fbfb7ec6ac28e4"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\admin\\handlers.rs": {
+    "mtime": 1782754766.6149182,
+    "hash": "a6a1548c5c6763db0a7e2666373d419d"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\admin\\handlers_enterprise.rs": {
+    "mtime": 1782871591.4014826,
+    "hash": "3eab0be4119f77febec515358349f22f"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\admin\\mod.rs": {
+    "mtime": 1782754766.6179378,
+    "hash": "f562e8938271406bbdbbbb6af183ddb8"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\admin\\rbac.rs": {
+    "mtime": 1782754766.6210203,
+    "hash": "a8b27ad3fcc48f633a810c3ac3184eed"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\auth\\handlers.rs": {
+    "mtime": 1782754766.625032,
+    "hash": "a9cbfc35fc54268e0092891d9e3e154e"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\auth\\mod.rs": {
+    "mtime": 1782464807.3171036,
+    "hash": "c74f786a3687b41156c87bd7788f3f52"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\billing\\error.rs": {
+    "mtime": 1783128041.5512097,
+    "hash": "12b6ad0923ed626070ba5df9d5c1caa0"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\billing\\mod.rs": {
+    "mtime": 1783273188.9198751,
+    "hash": "6048ef67960b2380d9ad87c84c089d18"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\billing\\plans.rs": {
+    "mtime": 1783305198.9732533,
+    "hash": "ac7d6d351e05ba7c7bf80a7f70740d85"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\billing\\simulate.rs": {
+    "mtime": 1783273108.0854056,
+    "hash": "120b35763cf987c3d9a9a04ffa648c6c"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\billing\\subscriptions.rs": {
+    "mtime": 1783273141.9385924,
+    "hash": "16e80bebaae2c2649d6cdd4ba3256d40"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\billing\\webhook.rs": {
+    "mtime": 1783273181.4162962,
+    "hash": "4e0fda96e37ede22bb7f08a18cb48760"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\src\\media\\renditions.rs": {
+    "mtime": 1782778690.4263706,
+    "hash": "9d40b10ea6c70f7f183549877bdfe58a"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\admin_auth.rs": {
+    "mtime": 1783345073.794292,
+    "hash": "c025b247c03d7dc9f74e6f318832cc17"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\admin_config.rs": {
+    "mtime": 1783345073.7945375,
+    "hash": "3301e182d1cd0b32b12871f8f3fab02b"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\admin_countries.rs": {
+    "mtime": 1783345073.7947662,
+    "hash": "8ff2460a0cbc94c0e02ad5a603d3c773"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\admin_enterprise.rs": {
+    "mtime": 1783345073.795018,
+    "hash": "acf8765898c55bdbe64988da06b85d5a"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\admin_middleware.rs": {
+    "mtime": 1783345073.7952876,
+    "hash": "0f5cd1650913046c9177af27e6ef6c06"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\admin_moderation.rs": {
+    "mtime": 1783345073.7955112,
+    "hash": "e5a1b2dc03f1926db3ded9ffba418ae3"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\admin_plans.rs": {
+    "mtime": 1783345073.7957692,
+    "hash": "b24bf06514251ba4feb1a35c4ae1e623"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\admin_support.rs": {
+    "mtime": 1783345073.7959898,
+    "hash": "1bfb3a61b921e8895853114ac1368916"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\admin_users.rs": {
+    "mtime": 1783345073.7962227,
+    "hash": "8247c51406fa321f04292374bf7244b9"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\albums.rs": {
+    "mtime": 1783345073.796454,
+    "hash": "ad961579195dd984d47300768a35d341"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\auth.rs": {
+    "mtime": 1783345073.7967105,
+    "hash": "00d5619eeca676ef97750479260947b3"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\billing.rs": {
+    "mtime": 1783345073.796998,
+    "hash": "35307eb4723f4ec4dbcd06cf903637c2"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\billing_webhook.rs": {
+    "mtime": 1783345073.7972877,
+    "hash": "11a9ad66a07cb8307c978ac6e4e4a2ae"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\chat.rs": {
+    "mtime": 1783345073.7975361,
+    "hash": "bc94fbde7ce9137ec1c66859e7c9323d"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\chat_reactions.rs": {
+    "mtime": 1783345073.797801,
+    "hash": "9fa312b4fcd0f5ffd2850f25b83e8ce4"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\chat_unsend.rs": {
+    "mtime": 1783345073.7980826,
+    "hash": "249dc6b856cdb76a8cf29ac5fa84b545"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\circles.rs": {
+    "mtime": 1783345073.7983632,
+    "hash": "f358f8aede0d03cf11239427e56fcf76"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\counters.rs": {
+    "mtime": 1783345073.7986803,
+    "hash": "bd1b130968f8f3f5703c2ff75f122c2b"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\dev.rs": {
+    "mtime": 1783345073.7989745,
+    "hash": "e641ed73d26881ea7e3f3d9a90d89c84"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\grid.rs": {
+    "mtime": 1783345073.799222,
+    "hash": "eeeb23911ecb70c3000c4b72aaaa7578"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\grid_filters.rs": {
+    "mtime": 1783345073.7994547,
+    "hash": "572b1ff5fe1bbb0501757d0177f7a7e9"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\grindr_t1.rs": {
+    "mtime": 1783345073.7997022,
+    "hash": "09393c91804edfdf93f1becaf3db0e54"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\health.rs": {
+    "mtime": 1783345073.7999427,
+    "hash": "ead33d3575ace95f1630125191bbd093"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\media_urls.rs": {
+    "mtime": 1783345073.8002,
+    "hash": "1a2f6e7beb83f0aa28df99b7fb307373"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\notifications.rs": {
+    "mtime": 1783345073.800441,
+    "hash": "055f45cfb555ececad3f7f647d6fddd8"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\privacy_preferences.rs": {
+    "mtime": 1783345073.8006737,
+    "hash": "bcb79e83211b26025f0e13466b4c900a"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\profile.rs": {
+    "mtime": 1783345073.8009045,
+    "hash": "f875d9f5ca8bf2a90b8b56e2f58bc37e"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\social.rs": {
+    "mtime": 1783345073.8011346,
+    "hash": "1c25c82cf18e69f03a172677efe38959"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\stories.rs": {
+    "mtime": 1783345073.8013997,
+    "hash": "4260081ea05095d2ed6ee342d9a9f1e2"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\tier2.rs": {
+    "mtime": 1783345073.801728,
+    "hash": "032421e290575980df1713a7d592fb60"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\tier3.rs": {
+    "mtime": 1783345073.8020208,
+    "hash": "1223b165e11e0357ecd35378de9987a9"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\api\\tests\\well_known.rs": {
+    "mtime": 1783345073.8023279,
+    "hash": "49649125acbf74f42efd944b3588d3c0"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth\\src\\code.rs": {
+    "mtime": 1782464807.336133,
+    "hash": "b082e04c32d2a5b3121ab3feed9cd971"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth\\src\\error.rs": {
+    "mtime": 1782780765.1346476,
+    "hash": "153aac440d71f84dc3cb8ede2e1428f4"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth\\src\\jwt.rs": {
+    "mtime": 1782464807.3401177,
+    "hash": "6fc5ffaeb202d7969a1c001f7e8cd07a"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth\\src\\lib.rs": {
+    "mtime": 1782754766.660027,
+    "hash": "3ed1708b3c32f5daa97f83e1534212d6"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth\\src\\notify.rs": {
+    "mtime": 1783322457.4842646,
+    "hash": "bf3f58d46ee0cf2ca0caf60286ec661a"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth\\src\\oauth.rs": {
+    "mtime": 1782862993.2186449,
+    "hash": "90cb94fd7b123ae7c8dfed33b6cc872f"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\src\\error.rs": {
+    "mtime": 1782754766.6671028,
+    "hash": "1b128b5bd504acc2860a1378a23b2ce7"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\src\\jwt.rs": {
+    "mtime": 1782754766.668198,
+    "hash": "2791250c19528baa116b371940a25fbc"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\src\\keystore.rs": {
+    "mtime": 1782754766.6717362,
+    "hash": "3f5764814652ad711eb97f525d2272a2"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\src\\lib.rs": {
+    "mtime": 1782754766.6747324,
+    "hash": "5807de659a05b90650bed4b41810f1f0"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\src\\mfa_token.rs": {
+    "mtime": 1782754766.677781,
+    "hash": "e8675ba3b883e81ffe4200fef74b8b58"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\src\\recovery.rs": {
+    "mtime": 1782754766.683106,
+    "hash": "752e2c4979b45dbcaeb638fd892f5338"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\src\\totp.rs": {
+    "mtime": 1782754766.68512,
+    "hash": "c828fe6d0a5a97b1681caf3e6e519596"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\tests\\jwt.rs": {
+    "mtime": 1782754766.6896899,
+    "hash": "4adbe78243c7f19412e712f1248a28ef"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\tests\\keystore.rs": {
+    "mtime": 1782754766.6937013,
+    "hash": "40052512c8eab21f71c9234afc85edbc"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\tests\\mfa_token.rs": {
+    "mtime": 1782754766.696712,
+    "hash": "c66d41f80300c22bd1e349a6fac4be9f"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\tests\\recovery.rs": {
+    "mtime": 1782754766.7012923,
+    "hash": "04b7e71e1ef7c294afaa3c5d9982b53f"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\auth_admin\\tests\\totp.rs": {
+    "mtime": 1782754766.704303,
+    "hash": "16ebbc1923cd93293012cfb2f4a23c3e"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\albums.rs": {
+    "mtime": 1782771131.6369083,
+    "hash": "3c3a76afe2b40b0841ffa13e85b53e0e"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\chat.rs": {
+    "mtime": 1783302502.869449,
+    "hash": "b89d1c074fe6375a16b08bd3f5ff4e2a"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\config.rs": {
+    "mtime": 1782754766.7996967,
+    "hash": "589270b1e60938ae8c78f57bad692b9a"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\enterprise.rs": {
+    "mtime": 1782871565.2276628,
+    "hash": "5e618619ccfa464a48eadd068d59872f"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\geo.rs": {
+    "mtime": 1783344357.9938104,
+    "hash": "cbb43042f87d8822c0b2f11615b349ee"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\lib.rs": {
+    "mtime": 1783345073.8026452,
+    "hash": "2219ef6cf43f5d75cd8521d12691ac18"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\moderation.rs": {
+    "mtime": 1782966228.0314343,
+    "hash": "f190705a5d711ccf86231339d36b4142"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\notifications.rs": {
+    "mtime": 1782821522.3058195,
+    "hash": "9339c6c2f1f5ac5917d3f62157292800"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\plans.rs": {
+    "mtime": 1782754766.8093038,
+    "hash": "0961a18499da435daf231374bbc31d56"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\profiles.rs": {
+    "mtime": 1783148901.985564,
+    "hash": "bddbedcde02c8a01ceeef637fcf126b2"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\social.rs": {
+    "mtime": 1783139008.469865,
+    "hash": "0d886da63d6ec96f581e33f5819b6f2d"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\staff.rs": {
+    "mtime": 1782754766.8113215,
+    "hash": "1cb9c883f61c202991be46a0b60a847e"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\stories.rs": {
+    "mtime": 1783302706.4928026,
+    "hash": "60d16323e5b1c60d313601b29dd7156a"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\support.rs": {
+    "mtime": 1783313204.7109196,
+    "hash": "d1191847aa0e97190fd361fc9db126d7"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\tier2.rs": {
+    "mtime": 1782893765.1257918,
+    "hash": "eff2e0d6b608ce9cd19db86a0e7910df"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\tier3.rs": {
+    "mtime": 1782920940.5238242,
+    "hash": "e33c4b5dd27951eb4fffa920dc7e7807"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\users.rs": {
+    "mtime": 1783344324.863351,
+    "hash": "4884a389718fccfb2bcf2411e7ea79c3"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\src\\verification.rs": {
+    "mtime": 1782969151.133726,
+    "hash": "7108117340ba655a3b4b46cfdbce584e"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\tests\\connection.rs": {
+    "mtime": 1783345073.8030124,
+    "hash": "69ca1b9384d0e6024a9c0da29d8c4c91"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\tests\\migrations.rs": {
+    "mtime": 1783345073.8033352,
+    "hash": "707f5368b04828668741f69df299b032"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\tests\\repos.rs": {
+    "mtime": 1783345073.8036134,
+    "hash": "375f67c0914d3a53e718f95dc7b5344e"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\tests\\staff.rs": {
+    "mtime": 1783345073.8038816,
+    "hash": "7aead92532866e803a597e01f6cf3df1"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\tests\\users_admin.rs": {
+    "mtime": 1783345073.8041475,
+    "hash": "72a78617266f41ceecef0da34f4e0b68"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\db\\tests\\common\\mod.rs": {
+    "mtime": 1782464807.3551161,
+    "hash": "576c6c0170311f8989804fdfea99dcdf"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\px_core\\src\\dto.rs": {
+    "mtime": 1782754766.8284683,
+    "hash": "742688d2f92eff9daf6f50f05a099bc1"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\px_core\\src\\lib.rs": {
+    "mtime": 1782754766.8309937,
+    "hash": "1b240e6191e2830ebef7ff8ee3fe2897"
+  },
+  "C:\\Users\\echev\\Desktop\\proyecto-X\\backend\\crates\\px_core\\src\\validation.rs": {
+    "mtime": 1782754766.8346653,
+    "hash": "afc71b16bda22e5841b5d5d17bdda28b"
+  }
+}

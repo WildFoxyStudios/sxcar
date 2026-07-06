@@ -237,7 +237,87 @@ None.
    - **Fix**: Define each unique color as a `VibraTheme` constant and reference it.
 
 ## Admin
-(populated by Task 3)
+
+### P0 — Breaks production
+
+None.
+
+### P1 — Broken UX flows
+
+1. **`DropdownButtonFormField` uses `initialValue` instead of `value` — reports screen cannot compile** — `apps/admin/lib/src/features/moderation/reports_screen.dart:198`
+
+   - **What**: The Review Report dialog's action selector uses `initialValue: selectedAction` on a `DropdownButtonFormField<String>`. The Flutter API resolves this as an unknown named parameter — `DropdownButtonFormField` accepts `value`, not `initialValue`. The Dart compiler rejects this, so the entire Moderation Queue screen fails to build.
+   - **Impact**: The reports/moderation screen is completely inaccessible. Any navigation to the moderation queue results in a build failure, making the entire moderation workflow unavailable from the admin panel (P1).
+   - **Fix**: Replace `initialValue` with `value` at line 198.
+
+### P2 — Missing or non-functional features
+
+1. **Webhooks screen is read-only — no create, edit, delete, or test** — `apps/admin/lib/src/features/settings/webhooks_screen.dart`
+
+   - **What**: The `WebhooksScreen` lists webhooks with name, URL, status, and last-fired timestamp. There are no action buttons, no "New Webhook" button, and no way to toggle or delete an existing webhook. The screen is a view-only listing.
+   - **Impact**: Operators cannot configure integrations from the admin panel. Any webhook management requires direct database access or API calls (P2).
+   - **Fix**: Add "New Webhook", "Edit", "Toggle", "Delete" affordances, matching the pattern used in `FlagsScreen` or `ApiKeysScreen`.
+
+2. **Legal documents screen has no edit or delete actions on existing rows** — `apps/admin/lib/src/features/content/legal_docs_screen.dart`
+
+   - **What**: `LegalDocsScreen` displays a table of documents with title, version, effective date, and status. Each row has no action column. The only write operation is "New Version" via the header button. Users cannot edit or archive existing documents.
+   - **Impact**: Once created, a legal document version is effectively immutable from the UI (P2).
+   - **Fix**: Add Edit and Delete/Archive action buttons to each row, matching the pattern in `CmsScreen`.
+
+3. **Campaigns screen is read-only — no create, edit, launch, or delete** — `apps/admin/lib/src/features/growth/campaigns_screen.dart`
+
+   - **What**: `CampaignsScreen` displays a listing with name, type, status, sent date, and stats. There are no action buttons and no create button. The screen is view-only.
+   - **Impact**: Operators cannot create or manage campaigns from the admin panel (P2).
+   - **Fix**: Add create/edit/launch affordances or, if the screen is intentionally read-only, add a note explaining where campaigns are managed.
+
+4. **Experiments screen is read-only — no create, start, pause, or stop** — `apps/admin/lib/src/features/growth/experiments_screen.dart`
+
+   - **What**: `ExperimentsScreen` lists experiments with name, status, variants, start date, and end date. No action buttons exist on rows and no create button is present. The screen cannot be used to manage experiments.
+   - **Impact**: Operators cannot start, stop, or create A/B experiments from the admin panel (P2).
+   - **Fix**: Add create/start/pause/stop controls or, if intentionally read-only, add a note explaining where experiments are managed.
+
+### P3 — Placeholders / stubs / simulated logic
+
+1. **CMS "Edit" button is a no-op stub** — `apps/admin/lib/src/features/content/cms_screen.dart:290`
+
+   - **What**: `_CmsRow` renders an "Edit" action button with `onPressed: () {}`. Clicking the button performs zero operations. The "Delete" button next to it works correctly (makes a real HTTP call).
+   - **Impact**: Users cannot edit existing CMS content from the admin panel. The Edit button appears functional but does nothing (P3).
+   - **Fix**: Wire `onPressed` to an edit dialog (matching the pattern in `TranslationsScreen` or `TemplatesScreen`) that makes a `PUT /admin/cms/:id` call.
+
+2. **No pagination on any list view — hardcoded `limit: 50, offset: 0`** — multiple files
+
+   - `apps/admin/lib/src/features/audit/audit_screen.dart:39` — `'limit': '50', 'offset': '0'`
+   - `apps/admin/lib/src/features/moderation/reports_screen.dart:50-51` — same pattern
+   - `apps/admin/lib/src/features/moderation/csam_screen.dart:40` — `'limit': '50'`
+   - `apps/admin/lib/src/features/gdpr/data_requests_screen.dart:38` — same pattern
+   - `apps/admin/lib/src/features/users/user_list_screen.dart:72` — `'limit': '20', 'offset': '0'`
+
+   - **What**: Every list screen fetches a hardcoded page of results. There is no pagination widget, infinite scroll, or "Load more" control. If the dataset exceeds the page size, users never see the remaining entries.
+   - **Impact**: For datasets larger than 50 records (audit logs, CSAM hits, data requests) or 20 records (users), content beyond the first page is inaccessible from the admin panel (P3).
+   - **Fix**: Add cursor or offset-based pagination to each list provider, and render "Previous" / "Next" controls in the table footer.
+
+3. **Template editor only updates the subject field — no content body editing** — `apps/admin/lib/src/features/content/templates_screen.dart:224-262`
+
+   - **What**: The edit dialog for notification templates contains a single `TextField` for the `subject` field. The template's body/content cannot be edited from the UI. The `PUT /admin/templates/:id` call only sends `{'subject': ...}`.
+   - **Impact**: Operators can rename a template but cannot modify its push/email body content (P3).
+   - **Fix**: Add a multiline body field to the edit dialog and include it in the PUT payload.
+
+### P4 — Cleanup
+
+1. **Hardcoded English UI strings in screen titles** — 8 screens with unlocalized titles/descriptions
+
+   - `apps/admin/lib/src/features/config/abuse_rules_screen.dart:74` — `Text('Abuse Detection Rules', ...)`
+   - `apps/admin/lib/src/features/config/flags_screen.dart:161` — `title: const Text('Create Feature Flag')`
+   - `apps/admin/lib/src/features/content/cms_screen.dart:184` — `title: const Text('Create CMS Content')`
+   - `apps/admin/lib/src/features/content/cms_screen.dart:307` — `title: const Text('Delete CMS Item')`
+   - `apps/admin/lib/src/features/content/legal_docs_screen.dart:183` — `title: const Text('New Legal Document Version')`
+   - `apps/admin/lib/src/features/gdpr/data_requests_screen.dart:75` — `Text('GDPR Data Requests', ...)`
+   - `apps/admin/lib/src/features/moderation/csam_screen.dart:77` — `Text('CSAM Hash Queue', ...)`
+   - `apps/admin/lib/src/features/settings/api_keys_screen.dart:181` — `title: const Text('Create API Key')`
+
+   - **What**: Screen titles, dialog titles, and descriptions are hardcoded English strings. The admin panel has no l10n setup at all — no `AppLocalizations` import, no translation keys.
+   - **Impact**: The admin panel cannot be localized (P4).
+   - **Fix**: Extract all user-facing strings into an l10n system or at minimum centralize them as constants.
 
 ## Cross-app consistency
 (populated by Task 4)

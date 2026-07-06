@@ -16,6 +16,7 @@ abstract final class AdminTheme {
   static const Color kOrange    = Color(0xFFF97316);
   static const Color kBlue      = Color(0xFF3B82F6);
   static const Color kAccentBg  = Color(0xFF2E2A14); // subtle accent surface
+  static const Color kYellow   = kAccent; // alias
 
   // ── Typography helpers ───────────────────────────────────────────────────────
   static TextStyle get headlineMedium => const TextStyle(

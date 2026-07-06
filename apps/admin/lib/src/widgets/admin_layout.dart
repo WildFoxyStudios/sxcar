@@ -20,9 +20,28 @@ class AdminLayout extends ConsumerWidget {
     (icon: Icons.flag_outlined,          activeIcon: Icons.flag,          label: 'Reports'),
     (icon: Icons.toggle_on_outlined,     activeIcon: Icons.toggle_on,     label: 'Flags'),
     (icon: Icons.credit_card_outlined,   activeIcon: Icons.credit_card,   label: 'Plans'),
+    (icon: Icons.privacy_tip_outlined,   activeIcon: Icons.privacy_tip,   label: 'GDPR'),
+    (icon: Icons.shield_outlined,        activeIcon: Icons.shield,        label: 'CSAM'),
+    (icon: Icons.history_outlined,       activeIcon: Icons.history,       label: 'Audit'),
+    (icon: Icons.public_outlined,        activeIcon: Icons.public,        label: 'Countries'),
+    (icon: Icons.science_outlined,       activeIcon: Icons.science,       label: 'Experiments'),
+    (icon: Icons.translate_outlined,     activeIcon: Icons.translate,     label: 'i18n'),
+    (icon: Icons.article_outlined,       activeIcon: Icons.article,       label: 'CMS'),
+    (icon: Icons.gavel_outlined,         activeIcon: Icons.gavel,         label: 'Legal'),
+    (icon: Icons.campaign_outlined,      activeIcon: Icons.campaign,      label: 'Campaigns'),
+    (icon: Icons.email_outlined,         activeIcon: Icons.email,         label: 'Templates'),
+    (icon: Icons.rule_outlined,          activeIcon: Icons.rule,          label: 'Abuse'),
+    (icon: Icons.vpn_key_outlined,       activeIcon: Icons.vpn_key,       label: 'API Keys'),
+    (icon: Icons.webhook_outlined,       activeIcon: Icons.webhook,       label: 'Webhooks'),
   ];
 
-  static const _routes = ['/dashboard', '/users', '/reports', '/flags', '/plans'];
+  static const _routes = [
+    '/dashboard', '/users', '/reports', '/flags', '/plans',
+    '/admin/gdpr', '/admin/csam', '/admin/audit', '/admin/countries',
+    '/admin/experiments', '/admin/translations', '/admin/cms',
+    '/admin/legal-docs', '/admin/campaigns', '/admin/templates',
+    '/admin/abuse', '/admin/api-keys', '/admin/webhooks',
+  ];
 
   String get _sectionTitle => selectedIndex < _navItems.length
       ? _navItems[selectedIndex].label

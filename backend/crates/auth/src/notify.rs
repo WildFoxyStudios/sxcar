@@ -106,7 +106,7 @@ mod tests {
         let n = SmtpNotifier::from_env().unwrap();
         assert_eq!(n.api_key, "test-key");
         assert_eq!(n.from, "test@example.com");
-        assert_eq!(n.endpoint, "https://api.mailgun.net/v3");
+        assert!(n.url.contains("api.mailgun.net"));
         // Restore
         if let Some(v) = prev {
             std::env::set_var("SMTP_API_KEY", v);
@@ -121,7 +121,7 @@ mod tests {
         let n = SmtpNotifier {
             api_key: "dummy".into(),
             from: "noreply@turnend.win".into(),
-            endpoint: "https://api.mailgun.net/v3".into(),
+            url: "https://api.mailgun.net/v3/sandbox.mailgun.org/messages".into(),
         };
         // Should succeed (just logs)
         assert!(n.send_sms("+1234567890", "hello").await.is_ok());

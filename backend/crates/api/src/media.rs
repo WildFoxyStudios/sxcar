@@ -152,7 +152,7 @@ pub fn presign(
 
 #[derive(Deserialize)]
 pub struct UploadUrlReq {
-    /// "profile" (público), "album" (privado) o "verification".
+    /// "profile" (público), "album" (privado), "verification" o "story".
     pub kind: String,
     /// Extensión opcional (jpg, png, …); se sanea.
     pub ext: Option<String>,
@@ -217,6 +217,7 @@ pub async fn create_photo(
         "profile" => &cfg.bucket_media,
         "album" => &cfg.bucket_private,
         "verification" => &cfg.bucket_verification,
+        "story" => &cfg.bucket_media,
         _ => return Err(StatusCode::BAD_REQUEST),
     };
 
@@ -309,6 +310,7 @@ pub async fn upload_url(
         "profile" => &cfg.bucket_media,
         "album" => &cfg.bucket_private,
         "verification" => &cfg.bucket_verification,
+        "story" => &cfg.bucket_media,
         _ => return Err(StatusCode::BAD_REQUEST),
     };
     let ext = sanitize_ext(req.ext.as_deref());
@@ -353,7 +355,7 @@ pub async fn get_url(
 ) -> Result<Json<GetUrlRes>, StatusCode> {
     // Validate the request before requiring R2 config, so bad input is 400
     // even in environments without R2 credentials (dev/CI → r2 = None).
-    if !matches!(q.kind.as_str(), "profile" | "album" | "verification") {
+    if !matches!(q.kind.as_str(), "profile" | "album" | "verification" | "story") {
         return Err(StatusCode::BAD_REQUEST);
     }
     if q.key.is_empty() || q.key.contains("..") {
@@ -363,6 +365,7 @@ pub async fn get_url(
     let bucket = match q.kind.as_str() {
         "profile" => &cfg.bucket_media,
         "album" => &cfg.bucket_private,
+        "story" => &cfg.bucket_media,
         _ => &cfg.bucket_verification,
     };
     let now = OffsetDateTime::now_utc();

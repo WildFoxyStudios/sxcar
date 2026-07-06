@@ -11,6 +11,7 @@ pub mod moderation;
 pub mod notifications;
 pub mod plans;
 pub mod social;
+pub mod stories;
 pub mod profiles;
 pub mod staff;
 pub mod support;

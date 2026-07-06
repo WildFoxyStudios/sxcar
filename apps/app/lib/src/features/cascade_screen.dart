@@ -15,6 +15,8 @@ import '../utils/distance_format.dart';
 import 'edit_profile/sheets.dart' show showPositionSheet;
 import 'profile_drawer.dart' show ownProfileProvider;
 import 'profile_screen.dart' show UserProfile;
+import 'story_service.dart';
+import 'story_viewer_screen.dart';
 
 /// Model for a user in the nearby grid.
 class NearbyUser {
@@ -377,6 +379,11 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 // ── Header SliverAppBar ──────────────────────────────────
                 _buildSliverAppBar(l10n, profileAsync, context),
 
+                // ── Stories bar (G12) ────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: _buildStoriesBar(context),
+                ),
+
                 // ── Location denied banner ───────────────────────────────
                 if (_locationDenied)
                   SliverToBoxAdapter(child: _buildLocationBanner()),
@@ -581,6 +588,60 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     if (p == null) return '?';
     final name = p.displayName ?? p.email;
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  // ── Stories bar (G12) ──────────────────────────────────────────────────────
+
+  Widget _buildStoriesBar(BuildContext context) {
+    final storiesAsync = ref.watch(storiesListProvider);
+
+    return Container(
+      height: 100,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: storiesAsync.when(
+        data: (groups) {
+          if (groups.isEmpty) return const SizedBox.shrink();
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: groups.length + 1, // +1 for the add button
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                // My story — add button
+                return _StoryAvatar(
+                  isAddButton: true,
+                  onTap: () => context.push('/create-story'),
+                );
+              }
+              final group = groups[index - 1];
+              return _StoryAvatar(
+                avatarKey: group.avatarKey,
+                displayName: group.displayName ?? 'Usuario',
+                hasUnviewed: !group.allViewed,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => StoryViewerScreen(
+                        groups: groups,
+                        initialGroupIndex: index - 1,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+        loading: () => const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+        error: (_, __) => const SizedBox.shrink(),
+      ),
+    );
   }
 
   // ── Chips row ──────────────────────────────────────────────────────────────
@@ -1222,6 +1283,83 @@ class _UserCard extends ConsumerWidget {
             color: VibraTheme.kTextMuted,
             fontWeight: FontWeight.bold,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stories avatar widget (G12)
+// ---------------------------------------------------------------------------
+
+class _StoryAvatar extends StatelessWidget {
+  final bool isAddButton;
+  final String? avatarKey;
+  final String? displayName;
+  final bool hasUnviewed;
+  final VoidCallback onTap;
+
+  const _StoryAvatar({
+    this.isAddButton = false,
+    this.avatarKey,
+    this.displayName,
+    this.hasUnviewed = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 72,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Avatar circle with colored border
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isAddButton
+                      ? VibraTheme.kAccent
+                      : hasUnviewed
+                          ? VibraTheme.kAccent
+                          : VibraTheme.kTextMuted.withValues(alpha: 0.3),
+                  width: 2.5,
+                ),
+              ),
+              child: isAddButton
+                  ? const Icon(Icons.add, color: VibraTheme.kAccent, size: 28)
+                  : CircleAvatar(
+                      radius: 28,
+                      backgroundColor: VibraTheme.kSurface,
+                      backgroundImage: avatarKey != null
+                          ? NetworkImage(
+                              'https://api.turnend.win/media/get-url?key=$avatarKey&kind=profile')
+                          : null,
+                      child: avatarKey == null
+                          ? const Icon(Icons.person,
+                              color: VibraTheme.kTextMuted, size: 28)
+                          : null,
+                    ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              displayName ?? (isAddButton ? 'You' : ''),
+              style: const TextStyle(
+                color: VibraTheme.kTextSecondary,
+                fontSize: 11,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );

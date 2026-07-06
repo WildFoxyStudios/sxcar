@@ -284,5 +284,17 @@
     "placeholders": {
       "count": { "type": "int", "example": "5" }
     }
-  }
+  },
+
+  "storiesTitle": "Stories",
+  "@storiesTitle": { "description": "Stories / Spotlight section title" },
+
+  "addStory": "Add Story",
+  "@addStory": { "description": "Button to create a new story" },
+
+  "storyCaption": "Write a caption…",
+  "@storyCaption": { "description": "Caption text field placeholder for stories" },
+
+  "tapToView": "Tap to view",
+  "@tapToView": { "description": "Hint text for story avatars" }
 }

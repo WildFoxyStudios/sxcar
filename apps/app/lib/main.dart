@@ -20,6 +20,7 @@ import 'src/features/grid_search_screen.dart';
 import 'src/features/chat_screen.dart';
 import 'src/features/circles_screen.dart';
 import 'src/features/create_group_screen.dart';
+import 'src/features/create_story_screen.dart';
 import 'src/features/group_info_screen.dart';
 import 'src/features/discreet_icon_picker_screen.dart';
 import 'src/features/interest_screen.dart';
@@ -249,6 +250,12 @@ final GoRouter appRouter = GoRouter(
           ),
         ),
       ],
+    ),
+
+    // ── Full-screen story screens ──────────────────────────────────────────
+    GoRoute(
+      path: '/create-story',
+      builder: (_, _) => const CreateStoryScreen(),
     ),
 
     // ── Legacy redirect routes (keeps old deep links / tests working) ──────

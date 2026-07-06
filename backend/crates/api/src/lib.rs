@@ -18,6 +18,7 @@ pub mod profile;
 pub mod chat_broker;
 pub mod ratelimit;
 pub mod social;
+pub mod stories;
 pub mod tarpit;
 pub mod tier2;
 pub mod tier3;
@@ -131,6 +132,9 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/blocks", get(social::list_blocks).post(social::block_user))
         .route("/blocks/:user_id", delete(social::unblock_user))
         .route("/reports", post(social::create_report))
+        .route("/stories", post(stories::create_story).get(stories::list_stories))
+        .route("/stories/:id", delete(stories::delete_story))
+        .route("/stories/:id/view", post(stories::view_story))
         .merge(auth_routes)
         .merge(admin::router(state.clone()))
         .merge(tier2::router())

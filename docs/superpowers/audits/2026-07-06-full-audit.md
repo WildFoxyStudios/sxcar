@@ -230,26 +230,11 @@ None.
 
    - **Fix**: Add `debugPrint` or `tracing` log statements in each catch block for debuggability.
 
-7. **Stale filename: cascade_screen.dart contains NavegarScreen class** — `apps/app/lib/src/features/cascade_screen.dart`
-
-   - **What**: Same as P3 finding 7 above — the filename does not match the class name of its primary widget.
-   - **Fix**: Rename file to `navegar_screen.dart`.
-
-8. **Inline hex color literals not using theme constants** — `apps/app/lib/src/theme/widgets.dart`
+7. **Inline hex color literals not using theme constants** — `apps/app/lib/src/theme/widgets.dart`
 
    - **What**: Multiple inline `Color(0x...)` literals (lines 395, 400-401, 483, 487, 519, 537, 689) bypass `VibraTheme` named constants.
    - **Impact**: Theme changes require hunting down inline literals.
    - **Fix**: Define each unique color as a `VibraTheme` constant and reference it.
-
-9. **Settings provider claims encrypted PIN storage but uses plaintext** — `apps/app/lib/src/settings/settings_providers.dart:103-127`
-
-   - **What**: Same as P1 finding 2. The P1 finding covers the security impact; this finding covers the doc/code alignment cleanup.
-   - **Fix**: Either implement encryption or update the doc comment to match reality.
-
-10. **`Right Now` screen has two empty catch blocks** — `apps/app/lib/src/features/right_now_screen.dart:124,219`
-
-    - **What**: Same as P4 finding 6 above (right_now_screen.dart specifically).
-    - **Fix**: Add `debugPrint` to log errors.
 
 ## Admin
 (populated by Task 3)

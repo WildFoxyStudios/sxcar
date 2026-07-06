@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use axum::Router;
+use axum::{routing::get, Router};
 use http_body_util::BodyExt;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use sqlx::PgPool;
@@ -150,6 +150,7 @@ async fn build_test_app(pool: PgPool) -> (Router, api::AppState) {
     };
 
     let router = Router::new()
+        .route("/grid/nearby", get(api::grid::nearby))
         .merge(api::onboarding::router())
         .merge(api::auth::router())
         .with_state(state.clone());

@@ -287,11 +287,11 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                         ],
                       ),
                     );
-                    if (confirmed == true && mounted) {
+                    if (confirmed == true && context.mounted) {
                       await ref
                           .read(storyServiceProvider)
                           .deleteStory(_currentStory.id);
-                      Navigator.of(context).pop();
+                      if (context.mounted) Navigator.of(context).pop();
                     }
                   }
                 },

@@ -23,3 +23,15 @@
 - The admin panel has no l10n infrastructure at all, unlike the app module which uses `AppLocalizations`.
 
 **Report path:** C:\Users\echev\Desktop\proyecto-X\.superpowers\sdd\task-3-report.md
+
+---
+
+## Fix Post-Commit: Admin P4 finding revised (2026-07-06)
+
+**Issue:** The original P4 finding claimed "8 hardcoded English strings" — actually 50+ across every admin screen. The grep pattern was too restrictive (required 3+ words with uppercase starts).
+
+**Changes made:**
+- `docs/superpowers/audits/2026-07-06-full-audit.md` — Revised Admin P4 finding: removed specific count "8", replaced with qualitative "pervasive across every admin screen"; acknowledged systemic issue (zero l10n infrastructure), not minor; reframed citations as "a sample" rather than "the complete list".
+- `.superpowers/sdd/task-3-report.md` — Updated match count from "8 matches" to "pervasive across every admin screen (50+ instances)" and P4 summary line.
+
+**Commit:** `2ccc64a5` — "audit: fix admin P4 — hardcoded strings are pervasive, not just 8"

@@ -25,9 +25,15 @@
      }
      ```
 
+2. **`DevOAuthVerifier` fallback authenticates arbitrary users when `OAUTH_GOOGLE_CLIENT_ID` is unset** — `backend/crates/api/src/main.rs:35`
+
+   - **What**: When `OAUTH_GOOGLE_CLIENT_ID` is not set, `RealOAuthVerifier::from_env()` returns `None` and the application falls back to `DevOAuthVerifier`. This verifier accepts tokens in the format `dev:<provider_uid>:<email>` without any cryptographic verification.
+   - **Impact**: In any deployment where `OAUTH_GOOGLE_CLIENT_ID` is absent (including production), anyone who knows this token format can authenticate as any user, bypassing all authentication. This is a production-authentication-bypass vulnerability (P0).
+   - **Fix**: Fail at startup if OAuth is not configured and the environment is production, or require at least Google client ID for all builds. Remove the `DevOAuthVerifier` fallback from production builds entirely.
+
 ### P1 — Broken UX flows
 
-None found. All handler endpoints are wired to real database calls, return proper error codes, and have no dead code paths that would break a user-facing flow.
+None.
 
 ### P2 — Missing or non-functional features
 
@@ -45,19 +51,13 @@ None found. All handler endpoints are wired to real database calls, return prope
    - **Impact**: Password-reset and email-verification emails are silently not delivered in production if SMTP is misconfigured.
    - **Fix**: Fail at startup (`panic!` or `bail!`) when `SMTP_API_KEY` is absent and the environment is detected as production, or add a startup warning with clear instructions.
 
-2. **`DevOAuthVerifier` fallback accepts arbitrary tokens** — `backend/crates/api/src/main.rs:35`
-
-   - **What**: When `OAUTH_GOOGLE_CLIENT_ID` is unset, `RealOAuthVerifier::from_env()` returns `None` and the code falls back to `DevOAuthVerifier`, which accepts tokens in the format `dev:<provider_uid>:<email>` without any cryptographic verification.
-   - **Impact**: Anyone who knows this format can authenticate as any user without valid Google/Apple credentials.
-   - **Fix**: Fail at startup if OAuth is not configured and environment is production, or require at least Google client ID for production builds.
-
-3. **Apple identity token signature verification is permanently skipped** — `backend/crates/auth/src/oauth.rs:101-130`
+2. **Apple identity token signature verification is permanently skipped** — `backend/crates/auth/src/oauth.rs:101-130`
 
    - **What**: `verify_apple_token()` decodes the JWT payload without verifying the RSA signature against Apple's public keys. A comment on line 103 reads "without signature verification". Only the `aud` claim is checked.
    - **Impact**: A forged Apple identity token with a matching `aud` field (obtainable from any app) would be accepted as valid.
    - **Fix**: Fetch Apple's public JWKS from `https://appleid.apple.com/auth/keys` and verify the JWT signature using the `jsonwebtoken` crate with `Algorithm::RS256`.
 
-4. **`SmtpNotifier::send_sms` is a no-op stub** — `backend/crates/auth/src/notify.rs:80-83`
+3. **`SmtpNotifier::send_sms` is a no-op stub** — `backend/crates/auth/src/notify.rs:80-83`
 
    - **What**: SMS sending via the SMTP notifier logs to `tracing::info!` and returns `Ok(())` without contacting any provider. The comment says "SMS not yet implemented via SMTP".
    - **Impact**: If SMS-based flows (e.g. 2FA) ever use this code path, the messages are silently dropped.

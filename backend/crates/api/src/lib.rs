@@ -143,7 +143,8 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .merge(tier2::router())
         .merge(tier3::router())
         .merge(billing::router())
-        .merge(media::router());
+        .merge(media::router())
+        .merge(onboarding::router());
     for path in tarpit::HONEYPOT_PATHS {
         router = router.route(path, any(tarpit::handler));
     }

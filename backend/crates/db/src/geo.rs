@@ -24,6 +24,9 @@ pub struct NearbyUserRow {
     pub bio: Option<String>,
     pub profile_photo_id: Option<uuid::Uuid>,
     pub distance_m: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[sqlx(default)]
+    pub profile_photo_url: Option<String>,
 }
 
 /// Busca usuarios activos cerca de una ubicación, ordenados por distancia,

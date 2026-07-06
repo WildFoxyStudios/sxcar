@@ -262,22 +262,23 @@ pub async fn update_own(
 
     // Profile photo upload: store the R2 key and generate a presigned URL.
     if let Some(ref key) = body.profile_photo_key {
-        let bucket = &state.r2.bucket_media;
-        let now = time::OffsetDateTime::now_utc();
-        // 7-day presigned URL — regenerated on each profile update.
-        let url = crate::media::presign(&state.r2, "GET", bucket, key, 604800, now);
-        sqlx::query(
-            "UPDATE users SET profile_photo_id = $1, profile_photo_url = $2 WHERE id = $3",
-        )
-        .bind(key)
-        .bind(&url)
-        .bind(user_id)
-        .execute(&state.pool)
-        .await
-        .map_err(|e| {
-            tracing::error!("profile photo update error: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+        if let Some(ref r2) = state.r2 {
+            let now = time::OffsetDateTime::now_utc();
+            // 7-day presigned URL — regenerated on each profile update.
+            let url = crate::media::presign(r2, "GET", &r2.bucket_media, key, 604800, now);
+            sqlx::query(
+                "UPDATE users SET profile_photo_id = $1, profile_photo_url = $2 WHERE id = $3",
+            )
+            .bind(key)
+            .bind(&url)
+            .bind(user_id)
+            .execute(&state.pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("profile photo update error: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+        }
     }
 
     // Persist details jsonb + show_* privacy flags (T4.2).

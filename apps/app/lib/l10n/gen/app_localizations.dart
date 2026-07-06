@@ -1519,6 +1519,276 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Toca para ver'**
   String get tapToView;
+
+  /// No description provided for @onboarding_title.
+  ///
+  /// In es, this message translates to:
+  /// **'Configura tu perfil'**
+  String get onboarding_title;
+
+  /// No description provided for @onboarding_subtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta a otros sobre ti'**
+  String get onboarding_subtitle;
+
+  /// No description provided for @onboarding_required_progress.
+  ///
+  /// In es, this message translates to:
+  /// **'{done} de {total} obligatorios completados'**
+  String onboarding_required_progress(int done, int total);
+
+  /// No description provided for @onboarding_optional_progress.
+  ///
+  /// In es, this message translates to:
+  /// **'{done} de {total} opcionales completados'**
+  String onboarding_optional_progress(int done, int total);
+
+  /// No description provided for @onboarding_next.
+  ///
+  /// In es, this message translates to:
+  /// **'Siguiente'**
+  String get onboarding_next;
+
+  /// No description provided for @onboarding_skip.
+  ///
+  /// In es, this message translates to:
+  /// **'Omitir'**
+  String get onboarding_skip;
+
+  /// No description provided for @onboarding_close.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerrar'**
+  String get onboarding_close;
+
+  /// No description provided for @onboarding_skip_all.
+  ///
+  /// In es, this message translates to:
+  /// **'Saltar todo el wizard'**
+  String get onboarding_skip_all;
+
+  /// No description provided for @onboarding_skip_all_confirm_title.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Saltar todo el wizard?'**
+  String get onboarding_skip_all_confirm_title;
+
+  /// No description provided for @onboarding_skip_all_confirm_body.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu perfil no será visible para otros hasta que completes los campos obligatorios. Puedes volver luego desde tu perfil.'**
+  String get onboarding_skip_all_confirm_body;
+
+  /// No description provided for @onboarding_skip_all_confirm_yes.
+  ///
+  /// In es, this message translates to:
+  /// **'Saltar'**
+  String get onboarding_skip_all_confirm_yes;
+
+  /// No description provided for @onboarding_skip_all_confirm_no.
+  ///
+  /// In es, this message translates to:
+  /// **'Seguir'**
+  String get onboarding_skip_all_confirm_no;
+
+  /// No description provided for @onboarding_required.
+  ///
+  /// In es, this message translates to:
+  /// **'Obligatorio'**
+  String get onboarding_required;
+
+  /// No description provided for @onboarding_optional.
+  ///
+  /// In es, this message translates to:
+  /// **'Opcional'**
+  String get onboarding_optional;
+
+  /// No description provided for @onboarding_done.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get onboarding_done;
+
+  /// No description provided for @onboarding_error_required.
+  ///
+  /// In es, this message translates to:
+  /// **'Este campo es obligatorio'**
+  String get onboarding_error_required;
+
+  /// No description provided for @onboarding_error_offline.
+  ///
+  /// In es, this message translates to:
+  /// **'Parece que estás sin conexión. Intenta de nuevo cuando tengas conexión.'**
+  String get onboarding_error_offline;
+
+  /// No description provided for @onboarding_card_profile_photo_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Foto de perfil'**
+  String get onboarding_card_profile_photo_label;
+
+  /// No description provided for @onboarding_card_profile_photo_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir una foto'**
+  String get onboarding_card_profile_photo_cta;
+
+  /// No description provided for @onboarding_card_display_name_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre'**
+  String get onboarding_card_display_name_label;
+
+  /// No description provided for @onboarding_card_display_name_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige tu nombre'**
+  String get onboarding_card_display_name_cta;
+
+  /// No description provided for @onboarding_card_age_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Edad'**
+  String get onboarding_card_age_label;
+
+  /// No description provided for @onboarding_card_age_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma tu edad'**
+  String get onboarding_card_age_cta;
+
+  /// No description provided for @onboarding_card_gender_position_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Género y posición'**
+  String get onboarding_card_gender_position_label;
+
+  /// No description provided for @onboarding_card_gender_position_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Define tu género y posición'**
+  String get onboarding_card_gender_position_cta;
+
+  /// No description provided for @onboarding_card_looking_for_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Busco'**
+  String get onboarding_card_looking_for_label;
+
+  /// No description provided for @onboarding_card_looking_for_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué buscas?'**
+  String get onboarding_card_looking_for_cta;
+
+  /// No description provided for @onboarding_card_tribes_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Tribus'**
+  String get onboarding_card_tribes_label;
+
+  /// No description provided for @onboarding_card_tribes_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige tus tribus'**
+  String get onboarding_card_tribes_cta;
+
+  /// No description provided for @onboarding_card_vaccines_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Salud y vacunas'**
+  String get onboarding_card_vaccines_label;
+
+  /// No description provided for @onboarding_card_vaccines_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparte tu información de salud'**
+  String get onboarding_card_vaccines_cta;
+
+  /// No description provided for @onboarding_card_practices_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Prácticas'**
+  String get onboarding_card_practices_label;
+
+  /// No description provided for @onboarding_card_practices_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Añade tus prácticas'**
+  String get onboarding_card_practices_cta;
+
+  /// No description provided for @onboarding_card_about_me_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Sobre mí'**
+  String get onboarding_card_about_me_label;
+
+  /// No description provided for @onboarding_card_about_me_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe una bio breve'**
+  String get onboarding_card_about_me_cta;
+
+  /// No description provided for @onboarding_card_height_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Altura'**
+  String get onboarding_card_height_label;
+
+  /// No description provided for @onboarding_card_height_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Añade tu altura'**
+  String get onboarding_card_height_cta;
+
+  /// No description provided for @onboarding_card_weight_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Peso'**
+  String get onboarding_card_weight_label;
+
+  /// No description provided for @onboarding_card_weight_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Añade tu peso'**
+  String get onboarding_card_weight_cta;
+
+  /// No description provided for @onboarding_card_relationship_status_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado sentimental'**
+  String get onboarding_card_relationship_status_label;
+
+  /// No description provided for @onboarding_card_relationship_status_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Define tu estado'**
+  String get onboarding_card_relationship_status_cta;
+
+  /// No description provided for @onboarding_card_position_preference_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Preferencia de posición'**
+  String get onboarding_card_position_preference_label;
+
+  /// No description provided for @onboarding_card_position_preference_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Define tu posición'**
+  String get onboarding_card_position_preference_cta;
+
+  /// No description provided for @onboarding_card_ethnicity_label.
+  ///
+  /// In es, this message translates to:
+  /// **'Etnia'**
+  String get onboarding_card_ethnicity_label;
+
+  /// No description provided for @onboarding_card_ethnicity_cta.
+  ///
+  /// In es, this message translates to:
+  /// **'Añade tu etnia'**
+  String get onboarding_card_ethnicity_cta;
 }
 
 class _AppLocalizationsDelegate

@@ -740,4 +740,147 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tapToView => 'Toca para ver';
+
+  @override
+  String get onboarding_title => 'Configura tu perfil';
+
+  @override
+  String get onboarding_subtitle => 'Cuenta a otros sobre ti';
+
+  @override
+  String onboarding_required_progress(int done, int total) {
+    return '$done de $total obligatorios completados';
+  }
+
+  @override
+  String onboarding_optional_progress(int done, int total) {
+    return '$done de $total opcionales completados';
+  }
+
+  @override
+  String get onboarding_next => 'Siguiente';
+
+  @override
+  String get onboarding_skip => 'Omitir';
+
+  @override
+  String get onboarding_close => 'Cerrar';
+
+  @override
+  String get onboarding_skip_all => 'Saltar todo el wizard';
+
+  @override
+  String get onboarding_skip_all_confirm_title => '¿Saltar todo el wizard?';
+
+  @override
+  String get onboarding_skip_all_confirm_body =>
+      'Tu perfil no será visible para otros hasta que completes los campos obligatorios. Puedes volver luego desde tu perfil.';
+
+  @override
+  String get onboarding_skip_all_confirm_yes => 'Saltar';
+
+  @override
+  String get onboarding_skip_all_confirm_no => 'Seguir';
+
+  @override
+  String get onboarding_required => 'Obligatorio';
+
+  @override
+  String get onboarding_optional => 'Opcional';
+
+  @override
+  String get onboarding_done => 'Listo';
+
+  @override
+  String get onboarding_error_required => 'Este campo es obligatorio';
+
+  @override
+  String get onboarding_error_offline =>
+      'Parece que estás sin conexión. Intenta de nuevo cuando tengas conexión.';
+
+  @override
+  String get onboarding_card_profile_photo_label => 'Foto de perfil';
+
+  @override
+  String get onboarding_card_profile_photo_cta => 'Añadir una foto';
+
+  @override
+  String get onboarding_card_display_name_label => 'Nombre';
+
+  @override
+  String get onboarding_card_display_name_cta => 'Elige tu nombre';
+
+  @override
+  String get onboarding_card_age_label => 'Edad';
+
+  @override
+  String get onboarding_card_age_cta => 'Confirma tu edad';
+
+  @override
+  String get onboarding_card_gender_position_label => 'Género y posición';
+
+  @override
+  String get onboarding_card_gender_position_cta =>
+      'Define tu género y posición';
+
+  @override
+  String get onboarding_card_looking_for_label => 'Busco';
+
+  @override
+  String get onboarding_card_looking_for_cta => '¿Qué buscas?';
+
+  @override
+  String get onboarding_card_tribes_label => 'Tribus';
+
+  @override
+  String get onboarding_card_tribes_cta => 'Elige tus tribus';
+
+  @override
+  String get onboarding_card_vaccines_label => 'Salud y vacunas';
+
+  @override
+  String get onboarding_card_vaccines_cta => 'Comparte tu información de salud';
+
+  @override
+  String get onboarding_card_practices_label => 'Prácticas';
+
+  @override
+  String get onboarding_card_practices_cta => 'Añade tus prácticas';
+
+  @override
+  String get onboarding_card_about_me_label => 'Sobre mí';
+
+  @override
+  String get onboarding_card_about_me_cta => 'Escribe una bio breve';
+
+  @override
+  String get onboarding_card_height_label => 'Altura';
+
+  @override
+  String get onboarding_card_height_cta => 'Añade tu altura';
+
+  @override
+  String get onboarding_card_weight_label => 'Peso';
+
+  @override
+  String get onboarding_card_weight_cta => 'Añade tu peso';
+
+  @override
+  String get onboarding_card_relationship_status_label => 'Estado sentimental';
+
+  @override
+  String get onboarding_card_relationship_status_cta => 'Define tu estado';
+
+  @override
+  String get onboarding_card_position_preference_label =>
+      'Preferencia de posición';
+
+  @override
+  String get onboarding_card_position_preference_cta => 'Define tu posición';
+
+  @override
+  String get onboarding_card_ethnicity_label => 'Etnia';
+
+  @override
+  String get onboarding_card_ethnicity_cta => 'Añade tu etnia';
 }

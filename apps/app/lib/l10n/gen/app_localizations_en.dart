@@ -652,4 +652,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String memberCount(int count) {
     return '$count members';
   }
+
+  @override
+  String get storiesTitle => 'Stories';
+
+  @override
+  String get addStory => 'Add Story';
+
+  @override
+  String get storyCaption => 'Write a caption…';
+
+  @override
+  String get tapToView => 'Tap to view';
 }

@@ -13,7 +13,6 @@ use super::error::BillingResult;
 use crate::AppState;
 use axum::{extract::State, Json};
 use serde::Serialize;
-use sqlx::Row;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize)]

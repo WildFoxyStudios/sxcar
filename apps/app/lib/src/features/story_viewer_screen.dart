@@ -2,8 +2,6 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../theme/app_theme.dart';
-import '../../l10n/gen/app_localizations.dart';
 import 'story_service.dart';
 
 /// Full-screen story viewer with auto-advancing progress timer.
@@ -66,7 +64,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
     _paused = false;
 
     final duration = _getStoryDuration();
-    if (duration <= 0) return;
+    if (duration == Duration.zero) return;
 
     const interval = Duration(milliseconds: 50);
     final steps = duration.inMilliseconds / 50;

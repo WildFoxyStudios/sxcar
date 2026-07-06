@@ -1357,6 +1357,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count} miembros'**
   String memberCount(int count);
+
+  /// Stories / Spotlight section title
+  ///
+  /// In es, this message translates to:
+  /// **'Historias'**
+  String get storiesTitle;
+
+  /// Button to create a new story
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir historia'**
+  String get addStory;
+
+  /// Caption text field placeholder for stories
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe un pie…'**
+  String get storyCaption;
+
+  /// Hint text for story avatars
+  ///
+  /// In es, this message translates to:
+  /// **'Toca para ver'**
+  String get tapToView;
 }
 
 class _AppLocalizationsDelegate

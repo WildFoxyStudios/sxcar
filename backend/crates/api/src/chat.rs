@@ -218,6 +218,9 @@ pub struct ConversationJson {
     pub last_message_kind: Option<String>,
     pub last_message_at: Option<String>,
     pub unread_count: i64,
+    pub is_group: bool,
+    pub name: Option<String>,
+    pub created_by: Option<String>,
 }
 
 /// GET /chat/conversations
@@ -236,7 +239,7 @@ pub async fn list_conversations(
         .into_iter()
         .map(|r| ConversationJson {
             conversation_id: r.conversation_id.to_string(),
-            other_user_id: r.other_user_id.to_string(),
+            other_user_id: r.other_user_id.map(|u| u.to_string()).unwrap_or_default(),
             other_display_name: r.other_display_name,
             last_message_preview: r.last_message_preview,
             last_message_kind: r.last_message_kind,
@@ -245,6 +248,9 @@ pub async fn list_conversations(
                     .unwrap_or_default()
             }),
             unread_count: r.unread_count,
+            is_group: r.is_group,
+            name: r.name,
+            created_by: r.created_by.map(|u| u.to_string()),
         })
         .collect();
 
@@ -799,6 +805,295 @@ pub async fn unsend_message_handler(
     }
 
     Ok(Json(serde_json::json!({ "ok": true })))
+}
+
+// ---------------------------------------------------------------------------
+// Group (Circle) endpoints
+// ---------------------------------------------------------------------------
+
+/// Request body for POST /chat/groups
+#[derive(Deserialize)]
+pub struct CreateGroupRequest {
+    pub name: String,
+    pub member_ids: Vec<Uuid>,
+}
+
+/// Response for POST /chat/groups
+#[derive(Serialize)]
+pub struct CreateGroupResponse {
+    pub group_id: String,
+}
+
+/// POST /chat/groups
+///
+/// Creates a group conversation with the given name and members.
+/// The creator is automatically added as a member.
+pub async fn create_group(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Json(req): Json<CreateGroupRequest>,
+) -> Result<(StatusCode, Json<CreateGroupResponse>), StatusCode> {
+    let name = req.name.trim();
+    if name.is_empty() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    if req.member_ids.is_empty() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    // Validate all member_ids are valid UUIDs (they already are by deser)
+    // Check that creator is not sending themselves in member_ids (they're auto-added)
+    // Limit member count to prevent abuse
+    if req.member_ids.len() > 100 {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let group_id = db::chat::create_group(&state.pool, user_id, name, &req.member_ids)
+        .await
+        .map_err(|e| {
+            tracing::error!("create_group error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(CreateGroupResponse {
+            group_id: group_id.to_string(),
+        }),
+    ))
+}
+
+/// Request body for PUT /chat/groups/:id/name
+#[derive(Deserialize)]
+pub struct UpdateGroupNameRequest {
+    pub name: String,
+}
+
+/// PUT /chat/groups/:id/name
+///
+/// Renames a group. Only the group creator can rename.
+pub async fn update_group_name(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Path(group_id): Path<Uuid>,
+    Json(req): Json<UpdateGroupNameRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let name = req.name.trim();
+    if name.is_empty() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    // Verify membership
+    let member = db::chat::is_member(&state.pool, group_id, user_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if !member {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    // Verify group exists and is a group
+    let is_group: Option<bool> = sqlx::query_scalar(
+        "SELECT is_group FROM conversations WHERE id = $1",
+    )
+    .bind(group_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    if !is_group.unwrap_or(false) {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    // Only creator can rename
+    let updated = db::chat::update_group_name(&state.pool, group_id, user_id, name)
+        .await
+        .map_err(|e| {
+            tracing::error!("update_group_name error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !updated {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    Ok(Json(serde_json::json!({ "ok": true })))
+}
+
+/// Request body for POST /chat/groups/:id/members
+#[derive(Deserialize)]
+pub struct AddMemberRequest {
+    pub user_id: Uuid,
+}
+
+/// POST /chat/groups/:id/members
+///
+/// Adds a member to a group. Any group member can add new members.
+pub async fn add_group_member(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Path(group_id): Path<Uuid>,
+    Json(req): Json<AddMemberRequest>,
+) -> Result<(StatusCode, Json<serde_json::Value>), StatusCode> {
+    // Verify the requester is a member
+    let member = db::chat::is_member(&state.pool, group_id, user_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if !member {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    // Verify it's a group
+    let is_group: Option<bool> = sqlx::query_scalar(
+        "SELECT is_group FROM conversations WHERE id = $1",
+    )
+    .bind(group_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    if !is_group.unwrap_or(false) {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    db::chat::add_group_member(&state.pool, group_id, req.user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("add_group_member error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(serde_json::json!({ "ok": true })),
+    ))
+}
+
+/// DELETE /chat/groups/:id/members/:user_id
+///
+/// Removes a member from a group. The creator can remove anyone; any member
+/// can remove themselves (leave the group).
+pub async fn remove_group_member(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Path((group_id, target_id)): Path<(Uuid, Uuid)>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    // Verify the requester is a member
+    let member = db::chat::is_member(&state.pool, group_id, user_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if !member {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    // Verify it's a group
+    let is_group_val: Option<bool> = sqlx::query_scalar(
+        "SELECT is_group FROM conversations WHERE id = $1",
+    )
+    .bind(group_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    if !is_group_val.unwrap_or(false) {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    // Self-removal (leaving) is always allowed for any member
+    if target_id == user_id {
+        db::chat::remove_group_member(&state.pool, group_id, target_id)
+            .await
+            .map_err(|e| {
+                tracing::error!("remove_group_member error: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+        return Ok(Json(serde_json::json!({ "ok": true })));
+    }
+
+    // Only creator can remove other members
+    let creator = db::chat::is_group_creator(&state.pool, group_id, user_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if !creator {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    db::chat::remove_group_member(&state.pool, group_id, target_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("remove_group_member error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    Ok(Json(serde_json::json!({ "ok": true })))
+}
+
+/// GET /chat/groups
+///
+/// Lists all groups the authenticated user is a member of.
+pub async fn list_user_groups(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let groups = db::chat::list_user_groups(&state.pool, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("list_user_groups error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let groups_json: Vec<serde_json::Value> = groups
+        .into_iter()
+        .map(|g| {
+            serde_json::json!({
+                "group_id": g.group_id.to_string(),
+                "name": g.name,
+                "created_by": g.created_by.to_string(),
+                "member_count": g.member_count,
+                "last_message_preview": g.last_message_preview,
+                "last_message_at": g.last_message_at.map(|t| {
+                    t.format(&time::format_description::well_known::Rfc3339)
+                        .unwrap_or_default()
+                }),
+            })
+        })
+        .collect();
+
+    Ok(Json(serde_json::json!({ "groups": groups_json })))
+}
+
+/// GET /chat/groups/:id/members
+///
+/// Lists all members of a group conversation.
+pub async fn list_group_members(
+    AuthUser(user_id): AuthUser,
+    State(state): State<AppState>,
+    Path(group_id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    // Verify membership
+    let member = db::chat::is_member(&state.pool, group_id, user_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if !member {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let members = db::chat::list_group_members(&state.pool, group_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("list_group_members error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let members_json: Vec<serde_json::Value> = members
+        .into_iter()
+        .map(|m| {
+            serde_json::json!({
+                "user_id": m.user_id.to_string(),
+                "display_name": m.display_name,
+            })
+        })
+        .collect();
+
+    Ok(Json(serde_json::json!({ "members": members_json })))
 }
 
 // ---------------------------------------------------------------------------

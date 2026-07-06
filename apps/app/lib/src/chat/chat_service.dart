@@ -235,6 +235,57 @@ class ChatService {
     sendViaWebSocket({'type': 'typing', 'conversation_id': conversationId});
   }
 
+  // -------------------------------------------------------------------------
+  // Group (Circle) API methods
+  // -------------------------------------------------------------------------
+
+  /// REST: create a new group conversation.
+  Future<String> createGroup({
+    required String name,
+    required List<String> memberIds,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/chat/groups',
+      data: {
+        'name': name,
+        'member_ids': memberIds,
+      },
+    );
+    return response.data!['group_id'] as String;
+  }
+
+  /// REST: list all groups the current user is a member of.
+  Future<List<Map<String, dynamic>>> listGroups() async {
+    final response = await _dio.get<Map<String, dynamic>>('/chat/groups');
+    final data = response.data!;
+    final list = data['groups'] as List<dynamic>;
+    return list.cast<Map<String, dynamic>>();
+  }
+
+  /// REST: rename a group (creator only).
+  Future<void> updateGroupName(String groupId, String name) async {
+    await _dio.put('/chat/groups/$groupId/name', data: {'name': name});
+  }
+
+  /// REST: add a member to a group.
+  Future<void> addGroupMember(String groupId, String userId) async {
+    await _dio.post('/chat/groups/$groupId/members', data: {'user_id': userId});
+  }
+
+  /// REST: remove a member from a group (creator can remove anyone; self-removal allowed).
+  Future<void> removeGroupMember(String groupId, String userId) async {
+    await _dio.delete('/chat/groups/$groupId/members/$userId');
+  }
+
+  /// REST: list members of a group.
+  Future<List<Map<String, dynamic>>> listGroupMembers(String groupId) async {
+    final response =
+        await _dio.get<Map<String, dynamic>>('/chat/groups/$groupId/members');
+    final data = response.data!;
+    final list = data['members'] as List<dynamic>;
+    return list.cast<Map<String, dynamic>>();
+  }
+
   /// Close the WebSocket connection.
   void disconnectWebSocket() {
     _subscription?.cancel();

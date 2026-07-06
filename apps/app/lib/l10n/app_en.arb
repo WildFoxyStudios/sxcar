@@ -252,5 +252,37 @@
   "@callReject": { "description": "Call screen: reject incoming call button" },
 
   "callEnded": "Call ended",
-  "@callEnded": { "description": "Call screen: call ended status label" }
+  "@callEnded": { "description": "Call screen: call ended status label" },
+
+  "circlesTitle": "Circles",
+  "@circlesTitle": { "description": "Circles (group chats) screen title" },
+
+  "createGroup": "Create group",
+  "@createGroup": { "description": "Create group action button / screen title" },
+
+  "groupName": "Group name",
+  "@groupName": { "description": "Group name label / TextField hint" },
+
+  "addMembers": "Add members",
+  "@addMembers": { "description": "Add members action / section title" },
+
+  "groupInfo": "Group info",
+  "@groupInfo": { "description": "Group info screen title" },
+
+  "leaveGroup": "Leave group",
+  "@leaveGroup": { "description": "Leave group action button" },
+
+  "noGroupsYet": "No circles yet",
+  "@noGroupsYet": { "description": "Empty state when user has no groups" },
+
+  "groupCreated": "Group created",
+  "@groupCreated": { "description": "Success toast after creating a group" },
+
+  "memberCount": "{count} members",
+  "@memberCount": {
+    "description": "Group member count label",
+    "placeholders": {
+      "count": { "type": "int", "example": "5" }
+    }
+  }
 }

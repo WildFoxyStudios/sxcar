@@ -625,4 +625,33 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get callEnded => 'Llamada finalizada';
+
+  @override
+  String get circlesTitle => 'Círculos';
+
+  @override
+  String get createGroup => 'Crear grupo';
+
+  @override
+  String get groupName => 'Nombre del grupo';
+
+  @override
+  String get addMembers => 'Añadir miembros';
+
+  @override
+  String get groupInfo => 'Info del grupo';
+
+  @override
+  String get leaveGroup => 'Salir del grupo';
+
+  @override
+  String get noGroupsYet => 'No tienes círculos aún';
+
+  @override
+  String get groupCreated => 'Grupo creado';
+
+  @override
+  String memberCount(int count) {
+    return '$count miembros';
+  }
 }

@@ -7,6 +7,7 @@ import '../albums/shared_albums_provider.dart';
 import '../theme/widgets.dart';
 import '../theme/app_theme.dart';
 import '../../l10n/gen/app_localizations.dart';
+import 'circles_screen.dart';
 
 /// Buzón screen — Grindr-style inbox with two tabs:
 ///
@@ -29,7 +30,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -58,6 +59,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
               const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
           tabs: [
             Tab(text: l10n.bandejaDeEntrada),
+            Tab(text: l10n.circlesTitle),
             Tab(text: l10n.albumes),
           ],
         ),
@@ -66,6 +68,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         controller: _tabController,
         children: const [
           _BandejaTab(),
+          CirclesScreen(),
           _AlbumsTab(),
         ],
       ),
@@ -194,24 +197,29 @@ class _ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = conversation.otherDisplayName ?? 'Unknown';
+    final displayName = conversation.displayTitle;
+    final isGroup = conversation.isGroup;
     final lastMessage = conversation.lastMessagePreview ?? '';
     return InkWell(
-      onTap: () => context.push('/inbox/${conversation.conversationId}'),
+      onTap: () => context.push('/inbox/${conversation.conversationId}', extra: conversation),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: VibraTheme.kSurface,
-              child: Text(
-                displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  color: VibraTheme.kTextPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              backgroundColor: isGroup
+                  ? VibraTheme.kAccent.withValues(alpha: 0.15)
+                  : VibraTheme.kSurface,
+              child: isGroup
+                  ? const Icon(Icons.groups, color: VibraTheme.kAccent, size: 22)
+                  : Text(
+                      displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                        color: VibraTheme.kTextPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(

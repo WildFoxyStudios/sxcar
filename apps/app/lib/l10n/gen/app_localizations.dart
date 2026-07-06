@@ -1303,6 +1303,60 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Llamada finalizada'**
   String get callEnded;
+
+  /// Circles (group chats) screen title
+  ///
+  /// In es, this message translates to:
+  /// **'Círculos'**
+  String get circlesTitle;
+
+  /// Create group action button / screen title
+  ///
+  /// In es, this message translates to:
+  /// **'Crear grupo'**
+  String get createGroup;
+
+  /// Group name label / TextField hint
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del grupo'**
+  String get groupName;
+
+  /// Add members action / section title
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir miembros'**
+  String get addMembers;
+
+  /// Group info screen title
+  ///
+  /// In es, this message translates to:
+  /// **'Info del grupo'**
+  String get groupInfo;
+
+  /// Leave group action button
+  ///
+  /// In es, this message translates to:
+  /// **'Salir del grupo'**
+  String get leaveGroup;
+
+  /// Empty state when user has no groups
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes círculos aún'**
+  String get noGroupsYet;
+
+  /// Success toast after creating a group
+  ///
+  /// In es, this message translates to:
+  /// **'Grupo creado'**
+  String get groupCreated;
+
+  /// Group member count label
+  ///
+  /// In es, this message translates to:
+  /// **'{count} miembros'**
+  String memberCount(int count);
 }
 
 class _AppLocalizationsDelegate

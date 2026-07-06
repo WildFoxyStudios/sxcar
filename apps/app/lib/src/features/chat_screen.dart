@@ -19,8 +19,15 @@ import '../../l10n/gen/app_localizations.dart';
 /// Real-time chat screen with WebSocket connection.
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
+  final bool isGroup;
+  final String? conversationName;
 
-  const ChatScreen({super.key, required this.conversationId});
+  const ChatScreen({
+    super.key,
+    required this.conversationId,
+    this.isGroup = false,
+    this.conversationName,
+  });
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -33,6 +40,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _loading = true;
   String? _error;
   StreamSubscription<Map<String, dynamic>>? _wsSubscription;
+
+  // Group chat state
+  final Map<String, String> _senderNames = {};
 
   // Typing indicator state
   bool _peerTyping = false;
@@ -156,6 +166,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _messages = List<Message>.from(messages);
         _loading = false;
       });
+      if (widget.isGroup) {
+        await _loadSenderNames(messages);
+      }
       _scrollToBottom();
     } catch (e) {
       if (!mounted) return;
@@ -163,6 +176,43 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _error = e.toString();
         _loading = false;
       });
+    }
+  }
+
+  /// Fetch display names for all unique senders in a group conversation.
+  Future<void> _loadSenderNames(List<Message> messages) async {
+    if (messages.isEmpty) return;
+
+    // Collect unique sender IDs that are not yet cached
+    final uniqueIds = <String>{};
+    for (final m in messages) {
+      if (!_senderNames.containsKey(m.senderId)) {
+        uniqueIds.add(m.senderId);
+      }
+    }
+    if (uniqueIds.isEmpty) return;
+
+    try {
+      // Fetch group members to get display names
+      final chatService = ref.read(chatServiceProvider);
+      final members = await chatService.listGroupMembers(widget.conversationId);
+      if (!mounted) return;
+      for (final m in members) {
+        final uid = m['user_id'] as String?;
+        final name = m['display_name'] as String?;
+        if (uid != null && name != null) {
+          _senderNames[uid] = name;
+        }
+      }
+      // Assign fallback for any missing
+      for (final uid in uniqueIds) {
+        _senderNames.putIfAbsent(uid, () => uid.substring(0, 8));
+      }
+    } catch (_) {
+      // Silently fall back to truncated UUID
+      for (final uid in uniqueIds) {
+        _senderNames.putIfAbsent(uid, () => uid.substring(0, 8));
+      }
     }
   }
 
@@ -376,7 +426,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       backgroundColor: VibraTheme.kBg,
       appBar: AppBar(
         backgroundColor: VibraTheme.kSurface,
-        title: const Text('Chat'),
+        title: Row(
+          children: [
+            if (widget.isGroup)
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(Icons.groups,
+                    color: VibraTheme.kAccent, size: 20),
+              ),
+            Text(widget.conversationName ?? 'Chat'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.phone, color: VibraTheme.kAccent, size: 22),
@@ -431,7 +491,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   if (showTimestamp)
                                     _buildTimestamp(message.createdAt),
                                   _MessageBubble(
-                                      message: message, isMe: isMe),
+                                    message: message,
+                                    isMe: isMe,
+                                    isGroup: widget.isGroup,
+                                    senderDisplayName:
+                                        _senderNames[message.senderId],
+                                  ),
                                 ],
                               );
                             },
@@ -700,8 +765,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 class _MessageBubble extends ConsumerStatefulWidget {
   final Message message;
   final bool isMe;
+  final String? senderDisplayName;
+  final bool isGroup;
 
-  const _MessageBubble({required this.message, required this.isMe});
+  const _MessageBubble({
+    required this.message,
+    required this.isMe,
+    this.senderDisplayName,
+    this.isGroup = false,
+  });
 
   @override
   ConsumerState<_MessageBubble> createState() => _MessageBubbleState();
@@ -846,6 +918,19 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
           isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Sender name label for group chats (only for others' messages)
+        if (widget.isGroup && !isMe && widget.senderDisplayName != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 14, bottom: 2, top: 4),
+            child: Text(
+              widget.senderDisplayName!,
+              style: const TextStyle(
+                color: VibraTheme.kAccent,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         GestureDetector(
           onLongPress: () => _showActionPicker(context, ref),
           child: bubble,

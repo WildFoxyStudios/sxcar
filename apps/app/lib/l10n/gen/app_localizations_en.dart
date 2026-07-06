@@ -623,4 +623,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get callEnded => 'Call ended';
+
+  @override
+  String get circlesTitle => 'Circles';
+
+  @override
+  String get createGroup => 'Create group';
+
+  @override
+  String get groupName => 'Group name';
+
+  @override
+  String get addMembers => 'Add members';
+
+  @override
+  String get groupInfo => 'Group info';
+
+  @override
+  String get leaveGroup => 'Leave group';
+
+  @override
+  String get noGroupsYet => 'No circles yet';
+
+  @override
+  String get groupCreated => 'Group created';
+
+  @override
+  String memberCount(int count) {
+    return '$count members';
+  }
 }

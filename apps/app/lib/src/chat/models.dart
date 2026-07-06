@@ -1,4 +1,4 @@
-/// A conversation between the current user and another user.
+/// A conversation between the current user and another user (or a group).
 class Conversation {
   final String conversationId;
   final String otherUserId;
@@ -7,6 +7,9 @@ class Conversation {
   final String? lastMessageKind;
   final String? lastMessageAt;
   final int unreadCount;
+  final bool isGroup;
+  final String? name;
+  final String? createdBy;
 
   const Conversation({
     required this.conversationId,
@@ -16,19 +19,30 @@ class Conversation {
     this.lastMessageKind,
     this.lastMessageAt,
     this.unreadCount = 0,
+    this.isGroup = false,
+    this.name,
+    this.createdBy,
   });
 
   factory Conversation.fromJson(Map<String, dynamic> json) {
     return Conversation(
       conversationId: json['conversation_id'] as String,
-      otherUserId: json['other_user_id'] as String,
+      otherUserId: json['other_user_id'] as String? ?? '',
       otherDisplayName: json['other_display_name'] as String?,
       lastMessagePreview: json['last_message_preview'] as String?,
       lastMessageKind: json['last_message_kind'] as String?,
       lastMessageAt: json['last_message_at'] as String?,
       unreadCount: (json['unread_count'] as num?)?.toInt() ?? 0,
+      isGroup: json['is_group'] as bool? ?? false,
+      name: json['name'] as String?,
+      createdBy: json['created_by'] as String?,
     );
   }
+
+  /// Display name for the conversation tile: group name for circles,
+  /// other user's display name for 1:1.
+  String get displayTitle =>
+      isGroup ? (name ?? 'Group') : (otherDisplayName ?? 'Unknown');
 }
 
 /// A single emoji reaction from one user on a message.

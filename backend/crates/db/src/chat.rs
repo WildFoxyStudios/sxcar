@@ -5,12 +5,15 @@ use uuid::Uuid;
 #[derive(Debug, FromRow)]
 pub struct ConversationRow {
     pub conversation_id: Uuid,
-    pub other_user_id: Uuid,
+    pub other_user_id: Option<Uuid>,
     pub other_display_name: Option<String>,
     pub last_message_preview: Option<String>,
     pub last_message_kind: Option<String>,
     pub last_message_at: Option<time::OffsetDateTime>,
     pub unread_count: i64,
+    pub is_group: bool,
+    pub name: Option<String>,
+    pub created_by: Option<Uuid>,
 }
 
 /// Row returned by list_messages and insert_message.
@@ -58,8 +61,8 @@ pub async fn list_conversations(
         )
         SELECT
             c.id AS conversation_id,
-            other.user_id AS other_user_id,
-            p.display_name AS other_display_name,
+            CASE WHEN c.is_group THEN NULL ELSE other.user_id END AS other_user_id,
+            CASE WHEN c.is_group THEN NULL ELSE p.display_name END AS other_display_name,
             m.body AS last_message_preview,
             m.kind AS last_message_kind,
             c.last_message_at,
@@ -69,10 +72,13 @@ pub async fn list_conversations(
                 WHERE msg.conversation_id = c.id
                   AND msg.sender_id != $1
                   AND (mm.last_read_at IS NULL OR msg.created_at > mm.last_read_at)
-            ), 0) AS unread_count
+            ), 0) AS unread_count,
+            c.is_group,
+            c.name,
+            c.created_by
         FROM my_memberships mm
         JOIN conversations c ON c.id = mm.conversation_id
-        JOIN LATERAL (
+        LEFT JOIN LATERAL (
             SELECT cm2.user_id
             FROM conversation_members cm2
             WHERE cm2.conversation_id = c.id AND cm2.user_id != $1
@@ -445,4 +451,190 @@ pub async fn delete_conversation(
     tx.commit().await?;
 
     Ok(true)
+}
+
+// ---------------------------------------------------------------------------
+// Group (Circle) helpers
+// ---------------------------------------------------------------------------
+
+/// Row returned by list_user_groups.
+#[derive(Debug, FromRow, serde::Serialize)]
+pub struct GroupRow {
+    pub group_id: Uuid,
+    pub name: String,
+    pub created_by: Uuid,
+    pub member_count: i64,
+    pub last_message_preview: Option<String>,
+    pub last_message_at: Option<time::OffsetDateTime>,
+}
+
+/// Row returned by list_group_members.
+#[derive(Debug, FromRow, serde::Serialize)]
+pub struct GroupMemberRow {
+    pub user_id: Uuid,
+    pub display_name: Option<String>,
+}
+
+/// Create a new group conversation.
+pub async fn create_group(
+    pool: &sqlx::PgPool,
+    creator_id: Uuid,
+    name: &str,
+    member_ids: &[Uuid],
+) -> anyhow::Result<Uuid> {
+    let mut tx = pool.begin().await?;
+
+    let group_id: Uuid = sqlx::query_scalar(
+        r#"INSERT INTO conversations (is_group, name, created_by)
+           VALUES (true, $1, $2)
+           RETURNING id"#,
+    )
+    .bind(name)
+    .bind(creator_id)
+    .fetch_one(&mut *tx)
+    .await?;
+
+    // Insert creator + all other members
+    let mut all_members = vec![creator_id];
+    all_members.extend(member_ids.iter());
+    // Deduplicate
+    all_members.sort();
+    all_members.dedup();
+
+    for uid in &all_members {
+        sqlx::query(
+            "INSERT INTO conversation_members (conversation_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        )
+        .bind(group_id)
+        .bind(uid)
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    tx.commit().await?;
+    Ok(group_id)
+}
+
+/// Add a member to a group conversation.
+pub async fn add_group_member(
+    pool: &sqlx::PgPool,
+    group_id: Uuid,
+    user_id: Uuid,
+) -> anyhow::Result<()> {
+    sqlx::query(
+        "INSERT INTO conversation_members (conversation_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+    )
+    .bind(group_id)
+    .bind(user_id)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// Remove a member from a group conversation.
+pub async fn remove_group_member(
+    pool: &sqlx::PgPool,
+    group_id: Uuid,
+    user_id: Uuid,
+) -> anyhow::Result<bool> {
+    let res = sqlx::query(
+        "DELETE FROM conversation_members WHERE conversation_id = $1 AND user_id = $2",
+    )
+    .bind(group_id)
+    .bind(user_id)
+    .execute(pool)
+    .await?;
+    Ok(res.rows_affected() > 0)
+}
+
+/// List all groups the user is a member of.
+pub async fn list_user_groups(
+    pool: &sqlx::PgPool,
+    user_id: Uuid,
+) -> anyhow::Result<Vec<GroupRow>> {
+    let rows = sqlx::query_as::<_, GroupRow>(
+        r#"
+        WITH my_groups AS (
+            SELECT cm.conversation_id
+            FROM conversation_members cm
+            JOIN conversations c ON c.id = cm.conversation_id
+            WHERE cm.user_id = $1 AND c.is_group = true
+        )
+        SELECT
+            c.id AS group_id,
+            COALESCE(c.name, 'Group') AS name,
+            c.created_by,
+            (SELECT COUNT(*)::bigint FROM conversation_members cm2 WHERE cm2.conversation_id = c.id) AS member_count,
+            m.body AS last_message_preview,
+            c.last_message_at
+        FROM my_groups mg
+        JOIN conversations c ON c.id = mg.conversation_id
+        LEFT JOIN LATERAL (
+            SELECT m.body
+            FROM messages m
+            WHERE m.conversation_id = c.id
+            ORDER BY m.created_at DESC
+            LIMIT 1
+        ) m ON true
+        ORDER BY c.last_message_at DESC NULLS LAST
+        "#,
+    )
+    .bind(user_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+/// List all members of a group conversation.
+pub async fn list_group_members(
+    pool: &sqlx::PgPool,
+    group_id: Uuid,
+) -> anyhow::Result<Vec<GroupMemberRow>> {
+    let rows = sqlx::query_as::<_, GroupMemberRow>(
+        r#"
+        SELECT cm.user_id, p.display_name
+        FROM conversation_members cm
+        LEFT JOIN profiles p ON p.user_id = cm.user_id
+        WHERE cm.conversation_id = $1
+        ORDER BY cm.user_id
+        "#,
+    )
+    .bind(group_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+/// Update group name (creator-only).
+pub async fn update_group_name(
+    pool: &sqlx::PgPool,
+    group_id: Uuid,
+    user_id: Uuid,
+    new_name: &str,
+) -> anyhow::Result<bool> {
+    let res = sqlx::query(
+        r#"UPDATE conversations SET name = $1 WHERE id = $2 AND created_by = $3 AND is_group = true"#,
+    )
+    .bind(new_name)
+    .bind(group_id)
+    .bind(user_id)
+    .execute(pool)
+    .await?;
+    Ok(res.rows_affected() > 0)
+}
+
+/// Check if a user is the creator of a group.
+pub async fn is_group_creator(
+    pool: &sqlx::PgPool,
+    group_id: Uuid,
+    user_id: Uuid,
+) -> anyhow::Result<bool> {
+    let exists: Option<bool> = sqlx::query_scalar(
+        r#"SELECT EXISTS(SELECT 1 FROM conversations WHERE id = $1 AND created_by = $2 AND is_group = true)"#,
+    )
+    .bind(group_id)
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(exists.unwrap_or(false))
 }

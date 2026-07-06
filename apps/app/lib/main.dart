@@ -8,6 +8,7 @@ import 'src/rust/frb_generated.dart';
 import 'src/auth/auth_provider.dart';
 import 'src/billing/revenuecat_providers.dart';
 import 'src/notifications/push_service.dart';
+import 'src/chat/models.dart';
 import 'src/chat/unread_count_provider.dart';
 import 'src/presence/presence_service.dart';
 import 'src/features/album_detail_screen.dart';
@@ -17,6 +18,9 @@ import 'src/features/cascade_screen.dart';
 import 'src/features/chat_list_screen.dart';
 import 'src/features/grid_search_screen.dart';
 import 'src/features/chat_screen.dart';
+import 'src/features/circles_screen.dart';
+import 'src/features/create_group_screen.dart';
+import 'src/features/group_info_screen.dart';
 import 'src/features/discreet_icon_picker_screen.dart';
 import 'src/features/interest_screen.dart';
 import 'src/features/login_screen.dart';
@@ -307,13 +311,34 @@ final GoRouter appRouter = GoRouter(
                 // about duplicated page keys.
                 GoRoute(
                   path: ':conversationId',
-                  pageBuilder: (context, state) => MaterialPage<void>(
-                    key: ValueKey(
-                        'chat-${state.pathParameters['conversationId']}'),
-                    child: ChatScreen(
-                      conversationId:
-                          state.pathParameters['conversationId']!,
-                    ),
+                  pageBuilder: (context, state) {
+                    final Conversation? extra =
+                        state.extra as Conversation?;
+                    return MaterialPage<void>(
+                      key: ValueKey(
+                          'chat-${state.pathParameters['conversationId']}'),
+                      child: ChatScreen(
+                        conversationId:
+                            state.pathParameters['conversationId']!,
+                        isGroup: extra?.isGroup ?? false,
+                        conversationName: extra?.displayTitle,
+                      ),
+                    );
+                  },
+                ),
+                // Circles (group chats) sub-routes
+                GoRoute(
+                  path: 'circles',
+                  builder: (_, _) => const CirclesScreen(),
+                ),
+                GoRoute(
+                  path: 'create-group',
+                  builder: (_, _) => const CreateGroupScreen(),
+                ),
+                GoRoute(
+                  path: 'group-info/:groupId',
+                  builder: (_, state) => GroupInfoScreen(
+                    groupId: state.pathParameters['groupId']!,
                   ),
                 ),
               ],

@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::auth::AuthUser;
+use crate::chat_broker;
 use crate::AppState;
 
 // ---------------------------------------------------------------------------
@@ -69,8 +70,10 @@ async fn handle_socket(socket: WebSocket, state: AppState, user_id: Uuid) {
                         tracing::error!("handle_incoming error: {e}");
                     }
                 }
-                Err(e) => {
-                    tracing::warn!("invalid WS message: {e}");
+                Err(_) => {
+                    // Not a known IncomingMessage type — try generic relay
+                    // so WebRTC signaling and future message types pass through.
+                    try_relay(&state.pool, &state.chat_broker, user_id, &text).await;
                 }
             }
         }
@@ -152,6 +155,35 @@ async fn handle_incoming(
         }
     }
     Ok(())
+}
+
+/// Try to relay an unknown message type as a generic passthrough over the
+/// chat broker.  Checks conversation membership and injects `user_id` from
+/// the authenticated session.  No DB writes — pure pub/sub.
+///
+/// Returns `true` if the message contained a parseable `conversation_id`
+/// (whether or not the sender was a member), `false` if it didn't.
+pub async fn try_relay(
+    pool: &sqlx::PgPool,
+    broker: &chat_broker::ChatBroker,
+    user_id: Uuid,
+    text: &str,
+) -> bool {
+    if let Ok(val) = serde_json::from_str::<serde_json::Value>(text) {
+        if let Some(conv_id) = val.get("conversation_id").and_then(|v| v.as_str()) {
+            if let Ok(cid) = Uuid::parse_str(conv_id) {
+                if db::chat::is_member(pool, cid, user_id).await.unwrap_or(false) {
+                    let mut out = val.clone();
+                    out["user_id"] = serde_json::Value::String(user_id.to_string());
+                    if let Ok(payload) = serde_json::to_string(&out) {
+                        broker.publish("chat", &payload);
+                    }
+                }
+                return true;
+            }
+        }
+    }
+    false
 }
 
 // ---------------------------------------------------------------------------
@@ -767,4 +799,148 @@ pub async fn unsend_message_handler(
     }
 
     Ok(Json(serde_json::json!({ "ok": true })))
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use futures_util::StreamExt;
+    use std::time::Duration;
+
+    fn test_db_url() -> String {
+        std::env::var("TEST_DATABASE_URL")
+            .unwrap_or_else(|_| "postgres://dev:dev@localhost:5433/appdb".to_string())
+    }
+
+    fn unique_suffix() -> String {
+        Uuid::new_v4().simple().to_string()
+    }
+
+    #[tokio::test]
+    async fn relay_passthrough_broadcasts_to_members() {
+        let pool = db::connect(&test_db_url()).await.unwrap();
+        db::migrate(&pool).await.unwrap();
+        let broker = chat_broker::ChatBroker::from_env_or(64);
+
+        // Create two users + a conversation
+        let user_a = Uuid::new_v4();
+        let user_b = Uuid::new_v4();
+        let conv_id = Uuid::new_v4();
+        let suffix = unique_suffix();
+
+        sqlx::query(
+            "INSERT INTO users (id, email, password_hash, dob) VALUES ($1, $2, $3, $4::date)",
+        )
+        .bind(user_a)
+        .bind(format!("ra_{suffix}@test.com"))
+        .bind("hash")
+        .bind("1990-01-01")
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        sqlx::query(
+            "INSERT INTO users (id, email, password_hash, dob) VALUES ($1, $2, $3, $4::date)",
+        )
+        .bind(user_b)
+        .bind(format!("rb_{suffix}@test.com"))
+        .bind("hash")
+        .bind("1990-01-01")
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        sqlx::query("INSERT INTO conversations (id) VALUES ($1)")
+            .bind(conv_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        sqlx::query(
+            "INSERT INTO conversation_members (conversation_id, user_id) VALUES ($1, $2), ($1, $3)",
+        )
+        .bind(conv_id)
+        .bind(user_a)
+        .bind(user_b)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // Subscribe to broker BEFORE publishing
+        let mut rx = broker.subscribe().await;
+
+        // ---- Member relay ----
+        let msg = serde_json::json!({
+            "type": "call_start",
+            "conversation_id": conv_id.to_string(),
+            "sdp": "fake_offer"
+        });
+        assert!(try_relay(&pool, &broker, user_a, &msg.to_string()).await,
+            "member should return true");
+
+        tokio::time::sleep(Duration::from_millis(50)).await;
+
+        let received = rx.next().await.expect("member should receive relayed message");
+        let parsed: serde_json::Value = serde_json::from_str(&received).unwrap();
+        assert_eq!(parsed["type"], "call_start");
+        assert_eq!(parsed["user_id"], user_a.to_string());
+        assert_eq!(parsed["sdp"], "fake_offer");
+
+        // ---- Non-member relay returns true (has conv_id) but doesn't publish ----
+        let user_c = Uuid::new_v4();
+        let suffix2 = unique_suffix();
+        sqlx::query(
+            "INSERT INTO users (id, email, password_hash, dob) VALUES ($1, $2, $3, $4::date)",
+        )
+        .bind(user_c)
+        .bind(format!("rc_{suffix2}@test.com"))
+        .bind("hash")
+        .bind("1990-01-01")
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // Subscribe rx2 after the member publish — it will see the member's message first
+        let mut rx2 = broker.subscribe().await;
+        let _carryover = rx2.next().await; // consume the member's broadcast
+
+        let msg2 = serde_json::json!({
+            "type": "call_answer",
+            "conversation_id": conv_id.to_string(),
+            "sdp": "answer"
+        });
+        assert!(try_relay(&pool, &broker, user_c, &msg2.to_string()).await,
+            "non-member with valid conv_id returns true");
+
+        tokio::time::sleep(Duration::from_millis(50)).await;
+        let timeout = tokio::time::timeout(Duration::from_millis(200), rx2.next()).await;
+        assert!(timeout.is_err(), "non-member should not produce a broker message");
+
+        // ---- Invalid conversation_id ----
+        let result = try_relay(
+            &pool,
+            &broker,
+            user_a,
+            &serde_json::json!({"type":"ice","conversation_id":"not-a-uuid"}).to_string(),
+        )
+        .await;
+        assert!(!result, "invalid conversation UUID returns false");
+
+        // ---- Missing conversation_id ----
+        let result = try_relay(
+            &pool,
+            &broker,
+            user_a,
+            &serde_json::json!({"type":"unknown"}).to_string(),
+        )
+        .await;
+        assert!(!result, "missing conversation_id returns false");
+
+        // ---- Invalid JSON ----
+        let result = try_relay(&pool, &broker, user_a, "not-json").await;
+        assert!(!result, "invalid JSON returns false");
+    }
 }

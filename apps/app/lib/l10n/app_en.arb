@@ -225,5 +225,17 @@
   "@chatVoiceMessage": { "description": "Label for voice message audio bubble" },
 
   "chatRecording": "Recording…",
-  "@chatRecording": { "description": "Label shown while recording a voice message" }
+  "@chatRecording": { "description": "Label shown while recording a voice message" },
+
+  "exploreSearchHint": "Search city…",
+  "@exploreSearchHint": { "description": "City search placeholder in Explore screen search bar" },
+
+  "exploreBackToMyLocation": "Back to my location",
+  "@exploreBackToMyLocation": { "description": "Button to return to GPS-based location after city search" },
+
+  "exploreNoResults": "No results",
+  "@exploreNoResults": { "description": "Empty state when geocoding returns no results" },
+
+  "exploreRecentSearches": "Recent",
+  "@exploreRecentSearches": { "description": "Label for recent city searches list" }
 }

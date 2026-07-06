@@ -596,4 +596,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatRecording => 'Recording…';
+
+  @override
+  String get exploreSearchHint => 'Search city…';
+
+  @override
+  String get exploreBackToMyLocation => 'Back to my location';
+
+  @override
+  String get exploreNoResults => 'No results';
+
+  @override
+  String get exploreRecentSearches => 'Recent';
 }

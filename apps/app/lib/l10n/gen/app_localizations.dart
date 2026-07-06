@@ -1249,6 +1249,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Grabando…'**
   String get chatRecording;
+
+  /// City search placeholder in Explore screen search bar
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar ciudad…'**
+  String get exploreSearchHint;
+
+  /// Button to return to GPS-based location after city search
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a mi ubicación'**
+  String get exploreBackToMyLocation;
+
+  /// Empty state when geocoding returns no results
+  ///
+  /// In es, this message translates to:
+  /// **'Sin resultados'**
+  String get exploreNoResults;
+
+  /// Label for recent city searches list
+  ///
+  /// In es, this message translates to:
+  /// **'Recientes'**
+  String get exploreRecentSearches;
 }
 
 class _AppLocalizationsDelegate

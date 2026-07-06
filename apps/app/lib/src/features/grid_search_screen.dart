@@ -1,8 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart' as latlong2;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_map/flutter_map.dart';
 import '../auth/auth_provider.dart';
 import '../location/location_service.dart';
+import '../location/geocoding_service.dart';
 import '../places/places_service.dart';
 import '../places/roam_service.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -11,7 +16,26 @@ import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
 import 'cascade_screen.dart' show NearbyUser;
 
-/// Explore — global user grid with Roam support backed by real places.
+/// Geocoding suggestion displayed in the dropdown.
+class _GeocodingSuggestion {
+  final String label;
+  final double lat;
+  final double lon;
+
+  const _GeocodingSuggestion({
+    required this.label,
+    required this.lat,
+    required this.lon,
+  });
+}
+
+/// Key for persisting recent city searches in SharedPreferences.
+const _kRecentSearchesKey = 'explore_recent_searches';
+const _kMaxRecentSearches = 5;
+const _kSearchDebounceMs = Duration(milliseconds: 500);
+
+/// Explore — global user grid with Roam support backed by real places,
+/// plus city search via native geocoding and an optional mini-map.
 class GridSearchScreen extends ConsumerStatefulWidget {
   const GridSearchScreen({super.key});
 
@@ -21,7 +45,13 @@ class GridSearchScreen extends ConsumerStatefulWidget {
 
 class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   late Future<List<NearbyUser>> _globalUsersFuture;
+
+  // Existing: user name search
   final TextEditingController _searchController = TextEditingController();
+
+  // New: city search
+  final TextEditingController _cityController = TextEditingController();
+  final FocusNode _cityFocus = FocusNode();
 
   // Roam location state — defaults used until /me/location is fetched.
   double _roamLat = 19.4326;
@@ -30,15 +60,33 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   String _roamName = '';
   bool _hasAppliedPersistedRoam = false;
 
+  // City search state
+  latlong2.LatLng? _searchCenter;
+  List<_GeocodingSuggestion> _suggestions = [];
+  bool _showSuggestions = false;
+  bool _isGeocoding = false;
+  String? _geocodeError;
+  Timer? _debounceTimer;
+  List<String> _recentSearches = [];
+  bool _recentSearchesLoaded = false;
+
   @override
   void initState() {
     super.initState();
     _globalUsersFuture = _fetchGlobalUsers();
     _applyRealLocationDefault();
+    _loadRecentSearches();
+
+    // Listen for city text changes for debounced geocoding
+    _cityController.addListener(_onCityTextChanged);
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
+    _cityController.removeListener(_onCityTextChanged);
+    _cityController.dispose();
+    _cityFocus.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -55,20 +103,151 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   Future<void> _applyRealLocationDefault() async {
     final pos = await ref.read(currentPositionProvider.future);
     if (pos == null || !mounted) return;
-    // Roam-persisted location (applied via ref.listen in build) wins.
     if (_hasAppliedPersistedRoam && _isRoam) return;
     setState(() {
       _roamLat = pos.latitude;
       _roamLon = pos.longitude;
-      _globalUsersFuture = _fetchGlobalUsers(lat: pos.latitude, lon: pos.longitude);
+      if (_searchCenter == null) {
+        _globalUsersFuture = _fetchGlobalUsers(
+          lat: pos.latitude,
+          lon: pos.longitude,
+        );
+      }
     });
+  }
+
+  /// Load recent city searches from SharedPreferences.
+  Future<void> _loadRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _recentSearches =
+          prefs.getStringList(_kRecentSearchesKey) ?? [];
+      _recentSearchesLoaded = true;
+    });
+  }
+
+  /// Persist a city search to the recent list (max 5, deduped).
+  Future<void> _saveRecentSearch(String query) async {
+    final updated = [
+      query,
+      ..._recentSearches.where((s) => s != query),
+    ].take(_kMaxRecentSearches).toList();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_kRecentSearchesKey, updated);
+    if (!mounted) return;
+    setState(() => _recentSearches = updated);
+  }
+
+  /// Debounced geocoding handler.
+  void _onCityTextChanged() {
+    _debounceTimer?.cancel();
+    final text = _cityController.text.trim();
+    if (text.length < 2) {
+      setState(() {
+        _suggestions = [];
+        _showSuggestions = false;
+        _geocodeError = null;
+      });
+      return;
+    }
+    _debounceTimer = Timer(_kSearchDebounceMs, () => _geocode(text));
+  }
+
+  /// Call the native geocoder and update suggestions.
+  Future<void> _geocode(String query) async {
+    setState(() {
+      _isGeocoding = true;
+      _geocodeError = null;
+    });
+    try {
+      final service = ref.read(geocodingServiceProvider);
+      final locations = await service.search(query);
+      if (!mounted) return;
+      if (_cityController.text.trim() != query) return; // stale response
+
+      final suggestions = locations
+          .take(5)
+          .map((loc) => _GeocodingSuggestion(
+                label: '$query (${loc.latitude.toStringAsFixed(4)}, '
+                    '${loc.longitude.toStringAsFixed(4)})',
+                lat: loc.latitude,
+                lon: loc.longitude,
+              ))
+          .toList();
+
+      setState(() {
+        _isGeocoding = false;
+        _suggestions = suggestions;
+        _showSuggestions = suggestions.isNotEmpty;
+        _geocodeError = suggestions.isEmpty ? 'exploreNoResults' : null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isGeocoding = false;
+        _suggestions = [];
+        _showSuggestions = false;
+        _geocodeError = 'exploreNoResults';
+      });
+    }
+  }
+
+  /// Select a geocoding suggestion: center the grid on the coordinates.
+  void _selectSuggestion(_GeocodingSuggestion suggestion) {
+    _cityController.text = suggestion.label;
+    _saveRecentSearch(suggestion.label);
+    setState(() {
+      _searchCenter = latlong2.LatLng(suggestion.lat, suggestion.lon);
+      _showSuggestions = false;
+      // Refresh grid with new center
+      _globalUsersFuture = _fetchGlobalUsers(
+        lat: suggestion.lat,
+        lon: suggestion.lon,
+      );
+    });
+    _cityFocus.unfocus();
+  }
+
+  /// Clear the search center and return to GPS/roam-based location.
+  void _backToMyLocation() {
+    setState(() {
+      _searchCenter = null;
+      _cityController.clear();
+      _suggestions = [];
+      _showSuggestions = false;
+      _globalUsersFuture = _fetchGlobalUsers();
+    });
+  }
+
+  /// Select a recent search from the history list.
+  void _selectRecentSearch(String recent) {
+    // Parse the label back to coordinates if possible, or re-geocode
+    _cityController.text = _cityController.text = recent;
+    // Trigger geocoding for the recent query
+    final match = RegExp(r'\(([\d.-]+),\s*([\d.-]+)\)').firstMatch(recent);
+    if (match != null) {
+      final lat = double.tryParse(match.group(1)!);
+      final lon = double.tryParse(match.group(2)!);
+      if (lat != null && lon != null) {
+        _selectSuggestion(_GeocodingSuggestion(
+          label: recent,
+          lat: lat,
+          lon: lon,
+        ));
+        return;
+      }
+    }
+    _geocode(recent);
   }
 
   Future<List<NearbyUser>> _fetchGlobalUsers({double? lat, double? lon}) async {
     final dio = ref.read(dioProvider);
+    final effectiveLat = _searchCenter?.latitude ?? lat ?? _roamLat;
+    final effectiveLon = _searchCenter?.longitude ?? lon ?? _roamLon;
     final queryParams = <String, dynamic>{
-      'lat': lat ?? _roamLat,
-      'lon': lon ?? _roamLon,
+      'lat': effectiveLat,
+      'lon': effectiveLon,
       'radius_m': 500000,
       'limit': 50,
     };
@@ -97,9 +276,10 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
     setState(() {
       _roamLat = lat;
       _roamLon = lon;
-
       _roamName = name ?? '';
       _isRoam = isRoam;
+      _searchCenter = null; // roam overrides city search
+      _cityController.clear();
       _globalUsersFuture = _fetchGlobalUsers(lat: lat, lon: lon);
     });
   }
@@ -148,8 +328,6 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           }
         },
         onUseRealLocation: () async {
-          // Read the device's REAL GPS position (falls back to last-known
-          // inside the provider). If unavailable, keep whatever we had.
           try {
             final pos = await ref.read(currentPositionProvider.future);
             if (pos == null) {
@@ -193,6 +371,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     // Load persisted roam on first build, then apply once.
     ref.listen<AsyncValue<RoamLocation?>>(roamLocationProvider, (prev, next) {
@@ -236,8 +415,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                   decoration: InputDecoration(
                     isDense: true,
                     border: InputBorder.none,
-                    hintText:
-                        AppLocalizations.of(context)!.explorarMasPerfiles,
+                    hintText: l10n.explorarMasPerfiles,
                     hintStyle:
                         const TextStyle(color: VibraTheme.kTextSecondary),
                   ),
@@ -249,8 +427,6 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           ),
         ),
         actions: [
-          // When roaming, surface the active location name so the user knows
-          // the grid is NOT centered on their real position.
           if (_isRoam && _roamName.isNotEmpty)
             Center(
               child: Container(
@@ -279,7 +455,247 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           ),
         ],
       ),
-      body: _buildGrid(theme),
+      body: Column(
+        children: [
+          // ── City search bar ──────────────────────────────────────────────
+          _buildCitySearchBar(l10n),
+
+          // ── Suggestions / recent searches overlay ────────────────────────
+          if (_showSuggestions || _recentSearchesLoaded)
+            _buildSuggestionOverlay(l10n),
+
+          // ── Mini-map when a city is selected ─────────────────────────────
+          if (_searchCenter != null) _buildMiniMap(),
+
+          // ── Location indicator + back button ─────────────────────────────
+          if (_searchCenter != null) _buildLocationIndicator(l10n),
+
+          // ── User grid ────────────────────────────────────────────────────
+          Expanded(child: _buildGrid(theme)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCitySearchBar(AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: TextField(
+        controller: _cityController,
+        focusNode: _cityFocus,
+        style: const TextStyle(color: Colors.white, fontSize: 15),
+        decoration: InputDecoration(
+          hintText: l10n.exploreSearchHint,
+          hintStyle: const TextStyle(color: VibraTheme.kTextSecondary),
+          prefixIcon:
+              const Icon(Icons.location_city, color: VibraTheme.kTextSecondary),
+          suffixIcon: _isGeocoding
+              ? const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : (_cityController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _cityController.clear();
+                          if (_searchCenter != null) _backToMyLocation();
+                        },
+                      )
+                    : null),
+          filled: true,
+          fillColor: VibraTheme.kChip,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+        ),
+        textInputAction: TextInputAction.search,
+        onSubmitted: (value) {
+          if (value.trim().length >= 2) {
+            _geocode(value.trim());
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildSuggestionOverlay(AppLocalizations l10n) {
+    final hasSuggestions = _showSuggestions && _suggestions.isNotEmpty;
+    final hasRecent = _recentSearches.isNotEmpty &&
+        _cityController.text.isEmpty &&
+        _cityFocus.hasFocus;
+
+    if (!hasSuggestions && !hasRecent && _geocodeError == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: VibraTheme.kSurface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      constraints: const BoxConstraints(maxHeight: 260),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Material(
+          type: MaterialType.transparency,
+          child: ListView(
+          padding: EdgeInsets.zero,
+          shrinkWrap: true,
+          children: [
+            // Geocoding error message
+            if (_geocodeError != null && !hasSuggestions)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  l10n.exploreNoResults,
+                  style: const TextStyle(
+                    color: VibraTheme.kTextSecondary,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+
+            // Recent searches header
+            if (hasRecent)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+                child: Text(
+                  l10n.exploreRecentSearches,
+                  style: const TextStyle(
+                    color: VibraTheme.kTextSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+            // Recent searches items
+            if (hasRecent)
+              ...List.generate(_recentSearches.length, (i) {
+                final recent = _recentSearches[i];
+                return ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.history, size: 18,
+                      color: VibraTheme.kTextSecondary),
+                  title: Text(recent,
+                      style: const TextStyle(fontSize: 14),
+                      overflow: TextOverflow.ellipsis),
+                  onTap: () => _selectRecentSearch(recent),
+                );
+              }),
+
+            // Geocoding suggestions
+            if (hasSuggestions)
+              ...List.generate(_suggestions.length, (i) {
+                final s = _suggestions[i];
+                return ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.place, size: 18,
+                      color: VibraTheme.kAccent),
+                  title: Text(s.label,
+                      style: const TextStyle(fontSize: 14),
+                      overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                    '${s.lat.toStringAsFixed(4)}, ${s.lon.toStringAsFixed(4)}',
+                    style: const TextStyle(fontSize: 11,
+                        color: VibraTheme.kTextSecondary),
+                  ),
+                  onTap: () => _selectSuggestion(s),
+                );
+              }),
+          ],
+        ),
+      ),
+      ),
+    );
+  }
+
+  Widget _buildMiniMap() {
+    final center = _searchCenter!;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      height: 160,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: VibraTheme.kDivider),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: FlutterMap(
+        options: MapOptions(
+          initialCenter: center,
+          initialZoom: 12,
+          interactionOptions: const InteractionOptions(
+            flags: InteractiveFlag.all,
+          ),
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.vibra.app',
+          ),
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: center,
+                width: 40,
+                height: 40,
+                child: const Icon(
+                  Icons.location_on,
+                  color: VibraTheme.kAccent,
+                  size: 36,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationIndicator(AppLocalizations l10n) {
+    final center = _searchCenter!;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+      child: Row(
+        children: [
+          const Icon(Icons.location_on, size: 16, color: VibraTheme.kAccent),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              '${center.latitude.toStringAsFixed(4)}, '
+              '${center.longitude.toStringAsFixed(4)}',
+              style: const TextStyle(
+                color: VibraTheme.kAccent,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          TextButton.icon(
+            onPressed: _backToMyLocation,
+            icon: const Icon(Icons.my_location, size: 16),
+            label: Text(
+              l10n.exploreBackToMyLocation,
+              style: const TextStyle(fontSize: 12),
+            ),
+            style: TextButton.styleFrom(
+              foregroundColor: VibraTheme.kTextSecondary,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -376,9 +792,6 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final user = users[index];
-                            // T5.10: read units once per build, pass to every
-                            // tile. Using `ref` is fine here — this is inside a
-                            // `ConsumerStatefulWidget` State.build.
                             final units = ref.watch(unitsProvider);
                             return _ExploreUserCard(user: user, units: units);
                           },
@@ -394,10 +807,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
         },
       );
   }
-
 }
-
-
 
 /// Full-bleed photo card matching the Cascade grid style (no online dot
 /// since Explore shows global users where real-time status is less relevant).
@@ -496,8 +906,7 @@ class _ExploreUserCard extends StatelessWidget {
                 ),
               ),
 
-            // NUEVO badge (top left) — T5.10: shown for accounts < 7 days old.
-            // Shared widget (T5.13) — see apps/app/lib/src/theme/widgets.dart.
+            // NUEVO badge (top left)
             if (user.isNew)
               Positioned(
                 top: 5,

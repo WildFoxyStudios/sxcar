@@ -3,6 +3,26 @@ import 'token_storage.dart';
 import 'models.dart';
 import '../config.dart';
 
+/// Thin wrapper around [Dio] that provides typed convenience methods
+/// for JSON API calls. Used by feature providers (onboarding, etc.).
+class ApiClient {
+  final Dio _dio;
+
+  ApiClient({required String baseUrl})
+      : _dio = Dio(BaseOptions(baseUrl: baseUrl));
+
+  Future<Map<String, dynamic>> getJson(String path) async {
+    final response = await _dio.get(path);
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> postJson(
+      String path, Map<String, dynamic> body) async {
+    final response = await _dio.post(path, data: body);
+    return response.data as Map<String, dynamic>;
+  }
+}
+
 Dio createAuthClient(TokenStorage tokenStorage) {
   final dio = Dio(BaseOptions(
     baseUrl: apiUrl,

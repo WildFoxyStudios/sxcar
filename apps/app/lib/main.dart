@@ -358,7 +358,7 @@ final GoRouter appRouter = GoRouter(
             ),
           ],
         ),
-        // Tab 4: Tienda (shop / plans — placeholder until T7)
+        // Tab 4: Tienda (shop / plans)
         StatefulShellBranch(
           routes: [
             GoRoute(

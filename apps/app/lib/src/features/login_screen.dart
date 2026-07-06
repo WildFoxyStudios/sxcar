@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../auth/google_sign_in_service.dart';
 import '../auth/models.dart';
-import '../../src/rust/lib.dart' show validateEmail;
+import '../utils/email_validator.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});

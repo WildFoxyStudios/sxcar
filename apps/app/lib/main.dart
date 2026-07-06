@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
-import 'src/rust/frb_generated.dart';
 import 'src/auth/auth_provider.dart';
 import 'src/billing/revenuecat_providers.dart';
 import 'src/notifications/push_service.dart';
@@ -94,7 +93,6 @@ Future<void> main() async {
   // Register the background message handler before runApp so that it is set
   // up even when the app is launched from a terminated state by a notification.
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  await RustLib.init();
   runApp(const ProviderScope(child: VibraApp()));
 }
 

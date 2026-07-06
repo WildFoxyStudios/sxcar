@@ -274,7 +274,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     // On-device NSFW check before showing the send sheet.
     final nsfwResult =
-        await ref.read(nsfwServiceProvider).check(bytes.toList());
+        await ref.read(nsfwServiceProvider).check(bytes);
     if (!mounted) return;
     if (nsfwResult.isNsfw) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -1,14 +1,17 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:nsfw_detector_flutter/nsfw_detector_flutter.dart';
 
-import '../rust/nsfw.dart';
+/// Result of an on-device NSFW classification.
+class NsfwResult {
+  final double score;
+  final bool isNsfw;
+
+  const NsfwResult({required this.score, required this.isNsfw});
+}
 
 /// Function type used to inject a fake classifier in tests.
-typedef NsfwClassifyFn = Future<NsfwResult> Function(List<int> bytes);
+typedef NsfwClassifyFn = Future<NsfwResult> Function(Uint8List bytes);
 
 /// Riverpod provider — returns the real service in production.
 /// Override in tests with [NsfwService.withClassifier].
@@ -16,31 +19,24 @@ final nsfwServiceProvider = Provider<NsfwService>(
   (ref) => NsfwService(),
 );
 
-/// On-device NSFW detection service backed by the Rust/tract-onnx bridge.
+/// On-device NSFW detection service backed by [nsfw_detector_flutter].
 ///
-/// The ONNX model (bundled at `assets/models/nsfw.onnx`) is extracted to the
-/// device's temp directory on first use and compiled by tract once per process.
+/// Uses the Yahoo OpenNSFW TFLite model bundled inside the package (zero
+/// setup, no downloads). All inference runs on-device — no images leave
+/// the device.
 ///
-/// On web ([kIsWeb]), all checks return safe instantly (score=0, isNsfw=false)
-/// because the WASM target is excluded from the Rust inference path.
-///
-/// On failure the service **fails open** — it logs and returns safe so that
-/// an inference hiccup never prevents a legitimate upload.
+/// On failure the service **fails open** — it logs and returns safe so
+/// an inference hiccup never blocks a legitimate upload.
 class NsfwService {
   final NsfwClassifyFn? _classifyOverride;
 
   bool _initialized = false;
+  NsfwDetector? _detector;
 
-  /// Production constructor — uses the real Rust bridge.
+  /// Production constructor — uses [NsfwDetector].
   NsfwService() : _classifyOverride = null;
 
-  /// Test constructor — injects a fake classifier instead of calling Rust.
-  ///
-  /// ```dart
-  /// final svc = NsfwService.withClassifier(
-  ///   (_) async => const NsfwResult(score: 0.9, isNsfw: true),
-  /// );
-  /// ```
+  /// Test constructor — injects a fake classifier.
   NsfwService.withClassifier(NsfwClassifyFn classify)
       : _classifyOverride = classify;
 
@@ -51,17 +47,32 @@ class NsfwService {
   /// Check [imageBytes] for NSFW content.
   ///
   /// Always returns a [NsfwResult]; never throws.
-  Future<NsfwResult> check(List<int> imageBytes) async {
-    if (kIsWeb) {
-      return const NsfwResult(score: 0.0, isNsfw: false);
+  Future<NsfwResult> check(Uint8List imageBytes) async {
+    // Inject override (tests).
+    final override = _classifyOverride;
+    if (override != null) {
+      try {
+        return await override(imageBytes);
+      } catch (e) {
+        debugPrint('[NsfwService] override error (fail-open): $e');
+        return const NsfwResult(score: 0.0, isNsfw: false);
+      }
     }
+
     await _ensureInitialized();
 
-    final classify = _classifyOverride ??
-        (bytes) => nsfwClassify(imageBytes: bytes);
+    final detector = _detector;
+    if (detector == null) {
+      debugPrint('[NsfwService] detector not initialised (fail-open)');
+      return const NsfwResult(score: 0.0, isNsfw: false);
+    }
 
     try {
-      return await classify(imageBytes);
+      final result = await detector.detectNSFWFromBytes(imageBytes);
+      return NsfwResult(
+        score: result?.score ?? 0.0,
+        isNsfw: result?.isNsfw ?? false,
+      );
     } catch (e) {
       // Fail open — an inference error must not block a legitimate upload.
       debugPrint('[NsfwService] classify error (fail-open): $e');
@@ -74,26 +85,14 @@ class NsfwService {
   // ---------------------------------------------------------------------------
 
   Future<void> _ensureInitialized() async {
-    if (_initialized || _classifyOverride != null) {
-      _initialized = true;
-      return;
-    }
+    if (_initialized) return;
     try {
-      final tempDir = await getTemporaryDirectory();
-      final modelFile = File('${tempDir.path}/nsfw.onnx');
-      if (!modelFile.existsSync()) {
-        final byteData = await rootBundle.load('assets/models/nsfw.onnx');
-        await modelFile.writeAsBytes(byteData.buffer.asUint8List());
-      }
-      // Ignore "already set" — safe to call multiple times.
-      try {
-        await loadNsfwModel(path: modelFile.path);
-      } catch (_) {}
+      _detector = await NsfwDetector.load();
       _initialized = true;
     } catch (e) {
-      // Fail open on init errors too (e.g. disk full, bad permissions).
+      // Fail open on init errors.
       debugPrint('[NsfwService] initialization failed (fail-open): $e');
-      _initialized = true;
+      _initialized = true; // don't retry
     }
   }
 }

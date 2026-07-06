@@ -169,7 +169,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       // On-device NSFW check before upload.
       final nsfwResult =
-          await ref.read(nsfwServiceProvider).check(bytes.toList());
+          await ref.read(nsfwServiceProvider).check(bytes);
       if (!mounted) return;
       if (nsfwResult.isNsfw) {
         setState(() => _isUploadingPhoto = false);

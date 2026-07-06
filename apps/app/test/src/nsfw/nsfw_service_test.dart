@@ -1,6 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/src/nsfw/nsfw_service.dart';
-import 'package:app/src/rust/nsfw.dart';
 
 void main() {
   group('NsfwService (injected classifier)', () {
@@ -9,7 +10,7 @@ void main() {
         (_) async => const NsfwResult(score: 0.1, isNsfw: false),
       );
 
-      final result = await svc.check([0, 1, 2]);
+      final result = await svc.check(Uint8List.fromList([0, 1, 2]));
 
       expect(result.isNsfw, isFalse);
       expect(result.score, closeTo(0.1, 0.001));
@@ -20,7 +21,7 @@ void main() {
         (_) async => const NsfwResult(score: 0.95, isNsfw: true),
       );
 
-      final result = await svc.check([0, 1, 2]);
+      final result = await svc.check(Uint8List.fromList([0, 1, 2]));
 
       expect(result.isNsfw, isTrue);
       expect(result.score, greaterThan(0.7));
@@ -28,34 +29,32 @@ void main() {
 
     test('fails open when classifier throws', () async {
       final svc = NsfwService.withClassifier(
-        (_) async => throw Exception('Rust bridge unavailable'),
+        (_) async => throw Exception('TFLite unavailable'),
       );
 
-      // Must not throw; must return safe.
-      final result = await svc.check([0, 1, 2]);
+      final result = await svc.check(Uint8List.fromList([0, 1, 2]));
 
       expect(result.isNsfw, isFalse);
       expect(result.score, equals(0.0));
     });
 
-    test('returns safe result on web (kIsWeb path covered by mock)', () async {
-      // kIsWeb is false in flutter_test, so the web branch is not hit here.
-      // This test confirms the service itself never throws on any input path.
+    test('returns safe result on missing detector (fail-open)', () async {
       final svc = NsfwService.withClassifier(
         (_) async => const NsfwResult(score: 0.0, isNsfw: false),
       );
-      final result = await svc.check(List<int>.filled(100, 0));
+      final bytes = Uint8List.fromList(List.filled(100, 0));
+      final result = await svc.check(bytes);
       expect(result.isNsfw, isFalse);
     });
 
     test('classifier receives the exact bytes passed to check()', () async {
-      final received = <List<int>>[];
+      final received = <Uint8List>[];
       final svc = NsfwService.withClassifier((bytes) async {
         received.add(bytes);
         return const NsfwResult(score: 0.0, isNsfw: false);
       });
 
-      final payload = [10, 20, 30];
+      final payload = Uint8List.fromList([10, 20, 30]);
       await svc.check(payload);
 
       expect(received, hasLength(1));

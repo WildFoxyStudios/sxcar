@@ -147,18 +147,19 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   void _toggleMute() {
-    // Mute/unmute local audio track.
-    setState(() {
-      _muted = !_muted;
-      // We can't access the local stream directly from here easily,
-      // but we can toggle via the service if needed.
-      // For now this is a UI toggle only — the actual mute could be
-      // added via service.enableAudio(_muted).
-    });
+    final callService = ref.read(callServiceProvider);
+    final localStream = callService.localStream;
+    if (localStream != null) {
+      for (final track in localStream.getAudioTracks()) {
+        track.enabled = !track.enabled;
+      }
+    }
+    setState(() => _muted = !_muted);
   }
 
   void _toggleSpeaker() {
     setState(() => _speakerOn = !_speakerOn);
+    Helper.setSpeakerphoneOn(_speakerOn);
   }
 
   // ── Build ───────────────────────────────────────────────────────────────
@@ -202,9 +203,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Caller Name', // TODO: Actual caller name from conversation
-              style: TextStyle(
+            Text(
+              widget.incomingCall?.callerName ?? 'Caller',
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 22,
                 fontWeight: FontWeight.w600,

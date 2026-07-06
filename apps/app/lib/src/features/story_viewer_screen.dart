@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../auth/auth_provider.dart';
+import '../theme/app_theme.dart';
 import 'story_service.dart';
 
 /// Full-screen story viewer with auto-advancing progress timer.
@@ -254,15 +256,61 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                 ),
               ),
 
-            // Delete button for own stories
+            // Options button for own stories
             Positioned(
               top: 80,
               right: 12,
-              child: IconButton(
+              child: PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert,
                     color: Colors.white70, size: 20),
-                onPressed: () {
-                  // TODO: show options (delete, etc.)
+                color: VibraTheme.kSurface,
+                onSelected: (value) async {
+                  if (value == 'delete') {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: VibraTheme.kSurface,
+                        title:
+                            const Text('Delete story', style: TextStyle(color: Colors.white)),
+                        content: const Text(
+                            'Are you sure?', style: TextStyle(color: Colors.white70)),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text('Delete',
+                                style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true && mounted) {
+                      await ref
+                          .read(storyServiceProvider)
+                          .deleteStory(_currentStory.id);
+                      Navigator.of(context).pop();
+                    }
+                  }
+                },
+                itemBuilder: (context) {
+                  final userId = ref.read(authStateProvider).userId;
+                  final isOwnStory = userId == _currentStory.userId;
+                  return [
+                    if (isOwnStory)
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: ListTile(
+                          leading: Icon(Icons.delete, color: Colors.red, size: 20),
+                          title: Text('Delete story',
+                              style: TextStyle(color: Colors.red)),
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                  ];
                 },
               ),
             ),

@@ -145,6 +145,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   incomingCall: IncomingCall(
                     conversationId: convId,
                     callerId: callerId,
+                    callerName: widget.conversationName,
                     sdp: sdp,
                     video: video,
                   ),

@@ -7,6 +7,7 @@ import '../albums/shared_albums_provider.dart';
 import '../theme/widgets.dart';
 import '../theme/app_theme.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../boost/boost_service.dart';
 import 'circles_screen.dart';
 
 /// Buzón screen — Grindr-style inbox with two tabs:
@@ -108,7 +109,9 @@ class _BandejaTabState extends ConsumerState<_BandejaTab> {
         sharedAlbumsAsync.when(
           data: (albums) => AlbumUpdateBanner(
             count: albums.length,
-            onTap: () {/* TODO: scroll to album carousel */},
+            onTap: () {
+              // Album carousel is in the Álbumes tab — no scroll needed here.
+            },
           ),
           loading: () => const SizedBox.shrink(),
           error: (_, _) => const SizedBox.shrink(),
@@ -331,9 +334,7 @@ class _AlbumsTab extends ConsumerWidget {
         }
         return AlbumCarousel(
           albums: albums,
-          onTap: (id) {
-            // TODO: navigate to album detail
-          },
+          onTap: (id) => context.push('/albums/$id'),
         );
       },
     );
@@ -344,16 +345,18 @@ class _AlbumsTab extends ConsumerWidget {
 // Boost FAB
 // ---------------------------------------------------------------------------
 
-class _BoostFab extends StatelessWidget {
+class _BoostFab extends ConsumerWidget {
   const _BoostFab();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     return FloatingActionButton.extended(
       backgroundColor: Colors.black,
       foregroundColor: VibraTheme.kYellow,
-      onPressed: () {/* TODO: trigger boost */},
+      onPressed: () {
+        ref.read(boostServiceProvider).activate();
+      },
       icon: const Icon(Icons.bolt),
       label: Text(
         l10n.boost,

@@ -639,7 +639,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
         ),
-        error: (_, __) => const SizedBox.shrink(),
+        error: (_, _) => const SizedBox.shrink(),
       ),
     );
   }

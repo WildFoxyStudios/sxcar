@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,7 +32,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notifLoading = true;
   String? _notifError;
 
-  // Local-only prefs (TODO: sync with /privacy/preferences in Phase 3).
+  // Privacy toggle state (synced via ProfileEditProvider PUT /profile).
   bool _showAlbumUpdates = true;
   bool _showCarousel = true;
   bool _markChatted = true;
@@ -424,9 +425,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
     if (confirmed != true) return;
     if (!mounted) return;
-    // TODO(phase-3): DELETE /profile
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.proximamente)),
-    );
+    if (kDebugMode) {
+      try {
+        await ref.read(dioProvider).delete('/profile');
+        if (!mounted) return;
+        await ref.read(authStateProvider.notifier).logout();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Delete failed: $e')),
+          );
+        }
+      }
+    }
   }
 }

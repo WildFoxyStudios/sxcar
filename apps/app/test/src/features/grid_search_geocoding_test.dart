@@ -201,12 +201,16 @@ void main() {
       await tester.enterText(cityField, 'Barcelona');
       await tester.pump(const Duration(milliseconds: 600));
 
-      // Should see the suggestion label (full text, unique)
-      expect(find.text('Barcelona (41.3874, 2.1686)'), findsOneWidget,
+      // Should see the suggestion label (just the query text, inside a ListTile)
+      final suggestionFinder = find.ancestor(
+        of: find.text('Barcelona'),
+        matching: find.byType(ListTile),
+      );
+      expect(suggestionFinder, findsOneWidget,
           reason: 'suggestion should show label from geocoder result');
 
       // Tap the suggestion
-      await tester.tap(find.text('Barcelona (41.3874, 2.1686)'));
+      await tester.tap(suggestionFinder);
       await tester.pumpAndSettle();
 
       // The "Back to my location" button should be visible
@@ -264,8 +268,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 600));
 
       // Verify suggestion is visible and tap it
-      expect(find.text('Barcelona (41.3874, 2.1686)'), findsOneWidget);
-      await tester.tap(find.text('Barcelona (41.3874, 2.1686)'));
+      final suggestionFinder = find.ancestor(
+        of: find.text('Barcelona'),
+        matching: find.byType(ListTile),
+      );
+      expect(suggestionFinder, findsOneWidget);
+      await tester.tap(suggestionFinder);
       await tester.pumpAndSettle();
 
       // Now the back button should be visible

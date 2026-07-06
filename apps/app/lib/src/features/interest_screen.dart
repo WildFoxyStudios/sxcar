@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../auth/auth_provider.dart';
+import '../boost/boost_service.dart';
 import '../billing/billing_providers.dart';
 import '../billing/models.dart';
 import '../profile_views/viewed_me_provider.dart';
@@ -222,7 +223,9 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.black,
         foregroundColor: VibraTheme.kYellow,
-        onPressed: () {/* TODO: trigger boost via boostService */},
+        onPressed: () {
+          ref.read(boostServiceProvider).activate();
+        },
         icon: const Icon(Icons.bolt),
         label: Text(
           l10n.boostTuInterest,

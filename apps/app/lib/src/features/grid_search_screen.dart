@@ -62,6 +62,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
 
   // City search state
   latlong2.LatLng? _searchCenter;
+  String _selectedLocationName = '';
   List<_GeocodingSuggestion> _suggestions = [];
   bool _showSuggestions = false;
   bool _isGeocoding = false;
@@ -166,11 +167,12 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
       if (!mounted) return;
       if (_cityController.text.trim() != query) return; // stale response
 
+      // The native geocoding Location type only exposes lat/lon, so we use the
+      // query text (which is the city/place name the user typed) as the label.
       final suggestions = locations
           .take(5)
           .map((loc) => _GeocodingSuggestion(
-                label: '$query (${loc.latitude.toStringAsFixed(4)}, '
-                    '${loc.longitude.toStringAsFixed(4)})',
+                label: query,
                 lat: loc.latitude,
                 lon: loc.longitude,
               ))
@@ -199,6 +201,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
     _saveRecentSearch(suggestion.label);
     setState(() {
       _searchCenter = latlong2.LatLng(suggestion.lat, suggestion.lon);
+      _selectedLocationName = suggestion.label;
       _showSuggestions = false;
       // Refresh grid with new center
       _globalUsersFuture = _fetchGlobalUsers(
@@ -213,6 +216,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   void _backToMyLocation() {
     setState(() {
       _searchCenter = null;
+      _selectedLocationName = '';
       _cityController.clear();
       _suggestions = [];
       _showSuggestions = false;
@@ -661,7 +665,10 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   }
 
   Widget _buildLocationIndicator(AppLocalizations l10n) {
-    final center = _searchCenter!;
+    final label = _selectedLocationName.isNotEmpty
+        ? _selectedLocationName
+        : '${_searchCenter!.latitude.toStringAsFixed(4)}, '
+            '${_searchCenter!.longitude.toStringAsFixed(4)}';
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
       child: Row(
@@ -670,8 +677,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           const SizedBox(width: 4),
           Expanded(
             child: Text(
-              '${center.latitude.toStringAsFixed(4)}, '
-              '${center.longitude.toStringAsFixed(4)}',
+              label,
               style: const TextStyle(
                 color: VibraTheme.kAccent,
                 fontSize: 12,

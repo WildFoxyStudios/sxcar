@@ -33,12 +33,14 @@ enum CallState {
 class IncomingCall {
   final String conversationId;
   final String callerId;
+  final String? callerName;
   final String sdp;
   final bool video;
 
   const IncomingCall({
     required this.conversationId,
     required this.callerId,
+    this.callerName,
     required this.sdp,
     this.video = false,
   });
@@ -50,7 +52,9 @@ class IncomingCall {
 
 final callServiceProvider = Provider<CallService>((ref) {
   final chatService = ref.watch(chatServiceProvider);
-  return CallService(chatService);
+  final service = CallService(chatService);
+  ref.onDispose(() => service.dispose());
+  return service;
 });
 
 // ---------------------------------------------------------------------------
@@ -67,7 +71,10 @@ class CallService {
 
   // ── PeerConnection ──────────────────────────────────────────────────────
   RTCPeerConnection? _peerConnection;
+
+  /// Exposed for mute/unmute and speaker routing.
   MediaStream? _localStream;
+  MediaStream? get localStream => _localStream;
 
   // ── Renderers ───────────────────────────────────────────────────────────
   final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();

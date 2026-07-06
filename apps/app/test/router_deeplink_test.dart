@@ -125,6 +125,64 @@ void main() {
       );
       expect(result, isNull);
     });
+
+    // ── Onboarding redirect guard ────────────────────────────────────────
+
+    test('authenticated + onboarding incomplete + /navegar → /onboarding', () {
+      final result = appRedirect(
+        incomingPath: '/navegar',
+        matchedLocation: '/navegar',
+        status: AuthStatus.authenticated,
+        onboardingCompleted: false,
+      );
+      expect(result, equals('/onboarding'));
+    });
+
+    test('authenticated + onboarding incomplete + /login → /onboarding', () {
+      final result = appRedirect(
+        incomingPath: '/login',
+        matchedLocation: '/login',
+        status: AuthStatus.authenticated,
+        onboardingCompleted: false,
+      );
+      // Onboarding guard fires before the auth-route → /navegar redirect.
+      expect(result, equals('/onboarding'));
+    });
+
+    test('authenticated + onboarding incomplete + /onboarding stays put', () {
+      final result = appRedirect(
+        incomingPath: '/onboarding',
+        matchedLocation: '/onboarding',
+        status: AuthStatus.authenticated,
+        onboardingCompleted: false,
+      );
+      // Already on the onboarding screen → no redirect.
+      expect(result, isNull);
+    });
+
+    test(
+        'authenticated + onboarding incomplete + /splash → /onboarding',
+        () {
+      // Splash is excluded when onboarding is incomplete — users should be
+      // on the wizard, not on splash.
+      final result = appRedirect(
+        incomingPath: '/splash',
+        matchedLocation: '/splash',
+        status: AuthStatus.authenticated,
+        onboardingCompleted: false,
+      );
+      expect(result, equals('/onboarding'));
+    });
+
+    test('authenticated + onboarding complete + /login → /navegar', () {
+      final result = appRedirect(
+        incomingPath: '/login',
+        matchedLocation: '/login',
+        status: AuthStatus.authenticated,
+        onboardingCompleted: true,
+      );
+      expect(result, equals('/navegar'));
+    });
   });
 
   group('GoRouter: pump with various URLs does not throw', () {

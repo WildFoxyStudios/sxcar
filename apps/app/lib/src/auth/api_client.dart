@@ -5,11 +5,15 @@ import '../config.dart';
 
 /// Thin wrapper around [Dio] that provides typed convenience methods
 /// for JSON API calls. Used by feature providers (onboarding, etc.).
+///
+/// Accepts an authenticated [Dio] via `dio:` or creates a bare one from
+/// [baseUrl] (defaults to [apiUrl]).
 class ApiClient {
   final Dio _dio;
 
-  ApiClient({required String baseUrl})
-      : _dio = Dio(BaseOptions(baseUrl: baseUrl));
+  ApiClient({Dio? dio, String? baseUrl})
+      : _dio = dio ??
+            Dio(BaseOptions(baseUrl: baseUrl ?? apiUrl));
 
   Future<Map<String, dynamic>> getJson(String path) async {
     final response = await _dio.get(path);

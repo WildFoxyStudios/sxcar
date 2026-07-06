@@ -12,26 +12,34 @@ class AuthState {
   final AuthStatus status;
   final String? accessToken;
   final String? email;
+  final bool onboardingCompleted;
 
   const AuthState({
     this.status = AuthStatus.loading,
     this.accessToken,
     this.email,
+    this.onboardingCompleted = true,
   });
 
   /// The current user's id, decoded from the access token's `sub` claim.
   /// Null when unauthenticated or the token is malformed.
   String? get userId => jwtSubject(accessToken);
 
+  /// True when the user is authenticated but has not completed onboarding.
+  bool get needsOnboarding =>
+      status == AuthStatus.authenticated && !onboardingCompleted;
+
   AuthState copyWith({
     AuthStatus? status,
     String? accessToken,
     String? email,
+    bool? onboardingCompleted,
   }) {
     return AuthState(
       status: status ?? this.status,
       accessToken: accessToken ?? this.accessToken,
       email: email ?? this.email,
+      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
     );
   }
 }
@@ -83,9 +91,11 @@ class AuthNotifier extends Notifier<AuthState> {
     final accessToken = await tokenStorage.getAccessToken();
     if (accessToken != null) {
       _currentRefreshToken = await tokenStorage.getRefreshToken();
+      // Existing users with stored tokens have already completed onboarding.
       state = AuthState(
         status: AuthStatus.authenticated,
         accessToken: accessToken,
+        onboardingCompleted: true,
       );
     } else {
       state = const AuthState(status: AuthStatus.unauthenticated);
@@ -108,6 +118,11 @@ class AuthNotifier extends Notifier<AuthState> {
       status: AuthStatus.authenticated,
       accessToken: pair.access,
       email: email,
+      // New login — user may need onboarding; the redirect guard will
+      // check /me/onboarding to decide. We optimistically set false so
+      // the wizard shows; if the backend says otherwise the next reload
+      // will correct it.
+      onboardingCompleted: false,
     );
     return pair;
   }
@@ -135,8 +150,15 @@ class AuthNotifier extends Notifier<AuthState> {
       status: AuthStatus.emailUnverified,
       accessToken: pair.access,
       email: email,
+      onboardingCompleted: false,
     );
     return pair;
+  }
+
+  /// Mark the current user's onboarding as completed. Called by the
+  /// onboarding wizard when the user finishes all required cards.
+  void markOnboardingCompleted() {
+    state = state.copyWith(onboardingCompleted: true);
   }
 
   Future<void> verifyEmail(String code) async {
@@ -174,6 +196,7 @@ class AuthNotifier extends Notifier<AuthState> {
       status: AuthStatus.authenticated,
       accessToken: pair.access,
       email: email,
+      onboardingCompleted: false,
     );
     return pair;
   }

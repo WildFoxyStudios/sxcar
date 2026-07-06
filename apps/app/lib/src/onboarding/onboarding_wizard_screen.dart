@@ -18,8 +18,13 @@ import 'cards/position_preference_card.dart';
 import 'cards/ethnicity_card.dart';
 
 class OnboardingWizardScreen extends StatefulWidget {
-  const OnboardingWizardScreen({super.key, required this.provider});
+  const OnboardingWizardScreen({
+    super.key,
+    required this.provider,
+    this.onCompleted,
+  });
   final OnboardingProvider provider;
+  final VoidCallback? onCompleted;
 
   @override
   State<OnboardingWizardScreen> createState() => _OnboardingWizardScreenState();
@@ -104,6 +109,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     );
     if (yes == true) {
       await widget.provider.forceComplete();
+      widget.onCompleted?.call();
       if (mounted) Navigator.of(context).pop(true);
     }
   }
@@ -152,6 +158,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                   curve: Curves.easeInOut,
                 );
               } else {
+                widget.onCompleted?.call();
                 Navigator.of(context).pop(true);
               }
             });

@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
+import 'src/auth/api_client.dart';
 import 'src/auth/auth_provider.dart';
 import 'src/billing/revenuecat_providers.dart';
 import 'src/notifications/push_service.dart';
+import 'src/onboarding/onboarding_provider.dart';
+import 'src/onboarding/onboarding_wizard_screen.dart';
 import 'src/chat/models.dart';
 import 'src/chat/unread_count_provider.dart';
 import 'src/presence/presence_service.dart';
@@ -61,6 +64,7 @@ const Set<String> _knownTopLevelPaths = {
   '/login',
   '/register',
   '/verify-email',
+  '/onboarding',
   '/profile',
   // New shell tabs (T2)
   '/navegar',
@@ -103,6 +107,7 @@ String? appRedirect({
   required String incomingPath,
   required String matchedLocation,
   required AuthStatus status,
+  bool onboardingCompleted = true,
 }) {
   // Deep-link / unmatched route guard. GoRouter runs the redirect
   // BEFORE the route table is matched. If the incoming URL does not
@@ -132,6 +137,17 @@ String? appRedirect({
     return '/login';
   }
 
+  // Onboarding guard: authenticated users who haven't completed the
+  // onboarding wizard are sent to /onboarding instead of the home tabs.
+  // This check runs before the generic "authenticated→/navegar" redirect
+  // so that a just-logged-in user who lands on /login or /splash gets
+  // routed to /onboarding first.
+  if (status == AuthStatus.authenticated &&
+      matchedLocation != '/onboarding' &&
+      !onboardingCompleted) {
+    return '/onboarding';
+  }
+
   if (status == AuthStatus.authenticated && (isAuthRoute || isSplash)) {
     return '/navegar';
   }
@@ -155,6 +171,7 @@ final GoRouter appRouter = GoRouter(
       incomingPath: state.uri.path,
       matchedLocation: state.matchedLocation,
       status: authState.status,
+      onboardingCompleted: authState.onboardingCompleted,
     );
   },
   routes: [
@@ -192,6 +209,26 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/verify-email',
       builder: (_, _) => const VerifyEmailScreen(),
+    ),
+
+    // ── Onboarding wizard ─────────────────────────────────────────────────
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, _) {
+        final container = ProviderScope.containerOf(context);
+        final dio = container.read(dioProvider);
+        final api = ApiClient(dio: dio);
+        final provider = OnboardingProvider(api)
+          ..load(); // kick off the GET /me/onboarding fetch
+        return OnboardingWizardScreen(
+          provider: provider,
+          onCompleted: () {
+            container
+                .read(authStateProvider.notifier)
+                .markOnboardingCompleted();
+          },
+        );
+      },
     ),
 
     // ── Full-screen profile detail (no bottom nav) ─────────────────────────
@@ -518,7 +555,8 @@ class _VibraAppState extends ConsumerState<VibraApp>
   @override
   Widget build(BuildContext context) {
     ref.listen<AuthState>(authStateProvider, (prev, next) {
-      if (prev?.status != next.status) {
+      if (prev?.status != next.status ||
+          prev?.onboardingCompleted != next.onboardingCompleted) {
         appRouter.refresh();
         // Register the FCM token once the user is authenticated. Doing this
         // post-auth ensures the Bearer token is in the Dio headers when the

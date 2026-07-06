@@ -43,12 +43,28 @@ class OnboardingProvider extends ChangeNotifier {
   }
 
   Future<void> skipCards(List<String> cardIds) async {
-    await _api.postJson('/me/onboarding/skip', {'card_ids': cardIds});
-    await load();
+    _loading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _api.postJson('/me/onboarding/skip', {'card_ids': cardIds});
+      await load();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
   }
 
   Future<void> forceComplete() async {
-    await _api.postJson('/me/onboarding/complete', const {});
-    await load();
+    _loading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _api.postJson('/me/onboarding/complete', const {});
+      await load();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
   }
 }

@@ -304,8 +304,9 @@ None.
 
 ### P4 — Cleanup
 
-1. **Hardcoded English UI strings in screen titles** — 8 screens with unlocalized titles/descriptions
+1. **Hardcoded English UI strings pervasive across every admin screen**
 
+   A sample of the affected locations (screen titles, dialog titles, button labels, error messages):
    - `apps/admin/lib/src/features/config/abuse_rules_screen.dart:74` — `Text('Abuse Detection Rules', ...)`
    - `apps/admin/lib/src/features/config/flags_screen.dart:161` — `title: const Text('Create Feature Flag')`
    - `apps/admin/lib/src/features/content/cms_screen.dart:184` — `title: const Text('Create CMS Content')`
@@ -315,9 +316,9 @@ None.
    - `apps/admin/lib/src/features/moderation/csam_screen.dart:77` — `Text('CSAM Hash Queue', ...)`
    - `apps/admin/lib/src/features/settings/api_keys_screen.dart:181` — `title: const Text('Create API Key')`
 
-   - **What**: Screen titles, dialog titles, and descriptions are hardcoded English strings. The admin panel has no l10n setup at all — no `AppLocalizations` import, no translation keys.
-   - **Impact**: The admin panel cannot be localized (P4).
-   - **Fix**: Extract all user-facing strings into an l10n system or at minimum centralize them as constants.
+   - **What**: Screen titles, dialog titles, button labels, error messages, and descriptions are hardcoded English strings in every admin screen. The admin panel has no l10n infrastructure at all — no `AppLocalizations` import, no translation keys, no localization setup. This is a systemic issue: every single `Text()` widget in the admin module is unlocalized (50+ instances across all screens), not merely a handful of outliers.
+   - **Impact**: The entire admin panel cannot be localized. Any deployment serving non-English-speaking admins would require a full l10n pass, not a spot fix (P4).
+   - **Fix**: Add l10n infrastructure to the admin module (following the pattern in `apps/app/` which uses `AppLocalizations`), then extract every user-facing string into translation keys.
 
 ## Cross-app consistency
 (populated by Task 4)

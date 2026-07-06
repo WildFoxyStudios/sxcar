@@ -1,7 +1,33 @@
 # proyecto-X Full Audit — 2026-07-06
 
 ## Summary
-(populated by Task 4)
+
+### Findings by priority
+
+| Priority | Backend | App | Admin | Total |
+|----------|---------|-----|-------|-------|
+| P0 | 2 | 0 | 0 | 2 |
+| P1 | 0 | 3 | 1 | 4 |
+| P2 | 1 | 4 | 4 | 9 |
+| P3 | 3 | 7 | 3 | 13 |
+| P4 | 2 | 7 | 1 | 10 |
+| **Total** | **8** | **21** | **9** | **38** |
+
+### Estimated effort for P0+P1 (person-hours)
+
+- **P0-1 (android_sha256 recursion)**: 0.5 h — trivial one-line fix.
+- **P0-2 (DevOAuthVerifier auth bypass)**: 1 h — gate the fallback behind a build flag or startup check.
+- **P1-1 (chat timestamp display)**: 0.5 h — add modulo condition.
+- **P1-2 (PIN stored unencrypted)**: 1 h — replace SharedPreferences with `flutter_secure_storage`.
+- **P1-3 (NSFW service fails open)**: 2 h — add fail-closed mode for production builds.
+- **P1-4 (admin reports dropdown)**: 0.5 h — rename `initialValue` to `value`.
+- **Total P0+P1 effort**: **5.5 person-hours**.
+
+### Top 3 critical risks
+
+1. **Authentication bypass (P0)**: `DevOAuthVerifier` accepts forged tokens when `OAUTH_GOOGLE_CLIENT_ID` is unset. Any production deployment missing this env var is fully compromised — arbitrary user impersonation with no auth required. **Fix first**, before any deployment.
+2. **Server crash on `.well-known` (P0)**: `android_sha256()` infinite-recursion stack overflow crashes the server process. If `ANDROID_SHA256_FINGERPRINT` is not set (or set to empty in CI/CD), the first request to `/.well-known/assetlinks.json` brings the server down.
+3. **Content moderation bypass (P1)**: The NSFW detector fails open — every error path silently allows explicit images through. A corrupt model file or missing asset means zero content filtering without any visible alert.
 
 ## Methodology
 - Read-only scan of `backend/crates/**`, `apps/app/lib/src/**`, `apps/admin/lib/src/**`.
@@ -321,7 +347,320 @@ None.
    - **Fix**: Add l10n infrastructure to the admin module (following the pattern in `apps/app/` which uses `AppLocalizations`), then extract every user-facing string into translation keys.
 
 ## Cross-app consistency
-(populated by Task 4)
+
+### Endpoint coverage matrix
+
+Legend: Backend = exposes endpoint, App = app client calls it, Admin = admin client calls it.
+
+| Group | Endpoint | Backend | App | Admin |
+|-------|----------|---------|-----|-------|
+| **Auth** | POST /auth/register | Y | Y | - |
+| | POST /auth/login | Y | Y | - |
+| | POST /auth/refresh | Y | Y | - |
+| | POST /auth/logout | Y | Y | - |
+| | POST /auth/verify-email | Y | Y | - |
+| | POST /auth/resend-email | Y | - | - |
+| | POST /auth/password/reset-request | Y | - | - |
+| | POST /auth/password/reset | Y | - | - |
+| | POST /auth/send-phone-code | Y | - | - |
+| | POST /auth/verify-phone | Y | - | - |
+| | POST /auth/oauth/:provider | Y | Y | - |
+| **Profile** | GET /profile | Y | Y | - |
+| | PUT /profile | Y | Y | - |
+| | DELETE /profile | Y | Y | - |
+| | GET /profile/:id | Y | Y | - |
+| | GET /profile/health | Y | Y | - |
+| | PUT /profile/health | Y | Y | - |
+| | GET /profile/views | Y | Y | - |
+| | GET /profile/views/count | Y | Y | - |
+| | POST /profile/verify | Y | - | - |
+| | GET /profile/verify/status | Y | - | - |
+| **Grid** | GET /grid/nearby | Y | Y | - |
+| **Chat** | GET /chat/conversations | Y | Y | - |
+| | POST /chat/conversations | Y | Y | - |
+| | DELETE /chat/conversations/:id | Y | Y | - |
+| | GET /chat/conversations/:id/messages | Y | Y | - |
+| | POST /chat/conversations/:id/messages | Y | Y | - |
+| | POST /chat/conversations/:id/read | Y | Y | - |
+| | POST /chat/conversations/:id/messages/:mid/viewed | Y | Y | - |
+| | PUT /chat/messages/:id/reaction | Y | Y | - |
+| | DELETE /chat/messages/:id/reaction | Y | Y | - |
+| | POST /chat/messages/:id/unsend | Y | Y | - |
+| | GET /chat/groups | Y | Y | - |
+| | POST /chat/groups | Y | Y | - |
+| | PUT /chat/groups/:id/name | Y | Y | - |
+| | GET /chat/groups/:id/members | Y | Y | - |
+| | POST /chat/groups/:id/members | Y | Y | - |
+| | DELETE /chat/groups/:id/members/:uid | Y | Y | - |
+| | GET /ws/chat | Y | Y (WebSocket) | - |
+| **Social** | POST /taps | Y | Y | - |
+| | GET /taps/count | Y | Y | - |
+| | GET /taps/received | Y | Y | - |
+| | GET /taps/sent | Y | - | - |
+| | GET /favorites | Y | Y | - |
+| | POST /favorites | Y | Y | - |
+| | DELETE /favorites/:user_id | Y | Y | - |
+| | GET /blocks | Y | Y | - |
+| | POST /blocks | Y | Y | - |
+| | DELETE /blocks/:user_id | Y | Y | - |
+| | POST /reports | Y | Y | - |
+| **Albums** | GET /albums | Y | Y | - |
+| | POST /albums | Y | Y | - |
+| | GET /albums/:id | Y | - | - |
+| | PUT /albums/:id | Y | - | - |
+| | DELETE /albums/:id | Y | - | - |
+| | GET /albums/shared | Y | Y | - |
+| | POST /albums/:id/photos | Y | Y | - |
+| | DELETE /albums/:id/photos/:photo_id | Y | - | - |
+| | POST /albums/:id/share | Y | - | - |
+| | DELETE /albums/:id/share/:user_id | Y | - | - |
+| **Stories** | POST /stories | Y | Y | - |
+| | GET /stories | Y | Y | - |
+| | DELETE /stories/:id | Y | Y | - |
+| | POST /stories/:id/view | Y | Y | - |
+| **Right Now** | POST /right-now | Y | Y | - |
+| | GET /right-now | Y | Y | - |
+| | DELETE /right-now/:id | Y | Y | - |
+| **Presence** | POST /heartbeat | Y | Y | - |
+| | GET /users/:id/status | Y | Y | - |
+| **Billing** | GET /billing/plans | Y | Y | - |
+| | POST /billing/simulate-purchase | Y | Y | - |
+| | GET /billing/me | Y | Y | - |
+| | POST /billing/revenuecat/webhook | Y | - | - (server-to-server) |
+| **Notifications** | POST /notifications/register | Y | Y | - |
+| | GET /notifications/preferences | Y | Y | - |
+| | PUT /notifications/preferences | Y | Y | - |
+| **Privacy** | GET /privacy/preferences | Y | - | - |
+| | PUT /privacy/preferences | Y | - | - |
+| **Media** | POST /media/upload-url | Y | Y | - |
+| | GET /media/get-url | Y | Y | - |
+| | POST /media/photos | Y | - | - |
+| **Tier 2** | POST /boost | Y | Y | - |
+| | GET /boost/active | Y | Y | - |
+| | GET /phrases | Y | Y | - |
+| | POST /phrases | Y | Y | - |
+| | PUT /phrases/order | Y | Y | - |
+| | DELETE /phrases/:id | Y | Y | - |
+| | GET /places | Y | Y | - |
+| | POST /places | Y | Y | - |
+| | DELETE /places/:id | Y | Y | - |
+| | GET /me/location | Y | Y | - |
+| | PUT /me/location | Y | Y | - |
+| **Tier 3** | GET /me/sessions | Y | Y | - |
+| | DELETE /me/sessions/:id | Y | Y | - |
+| | POST /screenshots | Y | - | - |
+| | GET /screenshots | Y | - | - |
+| | GET /me/idle-reminder | Y | Y | - |
+| | PUT /me/idle-reminder | Y | Y | - |
+| **Admin** | POST /admin/auth/login | Y | - | Y |
+| | POST /admin/auth/2fa | Y | - | Y |
+| | POST /admin/auth/logout | Y | - | Y |
+| | GET /admin/users | Y | - | Y |
+| | GET /admin/users/:id | Y | - | Y |
+| | POST /admin/users/:id/:action | Y | - | Y |
+| | GET /admin/audit | Y | - | Y |
+| | GET /admin/reports | Y | - | Y |
+| | POST /admin/reports/:id/review | Y | - | - |
+| | POST /admin/reports/:id/resolve | Y | - | Y |
+| | GET /admin/moderation/photos | Y | - | - |
+| | POST /admin/moderation/photos/:id/approve | Y | - | - |
+| | POST /admin/moderation/photos/:id/reject | Y | - | - |
+| | GET /admin/csam | Y | - | Y |
+| | POST /admin/csam/:id/report | Y | - | Y |
+| | GET /admin/support/users/:id/entitlements | Y | - | - |
+| | POST /admin/support/users/:id/entitlements | Y | - | - |
+| | GET /admin/gdpr/data-requests | Y | - | Y |
+| | POST /admin/gdpr/data-requests/:id/process | Y | - | - |
+| | GET /admin/legal/export/:user_id | Y | - | - |
+| | POST /admin/legal/hold | Y | - | - |
+| | POST /admin/legal/hold/:id/release | Y | - | - |
+| | GET /admin/flags | Y | - | Y |
+| | POST /admin/flags | Y | - | Y |
+| | DELETE /admin/flags/:key | Y | - | Y |
+| | GET /admin/config | Y | - | - |
+| | POST /admin/config | Y | - | - |
+| | GET /admin/analytics/overview | Y | - | Y |
+| | GET /admin/plans | Y | - | Y |
+| | POST /admin/plans | Y | - | - |
+| | GET /admin/plans/:code/features | Y | - | Y |
+| | POST /admin/plans/:code/features | Y | - | Y |
+| | DELETE /admin/plans/:code/features/:feature | Y | - | - |
+| | POST /admin/plans/:code/prices | Y | - | - |
+| | GET /admin/countries | Y | - | Y |
+| | GET /admin/countries/:code | Y | - | - |
+| | POST /admin/countries/:code | Y | - | - |
+| | GET /admin/experiments | Y | - | Y |
+| | POST /admin/experiments | Y | - | - |
+| | DELETE /admin/experiments/:key | Y | - | - |
+| | GET /admin/i18n | Y | - | Y |
+| | POST /admin/i18n | Y | - | - |
+| | GET /admin/cms | Y | - | Y |
+| | POST /admin/cms | Y | - | Y |
+| | POST /admin/cms/:key | Y | - | - |
+| | DELETE /admin/cms/:key | Y | - | Y |
+| | GET /admin/legal-docs | Y | - | Y |
+| | POST /admin/legal-docs | Y | - | Y |
+| | GET /admin/campaigns | Y | - | Y |
+| | POST /admin/campaigns | Y | - | - |
+| | POST /admin/campaigns/:id/send | Y | - | - |
+| | GET /admin/templates | Y | - | Y |
+| | POST /admin/templates | Y | - | - |
+| | GET /admin/abuse/rules | Y | - | Y |
+| | POST /admin/abuse/rules | Y | - | - |
+| | DELETE /admin/abuse/rules/:id | Y | - | - |
+| | GET /admin/api-keys | Y | - | Y |
+| | POST /admin/api-keys | Y | - | Y |
+| | POST /admin/api-keys/:id/revoke | Y | - | Y |
+| | GET /admin/webhooks | Y | - | Y |
+| | POST /admin/webhooks | Y | - | - |
+| | DELETE /admin/webhooks/:id | Y | - | - |
+| | GET /admin/config/history | Y | - | - |
+| | POST /admin/config/history/:version/rollback | Y | - | - |
+
+### Key consistency findings
+
+**1. App does not consume 13 backend endpoints**
+
+These endpoints exist on the backend but have no caller in the app codebase:
+
+| Endpoint | Likely reason |
+|----------|---------------|
+| POST /auth/resend-email | Verification email resend never wired into app UI |
+| POST /auth/password/reset-request | Password reset flow not implemented in app |
+| POST /auth/password/reset | Same -- reset token submission not implemented |
+| POST /auth/send-phone-code | Phone verification not wired in app |
+| POST /auth/verify-phone | Same |
+| GET /privacy/preferences | Privacy settings screen pending in app |
+| PUT /privacy/preferences | Same |
+| POST /profile/verify | Profile verification flow not built in app |
+| GET /profile/verify/status | Same |
+| GET /taps/sent | "Taps sent" list has no UI affordance -- unused endpoint |
+| DELETE /albums/:id/photos/:photo_id | Individual photo delete not exposed in albums UI |
+| POST /albums/:id/share | Album sharing not implemented in app |
+| DELETE /albums/:id/share/:user_id | Same |
+| POST /screenshots | Screenshot alert logging not implemented in app |
+| GET /screenshots | Screenshot alert list not implemented in app |
+
+Impact: **P2** -- 5 features are completely unconnected (password reset, phone verification, profile verification, albums sharing, screenshot alerts). The remaining endpoints exist but lack a consumer, indicating either dead code or work-in-progress.
+
+**2. Admin app has no screen for 30+ backend admin endpoints**
+
+The backend implements a full admin API (~80 endpoints for CRUD across 15 resource types). The admin app only calls ~34 of them. Major gaps:
+
+- **Photo moderation**: Backend has full approval/rejection pipeline (`GET /admin/moderation/photos`, `POST .../approve`, `POST .../reject`) -- admin app has zero photo moderation screens.
+- **Support entitlements**: Backend has `GET/POST /admin/support/users/:id/entitlements` -- admin app has no interface.
+- **Legal hold**: Backend has `GET /admin/legal/export/:user_id`, `POST /admin/legal/hold`, `POST .../release` -- admin app has no legal/LER screens.
+- **Config management**: Backend has `GET/POST /admin/config` + history/rollback -- admin app has no config editor.
+- **Subscription plans**: Backend has full plans CRUD (`POST /admin/plans`, `POST .../prices`, `DELETE .../features/:feature`) -- admin app only reads plans.
+- **Experiments**: Backend has `POST/DELETE /admin/experiments` -- admin app only reads.
+- **Webhooks**: Backend has `POST/DELETE /admin/webhooks` -- admin app only reads.
+- **Abuse rules**: Backend has `POST/DELETE /admin/abuse/rules` -- admin app only reads.
+
+Impact: **P2-P3** -- The admin app is predominantly read-only. Operators must use direct API/DB access for most write operations.
+
+**3. Admin app calls backend endpoints with inconsistent method/pattern**
+
+- Admin app uses `PUT /admin/abuse/rules/:id` but backend expects `POST /admin/abuse/rules` for upsert (id in body) -- method mismatch may cause 405.
+- Admin app uses `PUT /admin/countries/:code` but backend expects `POST /admin/countries/:code` -- method mismatch.
+- Admin app uses `PUT /admin/i18n/:locale/:key` but backend expects `POST /admin/i18n` -- endpoint path and method both mismatch.
+- Admin app uses `PUT /admin/templates/:id` but backend expects `POST /admin/templates` for upsert -- method mismatch.
+
+Impact: **P1** -- These mismatches mean the admin app's write operations for abuse rules, countries, translations, and templates may silently fail (405 Method Not Allowed if backend has no PUT handler, or 404 if the path differs).
+
+**4. Backend endpoints with no consumer in either app (admin-only or orphaned)**
+
+- `POST /billing/revenuecat/webhook` -- server-to-server webhook, intentional (not called by any client)
+- `GET /.well-known/apple-app-site-association`, `GET /.well-known/assetlinks.json` -- universal link discovery, intentional
+- `POST /dev/seed` -- development only, gated by env var
+- `POST /media/photos` -- backend defines the route but no app caller found; likely used by admin or internal
+
+These are correctly scoped and not findings.
+
+### Screen-to-endpoint coverage
+
+| Screen (App) | Backend endpoint(s) | Coverage |
+|-------------|---------------------|----------|
+| LoginScreen | POST /auth/login | Full |
+| RegisterScreen | POST /auth/register | Full |
+| CascadeScreen | GET /grid/nearby, GET /favorites, GET /stories | Full |
+| ProfileScreen | GET/PUT /profile, GET /profile/:id | Full |
+| ProfileDetailScreen | GET /grid/nearby, POST /taps, POST/DELETE /favorites, POST/DELETE /blocks, POST /reports | Full |
+| EditProfileScreen | GET/PUT /profile, GET/PUT /profile/health | Full |
+| YouScreen | GET /profile | Full |
+| InterestScreen | GET /taps/received, GET /taps/count, GET /profile/views, GET /profile/views/count | Full |
+| SettingsScreen | GET/PUT /notifications/preferences, POST /me/export-data, DELETE /profile, GET/PUT /me/idle-reminder, GET/DELETE /me/sessions, GET/PUT /phrases | Full |
+| ChatScreen | GET/POST/DELETE /chat/conversations/*, PUT/DELETE /chat/messages/:id/reaction, POST /chat/messages/:id/unsend, GET /media/get-url | Full |
+| ChatListScreen | GET /chat/conversations | Full |
+| AlbumsScreen | GET/POST /albums, DELETE /albums/:id | Partial -- missing individual photo delete |
+| AlbumDetailScreen | POST /albums/:id/photos | Partial -- missing photo delete |
+| StoriesScreen | GET/POST /stories, DELETE /stories/:id, POST /stories/:id/view | Full |
+| RightNowScreen | GET/POST /right-now, DELETE /right-now/:id | Full |
+| GridSearchScreen | GET /grid/nearby | Full |
+| BlocksListScreen | GET /blocks | Full |
+| TiendaScreen | GET /billing/plans, POST /billing/simulate-purchase, GET /billing/me | Full |
+| CirclesScreen | GET /chat/groups | Full |
+| GroupInfoScreen | PUT /chat/groups/:id/name, POST/DELETE /chat/groups/:id/members | Full |
+
+**Missing screens (endpoint exists but no consuming screen):**
+- Password reset flow (POST /auth/password/reset-request, POST /auth/password/reset)
+- Phone verification flow (POST /auth/send-phone-code, POST /auth/verify-phone)
+- Profile identity verification (POST /profile/verify, GET /profile/verify/status)
+- Privacy preferences screen (GET/PUT /privacy/preferences)
+- Album sharing UI (POST /albums/:id/share, DELETE /albums/:id/share/:user_id)
+- Screenshot alerts (POST/GET /screenshots)
+
+| Screen (Admin) | Backend endpoint(s) | Coverage |
+|----------------|---------------------|----------|
+| AdminLoginScreen | POST /admin/auth/login | Full |
+| UserListScreen | GET /admin/users | Full |
+| UserDetailScreen | GET /admin/users/:id, POST /admin/users/:id/:action | Full |
+| ReportsScreen | GET /admin/reports, POST /admin/reports/:id/resolve | Full -- but `POST /admin/reports/:id/review` not called |
+| AuditScreen | GET /admin/audit | Full |
+| DashboardScreen | GET /admin/analytics/overview | Full |
+| CmsScreen | GET /admin/cms, POST /admin/cms, DELETE /admin/cms/:key | Full |
+| TranslationsScreen | GET /admin/i18n, PUT /admin/i18n/:locale/:key | Partial -- backend expects POST, not PUT |
+| LegalDocsScreen | GET /admin/legal-docs, POST /admin/legal-docs | Full |
+| CampaignsScreen | GET /admin/campaigns | Partial -- POST /admin/campaigns not called |
+| ExperimentsScreen | GET /admin/experiments | Partial -- POST/DELETE not called |
+| TemplatesScreen | GET /admin/templates, PUT /admin/templates/:id | Partial -- backend expects POST, not PUT |
+| WebhooksScreen | GET /admin/webhooks | Partial -- POST/DELETE not called |
+| ApiKeysScreen | GET /admin/api-keys, POST /admin/api-keys, POST /admin/api-keys/:id/revoke | Full |
+| FlagsScreen | GET /admin/flags, POST /admin/flags, DELETE /admin/flags/:key | Full |
+| PlansScreen | GET /admin/plans, GET/POST /admin/plans/:code/features | Partial -- POST /admin/plans, DELETE /admin/plans not called |
+| CountriesScreen | GET /admin/countries, PUT /admin/countries/:code | Partial -- backend expects POST, not PUT |
+| AbuseRulesScreen | GET /admin/abuse/rules, PUT /admin/abuse/rules/:id | Partial -- backend expects POST, not PUT |
+| CSAMSccreen | GET /admin/csam, POST /admin/csam/:id/report | Full |
+| DataRequestsScreen | GET /admin/gdpr/data-requests, POST /admin/gdpr/data-requests/:id/resolve | Full |
+
+**Missing admin screens (backend endpoint exists but no consuming screen):**
+- Photo moderation: full pipeline not wired
+- Support entitlements: no screen
+- Legal hold / LER: no screen
+- Config management: no screen
+- Config history/rollback: no screen
 
 ## Out of scope
-(populated by Task 4)
+
+The following features are explicitly deferred per the spec and were **not** audited for correctness, completeness, or security:
+
+1. **Discover** -- The algorithmic content feed / discovery tab is not implemented in any tier. No backend endpoints, app screens, or admin screens exist for this feature.
+
+2. **Travel Pass** -- Roam-style location spoofing with a paid pass. The free tier's Roam feature (manual location change) exists at Tier 2, but the paid "Travel Pass" upsell / entitlement gate is not built.
+
+3. **Tribes-as-filter** -- The current implementation uses tribes as user-profile attributes (tags on a profile). Using tribes as a grid/cascade filter criterion (the Grindr "Tribes" filter) is not implemented. The `cascade_screen.dart` filter sheet has hardcoded tribe options (P2 in the main audit), but a server-driven tribes-as-filter pipeline is deferred.
+
+4. **Events** -- No event creation, browsing, RSVP, or check-in functionality exists in any layer.
+
+5. **Shop** -- No in-app merchandise or digital goods storefront beyond the premium subscription Tienda.
+
+6. **3-tier premium** -- Only a single premium subscription tier is implemented (via RevenueCat). The spec's 3-tier model (e.g., XTRA, Unlimited, or Bronze/Silver/Gold) is not built. The `plans` admin screen and backend endpoints exist but support only flat plan/feature configuration.
+
+### What IS in scope (covered by this audit)
+
+- All documented Tier 1, Tier 2, Tier 3 endpoints (chat, profile, albums, stories, right-now, etc.)
+- Auth flows (register, login, OAuth, refresh, email verification)
+- Billing integration (RevenueCat webhook, subscription state, simulate-purchase)
+- Admin panel screens (users, reports, CMS, translations, flags, plans, countries, etc.)
+- App screens (cascade, profile, chat, albums, stories, settings, etc.)
+- Onboarding wizard (placeholder only -- not yet implemented)
+- Deployments and infrastructure (env vars, R2 presigned URLs, Cloudflare Tunnel)

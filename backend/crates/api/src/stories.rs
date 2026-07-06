@@ -132,7 +132,6 @@ pub async fn list_stories(
         })?;
 
     // Build response with viewed status
-    let mut stories = Vec::with_capacity(rows.len());
     let mut user_stories: Vec<StoryJson> = Vec::new();
     let mut last_user_id: Option<Uuid> = None;
     let mut groups: Vec<StoryGroupJson> = Vec::new();

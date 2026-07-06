@@ -538,6 +538,81 @@ class AppLocalizationsEn extends AppLocalizations {
   String get detailsSocial => 'Social links';
 
   @override
+  String get editProfileFieldHeight => 'Height';
+
+  @override
+  String get editProfileFieldWeight => 'Weight';
+
+  @override
+  String get editProfileFieldBodyType => 'Body Type';
+
+  @override
+  String get editProfileFieldEthnicity => 'Ethnicity';
+
+  @override
+  String get editProfileFieldPronouns => 'Pronouns';
+
+  @override
+  String get editProfileFieldLookingFor => 'Looking For';
+
+  @override
+  String get editProfileFieldMeetAt => 'Meet At';
+
+  @override
+  String get editProfileFieldPosition => 'Position';
+
+  @override
+  String get editProfileFieldRelationshipStatus => 'Relationship Status';
+
+  @override
+  String get editProfilePlaceholderHeight => 'Select height';
+
+  @override
+  String get editProfilePlaceholderWeight => 'Select weight';
+
+  @override
+  String get editProfilePlaceholderBodyType => 'Select body type';
+
+  @override
+  String get editProfilePlaceholderEthnicity => 'Select ethnicity';
+
+  @override
+  String get editProfilePlaceholderPronouns => 'Select pronouns';
+
+  @override
+  String get editProfilePlaceholderLookingFor =>
+      'Select what you are looking for';
+
+  @override
+  String get editProfilePlaceholderMeetAt => 'Select where to meet';
+
+  @override
+  String get editProfilePlaceholderPosition => 'Select position';
+
+  @override
+  String get editProfilePlaceholderRelationshipStatus =>
+      'Select relationship status';
+
+  @override
+  String get editProfilePlaceholderVaccines => 'Select vaccines';
+
+  @override
+  String get editProfilePlaceholderTrips => 'Add recent trips';
+
+  @override
+  String get editProfilePlaceholderPractices => 'Select practices';
+
+  @override
+  String editProfileCountSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String editProfileCountTrips(int count) {
+    return '$count trips';
+  }
+
+  @override
   String get profileAgeSuffix => 'yrs';
 
   @override

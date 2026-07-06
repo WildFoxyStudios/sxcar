@@ -1130,6 +1130,144 @@ abstract class AppLocalizations {
   /// **'Redes sociales'**
   String get detailsSocial;
 
+  /// Edit profile field label: Height
+  ///
+  /// In es, this message translates to:
+  /// **'Altura'**
+  String get editProfileFieldHeight;
+
+  /// Edit profile field label: Weight
+  ///
+  /// In es, this message translates to:
+  /// **'Peso'**
+  String get editProfileFieldWeight;
+
+  /// Edit profile field label: Body Type
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo de cuerpo'**
+  String get editProfileFieldBodyType;
+
+  /// Edit profile field label: Ethnicity
+  ///
+  /// In es, this message translates to:
+  /// **'Etnia'**
+  String get editProfileFieldEthnicity;
+
+  /// Edit profile field label: Pronouns
+  ///
+  /// In es, this message translates to:
+  /// **'Pronombres'**
+  String get editProfileFieldPronouns;
+
+  /// Edit profile field label: Looking For
+  ///
+  /// In es, this message translates to:
+  /// **'Busco'**
+  String get editProfileFieldLookingFor;
+
+  /// Edit profile field label: Meet At
+  ///
+  /// In es, this message translates to:
+  /// **'Lugar de encuentro'**
+  String get editProfileFieldMeetAt;
+
+  /// Edit profile field label: Position
+  ///
+  /// In es, this message translates to:
+  /// **'Posición'**
+  String get editProfileFieldPosition;
+
+  /// Edit profile field label: Relationship Status
+  ///
+  /// In es, this message translates to:
+  /// **'Estado civil'**
+  String get editProfileFieldRelationshipStatus;
+
+  /// Edit profile placeholder: Select height
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar altura'**
+  String get editProfilePlaceholderHeight;
+
+  /// Edit profile placeholder: Select weight
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar peso'**
+  String get editProfilePlaceholderWeight;
+
+  /// Edit profile placeholder: Select body type
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar tipo de cuerpo'**
+  String get editProfilePlaceholderBodyType;
+
+  /// Edit profile placeholder: Select ethnicity
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar etnia'**
+  String get editProfilePlaceholderEthnicity;
+
+  /// Edit profile placeholder: Select pronouns
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar pronombres'**
+  String get editProfilePlaceholderPronouns;
+
+  /// Edit profile placeholder: Select what you are looking for
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar lo que buscas'**
+  String get editProfilePlaceholderLookingFor;
+
+  /// Edit profile placeholder: Select where to meet
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar lugar de encuentro'**
+  String get editProfilePlaceholderMeetAt;
+
+  /// Edit profile placeholder: Select position
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar posición'**
+  String get editProfilePlaceholderPosition;
+
+  /// Edit profile placeholder: Select relationship status
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar estado civil'**
+  String get editProfilePlaceholderRelationshipStatus;
+
+  /// Edit profile placeholder: Select vaccines
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar vacunas'**
+  String get editProfilePlaceholderVaccines;
+
+  /// Edit profile placeholder: Add recent trips
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir viajes recientes'**
+  String get editProfilePlaceholderTrips;
+
+  /// Edit profile placeholder: Select practices
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar prácticas'**
+  String get editProfilePlaceholderPractices;
+
+  /// Edit profile count label: N selected
+  ///
+  /// In es, this message translates to:
+  /// **'{count} seleccionados'**
+  String editProfileCountSelected(int count);
+
+  /// Edit profile count label: N trips
+  ///
+  /// In es, this message translates to:
+  /// **'{count} viajes'**
+  String editProfileCountTrips(int count);
+
   /// Profile detail age suffix, e.g. '35 años' / '35 yrs'
   ///
   /// In es, this message translates to:

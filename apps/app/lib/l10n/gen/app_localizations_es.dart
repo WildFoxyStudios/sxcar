@@ -540,6 +540,80 @@ class AppLocalizationsEs extends AppLocalizations {
   String get detailsSocial => 'Redes sociales';
 
   @override
+  String get editProfileFieldHeight => 'Altura';
+
+  @override
+  String get editProfileFieldWeight => 'Peso';
+
+  @override
+  String get editProfileFieldBodyType => 'Tipo de cuerpo';
+
+  @override
+  String get editProfileFieldEthnicity => 'Etnia';
+
+  @override
+  String get editProfileFieldPronouns => 'Pronombres';
+
+  @override
+  String get editProfileFieldLookingFor => 'Busco';
+
+  @override
+  String get editProfileFieldMeetAt => 'Lugar de encuentro';
+
+  @override
+  String get editProfileFieldPosition => 'Posición';
+
+  @override
+  String get editProfileFieldRelationshipStatus => 'Estado civil';
+
+  @override
+  String get editProfilePlaceholderHeight => 'Seleccionar altura';
+
+  @override
+  String get editProfilePlaceholderWeight => 'Seleccionar peso';
+
+  @override
+  String get editProfilePlaceholderBodyType => 'Seleccionar tipo de cuerpo';
+
+  @override
+  String get editProfilePlaceholderEthnicity => 'Seleccionar etnia';
+
+  @override
+  String get editProfilePlaceholderPronouns => 'Seleccionar pronombres';
+
+  @override
+  String get editProfilePlaceholderLookingFor => 'Seleccionar lo que buscas';
+
+  @override
+  String get editProfilePlaceholderMeetAt => 'Seleccionar lugar de encuentro';
+
+  @override
+  String get editProfilePlaceholderPosition => 'Seleccionar posición';
+
+  @override
+  String get editProfilePlaceholderRelationshipStatus =>
+      'Seleccionar estado civil';
+
+  @override
+  String get editProfilePlaceholderVaccines => 'Seleccionar vacunas';
+
+  @override
+  String get editProfilePlaceholderTrips => 'Añadir viajes recientes';
+
+  @override
+  String get editProfilePlaceholderPractices => 'Seleccionar prácticas';
+
+  @override
+  String editProfileCountSelected(int count) {
+    return '$count seleccionados';
+  }
+
+  @override
+  String editProfileCountTrips(int count) {
+    return '$count viajes';
+  }
+
+  @override
   String get profileAgeSuffix => 'años';
 
   @override

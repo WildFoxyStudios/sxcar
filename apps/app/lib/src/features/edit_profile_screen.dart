@@ -521,9 +521,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSelectorListTile<String>(
-                label: 'Height',
+                label: l10n?.editProfileFieldHeight ?? 'Height',
                 current: draft.heightCm?.toString(),
-                placeholder: 'Select height',
+                placeholder: l10n?.editProfilePlaceholderHeight ?? 'Select height',
                 onTap: () async {
                   final picked =
                       await showHeightSheet(context, currentCm: draft.heightCm);
@@ -533,9 +533,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 },
               ),
               _buildSelectorListTile<String>(
-                label: 'Weight',
+                label: l10n?.editProfileFieldWeight ?? 'Weight',
                 current: draft.weightKg?.toString(),
-                placeholder: 'Select weight',
+                placeholder: l10n?.editProfilePlaceholderWeight ?? 'Select weight',
                 onTap: () async {
                   final picked =
                       await showWeightSheet(context, currentKg: draft.weightKg);
@@ -545,9 +545,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 },
               ),
               _buildSelectorListTile<String>(
-                label: 'Body Type',
+                label: l10n?.editProfileFieldBodyType ?? 'Body Type',
                 current: draft.bodyType,
-                placeholder: 'Select body type',
+                placeholder: l10n?.editProfilePlaceholderBodyType ?? 'Select body type',
                 onTap: () async {
                   final picked = await showBodyTypeSheet(
                       context, current: draft.bodyType);
@@ -557,9 +557,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 },
               ),
               _buildSelectorListTile<String>(
-                label: 'Ethnicity',
+                label: l10n?.editProfileFieldEthnicity ?? 'Ethnicity',
                 current: draft.ethnicity,
-                placeholder: 'Select ethnicity',
+                placeholder: l10n?.editProfilePlaceholderEthnicity ?? 'Select ethnicity',
                 onTap: () async {
                   final picked =
                       await showEthnicitySheet(context, current: draft.ethnicity);
@@ -569,9 +569,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 },
               ),
               _buildSelectorListTile<String>(
-                label: 'Pronouns',
+                label: l10n?.editProfileFieldPronouns ?? 'Pronouns',
                 current: draft.pronouns,
-                placeholder: 'Select pronouns',
+                placeholder: l10n?.editProfilePlaceholderPronouns ?? 'Select pronouns',
                 onTap: () async {
                   final picked =
                       await showPronounsSheet(context, current: draft.pronouns);
@@ -617,11 +617,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSelectorListTile<String>(
-                label: 'Looking For',
+                label: l10n?.editProfileFieldLookingFor ?? 'Looking For',
                 current: draft.lookingFor.isEmpty
                     ? null
                     : draft.lookingFor.join(', '),
-                placeholder: 'Select what you are looking for',
+                placeholder: l10n?.editProfilePlaceholderLookingFor ?? 'Select what you are looking for',
                 onTap: () async {
                   final picked = await showLookingForSheet(
                     context,
@@ -634,10 +634,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 },
               ),
               _buildSelectorListTile<String>(
-                label: 'Meet At',
+                label: l10n?.editProfileFieldMeetAt ?? 'Meet At',
                 current:
                     draft.meetAt.isEmpty ? null : draft.meetAt.join(', '),
-                placeholder: 'Select where to meet',
+                placeholder: l10n?.editProfilePlaceholderMeetAt ?? 'Select where to meet',
                 onTap: () async {
                   final picked = await showMeetAtSheet(
                     context,
@@ -650,9 +650,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 },
               ),
               _buildSelectorListTile<String>(
-                label: 'Position',
+                label: l10n?.editProfileFieldPosition ?? 'Position',
                 current: draft.position,
-                placeholder: 'Select position',
+                placeholder: l10n?.editProfilePlaceholderPosition ?? 'Select position',
                 onTap: () async {
                   final picked =
                       await showPositionSheet(context, current: draft.position);
@@ -662,9 +662,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 },
               ),
               _buildSelectorListTile<String>(
-                label: 'Relationship Status',
+                label: l10n?.editProfileFieldRelationshipStatus ?? 'Relationship Status',
                 current: draft.relationshipStatus,
-                placeholder: 'Select relationship status',
+                placeholder: l10n?.editProfilePlaceholderRelationshipStatus ?? 'Select relationship status',
                 onTap: () async {
                   final picked = await showRelationshipSheet(
                     context,
@@ -693,9 +693,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               _buildSelectorListTile<String>(
                 label: l10n?.detailsVaccines ?? 'Vaccines',
                 current: _detailsCount(draft, 'vaccines') > 0
-                    ? '${_detailsCount(draft, 'vaccines')} selected'
+                    ? (l10n?.editProfileCountSelected(_detailsCount(draft, 'vaccines')) ?? '${_detailsCount(draft, 'vaccines')} selected')
                     : null,
-                placeholder: 'Select vaccines',
+                placeholder: l10n?.editProfilePlaceholderVaccines ?? 'Select vaccines',
                 onTap: () async {
                   final current = _readVaccines(draft);
                   await Navigator.of(context).push(MaterialPageRoute<void>(
@@ -711,9 +711,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               _buildSelectorListTile<String>(
                 label: l10n?.detailsTripCount ?? 'Trips',
                 current: _detailsCount(draft, 'trips') > 0
-                    ? '${_detailsCount(draft, 'trips')} trips'
+                    ? (l10n?.editProfileCountTrips(_detailsCount(draft, 'trips')) ?? '${_detailsCount(draft, 'trips')} trips')
                     : null,
-                placeholder: 'Add recent trips',
+                placeholder: l10n?.editProfilePlaceholderTrips ?? 'Add recent trips',
                 onTap: () async {
                   final current = _readTrips(draft);
                   await Navigator.of(context).push(MaterialPageRoute<void>(
@@ -744,9 +744,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               _buildSelectorListTile<String>(
                 label: l10n?.detailsPractices ?? 'Practices',
                 current: _detailsCount(draft, 'practices') > 0
-                    ? '${_detailsCount(draft, 'practices')} selected'
+                    ? (l10n?.editProfileCountSelected(_detailsCount(draft, 'practices')) ?? '${_detailsCount(draft, 'practices')} selected')
                     : null,
-                placeholder: 'Select practices',
+                placeholder: l10n?.editProfilePlaceholderPractices ?? 'Select practices',
                 onTap: () async {
                   final current = _readPractices(draft);
                   await Navigator.of(context).push(MaterialPageRoute<void>(

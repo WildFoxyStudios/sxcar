@@ -1,0 +1,82 @@
+import 'package:flutter/material.dart';
+import 'package:app/l10n/gen/app_localizations.dart';
+import '../models.dart';
+import '../onboarding_card.dart';
+import '../onboarding_provider.dart';
+
+class AboutMeCard extends StatefulWidget {
+  const AboutMeCard({
+    super.key,
+    required this.card,
+    required this.provider,
+    required this.onComplete,
+  });
+
+  final OnboardingCard card;
+  final OnboardingProvider provider;
+  final ValueChanged<bool> onComplete;
+
+  @override
+  State<AboutMeCard> createState() => _AboutMeCardState();
+}
+
+class _AboutMeCardState extends State<AboutMeCard> {
+  final _ctrl = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  Future<void> _submit() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.provider
+          .completeCard('about_me', {'bio': _ctrl.text});
+      widget.onComplete(true);
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      setState(() => _busy = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return OnboardingCardScaffold(
+      card: widget.card,
+      primaryLabel: l10n.onboarding_next,
+      primaryEnabled: !_busy && _ctrl.text.trim().isNotEmpty,
+      onPrimary: _submit,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _ctrl,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              labelText: 'About me',
+              hintText: 'Write a short bio...',
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,6 +1,9 @@
 [workspace]
 resolver = "2"
+# Exclude graphify-out (junk cache dir from graphify runs) — would otherwise
+# fail `cargo metadata` because there's no Cargo.toml inside it.
 members = ["crates/*"]
+exclude = ["crates/graphify-out"]
 
 [workspace.package]
 edition = "2021"

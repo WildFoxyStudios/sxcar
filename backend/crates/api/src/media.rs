@@ -118,8 +118,12 @@ pub fn presign(
     let canonical_uri = format!("/{}/{}", bucket, uri_encode(key, false));
 
     // Parámetros de firma, ordenados por clave.
+    // `X-Amz-Content-Sha256=UNSIGNED-PAYLOAD` es OBLIGATORIO en query string para
+    // PUT presignados en R2 (mismo comportamiento que AWS S3). Sin él, R2 devuelve
+    // 403 SignatureDoesNotMatch al subir; GET funciona sin él porque no hay payload.
     let mut params = [
         ("X-Amz-Algorithm", "AWS4-HMAC-SHA256".to_string()),
+        ("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD".to_string()),
         ("X-Amz-Credential", credential),
         ("X-Amz-Date", amzdate.clone()),
         ("X-Amz-Expires", expires.to_string()),
@@ -417,6 +421,7 @@ mod tests {
         let url = presign(&cfg(), "PUT", "m", "profile/u/x.jpg", 300, now);
         assert!(url.starts_with("https://acct.r2.cloudflarestorage.com/m/profile/u/x.jpg?"));
         assert!(url.contains("X-Amz-Algorithm=AWS4-HMAC-SHA256"));
+        assert!(url.contains("X-Amz-Content-Sha256=UNSIGNED-PAYLOAD"));
         assert!(url.contains("X-Amz-Credential=AKID%2F"));
         assert!(url.contains("X-Amz-Date="));
         assert!(url.contains("X-Amz-Expires=300"));

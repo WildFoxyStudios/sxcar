@@ -12,7 +12,9 @@ CREATE TABLE IF NOT EXISTS stories (
 );
 
 CREATE INDEX IF NOT EXISTS idx_stories_user ON stories(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_stories_expires ON stories(expires_at) WHERE expires_at > now();
+-- Partial index on non-expired stories — now() is STABLE so we use a regular index instead.
+-- The backend queries already add WHERE expires_at > now() in SQL.
+CREATE INDEX IF NOT EXISTS idx_stories_expires ON stories(expires_at);
 
 -- Story views: tracks who viewed which story.
 CREATE TABLE IF NOT EXISTS story_views (

@@ -1,36 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../settings/settings_providers.dart';
 import '../theme/app_theme.dart';
 
-/// PIN management screen.
-///
-/// - When PIN is OFF: shows a single card with "Activar PIN"
-/// - When PIN is ON: shows a card with "Cambiar PIN" + "Desactivar PIN"
-///
-/// Real PIN entry UI (a modal number pad) is out of scope — this screen just
-/// toggles [pinEnabledProvider]. The actual lock screen on app launch will be
-/// added in a future task.
-class PinScreen extends ConsumerWidget {
+/// PIN management screen — set, change, or remove a 4-digit PIN lock.
+class PinScreen extends ConsumerStatefulWidget {
   const PinScreen({super.key});
 
-  Future<void> _toggle(BuildContext context, WidgetRef ref, bool current) async {
-    await ref.read(pinEnabledProvider.notifier).setPinEnabled(!current);
-    if (!context.mounted) return;
+  @override
+  ConsumerState<PinScreen> createState() => _PinScreenState();
+}
+
+class _PinScreenState extends ConsumerState<PinScreen> {
+  final _controller = TextEditingController();
+  bool _obscure = true;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _savePin() async {
+    final code = _controller.text.trim();
+    if (code.length != 4 || int.tryParse(code) == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter exactly 4 digits')),
+      );
+      return;
+    }
+    await ref.read(pinCodeProvider.notifier).setPinCode(code);
+    await ref.read(pinEnabledProvider.notifier).setPinEnabled(true);
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          !current
-              ? 'PIN activado (placeholder)'
-              : 'PIN desactivado (placeholder)',
-        ),
+      const SnackBar(content: Text('PIN activated')),
+    );
+  }
+
+  Future<void> _removePin() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: VibraTheme.kSurface,
+        title: const Text('Remove PIN?', style: TextStyle(color: Colors.white)),
+        content: const Text('The app will no longer be locked.',
+            style: TextStyle(color: VibraTheme.kTextSecondary)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Remove', style: TextStyle(color: Colors.red))),
+        ],
       ),
+    );
+    if (confirm != true) return;
+    await ref.read(pinCodeProvider.notifier).setPinCode('');
+    await ref.read(pinEnabledProvider.notifier).setPinEnabled(false);
+    _controller.clear();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('PIN removed')),
     );
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final enabled = ref.watch(pinEnabledProvider);
 
@@ -43,43 +78,103 @@ class PinScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // ── PIN entry ─────────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: VibraTheme.kSurface,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        enabled ? 'PIN activo' : 'PIN inactivo',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
+                Text(
+                  enabled ? 'Change your PIN' : 'Set a PIN',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  enabled
+                      ? 'Enter a new 4-digit PIN or remove the current one.'
+                      : 'Enter a 4-digit PIN to lock the app when opened.',
+                  style: const TextStyle(
+                    color: VibraTheme.kTextSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _controller,
+                  obscureText: _obscure,
+                  maxLength: 4,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(4),
+                  ],
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    letterSpacing: 8,
+                  ),
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    hintText: '····',
+                    hintStyle: const TextStyle(
+                      color: VibraTheme.kTextSecondary,
+                      fontSize: 24,
+                      letterSpacing: 8,
+                    ),
+                    filled: true,
+                    fillColor: VibraTheme.kBg,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide:
+                          const BorderSide(color: VibraTheme.kDivider),
+                    ),
+                    counterText: '',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscure ? Icons.visibility_off : Icons.visibility,
+                        color: VibraTheme.kTextSecondary,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        enabled
-                            ? 'Tu PIN bloquea la app al abrirla'
-                            : 'Activa un PIN para bloquear la app al abrirla',
-                        style: const TextStyle(
-                          color: VibraTheme.kTextSecondary,
-                          fontSize: 13,
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: VibraTheme.kYellow,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: _savePin,
+                        child: Text(enabled ? 'Update PIN' : 'Activate PIN'),
+                      ),
+                    ),
+                    if (enabled) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          onPressed: _removePin,
+                          child: const Text('Remove PIN'),
                         ),
                       ),
                     ],
-                  ),
-                ),
-                Switch(
-                  value: enabled,
-                  activeThumbColor: VibraTheme.kYellow,
-                  onChanged: (_) => _toggle(context, ref, enabled),
+                  ],
                 ),
               ],
             ),

@@ -28,26 +28,46 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('PinScreen shows PIN toggle', (tester) async {
+  testWidgets('PinScreen shows PIN entry field and activate button',
+      (tester) async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
     await tester.pumpWidget(
       _wrap(child: const PinScreen(), container: container),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(Switch), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('Activate PIN'), findsOneWidget);
     expect(container.read(pinEnabledProvider), false);
   });
 
-  testWidgets('toggling switch flips pinEnabledProvider', (tester) async {
+  testWidgets('entering digits and tapping activate calls provider',
+      (tester) async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
     await tester.pumpWidget(
       _wrap(child: const PinScreen(), container: container),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(Switch));
-    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '1234');
+    await tester.tap(find.text('Activate PIN'));
+    // SharedPreferences in tests uses async method channels; pump to flush.
+    await tester.pumpAndSettle(const Duration(seconds: 1));
+    // The PIN code + enabled state are written via SharedPreferences.
+    // Verify the container received the state update.
     expect(container.read(pinEnabledProvider), true);
+  });
+
+  testWidgets('remove PIN button shows when PIN is active', (tester) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    // Pre-seed with an active PIN.
+    await container.read(pinEnabledProvider.notifier).setPinEnabled(true);
+    await tester.pumpWidget(
+      _wrap(child: const PinScreen(), container: container),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Remove PIN'), findsOneWidget);
+    expect(find.text('Update PIN'), findsOneWidget);
   });
 }

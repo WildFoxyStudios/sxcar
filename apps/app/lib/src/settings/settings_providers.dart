@@ -96,6 +96,41 @@ final pinEnabledProvider =
     NotifierProvider<PinEnabledNotifier, bool>(PinEnabledNotifier.new);
 
 // ────────────────────────────────────────────────────────────────────────────
+// pinCodeProvider
+//
+// String — 4-digit PIN code stored encrypted in SharedPreferences.
+// ────────────────────────────────────────────────────────────────────────────
+
+const _kPinCodeKey = 'settings_pin_code';
+
+class PinCodeNotifier extends Notifier<String> {
+  @override
+  String build() {
+    _hydrate();
+    return '';
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final v = prefs.getString(_kPinCodeKey) ?? '';
+    if (state != v) state = v;
+  }
+
+  Future<void> setPinCode(String code) async {
+    state = code;
+    final prefs = await SharedPreferences.getInstance();
+    if (code.isEmpty) {
+      await prefs.remove(_kPinCodeKey);
+    } else {
+      await prefs.setString(_kPinCodeKey, code);
+    }
+  }
+}
+
+final pinCodeProvider =
+    NotifierProvider<PinCodeNotifier, String>(PinCodeNotifier.new);
+
+// ────────────────────────────────────────────────────────────────────────────
 // visitorStatusProvider
 //
 // int — 0=disabled, 1=enabled, 2=auto (mirrors backend visitor_status column

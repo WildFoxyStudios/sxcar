@@ -141,6 +141,7 @@ pub async fn get_own(
 #[derive(Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct UpdateProfileReq {
+    pub profile_photo_key: Option<String>,
     pub display_name: Option<String>,
     pub bio: Option<String>,
     pub birthdate: Option<String>, // YYYY-MM-DD
@@ -257,6 +258,26 @@ pub async fn update_own(
                 tracing::error!("replace_profile_tags error: {e}");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
+    }
+
+    // Profile photo upload: store the R2 key and generate a presigned URL.
+    if let Some(ref key) = body.profile_photo_key {
+        let bucket = &state.r2.bucket_media;
+        let now = time::OffsetDateTime::now_utc();
+        // 7-day presigned URL — regenerated on each profile update.
+        let url = crate::media::presign(&state.r2, "GET", bucket, key, 604800, now);
+        sqlx::query(
+            "UPDATE users SET profile_photo_id = $1, profile_photo_url = $2 WHERE id = $3",
+        )
+        .bind(key)
+        .bind(&url)
+        .bind(user_id)
+        .execute(&state.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("profile photo update error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
     }
 
     // Persist details jsonb + show_* privacy flags (T4.2).

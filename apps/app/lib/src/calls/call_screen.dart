@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -37,6 +38,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   Stopwatch _stopwatch = Stopwatch();
   Timer? _durationTimer;
   String _duration = '00:00';
+  // Ringtone/vibration for incoming calls
+  Timer? _ringtoneTimer;
 
   @override
   void initState() {
@@ -47,7 +50,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   void dispose() {
     final callService = ref.read(callServiceProvider);
-    // Only end call if it's still active (not already ended by peer).
+    _ringtoneTimer?.cancel();
     if (callService.isActive) {
       callService.endCall();
     }
@@ -66,8 +69,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         _callState = state;
         if (state == CallState.connected) {
           _startTimer();
+          _ringtoneTimer?.cancel();
         } else if (state == CallState.ended) {
           _stopTimer();
+          _ringtoneTimer?.cancel();
         }
       });
       // Pop when call ends.
@@ -79,8 +84,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     });
 
     if (widget.incomingCall != null) {
-      // Incoming call — show ringing UI.
+      // Incoming call — show ringing UI + vibration.
       setState(() => _callState = CallState.ringing);
+      _ringtoneTimer = Timer.periodic(const Duration(milliseconds: 1200), (_) {
+        if (mounted) HapticFeedback.heavyImpact();
+      });
     } else {
       // Outgoing call.
       try {

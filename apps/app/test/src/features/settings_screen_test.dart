@@ -74,10 +74,10 @@ class _AuthNotifierStub extends AuthNotifier {
 
   @override
   AuthState build() => const AuthState(
-        status: AuthStatus.authenticated,
-        accessToken: 'test-token',
-        email: 'test@example.com',
-      );
+    status: AuthStatus.authenticated,
+    accessToken: 'test-token',
+    email: 'test@example.com',
+  );
 
   @override
   Future<void> logout() async {}
@@ -95,9 +95,8 @@ GoRouter _buildRouter() {
     routes: [
       GoRoute(
         path: '/settings',
-        builder: (_, state) => SettingsScreen(
-          initialTab: state.uri.queryParameters['tab'],
-        ),
+        builder: (_, state) =>
+            SettingsScreen(initialTab: state.uri.queryParameters['tab']),
       ),
       GoRoute(
         path: '/edit-profile',
@@ -168,7 +167,7 @@ void main() {
     /// The redesigned settings screen has a long ListView. Increase the test
     /// surface so off-screen widgets (e.g. SISTEMA DE UNIDADES, NOTIFICACIONES)
     /// are still in the rendered tree.
-    Future<void> _setBigSurface(WidgetTester tester) async {
+    Future<void> setBigSurface(WidgetTester tester) async {
       tester.view.physicalSize = const Size(1080, 4000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -179,7 +178,7 @@ void main() {
 
     // ── Test 1: all 7 section headers render ─────────────────────────────
     testWidgets('renders all 7 section headers', (tester) async {
-      await _setBigSurface(tester);
+      await setBigSurface(tester);
       await tester.pumpWidget(_wrap(router, dio));
       await tester.pumpAndSettle();
 
@@ -195,7 +194,7 @@ void main() {
 
     // ── Test 2: units Segmented3 toggles unitsProvider ───────────────────
     testWidgets('units Segmented3 toggles unitsProvider', (tester) async {
-      await _setBigSurface(tester);
+      await setBigSurface(tester);
       await tester.pumpWidget(_wrap(router, dio));
       await tester.pumpAndSettle();
       final l10n = AppLocalizations.of(
@@ -216,9 +215,10 @@ void main() {
     });
 
     // ── Test 3: visitor status Segmented3 toggles visitorStatusProvider ──
-    testWidgets('visitor status Segmented3 toggles visitorStatusProvider',
-        (tester) async {
-      await _setBigSurface(tester);
+    testWidgets('visitor status Segmented3 toggles visitorStatusProvider', (
+      tester,
+    ) async {
+      await setBigSurface(tester);
       await tester.pumpWidget(_wrap(router, dio));
       await tester.pumpAndSettle();
       final l10n = AppLocalizations.of(
@@ -247,9 +247,10 @@ void main() {
     });
 
     // ── Test 4: tap "Desbloquear usuarios" navigates to /settings/blocks ─
-    testWidgets('Desbloquear usuarios row navigates to /settings/blocks',
-        (tester) async {
-      await _setBigSurface(tester);
+    testWidgets('Desbloquear usuarios row navigates to /settings/blocks', (
+      tester,
+    ) async {
+      await setBigSurface(tester);
       await tester.pumpWidget(_wrap(router, dio));
       await tester.pumpAndSettle();
 
@@ -267,26 +268,29 @@ void main() {
     });
 
     // ── Test 5: tap "Icono de aplicación discreto" navigates ─────────────
-    testWidgets('Icono de aplicación discreto navigates to /settings/discreet-icon',
-        (tester) async {
-      await _setBigSurface(tester);
-      await tester.pumpWidget(_wrap(router, dio));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Icono de aplicación discreto navigates to /settings/discreet-icon',
+      (tester) async {
+        await setBigSurface(tester);
+        await tester.pumpWidget(_wrap(router, dio));
+        await tester.pumpAndSettle();
 
-      final inkWell = find.ancestor(
-        of: find.text('Icono de aplicación discreto'),
-        matching: find.byType(InkWell),
-      );
-      await tester.tap(inkWell, warnIfMissed: false);
-      await tester.pumpAndSettle();
+        final inkWell = find.ancestor(
+          of: find.text('Icono de aplicación discreto'),
+          matching: find.byType(InkWell),
+        );
+        await tester.tap(inkWell, warnIfMissed: false);
+        await tester.pumpAndSettle();
 
-      expect(find.text('DiscreetIcon'), findsOneWidget);
-    });
+        expect(find.text('DiscreetIcon'), findsOneWidget);
+      },
+    );
 
     // ── Test 6: tap "Frases guardadas" navigates ────────────────────────
-    testWidgets('Frases guardadas row navigates to /settings/phrases',
-        (tester) async {
-      await _setBigSurface(tester);
+    testWidgets('Frases guardadas row navigates to /settings/phrases', (
+      tester,
+    ) async {
+      await setBigSurface(tester);
       await tester.pumpWidget(_wrap(router, dio));
       await tester.pumpAndSettle();
 
@@ -307,10 +311,9 @@ void main() {
   // in future ARB edits.
   group('settings_screen l10n keys', () {
     testWidgets('all new keys render non-empty in es', (tester) async {
-      await tester.pumpWidget(_wrap(
-        _buildRouter(),
-        Dio()..httpClientAdapter = _MockAdapter(),
-      ));
+      await tester.pumpWidget(
+        _wrap(_buildRouter(), Dio()..httpClientAdapter = _MockAdapter()),
+      );
       await tester.pumpAndSettle();
 
       final l10n = AppLocalizations.of(

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -425,17 +424,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
     if (confirmed != true) return;
     if (!mounted) return;
-    if (kDebugMode) {
-      try {
-        await ref.read(dioProvider).delete('/profile');
-        if (!mounted) return;
-        await ref.read(authStateProvider.notifier).logout();
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Delete failed: $e')),
-          );
-        }
+    try {
+      await ref.read(dioProvider).delete('/profile');
+      if (!mounted) return;
+      await ref.read(authStateProvider.notifier).logout();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Delete failed: $e')),
+        );
       }
     }
   }

@@ -510,5 +510,20 @@
   "@exploreNoResults": { "description": "Empty state when geocoding returns no results" },
 
   "exploreRecentSearches": "Recientes",
-  "@exploreRecentSearches": { "description": "Label for recent city searches list" }
+  "@exploreRecentSearches": { "description": "Label for recent city searches list" },
+
+  "callOutgoing": "Llamando…",
+  "@callOutgoing": { "description": "Call screen: outgoing call status label" },
+
+  "callIncoming": "Te está llamando…",
+  "@callIncoming": { "description": "Call screen: incoming call notification label" },
+
+  "callAccept": "Aceptar",
+  "@callAccept": { "description": "Call screen: accept incoming call button" },
+
+  "callReject": "Rechazar",
+  "@callReject": { "description": "Call screen: reject incoming call button" },
+
+  "callEnded": "Llamada finalizada",
+  "@callEnded": { "description": "Call screen: call ended status label" }
 }

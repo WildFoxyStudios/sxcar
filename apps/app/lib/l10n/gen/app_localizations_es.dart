@@ -610,4 +610,19 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get exploreRecentSearches => 'Recientes';
+
+  @override
+  String get callOutgoing => 'Llamando…';
+
+  @override
+  String get callIncoming => 'Te está llamando…';
+
+  @override
+  String get callAccept => 'Aceptar';
+
+  @override
+  String get callReject => 'Rechazar';
+
+  @override
+  String get callEnded => 'Llamada finalizada';
 }

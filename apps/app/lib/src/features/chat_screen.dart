@@ -11,6 +11,8 @@ import '../chat/chat_service.dart';
 import '../chat/models.dart';
 import '../media/media_service.dart';
 import '../nsfw/nsfw_service.dart';
+import '../calls/call_service.dart';
+import '../calls/call_screen.dart';
 import '../theme/app_theme.dart';
 import '../../l10n/gen/app_localizations.dart';
 
@@ -114,6 +116,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               unsentAt: DateTime.now().toIso8601String(),
             );
           });
+        }
+      } else if (type == 'call_start') {
+        final convId = json['conversation_id'] as String?;
+        if (convId == null) return;
+        if (convId != widget.conversationId) return;
+        final sdp = json['sdp'] as String?;
+        final callerId = json['user_id'] as String? ?? '';
+        final video = json['video'] as bool? ?? false;
+        if (sdp == null) return;
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => ProviderScope(
+                overrides: [],
+                child: CallScreen(
+                  conversationId: convId,
+                  incomingCall: IncomingCall(
+                    conversationId: convId,
+                    callerId: callerId,
+                    sdp: sdp,
+                    video: video,
+                  ),
+                ),
+              ),
+            ),
+          );
         }
       }
     });
@@ -349,6 +377,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       appBar: AppBar(
         backgroundColor: VibraTheme.kSurface,
         title: const Text('Chat'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.phone, color: VibraTheme.kAccent, size: 22),
+            tooltip: 'Voice call',
+            onPressed: () {
+              final callService = ref.read(callServiceProvider);
+              if (!callService.isActive) {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ProviderScope(
+                      overrides: [],
+                      child: CallScreen(
+                        conversationId: widget.conversationId,
+                      ),
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: VibraTheme.kDivider),

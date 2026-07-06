@@ -1273,6 +1273,36 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Recientes'**
   String get exploreRecentSearches;
+
+  /// Call screen: outgoing call status label
+  ///
+  /// In es, this message translates to:
+  /// **'Llamando…'**
+  String get callOutgoing;
+
+  /// Call screen: incoming call notification label
+  ///
+  /// In es, this message translates to:
+  /// **'Te está llamando…'**
+  String get callIncoming;
+
+  /// Call screen: accept incoming call button
+  ///
+  /// In es, this message translates to:
+  /// **'Aceptar'**
+  String get callAccept;
+
+  /// Call screen: reject incoming call button
+  ///
+  /// In es, this message translates to:
+  /// **'Rechazar'**
+  String get callReject;
+
+  /// Call screen: call ended status label
+  ///
+  /// In es, this message translates to:
+  /// **'Llamada finalizada'**
+  String get callEnded;
 }
 
 class _AppLocalizationsDelegate

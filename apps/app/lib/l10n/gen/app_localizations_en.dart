@@ -608,4 +608,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exploreRecentSearches => 'Recent';
+
+  @override
+  String get callOutgoing => 'Calling…';
+
+  @override
+  String get callIncoming => 'Incoming call…';
+
+  @override
+  String get callAccept => 'Accept';
+
+  @override
+  String get callReject => 'Reject';
+
+  @override
+  String get callEnded => 'Call ended';
 }

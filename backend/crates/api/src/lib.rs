@@ -14,6 +14,7 @@ pub mod me;
 pub mod media;
 pub mod msgpack;
 pub mod notifications;
+pub mod onboarding;
 pub mod privacy;
 pub mod profile;
 pub mod chat_broker;

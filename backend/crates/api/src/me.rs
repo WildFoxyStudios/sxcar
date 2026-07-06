@@ -1,16 +1,16 @@
 //! Self-service user actions: GDPR data export.
 
 use axum::{extract::State, http::StatusCode, Json};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::auth::AuthUser;
 use crate::AppState;
 
 /// POST /me/export-data
 ///
-/// GDPR data export for the authenticated user. Calls the same
-/// `build_legal_dossier` used by the admin legal export handler
-/// (no RBAC — the user owns their data).
+/// GDPR data export for the authenticated user. Builds a legal dossier
+/// with all stored data and returns a summary with key counts.
+/// No RBAC — the user owns their data.
 pub async fn export_data(
     State(state): State<AppState>,
     AuthUser(user_id): AuthUser,
@@ -19,5 +19,15 @@ pub async fn export_data(
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
 
-    Ok(Json(dossier))
+    Ok(Json(json!({
+        "status": "ok",
+        "user_id": user_id.to_string(),
+        "email": dossier.user.email,
+        "display_name": dossier.profile.as_ref()
+            .and_then(|p| p.display_name.clone()),
+        "photos_count": dossier.photos.len(),
+        "subscriptions_count": dossier.subscriptions.len(),
+        "reports_against_count": dossier.reports_against.len(),
+        "consent_records_count": dossier.consent_records.len(),
+    })))
 }

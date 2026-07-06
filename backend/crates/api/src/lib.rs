@@ -10,6 +10,7 @@ pub mod fcm;
 pub mod grid;
 pub mod grindr_t1;
 pub mod health;
+pub mod me;
 pub mod media;
 pub mod msgpack;
 pub mod notifications;
@@ -90,6 +91,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/grid/nearby", get(grid::nearby))
         .route("/profile", get(profile::get_own).put(profile::update_own))
         .route("/profile/:id", get(profile::get_by_id))
+        .route("/me/export-data", post(me::export_data))
         .route("/chat/conversations", get(chat::list_conversations).post(chat::create_conversation))
         .route("/chat/conversations/:id/messages", get(chat::list_messages).post(chat::send_message))
         .route("/chat/conversations/:id", delete(chat::delete_conversation))

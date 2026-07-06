@@ -32,6 +32,7 @@ import 'src/features/register_screen.dart';
 import 'src/features/right_now_screen.dart';
 import 'src/features/verify_email_screen.dart';
 import 'src/features/edit_profile_screen.dart';
+import 'src/features/security_screen.dart';
 import 'src/features/settings_screen.dart';
 import 'src/phrases/phrases_screen.dart';
 import 'src/sessions/sessions_screen.dart';
@@ -71,6 +72,7 @@ const Set<String> _knownTopLevelPaths = {
   // Top-level routes moved out of You branch (T2)
   '/edit-profile',
   '/settings',
+  '/security',
   '/albums',
   '/grid-search',
   // Legacy paths kept as redirect routes so old deep links / tests don't break
@@ -238,6 +240,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/blocks',
       builder: (_, _) => const BlocksListScreen(),
+    ),
+    GoRoute(
+      path: '/security',
+      builder: (_, _) => const SecurityScreen(),
     ),
     GoRoute(
       path: '/albums',

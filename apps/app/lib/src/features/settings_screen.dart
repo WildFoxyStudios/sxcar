@@ -237,19 +237,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           SettingRow(
             icon: Icons.security_outlined,
             title: l10n.centroSeguridad,
-            onTap: () => _placeholderDialog(l10n.centroSeguridad),
+            onTap: () => context.push('/security'),
           ),
           const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
           SettingRow(
             icon: Icons.policy_outlined,
             title: l10n.preferenciasConsentimiento,
-            onTap: () => _placeholderDialog(l10n.preferenciasConsentimiento),
+            onTap: _showConsentDialog,
           ),
           const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
           SettingRow(
             icon: Icons.download_outlined,
             title: l10n.descargarDatos,
-            onTap: () => _placeholderDialog(l10n.descargarDatos),
+            onTap: () => _downloadData(context, ref),
           ),
 
           // ── UNIDADES ───────────────────────────────────────────────────
@@ -380,14 +380,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _placeholderDialog(String title) {
+  void _showConsentDialog() {
     final l10n = AppLocalizations.of(context)!;
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: VibraTheme.kSurface,
-        title: Text(title),
-        content: Text(l10n.proximamente),
+        title: Text(l10n.preferenciasConsentimiento),
+        content: const Text(
+          'You accepted the Terms of Service and Privacy Policy during '
+          'registration. Your data is processed in accordance with GDPR. '
+          'You can request a full data export or account deletion at any time.',
+          style: TextStyle(color: VibraTheme.kTextSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -396,6 +401,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _downloadData(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(dioProvider).post('/me/export-data');
+      if (!context.mounted) return;
+      messenger.showSnackBar(SnackBar(
+        content: Text('Data export complete. Check your email.'),
+        backgroundColor: VibraTheme.kSuccess,
+      ));
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(SnackBar(
+        content: Text('Export failed: $e'),
+        backgroundColor: VibraTheme.kBadgeRed,
+      ));
+    }
   }
 
   Future<void> _logout() async {

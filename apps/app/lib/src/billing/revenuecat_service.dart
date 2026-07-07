@@ -20,8 +20,12 @@ class RevenueCatService {
 
   RevenueCatService(this._ref);
 
-  /// RevenueCat test SDK key (public — safe to hardcode in the binary).
-  static const _rcApiKey = 'test_UBghduyLgpGRfYQJFKMwTOdJLaU';
+  /// RevenueCat SDK key. Read from REVENUECAT_API_KEY env var at compile time,
+  /// falling back to the public test SDK key for debug/development builds.
+  static const _rcApiKey = String.fromEnvironment(
+    'REVENUECAT_API_KEY',
+    defaultValue: 'test_UBghduyLgpGRfYQJFKMwTOdJLaU',
+  );
 
   /// Configure the RC SDK with the authenticated user's UUID.
   ///

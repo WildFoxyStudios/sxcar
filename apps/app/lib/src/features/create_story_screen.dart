@@ -44,7 +44,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text(loc.storyError('$e'))),
         );
       }
     }
@@ -87,7 +87,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload error: $e')),
+          SnackBar(content: Text(loc.storyUploadError('$e'))),
         );
       }
     } finally {
@@ -124,8 +124,8 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Share',
-                      style: TextStyle(color: Colors.white)),
+                  : Text(loc.storyShare,
+                      style: const TextStyle(color: Colors.white)),
             ),
         ],
       ),

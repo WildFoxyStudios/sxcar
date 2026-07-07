@@ -1033,21 +1033,21 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                   Icon(Icons.explore, color: theme.colorScheme.primary),
                   const SizedBox(width: 8),
                   Text(
-                    'Roam',
+                    l10n.roamTitle,
                     style: theme.textTheme.titleLarge,
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
-                'Choose a saved place or use your real location.',
+                l10n.roamSubtitle,
                 style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
               ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: widget.onUseRealLocation,
                 icon: const Icon(Icons.my_location),
-                label: const Text('Use real location'),
+                label: Text(l10n.roamUseRealLocation),
               ),
               const SizedBox(height: 16),
               const Divider(color: VibraTheme.kDivider),
@@ -1069,7 +1069,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Text(
-                        'No saved places yet.',
+                        l10n.roamNoSavedPlaces,
                         style: TextStyle(
                           color: Colors.grey.shade400,
                           fontSize: 13,
@@ -1106,7 +1106,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                 TextButton.icon(
                   onPressed: () => setState(() => _showAddForm = true),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add new place'),
+                  label: Text(l10n.roamAddNewPlace),
                 )
               else
                 Form(

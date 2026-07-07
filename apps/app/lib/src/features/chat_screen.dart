@@ -586,6 +586,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildEmptyState(ThemeData theme) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -599,17 +600,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 size: 32, color: VibraTheme.kAccent),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'No messages yet',
-            style: TextStyle(
+          Text(
+            l10n?.chatNoMessagesYet ?? 'No messages yet',
+            style: const TextStyle(
                 color: VibraTheme.kTextPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Say hi to start the conversation!',
-            style: TextStyle(color: VibraTheme.kTextSecondary, fontSize: 13),
+          Text(
+            l10n?.chatSayHi ?? 'Say hi to start the conversation!',
+            style: const TextStyle(color: VibraTheme.kTextSecondary, fontSize: 13),
           ),
         ],
       ),
@@ -720,8 +721,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   controller: _textController,
                   style: const TextStyle(
                       color: VibraTheme.kTextPrimary, fontSize: 14),
-                  decoration: const InputDecoration(
-                    hintText: 'Type a message...',
+                  decoration: InputDecoration(
+                    hintText: l10n?.chatTypeMessage ?? 'Type a message...',
                     hintStyle: TextStyle(
                         color: VibraTheme.kTextMuted, fontSize: 14),
                     border: InputBorder.none,
@@ -1134,6 +1135,7 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
   }
 
   Widget _buildTapToViewCard(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Align(
       alignment: Alignment.centerLeft,
       child: GestureDetector(
@@ -1146,15 +1148,15 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: VibraTheme.kAccent, width: 1.5),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.local_fire_department,
+              const Icon(Icons.local_fire_department,
                   color: VibraTheme.kAccent, size: 20),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
-                'Tap to view once',
-                style: TextStyle(
+                l10n?.chatTapToViewOnce ?? 'Tap to view once',
+                style: const TextStyle(
                   color: VibraTheme.kAccent,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -1168,6 +1170,7 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
   }
 
   Widget _buildEphemeralSentCard() {
+    final l10n = AppLocalizations.of(context);
     return Align(
       alignment: Alignment.centerRight,
       child: Container(
@@ -1178,14 +1181,14 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: VibraTheme.kDivider),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.timer_outlined, color: VibraTheme.kTextMuted, size: 18),
-            SizedBox(width: 8),
+            const Icon(Icons.timer_outlined, color: VibraTheme.kTextMuted, size: 18),
+            const SizedBox(width: 8),
             Text(
-              'View-once photo sent',
-              style: TextStyle(color: VibraTheme.kTextSecondary, fontSize: 13),
+              l10n?.chatViewOnceSent ?? 'View-once photo sent',
+              style: const TextStyle(color: VibraTheme.kTextSecondary, fontSize: 13),
             ),
           ],
         ),
@@ -1194,6 +1197,7 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
   }
 
   Widget _buildEphemeralExpiredCard(bool isMe) {
+    final l10n = AppLocalizations.of(context);
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -1203,15 +1207,15 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
           color: VibraTheme.kSurface,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.do_not_disturb_alt,
+            const Icon(Icons.do_not_disturb_alt,
                 color: VibraTheme.kTextMuted, size: 18),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
-              'Photo expired',
-              style: TextStyle(color: VibraTheme.kTextMuted, fontSize: 13),
+              l10n?.chatPhotoExpired ?? 'Photo expired',
+              style: const TextStyle(color: VibraTheme.kTextMuted, fontSize: 13),
             ),
           ],
         ),

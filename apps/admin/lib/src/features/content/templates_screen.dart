@@ -10,6 +10,7 @@ class TemplateItem {
   final String name;
   final String type;
   final String subject;
+  final String body;
   final String updatedAt;
 
   TemplateItem({
@@ -17,6 +18,7 @@ class TemplateItem {
     required this.name,
     required this.type,
     required this.subject,
+    required this.body,
     required this.updatedAt,
   });
 
@@ -26,6 +28,7 @@ class TemplateItem {
       name:      json['name']       as String? ?? '',
       type:      json['type']       as String? ?? '',
       subject:   json['subject']    as String? ?? '',
+      body:      json['body']       as String? ?? '',
       updatedAt: json['updated_at'] as String? ?? '',
     );
   }
@@ -224,6 +227,7 @@ class _TemplateRow extends ConsumerWidget {
   void _showEditDialog(
       BuildContext context, WidgetRef ref, TemplateItem item) {
     final subjectController = TextEditingController(text: item.subject);
+    final bodyController = TextEditingController(text: item.body);
 
     showDialog(
       context: context,
@@ -244,6 +248,14 @@ class _TemplateRow extends ConsumerWidget {
               style: const TextStyle(color: AdminTheme.kText),
               decoration: const InputDecoration(labelText: 'Subject'),
             ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: bodyController,
+              style: const TextStyle(color: AdminTheme.kText),
+              decoration: const InputDecoration(
+                  labelText: 'Body', alignLabelWithHint: true),
+              maxLines: 6,
+            ),
           ],
         ),
         actions: [
@@ -253,7 +265,8 @@ class _TemplateRow extends ConsumerWidget {
           FilledButton(
               onPressed: () {
                 Navigator.of(ctx).pop();
-                _save(context, ref, item.id, subjectController.text);
+                _save(context, ref, item.id, subjectController.text,
+                    bodyController.text);
               },
               child: const Text('Save')),
         ],
@@ -261,12 +274,12 @@ class _TemplateRow extends ConsumerWidget {
     );
   }
 
-  Future<void> _save(
-      BuildContext context, WidgetRef ref, String id, String subject) async {
+  Future<void> _save(BuildContext context, WidgetRef ref, String id,
+      String subject, String body) async {
     try {
       final client = ref.read(adminHttpClientProvider);
       await client.dio.put('/admin/templates/$id',
-          data: {'subject': subject});
+          data: {'subject': subject, 'body': body});
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Template updated'),

@@ -206,11 +206,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isOwn = widget.userId == null;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(isOwn ? 'My Profile' : 'Profile'),
+        title: Text(widget.userId == null ? 'My Profile' : 'Profile'),
       ),
       body: _buildBody(),
     );
@@ -249,6 +247,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildView() {
     final p = _profile!;
     final theme = Theme.of(context);
+    final isOwn = widget.userId == null;
 
     return ListView(
       padding: const EdgeInsets.all(16),

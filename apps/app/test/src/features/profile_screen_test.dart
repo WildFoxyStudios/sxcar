@@ -119,6 +119,13 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      // Edit button is at the bottom of a scrollable list — scroll to find it
+      await tester.scrollUntilVisible(
+        find.byIcon(Icons.edit),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+
       // Edit button should be visible
       expect(find.byIcon(Icons.edit), findsOneWidget);
     });

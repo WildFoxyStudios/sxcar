@@ -9,6 +9,8 @@ pub enum BillingError {
     AlreadyActive,
     #[error("unauthorized")]
     Unauthorized,
+    #[error("forbidden: dev seed not enabled")]
+    Forbidden,
     #[error("database error: {0}")]
     Db(#[from] anyhow::Error),
 }
@@ -25,6 +27,7 @@ impl IntoResponse for BillingError {
             BillingError::PlanNotFound => (StatusCode::NOT_FOUND, "plan_not_found"),
             BillingError::AlreadyActive => (StatusCode::CONFLICT, "already_active"),
             BillingError::Unauthorized => (StatusCode::UNAUTHORIZED, "unauthorized"),
+            BillingError::Forbidden => (StatusCode::FORBIDDEN, "forbidden"),
             BillingError::Db(_) => (StatusCode::INTERNAL_SERVER_ERROR, "db_error"),
         };
         (status, Json(json!({"error": code, "message": self.to_string()}))).into_response()

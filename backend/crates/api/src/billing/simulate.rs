@@ -57,6 +57,11 @@ pub async fn simulate_purchase(
     AuthUser(user_id): AuthUser,
     Json(req): Json<SimulatePurchaseReq>,
 ) -> BillingResult<(axum::http::StatusCode, Json<SubscriptionDto>)> {
+    // Gate: only available when DEV_SEED_ENABLED=true.
+    if std::env::var("DEV_SEED_ENABLED").map_or(true, |v| v != "true") {
+        return Err(BillingError::Forbidden);
+    }
+
     // 1. Look up plan_prices by id; join plans to get name + tier context.
     let row = sqlx::query(
         r#"SELECT pp.plan_code AS plan_code,

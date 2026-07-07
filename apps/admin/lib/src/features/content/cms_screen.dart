@@ -287,7 +287,8 @@ class _CmsRow extends ConsumerWidget {
             width: 120,
             child: Row(
               children: [
-                _ActionBtn('Edit', AdminTheme.kYellow, () {}),
+                _ActionBtn('Edit', AdminTheme.kYellow, () =>
+                    _showEditDialog(context, ref, item)),
                 const SizedBox(width: 6),
                 _ActionBtn('Delete', AdminTheme.kRed, () =>
                     _delete(context, ref, item.id)),
@@ -297,6 +298,74 @@ class _CmsRow extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _showEditDialog(BuildContext context, WidgetRef ref, CmsContent item) {
+    final keyController = TextEditingController(text: item.key);
+    final titleController = TextEditingController(text: item.title);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit CMS Content'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: keyController,
+              style: const TextStyle(color: AdminTheme.kText),
+              decoration: const InputDecoration(
+                  labelText: 'Key', hintText: 'e.g. about_page'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: titleController,
+              style: const TextStyle(color: AdminTheme.kText),
+              decoration:
+                  const InputDecoration(labelText: 'Title'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _edit(context, ref, item.id, keyController.text,
+                    titleController.text);
+              },
+              child: const Text('Save')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _edit(BuildContext context, WidgetRef ref, String id,
+      String key, String title) async {
+    if (key.isEmpty) return;
+    try {
+      final client = ref.read(adminHttpClientProvider);
+      await client.dio.put('/admin/cms/$id', data: {
+        'key': key,
+        'title': title,
+      });
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('CMS item updated'),
+            backgroundColor: AdminTheme.kGreen));
+        ref.invalidate(cmsProvider);
+      }
+    } on DioException catch (e) {
+      if (context.mounted) {
+        final msg = e.response?.data is Map
+            ? ((e.response!.data as Map)['error'] ?? 'Update failed').toString()
+            : 'Update failed';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(msg), backgroundColor: AdminTheme.kRed));
+      }
+    }
   }
 
   Future<void> _delete(

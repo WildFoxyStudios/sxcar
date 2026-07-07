@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
+import 'package:app/src/models/profile_options.dart';
 import '../models.dart';
 import '../onboarding_card.dart';
 import '../onboarding_provider.dart';
@@ -27,18 +28,6 @@ class _EthnicityCardState extends State<EthnicityCard> {
   String? _error;
   String? _selected;
 
-  static const _options = [
-    'Latino',
-    'White',
-    'Black',
-    'Asian',
-    'Middle Eastern',
-    'Indigenous',
-    'South Asian',
-    'Mixed',
-    'Other',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -51,7 +40,7 @@ class _EthnicityCardState extends State<EthnicityCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ..._options.map((o) => RadioListTile<String>(
+          ...kEthnicityOptions.map((o) => RadioListTile<String>(
                 title: Text(o),
                 value: o,
                 groupValue: _selected,

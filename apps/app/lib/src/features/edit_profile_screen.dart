@@ -10,6 +10,7 @@ import 'package:app/src/features/edit_profile/vaccines_screen.dart';
 import 'package:app/src/features/profile_screen.dart' show UserProfile;
 import 'package:app/src/health/health_service.dart';
 import 'package:app/src/media/media_service.dart';
+import 'package:app/src/models/profile_options.dart';
 import 'package:app/src/nsfw/nsfw_service.dart';
 import 'package:app/src/theme/app_theme.dart';
 import 'package:app/src/theme/widgets.dart';
@@ -63,19 +64,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     'health': false,           // always expanded (PrEP switch tested)
     'privacy': true,           // collapsed by default
   };
-
-  static const List<String> _hivStatusOptions = [
-    'Unknown',
-    'Negative',
-    'Positive',
-    'Prefer not to say',
-  ];
-
-  static const List<String> _tribeOptions = [
-    'Bear', 'Twink', 'Jock', 'Otter', 'Daddy', 'Geek', 'Leather', 'Pup',
-    'Muscle', 'Chub', 'Trans', 'Queer', 'Drag', 'Furry', 'Military', 'Poz',
-    'Clean', 'Discreet',
-  ];
 
   @override
   void initState() {
@@ -613,7 +601,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ChipMultiSelect(
-                options: _tribeOptions,
+                options: kTribeOptions,
                 selected: draft.tribes.toSet(),
                 onChanged: (next) =>
                     _updateDraftField((p) => _copyWith(p, tribes: next.toList())),
@@ -800,7 +788,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 dropdownColor: VibraTheme.kSurface,
                 style: const TextStyle(color: VibraTheme.kTextPrimary),
                 decoration: _inputDecoration('Select status'),
-                items: _hivStatusOptions
+                items: kHivStatusOptions
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                     .toList(),
                 onChanged: (val) => setState(() => _hivStatus = val),

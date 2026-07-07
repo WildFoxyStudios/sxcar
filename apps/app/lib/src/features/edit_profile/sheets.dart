@@ -1,92 +1,52 @@
 // Header
 import 'package:flutter/material.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
+import 'package:app/src/models/profile_options.dart';
 import 'package:app/src/theme/app_theme.dart';
 import 'package:app/src/theme/widgets.dart';
-
-// ─── Option lists (mirror backend allowed values) ────────────────────────────
-
-const _kEthnicityOptions = <String>[
-  'Latino', 'White', 'Black', 'Asian', 'Middle Eastern', 'Indigenous',
-  'South Asian', 'Mixed', 'Other',
-];
-
-const _kPositionOptions = <String>[
-  'Top', 'Bottom', 'Versatile', 'Side', 'Oral', 'Other',
-];
-
-const _kPronounsOptions = <String>[
-  'he/him', 'she/her', 'they/them', 'he/they', 'she/they', 'Other',
-];
-
-const _kRelationshipOptions = <String>[
-  'Single', 'Taken', 'Open', 'Married', 'Prefer not to say',
-];
-
-const _kRoleOptions = <String>[
-  'user', 'verificado', 'premium', // mirrors backend roles enum
-];
-
-const _kBodyTypeOptions = <String>[
-  'Slim', 'Average', 'Athletic', 'Muscular', 'Curvy', 'Stocky', 'Large',
-];
-
-const _kLookingForOptions = <String>[
-  'Chat', 'Friends', 'Dates', 'Relationship', 'Networking', 'Right Now',
-];
-
-const _kMeetAtOptions = <String>[
-  'Bar', 'Cafe', 'Gym', 'Park', 'Beach', 'Club', 'Sauna', 'Home', 'Other',
-];
-
-const _kTagOptions = <String>[
-  'Fitness', 'Music', 'Travel', 'Food', 'Art', 'Movies', 'Reading',
-  'Gaming', 'Outdoors', 'Tech', 'Cooking', 'Photography', 'Dancing',
-  'Yoga', 'Pets', 'Fashion',
-];
 
 // ─── Single-select sheets ───────────────────────────────────────────────────
 
 Future<String?> showEthnicitySheet(BuildContext context, {String? current}) =>
     _singleSelectSheet(context, titleKey: 'sheetSelectEthnicity',
-        options: _kEthnicityOptions, current: current);
+        options: kEthnicityOptions, current: current);
 
 Future<String?> showBodyTypeSheet(BuildContext context, {String? current}) =>
     _singleSelectSheet(context, titleKey: 'sheetSelectBodyType',
-        options: _kBodyTypeOptions, current: current);
+        options: kBodyTypeOptions, current: current);
 
 Future<String?> showPositionSheet(BuildContext context, {String? current}) =>
     _singleSelectSheet(context, titleKey: 'sheetSelectPosition',
-        options: _kPositionOptions, current: current);
+        options: kPositionOptions, current: current);
 
 Future<String?> showPronounsSheet(BuildContext context, {String? current}) =>
     _singleSelectSheet(context, titleKey: 'sheetSelectPronouns',
-        options: _kPronounsOptions, current: current);
+        options: kPronounsOptions, current: current);
 
 Future<String?> showRelationshipSheet(BuildContext context, {String? current}) =>
     _singleSelectSheet(context, titleKey: 'sheetSelectRelationship',
-        options: _kRelationshipOptions, current: current);
+        options: kRelationshipStatusOptions, current: current);
 
 Future<String?> showRoleSheet(BuildContext context, {String? current}) =>
     _singleSelectSheet(context, titleKey: 'sheetSelectRole',
-        options: _kRoleOptions, current: current);
+        options: kRoleOptions, current: current);
 
 // ─── Multi-select sheets (wrap ChipMultiSelect) ─────────────────────────────
 
 Future<Set<String>?> showLookingForSheet(BuildContext context,
     {Set<String> current = const <String>{}}) =>
     _multiSelectSheet(context, titleKey: 'sheetSelectLookingFor',
-        options: _kLookingForOptions, current: current);
+        options: kLookingForOptions, current: current);
 
 Future<Set<String>?> showMeetAtSheet(BuildContext context,
     {Set<String> current = const <String>{}}) =>
     _multiSelectSheet(context, titleKey: 'sheetSelectMeetAt',
-        options: _kMeetAtOptions, current: current);
+        options: kMeetAtOptions, current: current);
 
 Future<Set<String>?> showTagsSheet(BuildContext context,
     {Set<String> current = const <String>{}}) =>
     _multiSelectSheet(context, titleKey: 'sheetSelectTags',
-        options: _kTagOptions, current: current);
+        options: kTagOptions, current: current);
 
 // ─── Numeric sheets (height cm / weight kg) ─────────────────────────────────
 

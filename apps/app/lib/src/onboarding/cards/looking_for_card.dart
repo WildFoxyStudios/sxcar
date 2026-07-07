@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
+import 'package:app/src/models/profile_options.dart';
 import '../models.dart';
 import '../onboarding_card.dart';
 import '../onboarding_provider.dart';
@@ -27,15 +28,6 @@ class _LookingForCardState extends State<LookingForCard> {
   String? _error;
   final Set<String> _selected = {};
 
-  static const _options = [
-    'Chat',
-    'Friends',
-    'Dates',
-    'Relationship',
-    'Networking',
-    'Right Now',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -48,7 +40,7 @@ class _LookingForCardState extends State<LookingForCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ..._options.map(
+          ...kLookingForOptions.map(
             (o) => CheckboxListTile(
               title: Text(o),
               value: _selected.contains(o),

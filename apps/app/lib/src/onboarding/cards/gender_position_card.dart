@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
+import 'package:app/src/models/profile_options.dart';
 import '../models.dart';
 import '../onboarding_card.dart';
 import '../onboarding_provider.dart';
@@ -26,14 +27,6 @@ class _GenderPositionCardState extends State<GenderPositionCard> {
   String? _selectedGender;
   String? _selectedPosition;
 
-  static const _genders = [
-    'Man',
-    'Woman',
-    'Non-binary',
-    'Transgender',
-    'Other',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -49,7 +42,7 @@ class _GenderPositionCardState extends State<GenderPositionCard> {
           Text(l10n.onboarding_card_gender_position_label,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
-          ..._genders.map((g) => RadioListTile<String>(
+          ...kGenderOptions.map((g) => RadioListTile<String>(
                 title: Text(g),
                 value: g,
                 groupValue: _selectedGender,
@@ -59,8 +52,7 @@ class _GenderPositionCardState extends State<GenderPositionCard> {
           Text(l10n.onboarding_card_position_preference_label,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
-          ...['Top', 'Bottom', 'Versatile', 'Side'].map((p) =>
-              RadioListTile<String>(
+          ...kPositionOptions.map((p) => RadioListTile<String>(
                 title: Text(p),
                 value: p,
                 groupValue: _selectedPosition,

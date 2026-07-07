@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
+import 'package:app/src/models/profile_options.dart';
 import '../models.dart';
 import '../onboarding_card.dart';
 import '../onboarding_provider.dart';
@@ -27,14 +28,6 @@ class _RelationshipStatusCardState extends State<RelationshipStatusCard> {
   String? _error;
   String? _selected;
 
-  static const _options = [
-    'Single',
-    'Taken',
-    'Open',
-    'Married',
-    'Prefer not to say',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -47,7 +40,7 @@ class _RelationshipStatusCardState extends State<RelationshipStatusCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ..._options.map((o) => RadioListTile<String>(
+          ...kRelationshipStatusOptions.map((o) => RadioListTile<String>(
                 title: Text(o),
                 value: o,
                 groupValue: _selected,

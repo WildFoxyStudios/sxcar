@@ -4,6 +4,7 @@ pub mod auth;
 pub mod billing;
 pub mod chat;
 pub mod config;
+pub mod discover;
 pub mod cors;
 pub mod dev;
 pub mod fcm;
@@ -92,6 +93,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/.well-known/apple-app-site-association", get(well_known::apple_site_association))
         .route("/.well-known/assetlinks.json", get(well_known::assetlinks))
         .route("/grid/nearby", get(grid::nearby))
+.route("/discover", get(discover::list))
         .route("/profile", get(profile::get_own).put(profile::update_own))
         .route("/profile/:id", get(profile::get_by_id))
         .route("/me/export-data", post(me::export_data))

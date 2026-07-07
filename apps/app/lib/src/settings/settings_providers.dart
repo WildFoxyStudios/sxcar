@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+const _secureStorage = FlutterSecureStorage();
 
 // ────────────────────────────────────────────────────────────────────────────
 // unitsProvider
@@ -98,7 +101,8 @@ final pinEnabledProvider =
 // ────────────────────────────────────────────────────────────────────────────
 // pinCodeProvider
 //
-// String — 4-digit PIN code stored encrypted in SharedPreferences.
+// String — 4-digit PIN code stored in platform keychain via
+// flutter_secure_storage.
 // ────────────────────────────────────────────────────────────────────────────
 
 const _kPinCodeKey = 'settings_pin_code';
@@ -111,18 +115,16 @@ class PinCodeNotifier extends Notifier<String> {
   }
 
   Future<void> _hydrate() async {
-    final prefs = await SharedPreferences.getInstance();
-    final v = prefs.getString(_kPinCodeKey) ?? '';
+    final v = await _secureStorage.read(key: _kPinCodeKey) ?? '';
     if (state != v) state = v;
   }
 
   Future<void> setPinCode(String code) async {
     state = code;
-    final prefs = await SharedPreferences.getInstance();
     if (code.isEmpty) {
-      await prefs.remove(_kPinCodeKey);
+      await _secureStorage.delete(key: _kPinCodeKey);
     } else {
-      await prefs.setString(_kPinCodeKey, code);
+      await _secureStorage.write(key: _kPinCodeKey, value: code);
     }
   }
 }

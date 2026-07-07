@@ -16,6 +16,12 @@ import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
 import 'navegar_screen.dart' show NearbyUser;
 
+/// Default tribe options (hardcoded fallback if the API is unreachable).
+const _kDefaultTribes = [
+  'Bear', 'Otter', 'Twink', 'Jock', 'Daddy', 'Geek',
+  'Muscle', 'Chub', 'Leather', 'Trans', 'Queer',
+];
+
 /// Geocoding suggestion displayed in the dropdown.
 class _GeocodingSuggestion {
   final String label;
@@ -60,6 +66,10 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   String _roamName = '';
   bool _hasAppliedPersistedRoam = false;
 
+  // Tribe filter chips state
+  Set<String> _selectedTribes = {};
+  List<String> _tribes = _kDefaultTribes;
+
   // City search state
   latlong2.LatLng? _searchCenter;
   String _selectedLocationName = '';
@@ -77,6 +87,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
     _globalUsersFuture = _fetchGlobalUsers();
     _applyRealLocationDefault();
     _loadRecentSearches();
+    _loadFilterOptions();
 
     // Listen for city text changes for debounced geocoding
     _cityController.addListener(_onCityTextChanged);
@@ -126,6 +137,27 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           prefs.getStringList(_kRecentSearchesKey) ?? [];
       _recentSearchesLoaded = true;
     });
+  }
+
+  /// Load tribe filter options (with hardcoded defaults if API unreachable).
+  Future<void> _loadFilterOptions() async {
+    try {
+      await ref.read(authReadyProvider.future);
+      final dio = ref.read(dioProvider);
+      final resp = await dio.get<Map<String, dynamic>>('/meta/filters');
+      final data = resp.data!;
+      if (mounted) {
+        setState(() {
+          _tribes = (data['tribes'] as List<dynamic>?)
+                  ?.map((e) => e as String)
+                  .toList() ??
+              _kDefaultTribes;
+        });
+      }
+    } catch (_) {
+      debugPrint('[GridSearchScreen] error: loading tribe options failed');
+      // API unreachable — keep the hardcoded defaults.
+    }
   }
 
   /// Persist a city search to the recent list (max 5, deduped).
@@ -212,6 +244,18 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
     _cityFocus.unfocus();
   }
 
+  /// Toggle a tribe chip on/off and refresh the grid.
+  void _toggleTribe(String tribe) {
+    setState(() {
+      if (_selectedTribes.contains(tribe)) {
+        _selectedTribes.remove(tribe);
+      } else {
+        _selectedTribes.add(tribe);
+      }
+      _globalUsersFuture = _fetchGlobalUsers();
+    });
+  }
+
   /// Clear the search center and return to GPS/roam-based location.
   void _backToMyLocation() {
     setState(() {
@@ -257,6 +301,9 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
     };
     final q = _searchController.text.trim();
     if (q.isNotEmpty) queryParams['q'] = q;
+    if (_selectedTribes.isNotEmpty) {
+      queryParams['tribe'] = _selectedTribes.join(',');
+    }
 
     final response = await dio.get<Map<String, dynamic>>(
       '/grid/nearby',
@@ -291,6 +338,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   void _showRoamSheet() {
     final outerMessenger = ScaffoldMessenger.of(context);
     final outerContext = context;
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -474,8 +522,12 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           // ── Location indicator + back button ─────────────────────────────
           if (_searchCenter != null) _buildLocationIndicator(l10n),
 
+          // ── Tribe filter chips ───────────────────────────────────────────
+          if (_tribes.isNotEmpty)
+            _buildTribeChips(l10n),
+
           // ── User grid ────────────────────────────────────────────────────
-          Expanded(child: _buildGrid(theme)),
+          Expanded(child: _buildGrid(theme, l10n)),
         ],
       ),
     );
@@ -705,7 +757,45 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
     );
   }
 
-  Widget _buildGrid(ThemeData theme) {
+  /// Horizontal tribe filter chip bar.
+  Widget _buildTribeChips(AppLocalizations l10n) {
+    if (_tribes.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        children: _tribes.map((tribe) {
+          final selected = _selectedTribes.contains(tribe);
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(
+                tribe,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: selected ? Colors.black : Colors.white,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+              selected: selected,
+              selectedColor: VibraTheme.kAccent,
+              checkmarkColor: Colors.black,
+              backgroundColor: VibraTheme.kChip,
+              side: BorderSide(
+                color: selected ? VibraTheme.kAccent : VibraTheme.kDivider,
+              ),
+              onSelected: (_) => _toggleTribe(tribe),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildGrid(ThemeData theme, AppLocalizations l10n) {
     return FutureBuilder<List<NearbyUser>>(
         future: _globalUsersFuture,
         builder: (context, snapshot) {
@@ -983,6 +1073,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
     final lat = double.tryParse(_latController.text.trim());
     final lon = double.tryParse(_lonController.text.trim());
     if (lat == null || lon == null) return;
+    final l10n = AppLocalizations.of(context)!;
 
     setState(() => _submitting = true);
     try {

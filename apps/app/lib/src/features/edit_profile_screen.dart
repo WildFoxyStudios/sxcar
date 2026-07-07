@@ -902,6 +902,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Widget _buildPhotoSection(UserProfile p) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         Center(

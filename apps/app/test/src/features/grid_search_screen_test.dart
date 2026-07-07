@@ -14,6 +14,9 @@ class _MockExploreAdapter implements HttpClientAdapter {
   final Map<String, dynamic>? roamLocation;
   final List<String> paths = [];
 
+  /// Captured query parameters from each request, for test assertions.
+  final List<Map<String, dynamic>> queryParamsList = [];
+
   /// Optional ISO 8601 string injected as `created_at` on the canned user-1.
   /// If null, `created_at` is omitted from the response (preserves T5.10's
   /// pre-existing test fixture shape — no NUEVO badge by default).
@@ -32,6 +35,7 @@ class _MockExploreAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     paths.add('${options.method} ${options.path}');
+    queryParamsList.add(Map<String, dynamic>.from(options.queryParameters));
 
     if (options.path == '/grid/nearby') {
       final user1 = <String, dynamic>{
@@ -101,6 +105,18 @@ class _MockExploreAdapter implements HttpClientAdapter {
           }
         }),
         201,
+        headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+      );
+    }
+
+    if (options.path == '/meta/filters' && options.method == 'GET') {
+      return ResponseBody.fromString(
+        jsonEncode({
+          'tribes': ['Bear', 'Daddy', 'Geek'],
+          'body_types': ['Slim', 'Average', 'Athletic'],
+          'looking_for': ['Chat', 'Dates'],
+        }),
+        200,
         headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
       );
     }
@@ -181,10 +197,10 @@ void main() {
       await tester.tap(find.byIcon(Icons.explore_outlined));
       await tester.pumpAndSettle();
 
-      // Bottom sheet header is visible.
-      expect(find.text('Roam'), findsOneWidget);
-      expect(find.text('Use real location'), findsOneWidget);
-      expect(find.text('Add new place'), findsOneWidget);
+      // Bottom sheet header is visible (Spanish locale).
+      expect(find.text('Vagar'), findsOneWidget);
+      expect(find.text('Usar ubicación real'), findsOneWidget);
+      expect(find.text('Agregar nuevo lugar'), findsOneWidget);
     });
 
     testWidgets('lists saved places in roam sheet', (tester) async {
@@ -312,6 +328,64 @@ void main() {
       // 'NUEVO' is the es-locale badgeNew string.
       expect(find.text('NUEVO'), findsOneWidget,
           reason: 'account <7d old must render the NUEVO badge');
+    });
+
+    testWidgets('shows tribe filter chips loaded from meta/filters',
+        (tester) async {
+      final dio = Dio()..httpClientAdapter = _MockExploreAdapter();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: Locale('es'),
+            home: GridSearchScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Tribe chips should be visible (from /meta/filters mock).
+      expect(find.text('Bear'), findsOneWidget);
+      expect(find.text('Daddy'), findsOneWidget);
+      expect(find.text('Geek'), findsOneWidget);
+    });
+
+    testWidgets('tapping a tribe chip toggles selection and refreshes grid',
+        (tester) async {
+      final adapter = _MockExploreAdapter();
+      final dio = Dio()..httpClientAdapter = adapter;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+            dioProvider.overrideWithValue(dio),
+          ],
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: Locale('es'),
+            home: GridSearchScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Tap 'Bear' tribe chip.
+      await tester.tap(find.text('Bear'));
+      await tester.pumpAndSettle();
+
+      // The tribe=Bear should be passed as query param in the last request.
+      final lastParams = adapter.queryParamsList.last;
+      expect(lastParams['tribe'], 'Bear');
     });
 
     testWidgets('explore_card_hides_nuevo_badge_for_old_user',

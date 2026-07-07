@@ -43,6 +43,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final loc = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(loc.storyError('$e'))),
         );
@@ -86,6 +87,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final loc = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(loc.storyUploadError('$e'))),
         );

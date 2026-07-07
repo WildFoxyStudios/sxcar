@@ -23,6 +23,7 @@ pub mod privacy;
 pub mod profile;
 pub mod chat_broker;
 pub mod ratelimit;
+pub mod shop;
 pub mod social;
 pub mod stories;
 pub mod tarpit;
@@ -157,7 +158,8 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .merge(tier3::router())
         .merge(billing::router())
         .merge(media::router())
-        .merge(onboarding::router());
+        .merge(onboarding::router())
+        .merge(shop::router());
     for path in tarpit::HONEYPOT_PATHS {
         router = router.route(path, any(tarpit::handler));
     }

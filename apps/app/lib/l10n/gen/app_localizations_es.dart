@@ -1039,4 +1039,20 @@ class AppLocalizationsEs extends AppLocalizations {
   String you_profile_load_error(String error) {
     return 'Error al cargar el perfil: $error';
   }
+
+  @override
+  String get justNow => 'Ahora mismo';
+
+  @override
+  String minAgo(int count) {
+    return 'Hace ${count}m';
+  }
+
+  @override
+  String get yesterday => 'Ayer';
+
+  @override
+  String daysAgo(int count) {
+    return 'Hace ${count}d';
+  }
 }

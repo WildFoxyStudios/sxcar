@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../chat/chat_service.dart';
 import '../chat/models.dart';
 import '../albums/shared_albums_provider.dart';
@@ -22,6 +23,50 @@ class ChatListScreen extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<ChatListScreen> createState() => _ChatListScreenState();
+
+  /// Converts an ISO-8601 timestamp to a human-readable relative time string.
+  ///
+  /// Rules:
+  ///   - < 1 min → l10n.justNow
+  ///   - < 60 min → l10n.minAgo(minutes)
+  ///   - same day → HH:mm
+  ///   - yesterday → l10n.yesterday
+  ///   - < 7 days → l10n.daysAgo(days)
+  ///   - older → dd/MM/yyyy
+  static String relativeTime(String iso, AppLocalizations l10n) {
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      final now = DateTime.now();
+      final diff = now.difference(dt);
+
+      if (diff.inMinutes < 1) {
+        return l10n.justNow;
+      }
+      if (diff.inHours < 1) {
+        return l10n.minAgo(diff.inMinutes);
+      }
+
+      // Same calendar day (regardless of hour difference crossing midnight)
+      if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
+        return DateFormat('HH:mm').format(dt);
+      }
+
+      final yesterday = DateTime(now.year, now.month, now.day - 1);
+      if (dt.year == yesterday.year &&
+          dt.month == yesterday.month &&
+          dt.day == yesterday.day) {
+        return l10n.yesterday;
+      }
+
+      if (diff.inDays < 7) {
+        return l10n.daysAgo(diff.inDays);
+      }
+
+      return DateFormat('dd/MM/yyyy').format(dt);
+    } catch (_) {
+      return '';
+    }
+  }
 }
 
 class _ChatListScreenState extends ConsumerState<ChatListScreen>
@@ -200,6 +245,7 @@ class _ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final displayName = conversation.displayTitle;
     final isGroup = conversation.isGroup;
     final lastMessage = conversation.lastMessagePreview ?? '';
@@ -245,7 +291,8 @@ class _ConversationTile extends StatelessWidget {
                       ),
                       if (conversation.lastMessageAt != null)
                         Text(
-                          _relativeTime(conversation.lastMessageAt!),
+                          ChatListScreen.relativeTime(
+                              conversation.lastMessageAt!, l10n),
                           style: const TextStyle(
                             color: VibraTheme.kTextSecondary,
                             fontSize: 12,
@@ -289,20 +336,6 @@ class _ConversationTile extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _relativeTime(String iso) {
-    // Stub: in production use intl.DateFormat. For now, just return HH:mm if same day.
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      final now = DateTime.now();
-      if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
-        return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-      }
-      return '${dt.day}/${dt.month}';
-    } catch (_) {
-      return '';
-    }
   }
 }
 

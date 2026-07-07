@@ -2077,6 +2077,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Error al cargar el perfil: {error}'**
   String you_profile_load_error(String error);
+
+  /// Tiempo relativo: hace menos de 1 minuto
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora mismo'**
+  String get justNow;
+
+  /// Tiempo relativo: hace minutos. Ejemplo: Hace 5m
+  ///
+  /// In es, this message translates to:
+  /// **'Hace {count}m'**
+  String minAgo(int count);
+
+  /// Tiempo relativo: el día calendario anterior
+  ///
+  /// In es, this message translates to:
+  /// **'Ayer'**
+  String get yesterday;
+
+  /// Tiempo relativo: hace días. Ejemplo: Hace 3d
+  ///
+  /// In es, this message translates to:
+  /// **'Hace {count}d'**
+  String daysAgo(int count);
 }
 
 class _AppLocalizationsDelegate

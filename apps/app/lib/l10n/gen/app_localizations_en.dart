@@ -1035,4 +1035,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String you_profile_load_error(String error) {
     return 'Failed to load profile: $error';
   }
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String minAgo(int count) {
+    return '${count}m ago';
+  }
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String daysAgo(int count) {
+    return '${count}d ago';
+  }
 }

@@ -494,5 +494,27 @@
     "placeholders": {
       "error": { "type": "String", "example": "500" }
     }
+  },
+
+  "justNow": "Just now",
+  "@justNow": { "description": "Relative time: less than 1 minute ago" },
+
+  "minAgo": "{count}m ago",
+  "@minAgo": {
+    "description": "Relative time: minutes ago. Example: 5m ago",
+    "placeholders": {
+      "count": { "type": "int", "example": "5" }
+    }
+  },
+
+  "yesterday": "Yesterday",
+  "@yesterday": { "description": "Relative time: the previous calendar day" },
+
+  "daysAgo": "{count}d ago",
+  "@daysAgo": {
+    "description": "Relative time: days ago. Example: 3d ago",
+    "placeholders": {
+      "count": { "type": "int", "example": "3" }
+    }
   }
 }

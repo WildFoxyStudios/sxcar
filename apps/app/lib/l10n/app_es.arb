@@ -802,5 +802,27 @@
     "placeholders": {
       "error": { "type": "String", "example": "500" }
     }
+  },
+
+  "justNow": "Ahora mismo",
+  "@justNow": { "description": "Tiempo relativo: hace menos de 1 minuto" },
+
+  "minAgo": "Hace {count}m",
+  "@minAgo": {
+    "description": "Tiempo relativo: hace minutos. Ejemplo: Hace 5m",
+    "placeholders": {
+      "count": { "type": "int", "example": "5" }
+    }
+  },
+
+  "yesterday": "Ayer",
+  "@yesterday": { "description": "Tiempo relativo: el día calendario anterior" },
+
+  "daysAgo": "Hace {count}d",
+  "@daysAgo": {
+    "description": "Tiempo relativo: hace días. Ejemplo: Hace 3d",
+    "placeholders": {
+      "count": { "type": "int", "example": "3" }
+    }
   }
 }

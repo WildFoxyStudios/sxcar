@@ -392,12 +392,12 @@ class UpsellCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: highlighted
             ? const LinearGradient(
-                colors: [VibraTheme.kYellow, Color(0xFFFFD633)],
+                colors: [VibraTheme.kYellow, VibraTheme.kYellowLight],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
             : const LinearGradient(
-                colors: [Color(0xFF1A1A1A), Color(0xFF2A2A2A)],
+                colors: [VibraTheme.kSurface, VibraTheme.kChip],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -480,11 +480,11 @@ class PlanDurationCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: selected
-              ? const Color(0x33FFCC00) // kYellow @ ~20% over kSurface
+              ? VibraTheme.kYellow.withValues(alpha: 0.2) // kYellow @ ~20% over kSurface
               : VibraTheme.kSurface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? VibraTheme.kYellow : const Color(0xFF333333),
+            color: selected ? VibraTheme.kYellow : VibraTheme.kDivider,
             width: selected ? 2 : 1,
           ),
         ),
@@ -517,7 +517,7 @@ class PlanDurationCard extends StatelessWidget {
                   Text(
                     'Ahorra $savingsPercent%',
                     style: const TextStyle(
-                      color: Color(0xFF8E8E8E),
+                      color: VibraTheme.kTextSecondary,
                       fontSize: 12,
                     ),
                   ),
@@ -534,7 +534,7 @@ class PlanDurationCard extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF666666),
+                    color: VibraTheme.kTextTertiary,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
@@ -686,7 +686,7 @@ class SettingRow extends StatelessWidget {
                 Text(
                   subtitle!,
                   style: const TextStyle(
-                    color: Color(0xFF8E8E8E),
+                    color: VibraTheme.kTextSecondary,
                     fontSize: 12,
                   ),
                 ),

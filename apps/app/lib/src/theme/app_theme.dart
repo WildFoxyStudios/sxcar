@@ -26,6 +26,9 @@ class VibraTheme {
   /// Primary yellow accent — text OVER this MUST be black.
   static const Color kYellow = Color(0xFFFFCC00);
 
+  /// Lighter yellow used for gradient endpoints.
+  static const Color kYellowLight = Color(0xFFFFD633);
+
   /// Alias: kAccent == kYellow (keeps existing references compiling).
   static const Color kAccent = kYellow;
 

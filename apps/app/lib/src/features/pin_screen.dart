@@ -24,11 +24,12 @@ class _PinScreenState extends ConsumerState<PinScreen> {
   }
 
   Future<void> _savePin() async {
+    final l10n = AppLocalizations.of(context)!;
     final code = _controller.text.trim();
     if (code.length != 4 || int.tryParse(code) == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter exactly 4 digits')),
+        SnackBar(content: Text(l10n.pinEnterExactly4Digits)),
       );
       return;
     }
@@ -36,21 +37,22 @@ class _PinScreenState extends ConsumerState<PinScreen> {
     await ref.read(pinEnabledProvider.notifier).setPinEnabled(true);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('PIN activated')),
+      SnackBar(content: Text(l10n.pinActivated)),
     );
   }
 
   Future<void> _removePin() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: VibraTheme.kSurface,
-        title: const Text('Remove PIN?', style: TextStyle(color: Colors.white)),
-        content: const Text('The app will no longer be locked.',
-            style: TextStyle(color: VibraTheme.kTextSecondary)),
+        title: Text(l10n.pinRemoveTitle, style: const TextStyle(color: Colors.white)),
+        content: Text(l10n.pinRemoveBody,
+            style: const TextStyle(color: VibraTheme.kTextSecondary)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Remove', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancelar)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.pinRemoveConfirm, style: const TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -60,7 +62,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
     _controller.clear();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('PIN removed')),
+      SnackBar(content: Text(l10n.pinRemoved)),
     );
   }
 
@@ -89,7 +91,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  enabled ? 'Change your PIN' : 'Set a PIN',
+                  enabled ? l10n.pinChangeYourPin : l10n.pinSetAPin,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -98,9 +100,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  enabled
-                      ? 'Enter a new 4-digit PIN or remove the current one.'
-                      : 'Enter a 4-digit PIN to lock the app when opened.',
+                  enabled ? l10n.pinEnterNewPinDesc : l10n.pinEnterPinDesc,
                   style: const TextStyle(
                     color: VibraTheme.kTextSecondary,
                     fontSize: 13,
@@ -157,7 +157,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         onPressed: _savePin,
-                        child: Text(enabled ? 'Update PIN' : 'Activate PIN'),
+                        child: Text(enabled ? l10n.pinUpdatePin : l10n.pinActivatePin),
                       ),
                     ),
                     if (enabled) ...[
@@ -170,7 +170,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                           onPressed: _removePin,
-                          child: const Text('Remove PIN'),
+                          child: Text(l10n.pinRemovePin),
                         ),
                       ),
                     ],

@@ -1367,8 +1367,9 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
     final service = ref.read(chatServiceProvider);
     service.unsendMessage(message.id).catchError((_) {
       if (context.mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to unsend message')),
+          SnackBar(content: Text(l10n?.chatFailedToUnsend ?? 'Failed to unsend message')),
         );
       }
     });
@@ -1465,6 +1466,7 @@ class _PhotoSendSheetState extends State<_PhotoSendSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -1506,10 +1508,10 @@ class _PhotoSendSheetState extends State<_PhotoSendSheet> {
               const Icon(Icons.local_fire_department,
                   color: VibraTheme.kAccent, size: 20),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'View once',
-                  style: TextStyle(
+                  l10n?.chatViewOnce ?? 'View once',
+                  style: const TextStyle(
                     color: VibraTheme.kTextPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
@@ -1527,7 +1529,7 @@ class _PhotoSendSheetState extends State<_PhotoSendSheet> {
           // Send button — pops with the toggle value
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(_viewOnce),
-            child: const Text('Send'),
+            child: Text(l10n?.chatSend ?? 'Send'),
           ),
         ],
       ),

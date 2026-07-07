@@ -3175,6 +3175,252 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Confirmaciones de lectura'**
   String get chatReadReceipts;
+
+  /// Título de la AppBar de la pantalla Eventos
+  ///
+  /// In es, this message translates to:
+  /// **'Eventos'**
+  String get events_title;
+
+  /// Título de la AppBar de la pantalla de detalle de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Evento'**
+  String get events_detail_title;
+
+  /// Botón crear de la pantalla Eventos
+  ///
+  /// In es, this message translates to:
+  /// **'Crear'**
+  String get events_create;
+
+  /// Mensaje de estado de error de la pantalla Eventos
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron cargar los eventos'**
+  String get events_load_error;
+
+  /// Título de estado vacío de la pantalla Eventos
+  ///
+  /// In es, this message translates to:
+  /// **'No hay eventos cerca'**
+  String get events_empty_title;
+
+  /// Subtítulo de estado vacío de la pantalla Eventos
+  ///
+  /// In es, this message translates to:
+  /// **'Sé el primero en crear uno!'**
+  String get events_empty_subtitle;
+
+  /// Etiqueta de conteo de asistentes al evento
+  ///
+  /// In es, this message translates to:
+  /// **'{count} asistiendo'**
+  String events_attendee_count(int count);
+
+  /// Estado RSVP de asistencia al evento
+  ///
+  /// In es, this message translates to:
+  /// **'Asistiré'**
+  String get events_going;
+
+  /// Estado RSVP de tal vez al evento
+  ///
+  /// In es, this message translates to:
+  /// **'Tal vez'**
+  String get events_maybe;
+
+  /// Botón de reintentar de eventos
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get events_retry;
+
+  /// Snackbar de éxito después de crear evento
+  ///
+  /// In es, this message translates to:
+  /// **'Evento creado!'**
+  String get events_created;
+
+  /// Snackbar de error cuando falla la creación del evento
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo crear el evento'**
+  String get events_create_error;
+
+  /// Etiqueta del campo de título del formulario de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Título del evento'**
+  String get events_form_title;
+
+  /// Sugerencia del campo de título del formulario de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Dale un nombre a tu evento'**
+  String get events_form_title_hint;
+
+  /// Etiqueta del campo de descripción del formulario de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Descripción'**
+  String get events_form_description;
+
+  /// Etiqueta del campo de ubicación del formulario de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación'**
+  String get events_form_location;
+
+  /// Sugerencia del campo de ubicación del formulario de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Dónde ocurrirá?'**
+  String get events_form_location_hint;
+
+  /// Etiqueta del campo de fecha del formulario de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha'**
+  String get events_form_date;
+
+  /// Etiqueta del campo de hora del formulario de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Hora'**
+  String get events_form_time;
+
+  /// Botón de enviar del formulario de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Crear Evento'**
+  String get events_form_create;
+
+  /// Etiqueta de hora de fin en detalle de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Termina'**
+  String get events_ends;
+
+  /// Encabezado de sección de asistentes en detalle de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Asistentes'**
+  String get events_attendees;
+
+  /// Insignia RSVP del usuario actual: asistirá
+  ///
+  /// In es, this message translates to:
+  /// **'Asistirás'**
+  String get events_you_are_going;
+
+  /// Insignia RSVP del usuario actual: tal vez
+  ///
+  /// In es, this message translates to:
+  /// **'Tal vez asistas'**
+  String get events_you_are_maybe;
+
+  /// Botón de cancelar RSVP en detalle de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar'**
+  String get events_cancel;
+
+  /// Botón RSVP en detalle de evento: asistiré
+  ///
+  /// In es, this message translates to:
+  /// **'Asistiré'**
+  String get events_rsvp_going;
+
+  /// Botón RSVP en detalle de evento: tal vez
+  ///
+  /// In es, this message translates to:
+  /// **'Tal vez'**
+  String get events_rsvp_maybe;
+
+  /// Snackbar de error RSVP en detalle de evento
+  ///
+  /// In es, this message translates to:
+  /// **'Error al confirmar asistencia'**
+  String get events_rsvp_error;
+
+  /// Título del diálogo de confirmación de cancelación RSVP
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar RSVP?'**
+  String get events_cancel_confirm_title;
+
+  /// Cuerpo del diálogo de confirmación de cancelación RSVP
+  ///
+  /// In es, this message translates to:
+  /// **'Ya no aparecerás como asistente.'**
+  String get events_cancel_confirm_body;
+
+  /// Botón negativo del diálogo de cancelación RSVP
+  ///
+  /// In es, this message translates to:
+  /// **'Mantener RSVP'**
+  String get events_cancel_no;
+
+  /// Botón positivo del diálogo de cancelación RSVP
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar RSVP'**
+  String get events_cancel_yes;
+
+  /// Snackbar de RSVP cancelado
+  ///
+  /// In es, this message translates to:
+  /// **'RSVP cancelado'**
+  String get events_cancelled;
+
+  /// Snackbar de error al eliminar evento
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo eliminar el evento'**
+  String get events_delete_error;
+
+  /// Título de la AppBar de la pantalla Tienda
+  ///
+  /// In es, this message translates to:
+  /// **'Tienda'**
+  String get shopTitle;
+
+  /// Mensaje de estado de error de la pantalla Tienda
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar la tienda'**
+  String get shopLoadError;
+
+  /// Mensaje de estado vacío de la pantalla Tienda
+  ///
+  /// In es, this message translates to:
+  /// **'No hay productos disponibles'**
+  String get shopEmpty;
+
+  /// Cuerpo del diálogo de confirmación de compra
+  ///
+  /// In es, this message translates to:
+  /// **'Comprar {name} por {price}?'**
+  String shopConfirmPurchase(String name, String price);
+
+  /// Snackbar de éxito después de la compra
+  ///
+  /// In es, this message translates to:
+  /// **'{name} comprado!'**
+  String shopPurchaseSuccess(String name);
+
+  /// Snackbar de error cuando falla la compra
+  ///
+  /// In es, this message translates to:
+  /// **'Compra fallida'**
+  String get shopPurchaseError;
+
+  /// Elemento del menú Tienda en el cajón de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Tienda'**
+  String get shopMenuItem;
 }
 
 class _AppLocalizationsDelegate

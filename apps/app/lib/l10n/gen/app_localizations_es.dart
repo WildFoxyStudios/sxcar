@@ -1650,4 +1650,133 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get chatReadReceipts => 'Confirmaciones de lectura';
+
+  @override
+  String get events_title => 'Eventos';
+
+  @override
+  String get events_detail_title => 'Evento';
+
+  @override
+  String get events_create => 'Crear';
+
+  @override
+  String get events_load_error => 'No se pudieron cargar los eventos';
+
+  @override
+  String get events_empty_title => 'No hay eventos cerca';
+
+  @override
+  String get events_empty_subtitle => 'Sé el primero en crear uno!';
+
+  @override
+  String events_attendee_count(int count) {
+    return '$count asistiendo';
+  }
+
+  @override
+  String get events_going => 'Asistiré';
+
+  @override
+  String get events_maybe => 'Tal vez';
+
+  @override
+  String get events_retry => 'Reintentar';
+
+  @override
+  String get events_created => 'Evento creado!';
+
+  @override
+  String get events_create_error => 'No se pudo crear el evento';
+
+  @override
+  String get events_form_title => 'Título del evento';
+
+  @override
+  String get events_form_title_hint => 'Dale un nombre a tu evento';
+
+  @override
+  String get events_form_description => 'Descripción';
+
+  @override
+  String get events_form_location => 'Ubicación';
+
+  @override
+  String get events_form_location_hint => 'Dónde ocurrirá?';
+
+  @override
+  String get events_form_date => 'Fecha';
+
+  @override
+  String get events_form_time => 'Hora';
+
+  @override
+  String get events_form_create => 'Crear Evento';
+
+  @override
+  String get events_ends => 'Termina';
+
+  @override
+  String get events_attendees => 'Asistentes';
+
+  @override
+  String get events_you_are_going => 'Asistirás';
+
+  @override
+  String get events_you_are_maybe => 'Tal vez asistas';
+
+  @override
+  String get events_cancel => 'Cancelar';
+
+  @override
+  String get events_rsvp_going => 'Asistiré';
+
+  @override
+  String get events_rsvp_maybe => 'Tal vez';
+
+  @override
+  String get events_rsvp_error => 'Error al confirmar asistencia';
+
+  @override
+  String get events_cancel_confirm_title => 'Cancelar RSVP?';
+
+  @override
+  String get events_cancel_confirm_body => 'Ya no aparecerás como asistente.';
+
+  @override
+  String get events_cancel_no => 'Mantener RSVP';
+
+  @override
+  String get events_cancel_yes => 'Cancelar RSVP';
+
+  @override
+  String get events_cancelled => 'RSVP cancelado';
+
+  @override
+  String get events_delete_error => 'No se pudo eliminar el evento';
+
+  @override
+  String get shopTitle => 'Tienda';
+
+  @override
+  String get shopLoadError => 'No se pudo cargar la tienda';
+
+  @override
+  String get shopEmpty => 'No hay productos disponibles';
+
+  @override
+  String shopConfirmPurchase(String name, String price) {
+    return 'Comprar $name por $price?';
+  }
+
+  @override
+  String shopPurchaseSuccess(String name) {
+    return '$name comprado!';
+  }
+
+  @override
+  String get shopPurchaseError => 'Compra fallida';
+
+  @override
+  String get shopMenuItem => 'Tienda';
 }

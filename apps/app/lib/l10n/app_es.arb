@@ -1300,5 +1300,144 @@
   "@premiumFeaturePrioritySupport": { "description": "Función del nivel Unlimited: soporte prioritario" },
 
   "chatReadReceipts": "Confirmaciones de lectura",
-  "@chatReadReceipts": { "description": "Etiqueta de función de chat para confirmaciones de lectura" }
+  "@chatReadReceipts": { "description": "Etiqueta de función de chat para confirmaciones de lectura" },
+
+  "events_title": "Eventos",
+  "@events_title": { "description": "Título de la AppBar de la pantalla Eventos" },
+
+  "events_detail_title": "Evento",
+  "@events_detail_title": { "description": "Título de la AppBar de la pantalla de detalle de evento" },
+
+  "events_create": "Crear",
+  "@events_create": { "description": "Botón crear de la pantalla Eventos" },
+
+  "events_load_error": "No se pudieron cargar los eventos",
+  "@events_load_error": { "description": "Mensaje de estado de error de la pantalla Eventos" },
+
+  "events_empty_title": "No hay eventos cerca",
+  "@events_empty_title": { "description": "Título de estado vacío de la pantalla Eventos" },
+
+  "events_empty_subtitle": "Sé el primero en crear uno!",
+  "@events_empty_subtitle": { "description": "Subtítulo de estado vacío de la pantalla Eventos" },
+
+  "events_attendee_count": "{count} asistiendo",
+  "@events_attendee_count": {
+    "description": "Etiqueta de conteo de asistentes al evento",
+    "placeholders": {
+      "count": { "type": "int", "example": "5" }
+    }
+  },
+
+  "events_going": "Asistiré",
+  "@events_going": { "description": "Estado RSVP de asistencia al evento" },
+
+  "events_maybe": "Tal vez",
+  "@events_maybe": { "description": "Estado RSVP de tal vez al evento" },
+
+  "events_retry": "Reintentar",
+  "@events_retry": { "description": "Botón de reintentar de eventos" },
+
+  "events_created": "Evento creado!",
+  "@events_created": { "description": "Snackbar de éxito después de crear evento" },
+
+  "events_create_error": "No se pudo crear el evento",
+  "@events_create_error": { "description": "Snackbar de error cuando falla la creación del evento" },
+
+  "events_form_title": "Título del evento",
+  "@events_form_title": { "description": "Etiqueta del campo de título del formulario de evento" },
+
+  "events_form_title_hint": "Dale un nombre a tu evento",
+  "@events_form_title_hint": { "description": "Sugerencia del campo de título del formulario de evento" },
+
+  "events_form_description": "Descripción",
+  "@events_form_description": { "description": "Etiqueta del campo de descripción del formulario de evento" },
+
+  "events_form_location": "Ubicación",
+  "@events_form_location": { "description": "Etiqueta del campo de ubicación del formulario de evento" },
+
+  "events_form_location_hint": "Dónde ocurrirá?",
+  "@events_form_location_hint": { "description": "Sugerencia del campo de ubicación del formulario de evento" },
+
+  "events_form_date": "Fecha",
+  "@events_form_date": { "description": "Etiqueta del campo de fecha del formulario de evento" },
+
+  "events_form_time": "Hora",
+  "@events_form_time": { "description": "Etiqueta del campo de hora del formulario de evento" },
+
+  "events_form_create": "Crear Evento",
+  "@events_form_create": { "description": "Botón de enviar del formulario de evento" },
+
+  "events_ends": "Termina",
+  "@events_ends": { "description": "Etiqueta de hora de fin en detalle de evento" },
+
+  "events_attendees": "Asistentes",
+  "@events_attendees": { "description": "Encabezado de sección de asistentes en detalle de evento" },
+
+  "events_you_are_going": "Asistirás",
+  "@events_you_are_going": { "description": "Insignia RSVP del usuario actual: asistirá" },
+
+  "events_you_are_maybe": "Tal vez asistas",
+  "@events_you_are_maybe": { "description": "Insignia RSVP del usuario actual: tal vez" },
+
+  "events_cancel": "Cancelar",
+  "@events_cancel": { "description": "Botón de cancelar RSVP en detalle de evento" },
+
+  "events_rsvp_going": "Asistiré",
+  "@events_rsvp_going": { "description": "Botón RSVP en detalle de evento: asistiré" },
+
+  "events_rsvp_maybe": "Tal vez",
+  "@events_rsvp_maybe": { "description": "Botón RSVP en detalle de evento: tal vez" },
+
+  "events_rsvp_error": "Error al confirmar asistencia",
+  "@events_rsvp_error": { "description": "Snackbar de error RSVP en detalle de evento" },
+
+  "events_cancel_confirm_title": "Cancelar RSVP?",
+  "@events_cancel_confirm_title": { "description": "Título del diálogo de confirmación de cancelación RSVP" },
+
+  "events_cancel_confirm_body": "Ya no aparecerás como asistente.",
+  "@events_cancel_confirm_body": { "description": "Cuerpo del diálogo de confirmación de cancelación RSVP" },
+
+  "events_cancel_no": "Mantener RSVP",
+  "@events_cancel_no": { "description": "Botón negativo del diálogo de cancelación RSVP" },
+
+  "events_cancel_yes": "Cancelar RSVP",
+  "@events_cancel_yes": { "description": "Botón positivo del diálogo de cancelación RSVP" },
+
+  "events_cancelled": "RSVP cancelado",
+  "@events_cancelled": { "description": "Snackbar de RSVP cancelado" },
+
+  "events_delete_error": "No se pudo eliminar el evento",
+  "@events_delete_error": { "description": "Snackbar de error al eliminar evento" },
+
+  "shopTitle": "Tienda",
+  "@shopTitle": { "description": "Título de la AppBar de la pantalla Tienda" },
+
+  "shopLoadError": "No se pudo cargar la tienda",
+  "@shopLoadError": { "description": "Mensaje de estado de error de la pantalla Tienda" },
+
+  "shopEmpty": "No hay productos disponibles",
+  "@shopEmpty": { "description": "Mensaje de estado vacío de la pantalla Tienda" },
+
+  "shopConfirmPurchase": "Comprar {name} por {price}?",
+  "@shopConfirmPurchase": {
+    "description": "Cuerpo del diálogo de confirmación de compra",
+    "placeholders": {
+      "name": { "type": "String", "example": "1 Hour Boost" },
+      "price": { "type": "String", "example": "$1.99" }
+    }
+  },
+
+  "shopPurchaseSuccess": "{name} comprado!",
+  "@shopPurchaseSuccess": {
+    "description": "Snackbar de éxito después de la compra",
+    "placeholders": {
+      "name": { "type": "String", "example": "1 Hour Boost" }
+    }
+  },
+
+  "shopPurchaseError": "Compra fallida",
+  "@shopPurchaseError": { "description": "Snackbar de error cuando falla la compra" },
+
+  "shopMenuItem": "Tienda",
+  "@shopMenuItem": { "description": "Elemento del menú Tienda en el cajón de perfil" }
 }

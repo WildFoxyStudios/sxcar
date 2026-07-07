@@ -992,5 +992,144 @@
   "@premiumFeaturePrioritySupport": { "description": "Unlimited tier feature: priority customer support" },
 
   "chatReadReceipts": "Read receipts",
-  "@chatReadReceipts": { "description": "Chat feature label for read receipts" }
+  "@chatReadReceipts": { "description": "Chat feature label for read receipts" },
+
+  "events_title": "Events",
+  "@events_title": { "description": "Events screen AppBar title" },
+
+  "events_detail_title": "Event",
+  "@events_detail_title": { "description": "Event detail screen AppBar title" },
+
+  "events_create": "Create",
+  "@events_create": { "description": "Events screen create button" },
+
+  "events_load_error": "Could not load events",
+  "@events_load_error": { "description": "Events screen error state message" },
+
+  "events_empty_title": "No events nearby",
+  "@events_empty_title": { "description": "Events screen empty state title" },
+
+  "events_empty_subtitle": "Be the first to create one!",
+  "@events_empty_subtitle": { "description": "Events screen empty state subtitle" },
+
+  "events_attendee_count": "{count} attending",
+  "@events_attendee_count": {
+    "description": "Event attendee count label",
+    "placeholders": {
+      "count": { "type": "int", "example": "5" }
+    }
+  },
+
+  "events_going": "Going",
+  "@events_going": { "description": "Events going RSVP status" },
+
+  "events_maybe": "Maybe",
+  "@events_maybe": { "description": "Events maybe RSVP status" },
+
+  "events_retry": "Retry",
+  "@events_retry": { "description": "Events retry button" },
+
+  "events_created": "Event created!",
+  "@events_created": { "description": "Events success snackbar after creation" },
+
+  "events_create_error": "Could not create event",
+  "@events_create_error": { "description": "Events error snackbar when creation fails" },
+
+  "events_form_title": "Event title",
+  "@events_form_title": { "description": "Events create form title field label" },
+
+  "events_form_title_hint": "Give your event a name",
+  "@events_form_title_hint": { "description": "Events create form title field hint" },
+
+  "events_form_description": "Description",
+  "@events_form_description": { "description": "Events create form description field label" },
+
+  "events_form_location": "Location",
+  "@events_form_location": { "description": "Events create form location field label" },
+
+  "events_form_location_hint": "Where is it happening?",
+  "@events_form_location_hint": { "description": "Events create form location field hint" },
+
+  "events_form_date": "Date",
+  "@events_form_date": { "description": "Events create form date field label" },
+
+  "events_form_time": "Time",
+  "@events_form_time": { "description": "Events create form time field label" },
+
+  "events_form_create": "Create Event",
+  "@events_form_create": { "description": "Events create form submit button" },
+
+  "events_ends": "Ends",
+  "@events_ends": { "description": "Event detail screen end time label" },
+
+  "events_attendees": "Attendees",
+  "@events_attendees": { "description": "Event detail screen attendees section header" },
+
+  "events_you_are_going": "You're going",
+  "@events_you_are_going": { "description": "Event detail current user RSVP badge: going" },
+
+  "events_you_are_maybe": "You might go",
+  "@events_you_are_maybe": { "description": "Event detail current user RSVP badge: maybe" },
+
+  "events_cancel": "Cancel",
+  "@events_cancel": { "description": "Event detail cancel RSVP button" },
+
+  "events_rsvp_going": "Going",
+  "@events_rsvp_going": { "description": "Event detail RSVP button: going" },
+
+  "events_rsvp_maybe": "Maybe",
+  "@events_rsvp_maybe": { "description": "Event detail RSVP button: maybe" },
+
+  "events_rsvp_error": "Failed to RSVP",
+  "@events_rsvp_error": { "description": "Event detail RSVP error snackbar" },
+
+  "events_cancel_confirm_title": "Cancel RSVP?",
+  "@events_cancel_confirm_title": { "description": "Event detail cancel RSVP confirmation dialog title" },
+
+  "events_cancel_confirm_body": "You won't be listed as attending.",
+  "@events_cancel_confirm_body": { "description": "Event detail cancel RSVP confirmation dialog body" },
+
+  "events_cancel_no": "Keep RSVP",
+  "@events_cancel_no": { "description": "Event detail cancel RSVP dialog negative button" },
+
+  "events_cancel_yes": "Cancel RSVP",
+  "@events_cancel_yes": { "description": "Event detail cancel RSVP dialog positive button" },
+
+  "events_cancelled": "RSVP cancelled",
+  "@events_cancelled": { "description": "Event detail RSVP cancelled snackbar" },
+
+  "events_delete_error": "Could not delete event",
+  "@events_delete_error": { "description": "Event detail delete error snackbar" },
+
+  "shopTitle": "Shop",
+  "@shopTitle": { "description": "Shop screen AppBar title" },
+
+  "shopLoadError": "Could not load shop",
+  "@shopLoadError": { "description": "Shop screen error state message" },
+
+  "shopEmpty": "No products available",
+  "@shopEmpty": { "description": "Shop screen empty state message" },
+
+  "shopConfirmPurchase": "Buy {name} for {price}?",
+  "@shopConfirmPurchase": {
+    "description": "Shop purchase confirmation dialog body",
+    "placeholders": {
+      "name": { "type": "String", "example": "1 Hour Boost" },
+      "price": { "type": "String", "example": "$1.99" }
+    }
+  },
+
+  "shopPurchaseSuccess": "{name} purchased!",
+  "@shopPurchaseSuccess": {
+    "description": "Shop success snackbar after purchase",
+    "placeholders": {
+      "name": { "type": "String", "example": "1 Hour Boost" }
+    }
+  },
+
+  "shopPurchaseError": "Purchase failed",
+  "@shopPurchaseError": { "description": "Shop error snackbar when purchase fails" },
+
+  "shopMenuItem": "Shop",
+  "@shopMenuItem": { "description": "Shop menu item in the profile drawer" }
 }

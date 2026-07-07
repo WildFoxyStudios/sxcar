@@ -344,6 +344,15 @@ class ProfileDrawer extends ConsumerWidget {
             ),
 
             _DrawerListTile(
+              icon: Icons.storefront_outlined,
+              label: l10n.shopMenuItem,
+              onTap: () {
+                Navigator.of(context).pop();
+                context.push('/shop');
+              },
+            ),
+
+            _DrawerListTile(
               icon: Icons.favorite_border,
               label: l10n.saludSexual,
               onTap: () {

@@ -40,6 +40,7 @@ import 'src/features/security_screen.dart';
 import 'src/features/settings_screen.dart';
 import 'src/phrases/phrases_screen.dart';
 import 'src/sessions/sessions_screen.dart';
+import 'src/shop/shop_screen.dart';
 import 'src/theme/app_theme.dart';
 import 'l10n/gen/app_localizations.dart';
 
@@ -78,6 +79,7 @@ const Set<String> _knownTopLevelPaths = {
   '/edit-profile',
   '/settings',
   '/security',
+  '/shop',
   '/albums',
   '/events',
   '/grid-search',
@@ -282,6 +284,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/security',
       builder: (_, _) => const SecurityScreen(),
+    ),
+    GoRoute(
+      path: '/shop',
+      builder: (_, _) => const ShopScreen(),
     ),
     GoRoute(
       path: '/albums',

@@ -933,5 +933,64 @@
     "placeholders": {
       "city": { "type": "String" }
     }
-  }
+  },
+
+  "premiumTierFree": "Free",
+  "@premiumTierFree": { "description": "Premium tier badge label: Free tier" },
+
+  "premiumTierXtra": "Xtra",
+  "@premiumTierXtra": { "description": "Premium tier badge label: Xtra tier" },
+
+  "premiumTierUnlimited": "Unlimited",
+  "@premiumTierUnlimited": { "description": "Premium tier badge label: Unlimited tier" },
+
+  "premiumUpgradePrompt": "Upgrade to use {feature}",
+  "@premiumUpgradePrompt": {
+    "description": "Upgrade prompt shown on locked features",
+    "placeholders": {
+      "feature": { "type": "String" }
+    }
+  },
+
+  "premiumComparisonTitle": "Compare Plans",
+  "@premiumComparisonTitle": { "description": "Premium comparison sheet title" },
+
+  "premiumFeatureBasicGrid": "Basic grid (50 profiles)",
+  "@premiumFeatureBasicGrid": { "description": "Free tier feature: limited grid" },
+
+  "premiumFeatureBasicFilters": "Basic filters",
+  "@premiumFeatureBasicFilters": { "description": "Free tier feature: basic filters only" },
+
+  "premiumFeatureOneTribe": "1 tribe",
+  "@premiumFeatureOneTribe": { "description": "Free tier feature: one tribe limit" },
+
+  "premiumFeatureUnlimitedGrid": "Unlimited profiles",
+  "@premiumFeatureUnlimitedGrid": { "description": "Xtra+ tier feature: unlimited profile grid" },
+
+  "premiumFeatureAdvancedFilters": "Advanced filters",
+  "@premiumFeatureAdvancedFilters": { "description": "Xtra tier feature: advanced filter options" },
+
+  "premiumFeatureTribes3": "Up to 3 tribes",
+  "@premiumFeatureTribes3": { "description": "Xtra tier feature: up to 3 tribes" },
+
+  "premiumFeatureUnlimitedTribes": "Unlimited tribes",
+  "@premiumFeatureUnlimitedTribes": { "description": "Unlimited tier feature: unlimited tribes" },
+
+  "premiumFeatureNoAds": "No ads",
+  "@premiumFeatureNoAds": { "description": "Xtra+ tier feature: ad-free experience" },
+
+  "premiumFeatureTravelPass": "Travel Pass",
+  "@premiumFeatureTravelPass": { "description": "Xtra tier feature: travel pass ability" },
+
+  "premiumFeatureReadReceipts": "Read receipts",
+  "@premiumFeatureReadReceipts": { "description": "Xtra tier feature: read receipts in chat" },
+
+  "premiumFeatureIncognito": "Incognito mode",
+  "@premiumFeatureIncognito": { "description": "Unlimited tier feature: incognito browsing" },
+
+  "premiumFeaturePrioritySupport": "Priority support",
+  "@premiumFeaturePrioritySupport": { "description": "Unlimited tier feature: priority customer support" },
+
+  "chatReadReceipts": "Read receipts",
+  "@chatReadReceipts": { "description": "Chat feature label for read receipts" }
 }

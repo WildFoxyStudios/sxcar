@@ -12,6 +12,8 @@ import 'package:app/src/health/health_service.dart';
 import 'package:app/src/media/media_service.dart';
 import 'package:app/src/models/profile_options.dart';
 import 'package:app/src/nsfw/nsfw_service.dart';
+import 'package:app/src/premium/premium_gate.dart';
+import 'package:app/src/premium/premium_service.dart';
 import 'package:app/src/theme/app_theme.dart';
 import 'package:app/src/theme/widgets.dart';
 import 'package:dio/dio.dart';
@@ -602,12 +604,47 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ChipMultiSelect(
-                options: kTribeOptions,
-                selected: draft.tribes.toSet(),
-                onChanged: (next) =>
-                    _updateDraftField((p) => _copyWith(p, tribes: next.toList())),
-              ),
+              // Tribes selection — gated by premium tier max_tribes limit
+              Builder(builder: (context) {
+                final premiumAsync = ref.read(premiumStatusProvider);
+                final data = premiumAsync is AsyncData ? premiumAsync.value : null;
+                final maxTribes = data?.features.maxTribes ?? 1;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ChipMultiSelect(
+                      options: kTribeOptions,
+                      selected: draft.tribes.toSet(),
+                      onChanged: (next) {
+                        if (next.length > maxTribes) {
+                          // Show upgrade prompt
+                          showPremiumComparisonSheet(context);
+                          return;
+                        }
+                        _updateDraftField(
+                            (p) => _copyWith(p, tribes: next.toList()));
+                      },
+                    ),
+                    if (draft.tribes.length >= maxTribes)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: GestureDetector(
+                          onTap: () => showPremiumComparisonSheet(context),
+                          child: Text(
+                            maxTribes == 1
+                                ? 'Upgrade to Xtra for up to 3 tribes'
+                                : 'Upgrade to Unlimited for unlimited tribes',
+                            style: const TextStyle(
+                              color: VibraTheme.kYellow,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              }),
             ],
           ),
         ),

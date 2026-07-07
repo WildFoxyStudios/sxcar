@@ -1595,113 +1595,59 @@ class AppLocalizationsEs extends AppLocalizations {
     return 'Travel Pass activado — explorando $city';
   }
 
-  // -------------------------------------------------------------------------
-  // Events screen
-  // -------------------------------------------------------------------------
+  @override
+  String get premiumTierFree => 'Gratis';
 
   @override
-  String get events_title => 'Eventos';
+  String get premiumTierXtra => 'Xtra';
 
   @override
-  String get events_create => 'Crear evento';
+  String get premiumTierUnlimited => 'Ilimitado';
 
   @override
-  String get events_load_error => 'Error al cargar eventos';
-
-  @override
-  String get events_empty_title => 'No hay eventos cerca';
-
-  @override
-  String get events_empty_subtitle => 'Sé el primero en crear uno';
-
-  @override
-  String get events_retry => 'Reintentar';
-
-  @override
-  String events_attendee_count(int count) {
-    if (count == 1) return '1 asistiendo';
-    return '$count asistiendo';
+  String premiumUpgradePrompt(String feature) {
+    return 'Actualiza para usar $feature';
   }
 
   @override
-  String get events_going => 'Ir';
+  String get premiumComparisonTitle => 'Comparar Planes';
 
   @override
-  String get events_maybe => 'Tal vez';
+  String get premiumFeatureBasicGrid => 'Cuadrícula básica (50 perfiles)';
 
   @override
-  String get events_detail_title => 'Detalles del evento';
+  String get premiumFeatureBasicFilters => 'Filtros básicos';
 
   @override
-  String get events_ends => 'Termina';
+  String get premiumFeatureOneTribe => '1 tribu';
 
   @override
-  String get events_attendees => 'Asistentes';
+  String get premiumFeatureUnlimitedGrid => 'Perfiles ilimitados';
 
   @override
-  String get events_form_title => 'Título';
+  String get premiumFeatureAdvancedFilters => 'Filtros avanzados';
 
   @override
-  String get events_form_title_hint => 'Nombre del evento';
+  String get premiumFeatureTribes3 => 'Hasta 3 tribus';
 
   @override
-  String get events_form_description => 'Descripción';
+  String get premiumFeatureUnlimitedTribes => 'Tribus ilimitadas';
 
   @override
-  String get events_form_location => 'Ubicación';
+  String get premiumFeatureNoAds => 'Sin anuncios';
 
   @override
-  String get events_form_location_hint => '¿Dónde será?';
+  String get premiumFeatureTravelPass => 'Travel Pass';
 
   @override
-  String get events_form_date => 'Fecha';
+  String get premiumFeatureReadReceipts => 'Confirmaciones de lectura';
 
   @override
-  String get events_form_time => 'Hora';
+  String get premiumFeatureIncognito => 'Modo incógnito';
 
   @override
-  String get events_form_create => 'Crear';
+  String get premiumFeaturePrioritySupport => 'Soporte prioritario';
 
   @override
-  String get events_created => '¡Evento creado!';
-
-  @override
-  String get events_create_error => 'Error al crear evento';
-
-  @override
-  String get events_you_are_going => 'Vas a ir';
-
-  @override
-  String get events_you_are_maybe => 'Tal vez vayas';
-
-  @override
-  String get events_cancel => 'Cancelar evento';
-
-  @override
-  String get events_cancel_confirm_title => '¿Cancelar evento?';
-
-  @override
-  String get events_cancel_confirm_body =>
-      'Esto cancelará el evento para todos los asistentes.';
-
-  @override
-  String get events_cancel_yes => 'Sí, cancelar';
-
-  @override
-  String get events_cancel_no => 'No, mantener';
-
-  @override
-  String get events_cancelled => 'Evento cancelado';
-
-  @override
-  String get events_delete_error => 'Error al eliminar evento';
-
-  @override
-  String get events_rsvp_going => '¡Vas a ir!';
-
-  @override
-  String get events_rsvp_maybe => 'Marcado como tal vez';
-
-  @override
-  String get events_rsvp_error => 'Error al confirmar asistencia';
+  String get chatReadReceipts => 'Confirmaciones de lectura';
 }

@@ -1241,5 +1241,64 @@
     "placeholders": {
       "city": { "type": "String" }
     }
-  }
+  },
+
+  "premiumTierFree": "Gratis",
+  "@premiumTierFree": { "description": "Insignia del nivel gratuito" },
+
+  "premiumTierXtra": "Xtra",
+  "@premiumTierXtra": { "description": "Insignia del nivel Xtra" },
+
+  "premiumTierUnlimited": "Ilimitado",
+  "@premiumTierUnlimited": { "description": "Insignia del nivel Unlimited" },
+
+  "premiumUpgradePrompt": "Actualiza para usar {feature}",
+  "@premiumUpgradePrompt": {
+    "description": "Mensaje para actualizar en funciones bloqueadas",
+    "placeholders": {
+      "feature": { "type": "String" }
+    }
+  },
+
+  "premiumComparisonTitle": "Comparar Planes",
+  "@premiumComparisonTitle": { "description": "Título de la hoja comparativa de planes" },
+
+  "premiumFeatureBasicGrid": "Cuadrícula básica (50 perfiles)",
+  "@premiumFeatureBasicGrid": { "description": "Función del nivel gratuito: cuadrícula limitada" },
+
+  "premiumFeatureBasicFilters": "Filtros básicos",
+  "@premiumFeatureBasicFilters": { "description": "Función del nivel gratuito: solo filtros básicos" },
+
+  "premiumFeatureOneTribe": "1 tribu",
+  "@premiumFeatureOneTribe": { "description": "Función del nivel gratuito: límite de una tribu" },
+
+  "premiumFeatureUnlimitedGrid": "Perfiles ilimitados",
+  "@premiumFeatureUnlimitedGrid": { "description": "Función del nivel Xtra+: cuadrícula ilimitada" },
+
+  "premiumFeatureAdvancedFilters": "Filtros avanzados",
+  "@premiumFeatureAdvancedFilters": { "description": "Función del nivel Xtra: filtros avanzados" },
+
+  "premiumFeatureTribes3": "Hasta 3 tribus",
+  "@premiumFeatureTribes3": { "description": "Función del nivel Xtra: hasta 3 tribus" },
+
+  "premiumFeatureUnlimitedTribes": "Tribus ilimitadas",
+  "@premiumFeatureUnlimitedTribes": { "description": "Función del nivel Unlimited: tribus ilimitadas" },
+
+  "premiumFeatureNoAds": "Sin anuncios",
+  "@premiumFeatureNoAds": { "description": "Función del nivel Xtra+: sin anuncios" },
+
+  "premiumFeatureTravelPass": "Travel Pass",
+  "@premiumFeatureTravelPass": { "description": "Función del nivel Xtra: Travel Pass" },
+
+  "premiumFeatureReadReceipts": "Confirmaciones de lectura",
+  "@premiumFeatureReadReceipts": { "description": "Función del nivel Xtra: confirmaciones de lectura" },
+
+  "premiumFeatureIncognito": "Modo incógnito",
+  "@premiumFeatureIncognito": { "description": "Función del nivel Unlimited: navegación incógnita" },
+
+  "premiumFeaturePrioritySupport": "Soporte prioritario",
+  "@premiumFeaturePrioritySupport": { "description": "Función del nivel Unlimited: soporte prioritario" },
+
+  "chatReadReceipts": "Confirmaciones de lectura",
+  "@chatReadReceipts": { "description": "Etiqueta de función de chat para confirmaciones de lectura" }
 }

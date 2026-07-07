@@ -7,6 +7,8 @@ import '../auth/auth_provider.dart';
 import '../billing/billing_providers.dart';
 import '../billing/models.dart';
 import '../boost/boost_service.dart';
+import '../premium/premium_gate.dart';
+import '../premium/premium_service.dart';
 import '../presence/presence_mode_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
@@ -132,13 +134,25 @@ class ProfileDrawer extends ConsumerWidget {
 
                   const SizedBox(height: 16),
 
-                  // Online / Incógnito segmented
+                  // Online / Incógnito segmented (Incógnito gated behind tier check)
                   SizedBox(
                     width: double.infinity,
                     child: VibraSegmented(
                       options: [l10n.online, l10n.incognito],
                       selectedIndex: isIncognito ? 1 : 0,
                       onChanged: (idx) {
+                        if (idx == 1) {
+                          // Check if user has incognito access
+                          final premiumAsync =
+                              ref.read(premiumStatusProvider);
+                          final data = premiumAsync is AsyncData
+                              ? premiumAsync.value
+                              : null;
+                          if (data == null || !data.features.incognitoMode) {
+                            showPremiumComparisonSheet(context);
+                            return;
+                          }
+                        }
                         ref
                             .read(presenceModeProvider.notifier)
                             .setIncognito(idx == 1);

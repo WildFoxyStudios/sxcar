@@ -36,6 +36,7 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::billing::subscriptions::{grant_revenuecat_subscription, revoke_revenuecat_subscription};
+use crate::premium::{clear_subscription_tier, set_subscription_tier};
 use crate::AppState;
 
 const GRANT_EVENTS: &[&str] = &[
@@ -224,6 +225,10 @@ pub async fn revenuecat_webhook(
             )
                 .into_response();
         }
+        // Update subscription_tier on the users table.
+        if let Err(e) = set_subscription_tier(&state.pool, user_id, plan_code).await {
+            tracing::warn!(%user_id, plan_code, error = %e, "Failed to update subscription_tier");
+        }
         tracing::info!(%user_id, plan_code, event_type, "RevenueCat: subscription granted");
     } else if REVOKE_EVENTS.contains(&event_type.as_str()) {
         // CANCELLATION → 'cancelled' (access ends immediately; RC will send EXPIRATION later).
@@ -243,6 +248,11 @@ pub async fn revenuecat_webhook(
                 Json(json!({"error": "db_error"})),
             )
                 .into_response();
+        }
+        // Reset subscription_tier back to free when all active subscriptions are gone.
+        // We check if any active subscription remains; if not, downgrade to free.
+        if let Err(e) = clear_subscription_tier(&state.pool, user_id).await {
+            tracing::warn!(%user_id, error = %e, "Failed to clear subscription_tier");
         }
         tracing::info!(%user_id, plan_code, event_type, new_status, "RevenueCat: subscription revoked");
     } else {

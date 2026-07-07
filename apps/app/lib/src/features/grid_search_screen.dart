@@ -12,6 +12,8 @@ import '../places/places_service.dart';
 import '../places/roam_service.dart';
 import '../travel/travel_pass_service.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../premium/premium_gate.dart';
+import '../premium/premium_service.dart';
 import '../settings/settings_providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
@@ -599,7 +601,16 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
               color: _isRoam ? VibraTheme.kYellow : Colors.white,
             ),
             tooltip: l10n.roamTooltip,
-            onPressed: _showRoamSheet,
+            onPressed: () {
+              // Gate Travel Pass behind Xtra/Unlimited tier
+              final premiumAsync = ref.read(premiumStatusProvider);
+              final data = premiumAsync is AsyncData ? premiumAsync.value : null;
+              if (data == null || !data.features.travelPass) {
+                showPremiumComparisonSheet(context);
+                return;
+              }
+              _showRoamSheet();
+            },
           ),
         ],
       ),

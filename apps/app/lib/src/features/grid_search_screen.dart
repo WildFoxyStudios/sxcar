@@ -767,7 +767,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Try roaming to a different location!',
+                      l10n.gridNoUsersSubtitle,
                       style: VibraTheme.bodySecondary,
                       textAlign: TextAlign.center,
                     ),

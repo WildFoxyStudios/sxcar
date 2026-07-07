@@ -516,5 +516,30 @@
     "placeholders": {
       "count": { "type": "int", "example": "3" }
     }
-  }
+  },
+
+  "login_title": "Login",
+  "@login_title": { "description": "Login screen AppBar title" },
+  "login_email_label": "Email",
+  "@login_email_label": { "description": "Login screen email text field label" },
+  "login_email_empty_error": "Please enter your email",
+  "@login_email_empty_error": { "description": "Login screen email field empty validation error" },
+  "login_email_invalid_error": "Invalid email format",
+  "@login_email_invalid_error": { "description": "Login screen email field format validation error" },
+  "login_password_label": "Password",
+  "@login_password_label": { "description": "Login screen password text field label" },
+  "login_password_empty_error": "Please enter your password",
+  "@login_password_empty_error": { "description": "Login screen password field empty validation error" },
+  "login_button": "Login",
+  "@login_button": { "description": "Login screen submit button label" },
+  "login_or_divider": "or",
+  "@login_or_divider": { "description": "Login screen 'or' divider text between login methods" },
+  "login_google_button": "Sign in with Google",
+  "@login_google_button": { "description": "Login screen Google sign-in button label" },
+  "login_register_link": "Don't have an account? Register",
+  "@login_register_link": { "description": "Login screen link to register screen" },
+  "login_error_google": "Google Sign-In failed. Please try again.",
+  "@login_error_google": { "description": "Login screen generic Google sign-in error message" },
+  "login_error_network": "Login failed. Please try again.",
+  "@login_error_network": { "description": "Login screen generic login error message" }
 }

@@ -824,5 +824,30 @@
     "placeholders": {
       "count": { "type": "int", "example": "3" }
     }
-  }
+  },
+
+  "login_title": "Iniciar sesión",
+  "@login_title": { "description": "Título de la barra de inicio de sesión" },
+  "login_email_label": "Correo electrónico",
+  "@login_email_label": { "description": "Etiqueta del campo de correo electrónico en inicio de sesión" },
+  "login_email_empty_error": "Por favor, introduce tu correo electrónico",
+  "@login_email_empty_error": { "description": "Error de validación: campo de correo vacío en inicio de sesión" },
+  "login_email_invalid_error": "Formato de correo electrónico no válido",
+  "@login_email_invalid_error": { "description": "Error de validación: formato de correo inválido en inicio de sesión" },
+  "login_password_label": "Contraseña",
+  "@login_password_label": { "description": "Etiqueta del campo de contraseña en inicio de sesión" },
+  "login_password_empty_error": "Por favor, introduce tu contraseña",
+  "@login_password_empty_error": { "description": "Error de validación: campo de contraseña vacío en inicio de sesión" },
+  "login_button": "Iniciar sesión",
+  "@login_button": { "description": "Botón de inicio de sesión" },
+  "login_or_divider": "o",
+  "@login_or_divider": { "description": "Texto del divisor 'o' entre métodos de inicio de sesión" },
+  "login_google_button": "Iniciar sesión con Google",
+  "@login_google_button": { "description": "Botón de inicio de sesión con Google" },
+  "login_register_link": "¿No tienes cuenta? Regístrate",
+  "@login_register_link": { "description": "Enlace a la pantalla de registro desde inicio de sesión" },
+  "login_error_google": "Error al iniciar sesión con Google. Inténtalo de nuevo.",
+  "@login_error_google": { "description": "Mensaje de error genérico de Google Sign-In" },
+  "login_error_network": "Error al iniciar sesión. Inténtalo de nuevo.",
+  "@login_error_network": { "description": "Mensaje de error genérico de inicio de sesión" }
 }

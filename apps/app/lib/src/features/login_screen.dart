@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../auth/auth_provider.dart';
 import '../auth/google_sign_in_service.dart';
 import '../auth/models.dart';
@@ -42,8 +43,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         return;
       }
       if (!result.isSuccess) {
+        final l10n = AppLocalizations.of(context)!;
         setState(() {
-          _error = result.error ?? 'Google Sign-In failed';
+          _error = result.error ?? l10n.login_error_google;
           _isGoogleLoading = false;
         });
         return;
@@ -56,7 +58,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
-      setState(() => _error = 'Google Sign-In failed. Please try again.');
+      final l10n = AppLocalizations.of(context)!;
+      setState(() => _error = l10n.login_error_google);
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }
@@ -79,7 +82,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
-      setState(() => _error = 'Login failed. Please try again.');
+      final l10n = AppLocalizations.of(context)!;
+      setState(() => _error = l10n.login_error_network);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -87,8 +91,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: Text(l10n.login_title)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -98,17 +103,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.login_email_label,
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your email';
+                    return l10n.login_email_empty_error;
                   }
                   if (!validateEmail(email: value.trim())) {
-                    return 'Invalid email format';
+                    return l10n.login_email_invalid_error;
                   }
                   return null;
                 },
@@ -116,14 +121,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.login_password_label,
+                  border: const OutlineInputBorder(),
                 ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
+                    return l10n.login_password_empty_error;
                   }
                   return null;
                 },
@@ -146,7 +151,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Login'),
+                      : Text(l10n.login_button),
                 ),
               ),
               const SizedBox(height: 12),
@@ -154,7 +159,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const Expanded(child: Divider()),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text('or', style: TextStyle(color: Colors.grey[600])),
+                  child: Text(l10n.login_or_divider, style: TextStyle(color: Colors.grey[600])),
                 ),
                 const Expanded(child: Divider()),
               ]),
@@ -170,13 +175,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.login, size: 20),
-                  label: const Text('Sign in with Google'),
+                  label: Text(l10n.login_google_button),
                 ),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: _isLoading ? null : () => context.go('/register'),
-                child: const Text("Don't have an account? Register"),
+                child: Text(l10n.login_register_link),
               ),
             ],
           ),

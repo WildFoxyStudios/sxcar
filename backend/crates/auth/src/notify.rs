@@ -17,9 +17,8 @@ impl Notifier for DevNotifier {
         tracing::info!(target: "auth::notify", to, subject, body, "DEV email");
         Ok(())
     }
-    async fn send_sms(&self, to: &str, body: &str) -> Result<(), AuthError> {
-        tracing::info!(target: "auth::notify", to, body, "DEV sms");
-        Ok(())
+    async fn send_sms(&self, _to: &str, _body: &str) -> Result<(), AuthError> {
+        Err(AuthError::Notify("SMS not implemented".into()))
     }
 }
 
@@ -90,9 +89,8 @@ impl Notifier for SmtpNotifier {
         }
     }
 
-    async fn send_sms(&self, to: &str, body: &str) -> Result<(), AuthError> {
-        tracing::info!(target: "auth::notify", to, body, "SMS not yet implemented via SMTP");
-        Ok(())
+    async fn send_sms(&self, _to: &str, _body: &str) -> Result<(), AuthError> {
+        Err(AuthError::Notify("SMS not implemented".into()))
     }
 }
 

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../auth/auth_provider.dart';
 import '../media/media_service.dart';
 
@@ -50,7 +51,8 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
   List<AlbumPhoto>? _photos;
   bool _isLoading = true;
   bool _isUploading = false;
-  String? _error;
+  bool _isNotFound = false;
+  String? _errorDetail;
 
   @override
   void initState() {
@@ -61,7 +63,8 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
   Future<void> _loadAlbum() async {
     setState(() {
       _isLoading = true;
-      _error = null;
+      _isNotFound = false;
+      _errorDetail = null;
     });
 
     try {
@@ -84,16 +87,15 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
       setState(() {
         _isLoading = false;
         if (e.response?.statusCode == 404) {
-          _error = 'Album not found';
+          _isNotFound = true;
         } else {
-          _error =
-              'Failed to load album: ${e.response?.statusCode ?? e.message}';
+          _errorDetail = '${e.response?.statusCode ?? e.message}';
         }
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _error = 'Failed to load album: $e';
+        _errorDetail = '$e';
       });
     }
   }
@@ -139,19 +141,21 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
       await _loadAlbum();
     } on DioException catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-                'Failed to add photos: ${e.response?.statusCode ?? e.message}'),
+            content: Text(l10n.album_add_error(
+                '${e.response?.statusCode ?? e.message}')),
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to add photos: $e'),
+            content: Text(l10n.album_add_error('$e')),
             backgroundColor: Colors.red,
           ),
         );
@@ -176,7 +180,8 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final albumName = _album?['name'] as String? ?? 'Album';
+    final l10n = AppLocalizations.of(context)!;
+    final albumName = _album?['name'] as String? ?? l10n.album_title_fallback;
 
     return Scaffold(
       appBar: AppBar(
@@ -192,31 +197,34 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
                     )
                   : const Icon(Icons.add_photo_alternate),
               onPressed: _isUploading ? null : _addPhotos,
-              tooltip: 'Add photos',
+              tooltip: l10n.album_add_photos,
             ),
         ],
       ),
-      body: _buildBody(),
+      body: _buildBody(l10n),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(AppLocalizations l10n) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null) {
+    if (_isNotFound || _errorDetail != null) {
+      final errorText =
+          _isNotFound ? l10n.album_not_found : l10n.album_load_error(_errorDetail!);
+
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
-            Text(_error!, style: Theme.of(context).textTheme.titleMedium),
+            Text(errorText, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _loadAlbum,
-              child: const Text('Retry'),
+              child: Text(l10n.album_retry),
             ),
           ],
         ),
@@ -233,14 +241,14 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
             const Icon(Icons.photo_library_outlined, size: 64),
             const SizedBox(height: 16),
             Text(
-              'No photos yet',
+              l10n.album_no_photos,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             FilledButton.icon(
               onPressed: _addPhotos,
               icon: const Icon(Icons.add_photo_alternate),
-              label: const Text('Add Photos'),
+              label: Text(l10n.album_add_photos),
             ),
           ],
         ),
@@ -284,31 +292,34 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
   void _showPhotoPreview(AlbumPhoto photo) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                photo.photoUrl,
-                fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => const Icon(
-                  Icons.broken_image,
-                  size: 64,
-                  color: Colors.white,
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(context)!;
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  photo.photoUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.broken_image,
+                    size: 64,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(l10n.album_close),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

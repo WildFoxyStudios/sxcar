@@ -721,5 +721,40 @@
   "right_now_no_location": "Sin ubicación",
   "@right_now_no_location": { "description": "Etiqueta de ubicación no disponible en Right Now" },
   "right_now_location_permission": "Permiso de ubicación requerido",
-  "@right_now_location_permission": { "description": "Mensaje de permiso de ubicación en Right Now" }
+  "@right_now_location_permission": { "description": "Mensaje de permiso de ubicación en Right Now" },
+
+  "album_not_found": "Álbum no encontrado",
+  "@album_not_found": { "description": "Error de álbum no encontrado en la pantalla de detalle" },
+  "album_load_error": "Error al cargar el álbum: {error}",
+  "@album_load_error": {
+    "description": "Error al cargar el álbum en la pantalla de detalle",
+    "placeholders": {
+      "error": { "type": "String", "example": "500" }
+    }
+  },
+  "album_add_error": "Error al añadir fotos: {error}",
+  "@album_add_error": {
+    "description": "Error al añadir fotos al álbum",
+    "placeholders": {
+      "error": { "type": "String", "example": "Error de red" }
+    }
+  },
+  "album_retry": "Reintentar",
+  "@album_retry": { "description": "Botón de reintentar en pantalla de detalle de álbum" },
+  "album_title_fallback": "Álbum",
+  "@album_title_fallback": { "description": "Título por defecto del álbum cuando falta el nombre" },
+  "album_no_photos": "Sin fotos aún",
+  "@album_no_photos": { "description": "Estado vacío cuando el álbum no tiene fotos" },
+  "album_add_photos": "Añadir fotos",
+  "@album_add_photos": { "description": "Tooltip y botón para añadir fotos al álbum" },
+  "album_close": "Cerrar",
+  "@album_close": { "description": "Botón de cerrar en la vista previa de foto" },
+  "album_delete": "Eliminar",
+  "@album_delete": { "description": "Etiqueta de acción eliminar álbum" },
+  "album_delete_confirm": "¿Eliminar este álbum?",
+  "@album_delete_confirm": { "description": "Confirmación de eliminación de álbum" },
+  "album_share": "Compartir",
+  "@album_share": { "description": "Etiqueta de acción compartir álbum" },
+  "album_share_link": "Compartir enlace",
+  "@album_share_link": { "description": "Etiqueta de enlace para compartir álbum" }
 }

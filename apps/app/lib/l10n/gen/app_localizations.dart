@@ -1915,6 +1915,78 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Permiso de ubicación requerido'**
   String get right_now_location_permission;
+
+  /// Error de álbum no encontrado en la pantalla de detalle
+  ///
+  /// In es, this message translates to:
+  /// **'Álbum no encontrado'**
+  String get album_not_found;
+
+  /// Error al cargar el álbum en la pantalla de detalle
+  ///
+  /// In es, this message translates to:
+  /// **'Error al cargar el álbum: {error}'**
+  String album_load_error(String error);
+
+  /// Error al añadir fotos al álbum
+  ///
+  /// In es, this message translates to:
+  /// **'Error al añadir fotos: {error}'**
+  String album_add_error(String error);
+
+  /// Botón de reintentar en pantalla de detalle de álbum
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get album_retry;
+
+  /// Título por defecto del álbum cuando falta el nombre
+  ///
+  /// In es, this message translates to:
+  /// **'Álbum'**
+  String get album_title_fallback;
+
+  /// Estado vacío cuando el álbum no tiene fotos
+  ///
+  /// In es, this message translates to:
+  /// **'Sin fotos aún'**
+  String get album_no_photos;
+
+  /// Tooltip y botón para añadir fotos al álbum
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir fotos'**
+  String get album_add_photos;
+
+  /// Botón de cerrar en la vista previa de foto
+  ///
+  /// In es, this message translates to:
+  /// **'Cerrar'**
+  String get album_close;
+
+  /// Etiqueta de acción eliminar álbum
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar'**
+  String get album_delete;
+
+  /// Confirmación de eliminación de álbum
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar este álbum?'**
+  String get album_delete_confirm;
+
+  /// Etiqueta de acción compartir álbum
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir'**
+  String get album_share;
+
+  /// Etiqueta de enlace para compartir álbum
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir enlace'**
+  String get album_share_link;
 }
 
 class _AppLocalizationsDelegate

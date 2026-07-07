@@ -947,4 +947,44 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get right_now_location_permission => 'Permiso de ubicación requerido';
+
+  @override
+  String get album_not_found => 'Álbum no encontrado';
+
+  @override
+  String album_load_error(String error) {
+    return 'Error al cargar el álbum: $error';
+  }
+
+  @override
+  String album_add_error(String error) {
+    return 'Error al añadir fotos: $error';
+  }
+
+  @override
+  String get album_retry => 'Reintentar';
+
+  @override
+  String get album_title_fallback => 'Álbum';
+
+  @override
+  String get album_no_photos => 'Sin fotos aún';
+
+  @override
+  String get album_add_photos => 'Añadir fotos';
+
+  @override
+  String get album_close => 'Cerrar';
+
+  @override
+  String get album_delete => 'Eliminar';
+
+  @override
+  String get album_delete_confirm => '¿Eliminar este álbum?';
+
+  @override
+  String get album_share => 'Compartir';
+
+  @override
+  String get album_share_link => 'Compartir enlace';
 }

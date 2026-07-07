@@ -154,7 +154,7 @@ class ProfileEditNotifier extends Notifier<ProfileEditState> {
   }
 
   Map<String, dynamic> _buildBody(UserProfile p) {
-    return {
+    final body = <String, dynamic>{
       if (p.displayName != null) 'display_name': p.displayName,
       if (p.bio != null) 'bio': p.bio,
       if (p.birthdate != null) 'birthdate': p.birthdate,
@@ -170,7 +170,6 @@ class ProfileEditNotifier extends Notifier<ProfileEditState> {
       'looking_for': p.lookingFor,
       'meet_at': p.meetAt,
       'tags': p.tags,
-      'details': p.details,
       'show_age': p.showAge,
       'show_role': p.showRole,
       'show_tribes': p.showTribes,
@@ -179,6 +178,12 @@ class ProfileEditNotifier extends Notifier<ProfileEditState> {
       'show_relationship_status': p.showRelationshipStatus,
       'show_social_links': p.showSocialLinks,
     };
+    // Explicit null in 'details' is a 422 validation error on the backend.
+    // Only include it when the value is non-null.
+    if (p.details != null) {
+      body['details'] = p.details;
+    }
+    return body;
   }
 
   String _humanizeError(DioException e) {
@@ -186,7 +191,16 @@ class ProfileEditNotifier extends Notifier<ProfileEditState> {
     if (code == 413) return 'Detalles demasiado grandes (máx 8 KB).';
     if (code == 422) return 'Datos inválidos.';
     if (code == 401) return 'Sesión expirada.';
-    return 'Error al guardar (${code ?? 'network'}).';
+    if (code == 500) return 'Error del servidor. Intenta de nuevo.';
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout) {
+      return 'Tiempo de conexión agotado. Verifica tu conexión.';
+    }
+    if (e.type == DioExceptionType.connectionError) {
+      return 'Sin conexión. Verifica tu internet.';
+    }
+    if (code != null) return 'Error al guardar (HTTP $code).';
+    return 'Error de red (${e.type.name}). Verifica tu conexión.';
   }
 }
 

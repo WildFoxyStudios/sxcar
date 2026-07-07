@@ -50,7 +50,14 @@ final tokenStorageProvider = Provider<TokenStorage>((ref) {
 
 final dioProvider = Provider<Dio>((ref) {
   final storage = ref.watch(tokenStorageProvider);
-  return createAuthClient(storage);
+  return createAuthClient(
+    storage,
+    // When the refresh token flow fails, reset auth state so the
+    // router redirects to /login and screens stop fetching data.
+    onSessionExpired: () {
+      ref.read(authStateProvider.notifier).logout();
+    },
+  );
 });
 
 final authServiceProvider = Provider<AuthService>((ref) {

@@ -27,7 +27,7 @@ class ApiClient {
   }
 }
 
-Dio createAuthClient(TokenStorage tokenStorage) {
+Dio createAuthClient(TokenStorage tokenStorage, {void Function()? onSessionExpired}) {
   final dio = Dio(BaseOptions(
     baseUrl: apiUrl,
     connectTimeout: const Duration(seconds: 10),
@@ -105,6 +105,7 @@ Dio createAuthClient(TokenStorage tokenStorage) {
         handler.resolve(retryResponse);
       } catch (e) {
         await tokenStorage.clearTokens();
+        onSessionExpired?.call();
         // If refresh itself failed (any non-2xx), surface the ORIGINAL request
         // error to the caller — not a generic "Session expired" message — so
         // the UI can decide whether to re-prompt for login or show the actual

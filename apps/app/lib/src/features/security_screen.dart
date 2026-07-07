@@ -20,39 +20,33 @@ class SecurityScreen extends StatelessWidget {
         children: [
           _tipCard(
             icon: Icons.block,
-            title: 'Block and Report',
-            body: 'Tap the ⋮ menu on any profile to block or report a user. '
-                'Blocked users cannot see your profile or contact you.',
+            title: l10n.securityBlockReportTitle,
+            body: l10n.securityBlockReportBody,
           ),
           _tipCard(
             icon: Icons.visibility_off,
-            title: 'Incognito Mode',
-            body: 'Browse profiles without appearing in their Viewed Me list. '
-                'Available with Vibra+ and Unlimited plans.',
+            title: l10n.securityIncognitoTitle,
+            body: l10n.securityIncognitoBody,
           ),
           _tipCard(
             icon: Icons.lock,
-            title: 'PIN Lock',
-            body: 'Set a 4-digit PIN to lock the app when opened. '
-                'Configure it in Settings → PIN.',
+            title: l10n.securityPinLockTitle,
+            body: l10n.securityPinLockBody,
           ),
           _tipCard(
             icon: Icons.dark_mode,
-            title: 'Discreet App Icon',
-            body: 'Change the app icon to a generic one so Vibra is not '
-                'recognizable on your home screen. Set it in Settings → Discreet Icon.',
+            title: l10n.securityDiscreetIconTitle,
+            body: l10n.securityDiscreetIconBody,
           ),
           _tipCard(
             icon: Icons.camera_alt,
-            title: 'Screenshot Alerts',
-            body: 'You are notified when someone takes a screenshot of your '
-                'profile or chat. Enabled by default.',
+            title: l10n.securityScreenshotAlertsTitle,
+            body: l10n.securityScreenshotAlertsBody,
           ),
           _tipCard(
             icon: Icons.shield,
-            title: 'NSFW Blur',
-            body: 'Profile photos flagged as explicit are automatically blurred. '
-                'This uses on-device AI — no images leave your phone.',
+            title: l10n.securityNsfwBlurTitle,
+            body: l10n.securityNsfwBlurBody,
           ),
         ],
       ),

@@ -130,6 +130,7 @@ class RightNowScreen extends ConsumerWidget {
                           messenger.showSnackBar(SnackBar(
                               content: Text(l10n.right_now_published)));
                         } catch (_) {
+                          debugPrint('[RightNowScreen] error: publish failed');
                           messenger.showSnackBar(SnackBar(
                               content: Text(l10n.right_now_publish_error)));
                         }
@@ -226,6 +227,7 @@ class _RightNowFeed extends ConsumerWidget {
                               .delete(intent.id);
                           ref.invalidate(rightNowFeedProvider);
                         } catch (_) {
+                          debugPrint('[RightNowScreen] error: delete intent failed');
                           messenger.showSnackBar(SnackBar(
                               content: Text(l10n.right_now_delete_error)));
                         }

@@ -31,6 +31,7 @@ class SecureTokenStorage implements TokenStorage {
         _secure.write(key: _refreshKey, value: refresh),
       ]);
     } catch (_) {
+      debugPrint('[TokenStorage] error: secure write failed, falling back to SharedPreferences');
       // Fallback to SharedPreferences if secure storage fails
       final prefs = await _sharedPrefs;
       await prefs.setString(_accessKey, access);
@@ -43,7 +44,9 @@ class SecureTokenStorage implements TokenStorage {
     try {
       final token = await _secure.read(key: _accessKey);
       if (token != null && token.isNotEmpty) return token;
-    } catch (_) {}
+    } catch (_) {
+      debugPrint('[TokenStorage] error: secure read access_token failed');
+    }
     // Fallback
     final prefs = await _sharedPrefs;
     return prefs.getString(_accessKey);
@@ -54,7 +57,9 @@ class SecureTokenStorage implements TokenStorage {
     try {
       final token = await _secure.read(key: _refreshKey);
       if (token != null && token.isNotEmpty) return token;
-    } catch (_) {}
+    } catch (_) {
+      debugPrint('[TokenStorage] error: secure read refresh_token failed');
+    }
     final prefs = await _sharedPrefs;
     return prefs.getString(_refreshKey);
   }
@@ -66,7 +71,9 @@ class SecureTokenStorage implements TokenStorage {
         _secure.delete(key: _accessKey),
         _secure.delete(key: _refreshKey),
       ]);
-    } catch (_) {}
+    } catch (_) {
+      debugPrint('[TokenStorage] error: secure delete failed');
+    }
     final prefs = await _sharedPrefs;
     await prefs.remove(_accessKey);
     await prefs.remove(_refreshKey);

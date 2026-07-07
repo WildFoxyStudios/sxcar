@@ -170,6 +170,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
         });
       }
     } catch (_) {
+      debugPrint('[NavegarScreen] error: loading favorites failed');
       // Favorites are optional — the chip simply filters nothing on failure.
     }
   }
@@ -199,6 +200,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
         });
       }
     } catch (_) {
+      debugPrint('[NavegarScreen] error: loading filter options failed');
       // API unreachable — keep the hardcoded defaults.
     }
   }
@@ -364,6 +366,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
         );
       }
     } catch (_) {
+      debugPrint('[NavegarScreen] error: activating boost');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Boost activado')),

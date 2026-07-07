@@ -113,6 +113,7 @@ class CallService {
       await _remoteRenderer.initialize();
       await _localRenderer.initialize();
     } catch (_) {
+      debugPrint('[CallService._initRenderers] error: renderer initialization failed');
       // Test environments without platform channels: renderers stay inert.
     }
   }
@@ -255,6 +256,7 @@ class CallService {
         ),
       );
     } catch (_) {
+      debugPrint('[CallService.addIceCandidate] error: invalid candidate (common during call teardown)');
       // Ignore invalid candidates (common during call teardown).
     }
   }
@@ -364,7 +366,9 @@ class CallService {
     _currentConversationId = null;
     try {
       await _peerConnection?.close();
-    } catch (_) {}
+    } catch (_) {
+      debugPrint('[CallService._cleanup] error: peerConnection.close failed');
+    }
     _peerConnection = null;
 
     try {
@@ -372,8 +376,9 @@ class CallService {
         _localStream!.getTracks().forEach((track) => track.stop());
         _localStream!.dispose();
       }
-    } catch (_) {}
-    _localStream = null;
+    } catch (_) {
+      debugPrint('[CallService._cleanup] error: localStream cleanup failed');
+    }
   }
 
   void _updateState(CallState newState) {

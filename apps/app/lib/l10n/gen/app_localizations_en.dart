@@ -1542,4 +1542,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discover => 'Discover';
+
+  @override
+  String get travelPass => 'Travel Pass';
+
+  @override
+  String travelPassSet(String city) {
+    return 'Travel to $city';
+  }
+
+  @override
+  String travelPassBanner(String city) {
+    return 'You\'re exploring $city';
+  }
+
+  @override
+  String travelPassExpires(String hours) {
+    return 'Expires in ${hours}h';
+  }
+
+  @override
+  String get travelPassBackToMyLocation => 'Back to my location';
+
+  @override
+  String travelPassFailedToSet(String error) {
+    return 'Failed to set travel pass: $error';
+  }
+
+  @override
+  String get travelPassFailedToCancel => 'Failed to cancel travel pass';
+
+  @override
+  String get travelPassCancelled =>
+      'Travel pass cancelled — back to your location';
+
+  @override
+  String travelPassSetSuccess(String city) {
+    return 'Travel pass activated — exploring $city';
+  }
 }

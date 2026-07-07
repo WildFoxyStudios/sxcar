@@ -3013,6 +3013,60 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Descubrir'**
   String get discover;
+
+  /// Travel Pass button/section label
+  ///
+  /// In es, this message translates to:
+  /// **'Travel Pass'**
+  String get travelPass;
+
+  /// Button to set travel location to a specific city
+  ///
+  /// In es, this message translates to:
+  /// **'Viajar a {city}'**
+  String travelPassSet(String city);
+
+  /// Banner label showing the travel pass active city
+  ///
+  /// In es, this message translates to:
+  /// **'Estas explorando {city}'**
+  String travelPassBanner(String city);
+
+  /// Travel pass banner showing remaining hours
+  ///
+  /// In es, this message translates to:
+  /// **'Expira en {hours}h'**
+  String travelPassExpires(String hours);
+
+  /// Button to cancel travel pass and return to real GPS location
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a mi ubicacion'**
+  String get travelPassBackToMyLocation;
+
+  /// Error snackbar when setting travel pass fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al activar Travel Pass: {error}'**
+  String travelPassFailedToSet(String error);
+
+  /// Error snackbar when cancelling travel pass fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al cancelar Travel Pass'**
+  String get travelPassFailedToCancel;
+
+  /// Success snackbar when travel pass is cancelled
+  ///
+  /// In es, this message translates to:
+  /// **'Travel Pass cancelado — de vuelta a tu ubicacion'**
+  String get travelPassCancelled;
+
+  /// Success snackbar when travel pass is activated
+  ///
+  /// In es, this message translates to:
+  /// **'Travel Pass activado — explorando {city}'**
+  String travelPassSetSuccess(String city);
 }
 
 class _AppLocalizationsDelegate

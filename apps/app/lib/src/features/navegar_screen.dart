@@ -9,6 +9,7 @@ import '../auth/auth_provider.dart';
 import '../boost/boost_service.dart';
 import '../location/location_service.dart';
 import '../presence/presence_service.dart';
+import '../travel/travel_pass_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
 import '../settings/settings_providers.dart';
@@ -136,6 +137,10 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   String? _position; // backend enum value (lowercase, e.g. 'bottom', 'top')
   bool _notChatted = false;
 
+  // ── Travel Pass state ───────────────────────────────────────────────────────
+  TravelPass? _travelPass;
+  bool _travelPassLoaded = false;
+
   // ── Dynamic filter options (fetched from /meta/filters on init) ──────────
   List<String> _tribes = _kDefaultTribes;
   List<String> _bodyTypes = _kDefaultBodyTypes;
@@ -148,6 +153,35 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     _discoverUsersFuture = _initAndFetchDiscover();
     _loadFavorites();
     _loadFilterOptions();
+    _loadTravelPass();
+  }
+
+  /// Load the current active travel pass from the server.
+  Future<void> _loadTravelPass() async {
+    try {
+      await ref.read(authReadyProvider.future);
+      final service = ref.read(travelPassServiceProvider);
+      final tp = await service.getCurrent();
+      if (!mounted) return;
+      setState(() {
+        _travelPass = tp;
+        _travelPassLoaded = true;
+        if (tp != null) {
+          // Re-fetch with travel pass coordinates
+          _nearbyUsersFuture = _fetchNearbyUsers(
+            overrideLat: tp.lat,
+            overrideLon: tp.lon,
+          );
+          _discoverUsersFuture = _fetchDiscoverUsers(
+            overrideLat: tp.lat,
+            overrideLon: tp.lon,
+          );
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _travelPassLoaded = true);
+    }
   }
 
   /// Waits for auth, fetches GPS, then fetches nearby users.
@@ -224,23 +258,36 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
 
   /// Fetches curated user profiles from GET /discover.
   /// Returns an empty list on failure (silently — the strip simply won't show).
-  Future<List<NearbyUser>> _fetchDiscoverUsers() async {
-    var pos = _lastPosition;
-    if (pos == null) {
+  Future<List<NearbyUser>> _fetchDiscoverUsers({
+    double? overrideLat,
+    double? overrideLon,
+  }) async {
+    // Use override coordinates (travel pass) if provided, otherwise use GPS.
+    double lat;
+    double lon;
+    if (overrideLat != null && overrideLon != null) {
+      lat = overrideLat;
+      lon = overrideLon;
+    } else if (_lastPosition != null) {
+      lat = _lastPosition!.latitude;
+      lon = _lastPosition!.longitude;
+    } else {
       // No cached position — try to obtain one ourselves.
       final service = ref.read(locationServiceProvider);
-      pos = await service.getCurrentPosition() ??
+      final pos = await service.getCurrentPosition() ??
           await service.getLastKnownPosition();
+      if (pos == null) return const [];
+      lat = pos.latitude;
+      lon = pos.longitude;
     }
-    if (pos == null) return const [];
     try {
       final dio = ref.read(dioProvider);
       final response = await dio.get<Map<String, dynamic>>(
         '/discover',
         queryParameters: {
-          'lat': pos.latitude,
-          'lon': pos.longitude,
-          'radius_m': 50000, // 50 km default radius for discover
+          'lat': lat,
+          'lon': lon,
+          'radius_m': 50000,
         },
       );
       final data = response.data!;
@@ -254,15 +301,21 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     }
   }
 
-  Future<List<NearbyUser>> _fetchNearbyUsers() async {
-    final pos = _lastPosition;
-    if (pos == null) return const [];
+  Future<List<NearbyUser>> _fetchNearbyUsers({
+    double? overrideLat,
+    double? overrideLon,
+  }) async {
     final dio = ref.read(dioProvider);
     final radiusM = (_distanceKm * 1000).round();
 
+    // Use override coordinates (travel pass) if provided, otherwise use GPS.
+    final effectiveLat = overrideLat ?? _lastPosition?.latitude;
+    final effectiveLon = overrideLon ?? _lastPosition?.longitude;
+    if (effectiveLat == null || effectiveLon == null) return const [];
+
     final queryParams = <String, dynamic>{
-      'lat': pos.latitude,
-      'lon': pos.longitude,
+      'lat': effectiveLat,
+      'lon': effectiveLon,
       'radius_m': radiusM,
       'limit': 50,
     };
@@ -479,6 +532,10 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 // ── Location denied banner ───────────────────────────────
                 if (_locationDenied)
                   SliverToBoxAdapter(child: _buildLocationBanner()),
+
+                // ── Travel Pass banner ────────────────────────────────────
+                if (_travelPass != null)
+                  SliverToBoxAdapter(child: _buildTravelPassBanner(l10n)),
 
                 // ── Filter chips row ─────────────────────────────────────
                 SliverToBoxAdapter(
@@ -1049,6 +1106,81 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
             child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Travel Pass banner: shows active virtual location and expiry.
+  Widget _buildTravelPassBanner(AppLocalizations l10n) {
+    final tp = _travelPass;
+    if (tp == null) return const SizedBox.shrink();
+    final cityLabel = tp.cityName ??
+        '${tp.lat.toStringAsFixed(4)}, ${tp.lon.toStringAsFixed(4)}';
+    final hoursRemaining = tp.expiresInHours.toStringAsFixed(1);
+    return Container(
+      width: double.infinity,
+      color: VibraTheme.kSurface,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          const Icon(Icons.flight_takeoff, size: 18, color: VibraTheme.kYellow),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.travelPassBanner(cityLabel),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  l10n.travelPassExpires(hoursRemaining),
+                  style: const TextStyle(
+                    color: VibraTheme.kTextSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              final service = ref.read(travelPassServiceProvider);
+              service.delete().then((_) {
+                if (!mounted) return;
+                setState(() {
+                  _travelPass = null;
+                  _nearbyUsersFuture = _fetchNearbyUsers();
+                  _discoverUsersFuture = _fetchDiscoverUsers();
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.travelPassCancelled)),
+                );
+              }).catchError((e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.travelPassFailedToCancel),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              });
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: VibraTheme.kAccent,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+            child: Text(
+              l10n.travelPassBackToMyLocation,
+              style: const TextStyle(fontSize: 12),
+            ),
           ),
         ],
       ),

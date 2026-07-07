@@ -1197,5 +1197,49 @@
   "@gridFailedToLoad": { "description": "Grid search screen error state message" },
 
   "discover": "Descubrir",
-  "@discover": { "description": "Discover section header in Navegar screen" }
+  "@discover": { "description": "Discover section header in Navegar screen" },
+
+  "travelPass": "Travel Pass",
+  "@travelPass": { "description": "Travel Pass button/section label" },
+  "travelPassSet": "Viajar a {city}",
+  "@travelPassSet": {
+    "description": "Button to set travel location to a specific city",
+    "placeholders": {
+      "city": { "type": "String" }
+    }
+  },
+  "travelPassBanner": "Estas explorando {city}",
+  "@travelPassBanner": {
+    "description": "Banner label showing the travel pass active city",
+    "placeholders": {
+      "city": { "type": "String" }
+    }
+  },
+  "travelPassExpires": "Expira en {hours}h",
+  "@travelPassExpires": {
+    "description": "Travel pass banner showing remaining hours",
+    "placeholders": {
+      "hours": { "type": "String" }
+    }
+  },
+  "travelPassBackToMyLocation": "Volver a mi ubicacion",
+  "@travelPassBackToMyLocation": { "description": "Button to cancel travel pass and return to real GPS location" },
+  "travelPassFailedToSet": "Error al activar Travel Pass: {error}",
+  "@travelPassFailedToSet": {
+    "description": "Error snackbar when setting travel pass fails",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "travelPassFailedToCancel": "Error al cancelar Travel Pass",
+  "@travelPassFailedToCancel": { "description": "Error snackbar when cancelling travel pass fails" },
+  "travelPassCancelled": "Travel Pass cancelado — de vuelta a tu ubicacion",
+  "@travelPassCancelled": { "description": "Success snackbar when travel pass is cancelled" },
+  "travelPassSetSuccess": "Travel Pass activado — explorando {city}",
+  "@travelPassSetSuccess": {
+    "description": "Success snackbar when travel pass is activated",
+    "placeholders": {
+      "city": { "type": "String" }
+    }
+  }
 }

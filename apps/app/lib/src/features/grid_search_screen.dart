@@ -10,6 +10,7 @@ import '../location/location_service.dart';
 import '../location/geocoding_service.dart';
 import '../places/places_service.dart';
 import '../places/roam_service.dart';
+import '../travel/travel_pass_service.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../settings/settings_providers.dart';
 import '../theme/app_theme.dart';
@@ -66,6 +67,10 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   String _roamName = '';
   bool _hasAppliedPersistedRoam = false;
 
+  // Travel Pass state
+  TravelPass? _travelPass;
+  bool _travelPassLoaded = false;
+
   // Tribe filter chips state
   Set<String> _selectedTribes = {};
   List<String> _tribes = _kDefaultTribes;
@@ -88,6 +93,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
     _applyRealLocationDefault();
     _loadRecentSearches();
     _loadFilterOptions();
+    _loadTravelPass();
 
     // Listen for city text changes for debounced geocoding
     _cityController.addListener(_onCityTextChanged);
@@ -137,6 +143,92 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           prefs.getStringList(_kRecentSearchesKey) ?? [];
       _recentSearchesLoaded = true;
     });
+  }
+
+  /// Load the current active travel pass from the server.
+  Future<void> _loadTravelPass() async {
+    try {
+      final service = ref.read(travelPassServiceProvider);
+      final tp = await service.getCurrent();
+      if (!mounted) return;
+      setState(() {
+        _travelPass = tp;
+        _travelPassLoaded = true;
+        // If travel pass is active, use its location for the grid.
+        if (tp != null) {
+          _globalUsersFuture = _fetchGlobalUsers(lat: tp.lat, lon: tp.lon);
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _travelPassLoaded = true);
+    }
+  }
+
+  /// Set the travel pass to a specific city's coordinates.
+  Future<void> _setTravelPass(double lat, double lon, String? cityName) async {
+    try {
+      final service = ref.read(travelPassServiceProvider);
+      final tp = await service.set(lat: lat, lon: lon, cityName: cityName);
+      if (!mounted) return;
+      setState(() {
+        _travelPass = tp;
+        _globalUsersFuture = _fetchGlobalUsers(lat: tp.lat, lon: tp.lon);
+      });
+      final l10n = AppLocalizations.of(context);
+      if (l10n != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.travelPassSetSuccess(cityName ?? '')),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n?.travelPassFailedToSet(e.toString()) ??
+                'Failed to set travel pass: $e',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Cancel the active travel pass and return to real GPS.
+  Future<void> _cancelTravelPass() async {
+    try {
+      final service = ref.read(travelPassServiceProvider);
+      await service.delete();
+      if (!mounted) return;
+      setState(() {
+        _travelPass = null;
+        _searchCenter = null;
+        _cityController.clear();
+        // Re-fetch with GPS location
+        _globalUsersFuture = _fetchGlobalUsers();
+      });
+      final l10n = AppLocalizations.of(context);
+      if (l10n != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.travelPassCancelled)),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n?.travelPassFailedToCancel ?? 'Failed to cancel travel pass',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   /// Load tribe filter options (with hardcoded defaults if API unreachable).
@@ -258,6 +350,10 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
 
   /// Clear the search center and return to GPS/roam-based location.
   void _backToMyLocation() {
+    if (_travelPass != null) {
+      _cancelTravelPass();
+      return;
+    }
     setState(() {
       _searchCenter = null;
       _selectedLocationName = '';
@@ -522,6 +618,9 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           // ── Location indicator + back button ─────────────────────────────
           if (_searchCenter != null) _buildLocationIndicator(l10n),
 
+          // ── Travel Pass banner ───────────────────────────────────────────
+          if (_travelPass != null) _buildTravelPassBanner(l10n),
+
           // ── Tribe filter chips ───────────────────────────────────────────
           if (_tribes.isNotEmpty)
             _buildTribeChips(l10n),
@@ -652,19 +751,45 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
             if (hasSuggestions)
               ...List.generate(_suggestions.length, (i) {
                 final s = _suggestions[i];
-                return ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.place, size: 18,
-                      color: VibraTheme.kAccent),
-                  title: Text(s.label,
-                      style: const TextStyle(fontSize: 14),
-                      overflow: TextOverflow.ellipsis),
-                  subtitle: Text(
-                    '${s.lat.toStringAsFixed(4)}, ${s.lon.toStringAsFixed(4)}',
-                    style: const TextStyle(fontSize: 11,
-                        color: VibraTheme.kTextSecondary),
-                  ),
-                  onTap: () => _selectSuggestion(s),
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      dense: true,
+                      leading: const Icon(Icons.place, size: 18,
+                          color: VibraTheme.kAccent),
+                      title: Text(s.label,
+                          style: const TextStyle(fontSize: 14),
+                          overflow: TextOverflow.ellipsis),
+                      subtitle: Text(
+                        '${s.lat.toStringAsFixed(4)}, ${s.lon.toStringAsFixed(4)}',
+                        style: const TextStyle(fontSize: 11,
+                            color: VibraTheme.kTextSecondary),
+                      ),
+                      onTap: () => _selectSuggestion(s),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 44, right: 12, bottom: 4),
+                      child: SizedBox(
+                        height: 32,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _setTravelPass(s.lat, s.lon, s.label),
+                          icon: const Icon(Icons.flight_takeoff, size: 16),
+                          label: Text(
+                            AppLocalizations.of(context)!.travelPassSet(s.label),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: VibraTheme.kYellow,
+                            side: const BorderSide(color: VibraTheme.kYellow),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               }),
           ],
@@ -747,6 +872,68 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
             ),
             style: TextButton.styleFrom(
               foregroundColor: VibraTheme.kTextSecondary,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Travel Pass banner showing active travel location and expiry.
+  Widget _buildTravelPassBanner(AppLocalizations l10n) {
+    final tp = _travelPass;
+    if (tp == null) return const SizedBox.shrink();
+    final cityLabel = tp.cityName ?? '${tp.lat.toStringAsFixed(4)}, ${tp.lon.toStringAsFixed(4)}';
+    final hoursRemaining = tp.expiresInHours.toStringAsFixed(1);
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: VibraTheme.kSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: VibraTheme.kYellow.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.flight_takeoff, size: 18, color: VibraTheme.kYellow),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.travelPassBanner(cityLabel),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  l10n.travelPassExpires(hoursRemaining),
+                  style: const TextStyle(
+                    color: VibraTheme.kTextSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton.icon(
+            onPressed: _cancelTravelPass,
+            icon: const Icon(Icons.close, size: 16),
+            label: Text(
+              l10n.travelPassBackToMyLocation,
+              style: const TextStyle(fontSize: 11),
+            ),
+            style: TextButton.styleFrom(
+              foregroundColor: VibraTheme.kAccent,
               padding: const EdgeInsets.symmetric(horizontal: 8),
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,

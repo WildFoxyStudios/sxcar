@@ -139,12 +139,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     );
     if (yes == true) {
       await widget.provider.forceComplete();
+      // Router redirect handles navigation to /navegar via
+      // markOnboardingCompleted() — no manual pop needed.
       widget.onCompleted?.call();
-      if (mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) Navigator.of(context).pop(true);
-        });
-      }
     }
   }
 
@@ -192,10 +189,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                   curve: Curves.easeInOut,
                 );
               } else {
+                // Router redirect handles navigation to /navegar via
+                // markOnboardingCompleted() — no manual pop needed.
                 widget.onCompleted?.call();
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) Navigator.of(context).pop(true);
-                });
               }
             });
           },

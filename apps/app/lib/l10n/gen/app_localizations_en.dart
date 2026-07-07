@@ -1216,4 +1216,327 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profile_loading => 'Loading...';
+
+  @override
+  String get editProfileTitle => 'Edit Profile';
+
+  @override
+  String get editProfileFieldDisplayName => 'Display Name';
+
+  @override
+  String get editProfilePlaceholderDisplayName => 'Your display name';
+
+  @override
+  String get editProfileFieldBio => 'Bio';
+
+  @override
+  String get editProfilePlaceholderBio => 'Tell people about yourself';
+
+  @override
+  String get editProfileFieldHivStatus => 'HIV Status';
+
+  @override
+  String get editProfilePlaceholderSelectStatus => 'Select status';
+
+  @override
+  String get editProfileFieldLastTestedOn => 'Last Tested On';
+
+  @override
+  String get editProfileNotSet => 'Not set';
+
+  @override
+  String get editProfileFieldOnPrep => 'On PrEP';
+
+  @override
+  String get editProfileUploading => 'Uploading...';
+
+  @override
+  String get editProfileChangePhoto => 'Change Photo';
+
+  @override
+  String get editProfileShowAge => 'Show age';
+
+  @override
+  String get editProfileShowRole => 'Show role';
+
+  @override
+  String get editProfileShowTribes => 'Show tribes';
+
+  @override
+  String get editProfileShowPosition => 'Show position';
+
+  @override
+  String get editProfileShowEthnicity => 'Show ethnicity';
+
+  @override
+  String get editProfileShowRelationshipStatus => 'Show relationship status';
+
+  @override
+  String get editProfileOn => 'On';
+
+  @override
+  String get editProfileOff => 'Off';
+
+  @override
+  String get securityBlockReportTitle => 'Block and Report';
+
+  @override
+  String get securityBlockReportBody =>
+      'Tap the ⋮ menu on any profile to block or report a user. Blocked users cannot see your profile or contact you.';
+
+  @override
+  String get securityIncognitoTitle => 'Incognito Mode';
+
+  @override
+  String get securityIncognitoBody =>
+      'Browse profiles without appearing in their Viewed Me list. Available with Vibra+ and Unlimited plans.';
+
+  @override
+  String get securityPinLockTitle => 'PIN Lock';
+
+  @override
+  String get securityPinLockBody =>
+      'Set a 4-digit PIN to lock the app when opened. Configure it in Settings → PIN.';
+
+  @override
+  String get securityDiscreetIconTitle => 'Discreet App Icon';
+
+  @override
+  String get securityDiscreetIconBody =>
+      'Change the app icon to a generic one so Vibra is not recognizable on your home screen. Set it in Settings → Discreet Icon.';
+
+  @override
+  String get securityScreenshotAlertsTitle => 'Screenshot Alerts';
+
+  @override
+  String get securityScreenshotAlertsBody =>
+      'You are notified when someone takes a screenshot of your profile or chat. Enabled by default.';
+
+  @override
+  String get securityNsfwBlurTitle => 'NSFW Blur';
+
+  @override
+  String get securityNsfwBlurBody =>
+      'Profile photos flagged as explicit are automatically blurred. This uses on-device AI — no images leave your phone.';
+
+  @override
+  String get pinEnterExactly4Digits => 'Enter exactly 4 digits';
+
+  @override
+  String get pinActivated => 'PIN activated';
+
+  @override
+  String get pinRemoveTitle => 'Remove PIN?';
+
+  @override
+  String get pinRemoveBody => 'The app will no longer be locked.';
+
+  @override
+  String get pinRemoveConfirm => 'Remove';
+
+  @override
+  String get pinRemoved => 'PIN removed';
+
+  @override
+  String get pinChangeYourPin => 'Change your PIN';
+
+  @override
+  String get pinSetAPin => 'Set a PIN';
+
+  @override
+  String get pinEnterNewPinDesc =>
+      'Enter a new 4-digit PIN or remove the current one.';
+
+  @override
+  String get pinEnterPinDesc =>
+      'Enter a 4-digit PIN to lock the app when opened.';
+
+  @override
+  String get pinUpdatePin => 'Update PIN';
+
+  @override
+  String get pinActivatePin => 'Activate PIN';
+
+  @override
+  String get pinRemovePin => 'Remove PIN';
+
+  @override
+  String get chatFailedToLoad => 'Failed to load messages';
+
+  @override
+  String get chatNoMessagesYet => 'No messages yet';
+
+  @override
+  String get chatSayHi => 'Say hi to start the conversation!';
+
+  @override
+  String get chatTypeMessage => 'Type a message...';
+
+  @override
+  String get chatViewOnce => 'View once';
+
+  @override
+  String get chatSend => 'Send';
+
+  @override
+  String get chatTapToViewOnce => 'Tap to view once';
+
+  @override
+  String get chatViewOnceSent => 'View-once photo sent';
+
+  @override
+  String get chatPhotoExpired => 'Photo expired';
+
+  @override
+  String get chatFailedToUnsend => 'Failed to unsend message';
+
+  @override
+  String get chatVoiceCall => 'Voice call';
+
+  @override
+  String get chatNsfwContent =>
+      'This image appears to violate our content guidelines.';
+
+  @override
+  String get roamTitle => 'Roam';
+
+  @override
+  String get roamSubtitle => 'Choose a saved place or use your real location.';
+
+  @override
+  String get roamUseRealLocation => 'Use real location';
+
+  @override
+  String get roamNoSavedPlaces => 'No saved places yet.';
+
+  @override
+  String get roamAddNewPlace => 'Add new place';
+
+  @override
+  String get roamNameLabel => 'Name';
+
+  @override
+  String get roamNameRequired => 'Name is required';
+
+  @override
+  String get roamLatitudeLabel => 'Latitude';
+
+  @override
+  String get roamLongitudeLabel => 'Longitude';
+
+  @override
+  String get roamMustBeNumber => 'Must be a number';
+
+  @override
+  String get roamLatRange => 'Range: -90..90';
+
+  @override
+  String get roamLonRange => 'Range: -180..180';
+
+  @override
+  String get roamAddAndRoam => 'Add & Roam';
+
+  @override
+  String roamFailedToAddPlace(String error) {
+    return 'Failed to add place: $error';
+  }
+
+  @override
+  String roamRoamingTo(String name) {
+    return 'Roaming to $name';
+  }
+
+  @override
+  String roamFailedToSet(String error) {
+    return 'Failed to set roam: $error';
+  }
+
+  @override
+  String get roamLocationUnavailable =>
+      'Location unavailable — enable GPS permission in settings';
+
+  @override
+  String get roamUsingRealLocation => 'Using your real location';
+
+  @override
+  String roamFailedGeneric(String error) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String get roamTooltip => 'Roam';
+
+  @override
+  String get albumCreateTitle => 'Create Album';
+
+  @override
+  String get albumNameLabel => 'Album name';
+
+  @override
+  String get albumDescriptionOptional => 'Description (optional)';
+
+  @override
+  String get albumPrivateLabel => 'Private album';
+
+  @override
+  String get albumCreateButton => 'Create';
+
+  @override
+  String albumFailedToCreate(String error) {
+    return 'Failed to create album: $error';
+  }
+
+  @override
+  String get albumFailedToCreateSimple => 'Failed to create album';
+
+  @override
+  String get albumSinTitulo => 'Untitled';
+
+  @override
+  String get storyShare => 'Share';
+
+  @override
+  String storyError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String storyUploadError(String error) {
+    return 'Upload error: $error';
+  }
+
+  @override
+  String get circleGroupFallback => 'Group';
+
+  @override
+  String circleMembers(int count) {
+    return '$count members';
+  }
+
+  @override
+  String get callUnmute => 'Unmute';
+
+  @override
+  String get callMute => 'Mute';
+
+  @override
+  String get callSpeaker => 'Speaker';
+
+  @override
+  String get callEarpiece => 'Earpiece';
+
+  @override
+  String get callHangup => 'Hang up';
+
+  @override
+  String get badgePopular => 'POPULAR';
+
+  @override
+  String get gridNoUsersTitle => 'No users found in this area';
+
+  @override
+  String get gridNoUsersSubtitle => 'Try roaming to a different location!';
+
+  @override
+  String get gridFailedToLoad => 'Failed to load global users';
 }

@@ -1230,4 +1230,327 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profile_loading => 'Cargando...';
+
+  @override
+  String get editProfileTitle => 'Editar perfil';
+
+  @override
+  String get editProfileFieldDisplayName => 'Nombre para mostrar';
+
+  @override
+  String get editProfilePlaceholderDisplayName => 'Tu nombre para mostrar';
+
+  @override
+  String get editProfileFieldBio => 'Biografía';
+
+  @override
+  String get editProfilePlaceholderBio => 'Cuéntale a la gente sobre ti';
+
+  @override
+  String get editProfileFieldHivStatus => 'Estado de VIH';
+
+  @override
+  String get editProfilePlaceholderSelectStatus => 'Seleccionar estado';
+
+  @override
+  String get editProfileFieldLastTestedOn => 'Última prueba';
+
+  @override
+  String get editProfileNotSet => 'No establecido';
+
+  @override
+  String get editProfileFieldOnPrep => 'En PrEP';
+
+  @override
+  String get editProfileUploading => 'Subiendo...';
+
+  @override
+  String get editProfileChangePhoto => 'Cambiar foto';
+
+  @override
+  String get editProfileShowAge => 'Mostrar edad';
+
+  @override
+  String get editProfileShowRole => 'Mostrar rol';
+
+  @override
+  String get editProfileShowTribes => 'Mostrar tribus';
+
+  @override
+  String get editProfileShowPosition => 'Mostrar posición';
+
+  @override
+  String get editProfileShowEthnicity => 'Mostrar etnia';
+
+  @override
+  String get editProfileShowRelationshipStatus => 'Mostrar estado civil';
+
+  @override
+  String get editProfileOn => 'Sí';
+
+  @override
+  String get editProfileOff => 'No';
+
+  @override
+  String get securityBlockReportTitle => 'Bloquear y reportar';
+
+  @override
+  String get securityBlockReportBody =>
+      'Toca el menú ⋮ en cualquier perfil para bloquear o reportar a un usuario. Los usuarios bloqueados no pueden ver tu perfil ni contactarte.';
+
+  @override
+  String get securityIncognitoTitle => 'Modo incógnito';
+
+  @override
+  String get securityIncognitoBody =>
+      'Navega perfiles sin aparecer en su lista de Te han visto. Disponible con planes Vibra+ y Unlimited.';
+
+  @override
+  String get securityPinLockTitle => 'Bloqueo PIN';
+
+  @override
+  String get securityPinLockBody =>
+      'Establece un PIN de 4 dígitos para bloquear la app al abrirse. Configúralo en Ajustes → PIN.';
+
+  @override
+  String get securityDiscreetIconTitle => 'Icono de aplicación discreto';
+
+  @override
+  String get securityDiscreetIconBody =>
+      'Cambia el icono de la app a uno genérico para que Vibra no sea reconocible en tu pantalla de inicio. Configúralo en Ajustes → Icono discreto.';
+
+  @override
+  String get securityScreenshotAlertsTitle => 'Alertas de captura de pantalla';
+
+  @override
+  String get securityScreenshotAlertsBody =>
+      'Recibirás una notificación cuando alguien tome una captura de pantalla de tu perfil o chat. Activado por defecto.';
+
+  @override
+  String get securityNsfwBlurTitle => 'Desenfoque NSFW';
+
+  @override
+  String get securityNsfwBlurBody =>
+      'Las fotos de perfil marcadas como explícitas se difuminan automáticamente. Esto usa IA en el dispositivo — ninguna imagen sale de tu teléfono.';
+
+  @override
+  String get pinEnterExactly4Digits => 'Ingresa exactamente 4 dígitos';
+
+  @override
+  String get pinActivated => 'PIN activado';
+
+  @override
+  String get pinRemoveTitle => '¿Eliminar PIN?';
+
+  @override
+  String get pinRemoveBody => 'La app ya no estará bloqueada.';
+
+  @override
+  String get pinRemoveConfirm => 'Eliminar';
+
+  @override
+  String get pinRemoved => 'PIN eliminado';
+
+  @override
+  String get pinChangeYourPin => 'Cambiar tu PIN';
+
+  @override
+  String get pinSetAPin => 'Establecer un PIN';
+
+  @override
+  String get pinEnterNewPinDesc =>
+      'Ingresa un nuevo PIN de 4 dígitos o elimina el actual.';
+
+  @override
+  String get pinEnterPinDesc =>
+      'Ingresa un PIN de 4 dígitos para bloquear la app al abrirse.';
+
+  @override
+  String get pinUpdatePin => 'Actualizar PIN';
+
+  @override
+  String get pinActivatePin => 'Activar PIN';
+
+  @override
+  String get pinRemovePin => 'Eliminar PIN';
+
+  @override
+  String get chatFailedToLoad => 'Error al cargar mensajes';
+
+  @override
+  String get chatNoMessagesYet => 'Sin mensajes aún';
+
+  @override
+  String get chatSayHi => '¡Saluda para empezar la conversación!';
+
+  @override
+  String get chatTypeMessage => 'Escribe un mensaje...';
+
+  @override
+  String get chatViewOnce => 'Ver una vez';
+
+  @override
+  String get chatSend => 'Enviar';
+
+  @override
+  String get chatTapToViewOnce => 'Toca para ver una vez';
+
+  @override
+  String get chatViewOnceSent => 'Foto de un solo uso enviada';
+
+  @override
+  String get chatPhotoExpired => 'Foto expirada';
+
+  @override
+  String get chatFailedToUnsend => 'Error al anular el mensaje';
+
+  @override
+  String get chatVoiceCall => 'Llamada de voz';
+
+  @override
+  String get chatNsfwContent =>
+      'Esta imagen parece violar nuestras pautas de contenido.';
+
+  @override
+  String get roamTitle => 'Vagar';
+
+  @override
+  String get roamSubtitle => 'Elige un lugar guardado o usa tu ubicación real.';
+
+  @override
+  String get roamUseRealLocation => 'Usar ubicación real';
+
+  @override
+  String get roamNoSavedPlaces => 'Sin lugares guardados aún.';
+
+  @override
+  String get roamAddNewPlace => 'Agregar nuevo lugar';
+
+  @override
+  String get roamNameLabel => 'Nombre';
+
+  @override
+  String get roamNameRequired => 'El nombre es obligatorio';
+
+  @override
+  String get roamLatitudeLabel => 'Latitud';
+
+  @override
+  String get roamLongitudeLabel => 'Longitud';
+
+  @override
+  String get roamMustBeNumber => 'Debe ser un número';
+
+  @override
+  String get roamLatRange => 'Rango: -90..90';
+
+  @override
+  String get roamLonRange => 'Rango: -180..180';
+
+  @override
+  String get roamAddAndRoam => 'Agregar y Vagar';
+
+  @override
+  String roamFailedToAddPlace(String error) {
+    return 'Error al agregar lugar: $error';
+  }
+
+  @override
+  String roamRoamingTo(String name) {
+    return 'Viajando a $name';
+  }
+
+  @override
+  String roamFailedToSet(String error) {
+    return 'Error al establecer ubicación: $error';
+  }
+
+  @override
+  String get roamLocationUnavailable =>
+      'Ubicación no disponible — activa el permiso GPS en ajustes';
+
+  @override
+  String get roamUsingRealLocation => 'Usando tu ubicación real';
+
+  @override
+  String roamFailedGeneric(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get roamTooltip => 'Vagar';
+
+  @override
+  String get albumCreateTitle => 'Crear álbum';
+
+  @override
+  String get albumNameLabel => 'Nombre del álbum';
+
+  @override
+  String get albumDescriptionOptional => 'Descripción (opcional)';
+
+  @override
+  String get albumPrivateLabel => 'Álbum privado';
+
+  @override
+  String get albumCreateButton => 'Crear';
+
+  @override
+  String albumFailedToCreate(String error) {
+    return 'Error al crear álbum: $error';
+  }
+
+  @override
+  String get albumFailedToCreateSimple => 'Error al crear álbum';
+
+  @override
+  String get albumSinTitulo => 'Sin título';
+
+  @override
+  String get storyShare => 'Compartir';
+
+  @override
+  String storyError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String storyUploadError(String error) {
+    return 'Error de subida: $error';
+  }
+
+  @override
+  String get circleGroupFallback => 'Grupo';
+
+  @override
+  String circleMembers(int count) {
+    return '$count miembros';
+  }
+
+  @override
+  String get callUnmute => 'Activar micrófono';
+
+  @override
+  String get callMute => 'Silenciar';
+
+  @override
+  String get callSpeaker => 'Altavoz';
+
+  @override
+  String get callEarpiece => 'Auricular';
+
+  @override
+  String get callHangup => 'Colgar';
+
+  @override
+  String get badgePopular => 'POPULAR';
+
+  @override
+  String get gridNoUsersTitle => 'No se encontraron usuarios en esta área';
+
+  @override
+  String get gridNoUsersSubtitle => '¡Prueba a viajar a otra ubicación!';
+
+  @override
+  String get gridFailedToLoad => 'Error al cargar usuarios';
 }

@@ -393,8 +393,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Profile')),
+      appBar: AppBar(title: Text(l10n?.editProfileTitle ?? 'Edit Profile')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -405,6 +406,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Widget _buildError() {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -420,7 +422,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           const SizedBox(height: 16),
           FilledButton(
             onPressed: _loadProfile,
-            child: const Text('Retry'),
+            child: Text(l10n?.reintentar ?? 'Retry'),
           ),
         ],
       ),
@@ -494,23 +496,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildLabel('Display Name'),
+              _buildLabel(l10n?.editProfileFieldDisplayName ?? 'Display Name'),
               const SizedBox(height: 4),
               TextField(
                 controller: _displayNameController,
                 onChanged: (_) => _pushTextToDraft(),
                 style: const TextStyle(color: VibraTheme.kTextPrimary),
-                decoration: _inputDecoration('Your display name'),
+                decoration: _inputDecoration(l10n?.editProfilePlaceholderDisplayName ?? 'Your display name'),
               ),
               const SizedBox(height: 12),
-              _buildLabel('Bio'),
+              _buildLabel(l10n?.editProfileFieldBio ?? 'Bio'),
               const SizedBox(height: 4),
               TextField(
                 controller: _bioController,
                 maxLines: 3,
                 onChanged: (_) => _pushTextToDraft(),
                 style: const TextStyle(color: VibraTheme.kTextPrimary),
-                decoration: _inputDecoration('Tell people about yourself'),
+                decoration: _inputDecoration(l10n?.editProfilePlaceholderBio ?? 'Tell people about yourself'),
               ),
             ],
           ),
@@ -781,13 +783,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               // HIV Status dropdown (kept inline; the existing test relies
               // on finding the literal "HIV Status" label and the dropdown
               // widget).
-              _buildLabel('HIV Status'),
+              _buildLabel(l10n?.editProfileFieldHivStatus ?? 'HIV Status'),
               const SizedBox(height: 4),
               DropdownButtonFormField<String>(
                 initialValue: _hivStatus,
                 dropdownColor: VibraTheme.kSurface,
                 style: const TextStyle(color: VibraTheme.kTextPrimary),
-                decoration: _inputDecoration('Select status'),
+                decoration: _inputDecoration(l10n?.editProfilePlaceholderSelectStatus ?? 'Select status'),
                 items: kHivStatusOptions
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                     .toList(),
@@ -797,7 +799,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
               // Last tested on date picker (kept inline — test searches
               // 'Not set').
-              _buildLabel('Last Tested On'),
+              _buildLabel(l10n?.editProfileFieldLastTestedOn ?? 'Last Tested On'),
               const SizedBox(height: 4),
               InkWell(
                 onTap: _pickLastTestedDate,
@@ -815,7 +817,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       Expanded(
                         child: Text(
                           _lastTestedOn == null
-                              ? 'Not set'
+                              ? (l10n?.editProfileNotSet ?? 'Not set')
                               : '${_lastTestedOn!.year.toString().padLeft(4, '0')}-${_lastTestedOn!.month.toString().padLeft(2, '0')}-${_lastTestedOn!.day.toString().padLeft(2, '0')}',
                           style: TextStyle(
                             color: _lastTestedOn == null
@@ -844,10 +846,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'On PrEP',
-                        style: TextStyle(
+                        l10n?.editProfileFieldOnPrep ?? 'On PrEP',
+                        style: const TextStyle(
                             color: VibraTheme.kTextPrimary, fontSize: 14),
                       ),
                     ),
@@ -884,12 +886,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildPrivacyRow('Show age', draft.showAge),
-              _buildPrivacyRow('Show role', draft.showRole),
-              _buildPrivacyRow('Show tribes', draft.showTribes),
-              _buildPrivacyRow('Show position', draft.showPosition),
-              _buildPrivacyRow('Show ethnicity', draft.showEthnicity),
-              _buildPrivacyRow('Show relationship status',
+              _buildPrivacyRow(l10n?.editProfileShowAge ?? 'Show age', draft.showAge),
+              _buildPrivacyRow(l10n?.editProfileShowRole ?? 'Show role', draft.showRole),
+              _buildPrivacyRow(l10n?.editProfileShowTribes ?? 'Show tribes', draft.showTribes),
+              _buildPrivacyRow(l10n?.editProfileShowPosition ?? 'Show position', draft.showPosition),
+              _buildPrivacyRow(l10n?.editProfileShowEthnicity ?? 'Show ethnicity', draft.showEthnicity),
+              _buildPrivacyRow(l10n?.editProfileShowRelationshipStatus ?? 'Show relationship status',
                   draft.showRelationshipStatus),
             ],
           ),
@@ -935,15 +937,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         const SizedBox(height: 8),
         Center(
           child: _isUploadingPhoto
-              ? const Text(
-                  'Uploading...',
-                  style: TextStyle(
+              ? Text(
+                  l10n?.editProfileUploading ?? 'Uploading...',
+                  style: const TextStyle(
                       color: VibraTheme.kTextSecondary, fontSize: 13),
                 )
               : TextButton.icon(
                   onPressed: _pickAndUploadPhoto,
                   icon: const Icon(Icons.camera_alt, size: 18),
-                  label: const Text('Change Photo'),
+                  label: Text(l10n?.editProfileChangePhoto ?? 'Change Photo'),
                 ),
         ),
       ],
@@ -986,6 +988,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Widget _buildPrivacyRow(String label, bool value) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -995,7 +998,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 style: const TextStyle(color: VibraTheme.kTextPrimary)),
           ),
           Text(
-            value ? 'On' : 'Off',
+            value ? (l10n?.editProfileOn ?? 'On') : (l10n?.editProfileOff ?? 'Off'),
             style: TextStyle(
               color: value ? VibraTheme.kYellow : VibraTheme.kTextSecondary,
               fontWeight: FontWeight.w600,

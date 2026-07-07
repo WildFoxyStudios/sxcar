@@ -2413,6 +2413,600 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cargando...'**
   String get profile_loading;
+
+  /// Edit profile screen AppBar title
+  ///
+  /// In es, this message translates to:
+  /// **'Editar perfil'**
+  String get editProfileTitle;
+
+  /// Edit profile field label: Display Name
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre para mostrar'**
+  String get editProfileFieldDisplayName;
+
+  /// Edit profile text field hint: Your display name
+  ///
+  /// In es, this message translates to:
+  /// **'Tu nombre para mostrar'**
+  String get editProfilePlaceholderDisplayName;
+
+  /// Edit profile field label: Bio
+  ///
+  /// In es, this message translates to:
+  /// **'Biografía'**
+  String get editProfileFieldBio;
+
+  /// Edit profile text field hint: Tell people about yourself
+  ///
+  /// In es, this message translates to:
+  /// **'Cuéntale a la gente sobre ti'**
+  String get editProfilePlaceholderBio;
+
+  /// Edit profile health section label: HIV Status
+  ///
+  /// In es, this message translates to:
+  /// **'Estado de VIH'**
+  String get editProfileFieldHivStatus;
+
+  /// Edit profile HIV Status dropdown hint
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar estado'**
+  String get editProfilePlaceholderSelectStatus;
+
+  /// Edit profile health section label: Last Tested On
+  ///
+  /// In es, this message translates to:
+  /// **'Última prueba'**
+  String get editProfileFieldLastTestedOn;
+
+  /// Edit profile date picker default text when no date is set
+  ///
+  /// In es, this message translates to:
+  /// **'No establecido'**
+  String get editProfileNotSet;
+
+  /// Edit profile health section label: On PrEP
+  ///
+  /// In es, this message translates to:
+  /// **'En PrEP'**
+  String get editProfileFieldOnPrep;
+
+  /// Edit profile photo upload progress text
+  ///
+  /// In es, this message translates to:
+  /// **'Subiendo...'**
+  String get editProfileUploading;
+
+  /// Edit profile button text to change profile photo
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar foto'**
+  String get editProfileChangePhoto;
+
+  /// Edit profile privacy toggle label: Show age on profile
+  ///
+  /// In es, this message translates to:
+  /// **'Mostrar edad'**
+  String get editProfileShowAge;
+
+  /// Edit profile privacy toggle label: Show role on profile
+  ///
+  /// In es, this message translates to:
+  /// **'Mostrar rol'**
+  String get editProfileShowRole;
+
+  /// Edit profile privacy toggle label: Show tribes on profile
+  ///
+  /// In es, this message translates to:
+  /// **'Mostrar tribus'**
+  String get editProfileShowTribes;
+
+  /// Edit profile privacy toggle label: Show position on profile
+  ///
+  /// In es, this message translates to:
+  /// **'Mostrar posición'**
+  String get editProfileShowPosition;
+
+  /// Edit profile privacy toggle label: Show ethnicity on profile
+  ///
+  /// In es, this message translates to:
+  /// **'Mostrar etnia'**
+  String get editProfileShowEthnicity;
+
+  /// Edit profile privacy toggle label: Show relationship status on profile
+  ///
+  /// In es, this message translates to:
+  /// **'Mostrar estado civil'**
+  String get editProfileShowRelationshipStatus;
+
+  /// Edit profile privacy toggle value: On
+  ///
+  /// In es, this message translates to:
+  /// **'Sí'**
+  String get editProfileOn;
+
+  /// Edit profile privacy toggle value: Off
+  ///
+  /// In es, this message translates to:
+  /// **'No'**
+  String get editProfileOff;
+
+  /// Security screen tip card title: Block and Report
+  ///
+  /// In es, this message translates to:
+  /// **'Bloquear y reportar'**
+  String get securityBlockReportTitle;
+
+  /// Security screen tip card body for Block and Report
+  ///
+  /// In es, this message translates to:
+  /// **'Toca el menú ⋮ en cualquier perfil para bloquear o reportar a un usuario. Los usuarios bloqueados no pueden ver tu perfil ni contactarte.'**
+  String get securityBlockReportBody;
+
+  /// Security screen tip card title: Incognito Mode
+  ///
+  /// In es, this message translates to:
+  /// **'Modo incógnito'**
+  String get securityIncognitoTitle;
+
+  /// Security screen tip card body for Incognito Mode
+  ///
+  /// In es, this message translates to:
+  /// **'Navega perfiles sin aparecer en su lista de Te han visto. Disponible con planes Vibra+ y Unlimited.'**
+  String get securityIncognitoBody;
+
+  /// Security screen tip card title: PIN Lock
+  ///
+  /// In es, this message translates to:
+  /// **'Bloqueo PIN'**
+  String get securityPinLockTitle;
+
+  /// Security screen tip card body for PIN Lock
+  ///
+  /// In es, this message translates to:
+  /// **'Establece un PIN de 4 dígitos para bloquear la app al abrirse. Configúralo en Ajustes → PIN.'**
+  String get securityPinLockBody;
+
+  /// Security screen tip card title: Discreet App Icon
+  ///
+  /// In es, this message translates to:
+  /// **'Icono de aplicación discreto'**
+  String get securityDiscreetIconTitle;
+
+  /// Security screen tip card body for Discreet App Icon
+  ///
+  /// In es, this message translates to:
+  /// **'Cambia el icono de la app a uno genérico para que Vibra no sea reconocible en tu pantalla de inicio. Configúralo en Ajustes → Icono discreto.'**
+  String get securityDiscreetIconBody;
+
+  /// Security screen tip card title: Screenshot Alerts
+  ///
+  /// In es, this message translates to:
+  /// **'Alertas de captura de pantalla'**
+  String get securityScreenshotAlertsTitle;
+
+  /// Security screen tip card body for Screenshot Alerts
+  ///
+  /// In es, this message translates to:
+  /// **'Recibirás una notificación cuando alguien tome una captura de pantalla de tu perfil o chat. Activado por defecto.'**
+  String get securityScreenshotAlertsBody;
+
+  /// Security screen tip card title: NSFW Blur
+  ///
+  /// In es, this message translates to:
+  /// **'Desenfoque NSFW'**
+  String get securityNsfwBlurTitle;
+
+  /// Security screen tip card body for NSFW Blur
+  ///
+  /// In es, this message translates to:
+  /// **'Las fotos de perfil marcadas como explícitas se difuminan automáticamente. Esto usa IA en el dispositivo — ninguna imagen sale de tu teléfono.'**
+  String get securityNsfwBlurBody;
+
+  /// Pin screen validation error when PIN is not exactly 4 digits
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa exactamente 4 dígitos'**
+  String get pinEnterExactly4Digits;
+
+  /// Pin screen success snackbar after activating PIN
+  ///
+  /// In es, this message translates to:
+  /// **'PIN activado'**
+  String get pinActivated;
+
+  /// Pin screen remove PIN confirmation dialog title
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar PIN?'**
+  String get pinRemoveTitle;
+
+  /// Pin screen remove PIN confirmation dialog body
+  ///
+  /// In es, this message translates to:
+  /// **'La app ya no estará bloqueada.'**
+  String get pinRemoveBody;
+
+  /// Pin screen remove PIN confirmation button
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar'**
+  String get pinRemoveConfirm;
+
+  /// Pin screen success snackbar after removing PIN
+  ///
+  /// In es, this message translates to:
+  /// **'PIN eliminado'**
+  String get pinRemoved;
+
+  /// Pin screen section title when PIN is already set
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar tu PIN'**
+  String get pinChangeYourPin;
+
+  /// Pin screen section title when no PIN is set
+  ///
+  /// In es, this message translates to:
+  /// **'Establecer un PIN'**
+  String get pinSetAPin;
+
+  /// Pin screen description when changing an existing PIN
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa un nuevo PIN de 4 dígitos o elimina el actual.'**
+  String get pinEnterNewPinDesc;
+
+  /// Pin screen description when setting a new PIN
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa un PIN de 4 dígitos para bloquear la app al abrirse.'**
+  String get pinEnterPinDesc;
+
+  /// Pin screen button text to update an existing PIN
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar PIN'**
+  String get pinUpdatePin;
+
+  /// Pin screen button text to activate a new PIN
+  ///
+  /// In es, this message translates to:
+  /// **'Activar PIN'**
+  String get pinActivatePin;
+
+  /// Pin screen button text to remove PIN
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar PIN'**
+  String get pinRemovePin;
+
+  /// Chat screen error state title when messages fail to load
+  ///
+  /// In es, this message translates to:
+  /// **'Error al cargar mensajes'**
+  String get chatFailedToLoad;
+
+  /// Chat screen empty state title
+  ///
+  /// In es, this message translates to:
+  /// **'Sin mensajes aún'**
+  String get chatNoMessagesYet;
+
+  /// Chat screen empty state subtitle
+  ///
+  /// In es, this message translates to:
+  /// **'¡Saluda para empezar la conversación!'**
+  String get chatSayHi;
+
+  /// Chat screen input field placeholder
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe un mensaje...'**
+  String get chatTypeMessage;
+
+  /// Chat screen photo send sheet toggle label
+  ///
+  /// In es, this message translates to:
+  /// **'Ver una vez'**
+  String get chatViewOnce;
+
+  /// Chat screen send button label
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar'**
+  String get chatSend;
+
+  /// Chat screen ephemeral photo bubble prompt
+  ///
+  /// In es, this message translates to:
+  /// **'Toca para ver una vez'**
+  String get chatTapToViewOnce;
+
+  /// Chat screen sender confirmation for view-once photo
+  ///
+  /// In es, this message translates to:
+  /// **'Foto de un solo uso enviada'**
+  String get chatViewOnceSent;
+
+  /// Chat screen label for expired view-once photo
+  ///
+  /// In es, this message translates to:
+  /// **'Foto expirada'**
+  String get chatPhotoExpired;
+
+  /// Chat screen error snackbar when unsend fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al anular el mensaje'**
+  String get chatFailedToUnsend;
+
+  /// Chat screen tooltip for voice call button
+  ///
+  /// In es, this message translates to:
+  /// **'Llamada de voz'**
+  String get chatVoiceCall;
+
+  /// Chat screen NSFW warning when photo is rejected
+  ///
+  /// In es, this message translates to:
+  /// **'Esta imagen parece violar nuestras pautas de contenido.'**
+  String get chatNsfwContent;
+
+  /// Roam bottom sheet title
+  ///
+  /// In es, this message translates to:
+  /// **'Vagar'**
+  String get roamTitle;
+
+  /// Roam bottom sheet subtitle
+  ///
+  /// In es, this message translates to:
+  /// **'Elige un lugar guardado o usa tu ubicación real.'**
+  String get roamSubtitle;
+
+  /// Roam bottom sheet button to use real GPS location
+  ///
+  /// In es, this message translates to:
+  /// **'Usar ubicación real'**
+  String get roamUseRealLocation;
+
+  /// Roam bottom sheet empty state when no places saved
+  ///
+  /// In es, this message translates to:
+  /// **'Sin lugares guardados aún.'**
+  String get roamNoSavedPlaces;
+
+  /// Roam bottom sheet button to add a new place
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar nuevo lugar'**
+  String get roamAddNewPlace;
+
+  /// Roam add-place form label for name field
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre'**
+  String get roamNameLabel;
+
+  /// Roam add-place form validation error for empty name
+  ///
+  /// In es, this message translates to:
+  /// **'El nombre es obligatorio'**
+  String get roamNameRequired;
+
+  /// Roam add-place form label for latitude field
+  ///
+  /// In es, this message translates to:
+  /// **'Latitud'**
+  String get roamLatitudeLabel;
+
+  /// Roam add-place form label for longitude field
+  ///
+  /// In es, this message translates to:
+  /// **'Longitud'**
+  String get roamLongitudeLabel;
+
+  /// Roam add-place form validation error for non-numeric input
+  ///
+  /// In es, this message translates to:
+  /// **'Debe ser un número'**
+  String get roamMustBeNumber;
+
+  /// Roam add-place form validation error for out-of-range latitude
+  ///
+  /// In es, this message translates to:
+  /// **'Rango: -90..90'**
+  String get roamLatRange;
+
+  /// Roam add-place form validation error for out-of-range longitude
+  ///
+  /// In es, this message translates to:
+  /// **'Rango: -180..180'**
+  String get roamLonRange;
+
+  /// Roam bottom sheet submit button for new place
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar y Vagar'**
+  String get roamAddAndRoam;
+
+  /// Roam bottom sheet error snackbar when adding a place fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al agregar lugar: {error}'**
+  String roamFailedToAddPlace(String error);
+
+  /// Grid search screen snackbar when roaming to a new place
+  ///
+  /// In es, this message translates to:
+  /// **'Viajando a {name}'**
+  String roamRoamingTo(String name);
+
+  /// Grid search screen error snackbar when roam fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al establecer ubicación: {error}'**
+  String roamFailedToSet(String error);
+
+  /// Grid search screen snackbar when GPS location is unavailable
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación no disponible — activa el permiso GPS en ajustes'**
+  String get roamLocationUnavailable;
+
+  /// Grid search screen snackbar when real GPS location is set
+  ///
+  /// In es, this message translates to:
+  /// **'Usando tu ubicación real'**
+  String get roamUsingRealLocation;
+
+  /// Grid search screen generic error snackbar for roam failures
+  ///
+  /// In es, this message translates to:
+  /// **'Error: {error}'**
+  String roamFailedGeneric(String error);
+
+  /// Grid search screen roam button tooltip
+  ///
+  /// In es, this message translates to:
+  /// **'Vagar'**
+  String get roamTooltip;
+
+  /// Albums screen create album dialog title
+  ///
+  /// In es, this message translates to:
+  /// **'Crear álbum'**
+  String get albumCreateTitle;
+
+  /// Albums screen create dialog album name field label
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del álbum'**
+  String get albumNameLabel;
+
+  /// Albums screen create dialog description field label
+  ///
+  /// In es, this message translates to:
+  /// **'Descripción (opcional)'**
+  String get albumDescriptionOptional;
+
+  /// Albums screen create dialog private album checkbox label
+  ///
+  /// In es, this message translates to:
+  /// **'Álbum privado'**
+  String get albumPrivateLabel;
+
+  /// Albums screen create dialog submit button
+  ///
+  /// In es, this message translates to:
+  /// **'Crear'**
+  String get albumCreateButton;
+
+  /// Albums screen error snackbar when album creation fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al crear álbum: {error}'**
+  String albumFailedToCreate(String error);
+
+  /// Albums screen generic error snackbar for album creation
+  ///
+  /// In es, this message translates to:
+  /// **'Error al crear álbum'**
+  String get albumFailedToCreateSimple;
+
+  /// Albums tile fallback when album name is null
+  ///
+  /// In es, this message translates to:
+  /// **'Sin título'**
+  String get albumSinTitulo;
+
+  /// Create story screen share/submit button label
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir'**
+  String get storyShare;
+
+  /// Create story screen generic error snackbar
+  ///
+  /// In es, this message translates to:
+  /// **'Error: {error}'**
+  String storyError(String error);
+
+  /// Create story screen upload error snackbar
+  ///
+  /// In es, this message translates to:
+  /// **'Error de subida: {error}'**
+  String storyUploadError(String error);
+
+  /// Circles screen fallback name when group has no name
+  ///
+  /// In es, this message translates to:
+  /// **'Grupo'**
+  String get circleGroupFallback;
+
+  /// Circles screen member count label under group name
+  ///
+  /// In es, this message translates to:
+  /// **'{count} miembros'**
+  String circleMembers(int count);
+
+  /// Call screen button label to unmute microphone
+  ///
+  /// In es, this message translates to:
+  /// **'Activar micrófono'**
+  String get callUnmute;
+
+  /// Call screen button label to mute microphone
+  ///
+  /// In es, this message translates to:
+  /// **'Silenciar'**
+  String get callMute;
+
+  /// Call screen button label to enable speakerphone
+  ///
+  /// In es, this message translates to:
+  /// **'Altavoz'**
+  String get callSpeaker;
+
+  /// Call screen button label to switch to earpiece
+  ///
+  /// In es, this message translates to:
+  /// **'Auricular'**
+  String get callEarpiece;
+
+  /// Call screen button label to end/hang up the call
+  ///
+  /// In es, this message translates to:
+  /// **'Colgar'**
+  String get callHangup;
+
+  /// Shop card POPULAR badge label
+  ///
+  /// In es, this message translates to:
+  /// **'POPULAR'**
+  String get badgePopular;
+
+  /// Grid search screen empty state title when no users found
+  ///
+  /// In es, this message translates to:
+  /// **'No se encontraron usuarios en esta área'**
+  String get gridNoUsersTitle;
+
+  /// Grid search screen empty state subtitle suggesting roam
+  ///
+  /// In es, this message translates to:
+  /// **'¡Prueba a viajar a otra ubicación!'**
+  String get gridNoUsersSubtitle;
+
+  /// Grid search screen error state message
+  ///
+  /// In es, this message translates to:
+  /// **'Error al cargar usuarios'**
+  String get gridFailedToLoad;
 }
 
 class _AppLocalizationsDelegate

@@ -14,7 +14,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../settings/settings_providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
-import 'cascade_screen.dart' show NearbyUser;
+import 'navegar_screen.dart' show NearbyUser;
 
 /// Geocoding suggestion displayed in the dropdown.
 class _GeocodingSuggestion {

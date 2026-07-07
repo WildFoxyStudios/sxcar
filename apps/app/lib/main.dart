@@ -16,7 +16,7 @@ import 'src/presence/presence_service.dart';
 import 'src/features/album_detail_screen.dart';
 import 'src/features/albums_screen.dart';
 import 'src/features/blocks_list_screen.dart';
-import 'src/features/cascade_screen.dart';
+import 'src/features/navegar_screen.dart';
 import 'src/features/chat_list_screen.dart';
 import 'src/features/grid_search_screen.dart';
 import 'src/features/chat_screen.dart';

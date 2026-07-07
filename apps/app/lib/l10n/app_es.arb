@@ -756,5 +756,51 @@
   "album_share": "Compartir",
   "@album_share": { "description": "Etiqueta de acción compartir álbum" },
   "album_share_link": "Compartir enlace",
-  "@album_share_link": { "description": "Etiqueta de enlace para compartir álbum" }
+  "@album_share_link": { "description": "Etiqueta de enlace para compartir álbum" },
+
+  "you_title": "Tú",
+  "@you_title": { "description": "Título de la barra de la pantalla Tú" },
+  "you_settings_header": "CONFIGURACIÓN",
+  "@you_settings_header": { "description": "Encabezado de sección de configuración en pantalla Tú" },
+  "you_notifications": "Notificaciones",
+  "@you_notifications": { "description": "Fila de configuración: notificaciones" },
+  "you_privacy": "Privacidad",
+  "@you_privacy": { "description": "Fila de configuración: privacidad" },
+  "you_blocked_users": "Usuarios bloqueados",
+  "@you_blocked_users": { "description": "Fila de configuración: usuarios bloqueados" },
+  "you_logout_title": "Cerrar sesión",
+  "@you_logout_title": { "description": "Título del diálogo de confirmación de cierre de sesión" },
+  "you_logout_confirm": "¿Estás seguro de que quieres cerrar sesión?",
+  "@you_logout_confirm": { "description": "Cuerpo del diálogo de confirmación de cierre de sesión" },
+  "you_boosted_snackbar": "¡Boost activado por 30 min!",
+  "@you_boosted_snackbar": { "description": "Snackbar de boost activado" },
+  "you_boost_failed": "Error al activar boost: {error}",
+  "@you_boost_failed": {
+    "description": "Snackbar de error al activar boost",
+    "placeholders": {
+      "error": { "type": "String", "example": "Error de red" }
+    }
+  },
+  "you_boosting": "Activando boost...",
+  "@you_boosting": { "description": "Etiqueta del botón boost mientras se activa" },
+  "you_boost_active": "BOOST · {minutes}m restantes",
+  "@you_boost_active": {
+    "description": "Etiqueta de boost activo con minutos restantes",
+    "placeholders": {
+      "minutes": { "type": "int", "example": "22" }
+    }
+  },
+  "you_boosted_badge": "BOOST",
+  "@you_boosted_badge": { "description": "Texto de la insignia de boost en la foto de perfil" },
+  "you_viewed_me": "TE HAN VISTO",
+  "@you_viewed_me": { "description": "Encabezado de sección 'Te han visto' en pantalla Tú" },
+  "you_viewers_error": "No se pudieron cargar los visitantes",
+  "@you_viewers_error": { "description": "Mensaje de error de 'Te han visto'" },
+  "you_profile_load_error": "Error al cargar el perfil: {error}",
+  "@you_profile_load_error": {
+    "description": "Mensaje de error al cargar el perfil",
+    "placeholders": {
+      "error": { "type": "String", "example": "500" }
+    }
+  }
 }

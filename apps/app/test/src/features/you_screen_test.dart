@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/features/you_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -117,20 +119,31 @@ class _AuthenticatedNotifier extends AuthNotifier {
   Future<void> logout() async {}
 }
 
+Widget _buildScreen(Dio dio) {
+  return ProviderScope(
+    overrides: [
+      authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
+      dioProvider.overrideWithValue(dio),
+    ],
+    child: MaterialApp(
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const YouScreen(),
+    ),
+  );
+}
+
 void main() {
   group('YouScreen', () {
     testWidgets('shows user email and profile section', (tester) async {
       final dio = Dio()..httpClientAdapter = _CombinedAdapter();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: YouScreen()),
-        ),
-      );
+      await tester.pumpWidget(_buildScreen(dio));
 
       await tester.pumpAndSettle();
 
@@ -140,15 +153,7 @@ void main() {
     testWidgets('shows Edit Profile button', (tester) async {
       final dio = Dio()..httpClientAdapter = _CombinedAdapter();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: YouScreen()),
-        ),
-      );
+      await tester.pumpWidget(_buildScreen(dio));
 
       await tester.pumpAndSettle();
 
@@ -158,69 +163,45 @@ void main() {
     testWidgets('shows logout option', (tester) async {
       final dio = Dio()..httpClientAdapter = _CombinedAdapter();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: YouScreen()),
-        ),
-      );
+      await tester.pumpWidget(_buildScreen(dio));
 
       await tester.pumpAndSettle();
 
       // The logout option is below the profile + viewed me section; scroll
       // down to find it.
       await tester.scrollUntilVisible(
-        find.text('Logout'),
+        find.text('Log Out'),
         100,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('Logout'), findsOneWidget);
+      expect(find.text('Log Out'), findsOneWidget);
     });
 
     testWidgets('shows settings section', (tester) async {
       final dio = Dio()..httpClientAdapter = _CombinedAdapter();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: YouScreen()),
-        ),
-      );
+      await tester.pumpWidget(_buildScreen(dio));
 
       await tester.pumpAndSettle();
 
       // Delete Account sits at the bottom of the scrollable area.
       await tester.scrollUntilVisible(
-        find.text('Delete Account'),
+        find.text('Delete account'),
         100,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('Delete Account'), findsOneWidget);
+      expect(find.text('Delete account'), findsOneWidget);
     });
 
     testWidgets('shows Viewed Me empty state when no viewers', (tester) async {
       final dio = Dio()..httpClientAdapter = _CombinedAdapter(viewers: []);
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: YouScreen()),
-        ),
-      );
+      await tester.pumpWidget(_buildScreen(dio));
 
       await tester.pumpAndSettle();
 
       expect(find.text('VIEWED ME'), findsOneWidget);
-      expect(find.text('No one has viewed you yet'), findsOneWidget);
+      expect(find.text('Nobody has viewed your profile yet'), findsOneWidget);
     });
 
     testWidgets('shows Viewed Me section with viewer names', (tester) async {
@@ -240,15 +221,7 @@ void main() {
           },
         ]);
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: YouScreen()),
-        ),
-      );
+      await tester.pumpWidget(_buildScreen(dio));
 
       await tester.pumpAndSettle();
 
@@ -260,15 +233,7 @@ void main() {
     testWidgets('shows Boost button when not active', (tester) async {
       final dio = Dio()..httpClientAdapter = _CombinedAdapter();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: YouScreen()),
-        ),
-      );
+      await tester.pumpWidget(_buildScreen(dio));
 
       await tester.pumpAndSettle();
 
@@ -285,15 +250,7 @@ void main() {
           },
         );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: YouScreen()),
-        ),
-      );
+      await tester.pumpWidget(_buildScreen(dio));
 
       await tester.pumpAndSettle();
 
@@ -307,15 +264,7 @@ void main() {
       final adapter = _CombinedAdapter();
       final dio = Dio()..httpClientAdapter = adapter;
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: YouScreen()),
-        ),
-      );
+      await tester.pumpWidget(_buildScreen(dio));
 
       await tester.pumpAndSettle();
 

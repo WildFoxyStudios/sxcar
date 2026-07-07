@@ -984,4 +984,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get album_share_link => 'Share link';
+
+  @override
+  String get you_title => 'You';
+
+  @override
+  String get you_settings_header => 'SETTINGS';
+
+  @override
+  String get you_notifications => 'Notifications';
+
+  @override
+  String get you_privacy => 'Privacy';
+
+  @override
+  String get you_blocked_users => 'Blocked Users';
+
+  @override
+  String get you_logout_title => 'Logout';
+
+  @override
+  String get you_logout_confirm => 'Are you sure you want to log out?';
+
+  @override
+  String get you_boosted_snackbar => 'Boosted for 30 min!';
+
+  @override
+  String you_boost_failed(String error) {
+    return 'Failed to boost: $error';
+  }
+
+  @override
+  String get you_boosting => 'Boosting...';
+
+  @override
+  String you_boost_active(int minutes) {
+    return 'BOOSTED · ${minutes}m left';
+  }
+
+  @override
+  String get you_boosted_badge => 'BOOSTED';
+
+  @override
+  String get you_viewed_me => 'VIEWED ME';
+
+  @override
+  String get you_viewers_error => 'Could not load viewers';
+
+  @override
+  String you_profile_load_error(String error) {
+    return 'Failed to load profile: $error';
+  }
 }

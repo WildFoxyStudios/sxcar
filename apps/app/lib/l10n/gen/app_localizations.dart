@@ -1987,6 +1987,96 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Compartir enlace'**
   String get album_share_link;
+
+  /// Título de la barra de la pantalla Tú
+  ///
+  /// In es, this message translates to:
+  /// **'Tú'**
+  String get you_title;
+
+  /// Encabezado de sección de configuración en pantalla Tú
+  ///
+  /// In es, this message translates to:
+  /// **'CONFIGURACIÓN'**
+  String get you_settings_header;
+
+  /// Fila de configuración: notificaciones
+  ///
+  /// In es, this message translates to:
+  /// **'Notificaciones'**
+  String get you_notifications;
+
+  /// Fila de configuración: privacidad
+  ///
+  /// In es, this message translates to:
+  /// **'Privacidad'**
+  String get you_privacy;
+
+  /// Fila de configuración: usuarios bloqueados
+  ///
+  /// In es, this message translates to:
+  /// **'Usuarios bloqueados'**
+  String get you_blocked_users;
+
+  /// Título del diálogo de confirmación de cierre de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'Cerrar sesión'**
+  String get you_logout_title;
+
+  /// Cuerpo del diálogo de confirmación de cierre de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'¿Estás seguro de que quieres cerrar sesión?'**
+  String get you_logout_confirm;
+
+  /// Snackbar de boost activado
+  ///
+  /// In es, this message translates to:
+  /// **'¡Boost activado por 30 min!'**
+  String get you_boosted_snackbar;
+
+  /// Snackbar de error al activar boost
+  ///
+  /// In es, this message translates to:
+  /// **'Error al activar boost: {error}'**
+  String you_boost_failed(String error);
+
+  /// Etiqueta del botón boost mientras se activa
+  ///
+  /// In es, this message translates to:
+  /// **'Activando boost...'**
+  String get you_boosting;
+
+  /// Etiqueta de boost activo con minutos restantes
+  ///
+  /// In es, this message translates to:
+  /// **'BOOST · {minutes}m restantes'**
+  String you_boost_active(int minutes);
+
+  /// Texto de la insignia de boost en la foto de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'BOOST'**
+  String get you_boosted_badge;
+
+  /// Encabezado de sección 'Te han visto' en pantalla Tú
+  ///
+  /// In es, this message translates to:
+  /// **'TE HAN VISTO'**
+  String get you_viewed_me;
+
+  /// Mensaje de error de 'Te han visto'
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron cargar los visitantes'**
+  String get you_viewers_error;
+
+  /// Mensaje de error al cargar el perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Error al cargar el perfil: {error}'**
+  String you_profile_load_error(String error);
 }
 
 class _AppLocalizationsDelegate

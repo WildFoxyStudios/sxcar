@@ -448,5 +448,51 @@
   "album_share": "Share",
   "@album_share": { "description": "Album share action label" },
   "album_share_link": "Share link",
-  "@album_share_link": { "description": "Album share link label" }
+  "@album_share_link": { "description": "Album share link label" },
+
+  "you_title": "You",
+  "@you_title": { "description": "You screen AppBar title" },
+  "you_settings_header": "SETTINGS",
+  "@you_settings_header": { "description": "You screen settings section header" },
+  "you_notifications": "Notifications",
+  "@you_notifications": { "description": "You screen settings row: notifications" },
+  "you_privacy": "Privacy",
+  "@you_privacy": { "description": "You screen settings row: privacy" },
+  "you_blocked_users": "Blocked Users",
+  "@you_blocked_users": { "description": "You screen settings row: blocked users" },
+  "you_logout_title": "Logout",
+  "@you_logout_title": { "description": "You screen logout confirmation dialog title" },
+  "you_logout_confirm": "Are you sure you want to log out?",
+  "@you_logout_confirm": { "description": "You screen logout confirmation dialog body" },
+  "you_boosted_snackbar": "Boosted for 30 min!",
+  "@you_boosted_snackbar": { "description": "You screen boost activated snackbar" },
+  "you_boost_failed": "Failed to boost: {error}",
+  "@you_boost_failed": {
+    "description": "You screen boost failure snackbar",
+    "placeholders": {
+      "error": { "type": "String", "example": "Network error" }
+    }
+  },
+  "you_boosting": "Boosting...",
+  "@you_boosting": { "description": "You screen boost button label while activating" },
+  "you_boost_active": "BOOSTED · {minutes}m left",
+  "@you_boost_active": {
+    "description": "You screen boost active status label with minutes remaining",
+    "placeholders": {
+      "minutes": { "type": "int", "example": "22" }
+    }
+  },
+  "you_boosted_badge": "BOOSTED",
+  "@you_boosted_badge": { "description": "You screen boost badge text on profile photo" },
+  "you_viewed_me": "VIEWED ME",
+  "@you_viewed_me": { "description": "You screen Viewed Me section header" },
+  "you_viewers_error": "Could not load viewers",
+  "@you_viewers_error": { "description": "You screen Viewed Me error state message" },
+  "you_profile_load_error": "Failed to load profile: {error}",
+  "@you_profile_load_error": {
+    "description": "You screen profile load error message prefix",
+    "placeholders": {
+      "error": { "type": "String", "example": "500" }
+    }
+  }
 }

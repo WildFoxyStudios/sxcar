@@ -987,4 +987,56 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get album_share_link => 'Compartir enlace';
+
+  @override
+  String get you_title => 'Tú';
+
+  @override
+  String get you_settings_header => 'CONFIGURACIÓN';
+
+  @override
+  String get you_notifications => 'Notificaciones';
+
+  @override
+  String get you_privacy => 'Privacidad';
+
+  @override
+  String get you_blocked_users => 'Usuarios bloqueados';
+
+  @override
+  String get you_logout_title => 'Cerrar sesión';
+
+  @override
+  String get you_logout_confirm =>
+      '¿Estás seguro de que quieres cerrar sesión?';
+
+  @override
+  String get you_boosted_snackbar => '¡Boost activado por 30 min!';
+
+  @override
+  String you_boost_failed(String error) {
+    return 'Error al activar boost: $error';
+  }
+
+  @override
+  String get you_boosting => 'Activando boost...';
+
+  @override
+  String you_boost_active(int minutes) {
+    return 'BOOST · ${minutes}m restantes';
+  }
+
+  @override
+  String get you_boosted_badge => 'BOOST';
+
+  @override
+  String get you_viewed_me => 'TE HAN VISTO';
+
+  @override
+  String get you_viewers_error => 'No se pudieron cargar los visitantes';
+
+  @override
+  String you_profile_load_error(String error) {
+    return 'Error al cargar el perfil: $error';
+  }
 }

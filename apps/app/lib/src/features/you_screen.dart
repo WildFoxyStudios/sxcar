@@ -20,7 +20,7 @@ class YouScreen extends ConsumerStatefulWidget {
 class _YouScreenState extends ConsumerState<YouScreen> {
   UserProfile? _profile;
   bool _isLoading = true;
-  String? _error;
+  String? _errorDetail;
 
   @override
   void initState() {
@@ -31,7 +31,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
   Future<void> _loadProfile() async {
     setState(() {
       _isLoading = true;
-      _error = null;
+      _errorDetail = null;
     });
 
     try {
@@ -47,33 +47,35 @@ class _YouScreenState extends ConsumerState<YouScreen> {
     } on DioException catch (e) {
       setState(() {
         _isLoading = false;
-        _error =
-            'Failed to load profile: ${e.response?.statusCode ?? e.message}';
+        _errorDetail = '${e.response?.statusCode ?? e.message}';
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _error = 'Failed to load profile: $e';
+        _errorDetail = '$e';
       });
     }
   }
 
   Future<void> _logout() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: VibraTheme.kSurface,
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to log out?'),
+        title: Text(l10n.you_logout_title),
+        content: Text(l10n.you_logout_confirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancelar),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Logout',
-                style: TextStyle(color: VibraTheme.kError)),
+            child: Text(
+              l10n.cerrarSesion,
+              style: const TextStyle(color: VibraTheme.kError),
+            ),
           ),
         ],
       ),
@@ -163,23 +165,24 @@ class _YouScreenState extends ConsumerState<YouScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final authState = ref.watch(authStateProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('You'),
+        title: Text(l10n.you_title),
       ),
-      body: _buildBody(theme, authState),
+      body: _buildBody(theme, authState, l10n),
     );
   }
 
-  Widget _buildBody(ThemeData theme, AuthState authState) {
+  Widget _buildBody(ThemeData theme, AuthState authState, AppLocalizations l10n) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null) {
+    if (_errorDetail != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -189,7 +192,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                _error!,
+                l10n.you_profile_load_error(_errorDetail!),
                 style: TextStyle(color: Colors.red.shade300, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
@@ -197,7 +200,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _loadProfile,
-              child: const Text('Retry'),
+              child: Text(l10n.reintentar),
             ),
           ],
         ),
@@ -294,7 +297,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
           child: OutlinedButton.icon(
             onPressed: () => context.push('/edit-profile'),
             icon: const Icon(Icons.edit),
-            label: const Text('Edit Profile'),
+            label: Text(l10n.editarPerfil),
             style: OutlinedButton.styleFrom(
               foregroundColor: theme.colorScheme.primary,
               side: BorderSide(color: theme.colorScheme.primary),
@@ -312,7 +315,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
-            'SETTINGS',
+            l10n.you_settings_header,
             style: theme.textTheme.labelSmall?.copyWith(
               color: Colors.grey,
               letterSpacing: 1.2,
@@ -328,7 +331,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
               ListTile(
                 leading: const Icon(Icons.notifications_outlined,
                     color: VibraTheme.kTextSecondary),
-                title: const Text('Notifications'),
+                title: Text(l10n.you_notifications),
                 trailing: const Icon(Icons.chevron_right,
                     color: VibraTheme.kTextMuted),
                 onTap: () =>
@@ -338,7 +341,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
               ListTile(
                 leading: const Icon(Icons.lock_outline,
                     color: VibraTheme.kTextSecondary),
-                title: const Text('Privacy'),
+                title: Text(l10n.you_privacy),
                 trailing: const Icon(Icons.chevron_right,
                     color: VibraTheme.kTextMuted),
                 onTap: () => context.push('/settings?tab=privacy'),
@@ -347,7 +350,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
               ListTile(
                 leading: const Icon(Icons.block,
                     color: VibraTheme.kTextSecondary),
-                title: const Text('Blocked Users'),
+                title: Text(l10n.you_blocked_users),
                 trailing: const Icon(Icons.chevron_right,
                     color: VibraTheme.kTextMuted),
                 onTap: () => context.push('/settings?tab=blocks'),
@@ -356,9 +359,9 @@ class _YouScreenState extends ConsumerState<YouScreen> {
               ListTile(
                 leading:
                     const Icon(Icons.logout, color: VibraTheme.kError),
-                title: const Text(
-                  'Logout',
-                  style: TextStyle(color: VibraTheme.kError),
+                title: Text(
+                  l10n.cerrarSesion,
+                  style: const TextStyle(color: VibraTheme.kError),
                 ),
                 onTap: _logout,
               ),
@@ -366,9 +369,9 @@ class _YouScreenState extends ConsumerState<YouScreen> {
               ListTile(
                 leading: const Icon(Icons.delete_forever,
                     color: VibraTheme.kError),
-                title: const Text(
-                  'Delete Account',
-                  style: TextStyle(color: VibraTheme.kError),
+                title: Text(
+                  l10n.eliminarCuenta,
+                  style: const TextStyle(color: VibraTheme.kError),
                 ),
                 onTap: _deleteAccount,
               ),
@@ -475,6 +478,7 @@ class _BoostButtonState extends ConsumerState<_BoostButton> {
   bool _activating = false;
 
   Future<void> _activate() async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _activating = true);
     try {
       final service = ref.read(boostServiceProvider);
@@ -482,8 +486,8 @@ class _BoostButtonState extends ConsumerState<_BoostButton> {
       ref.invalidate(activeBoostProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Boosted for 30 min!'),
+          SnackBar(
+            content: Text(l10n.you_boosted_snackbar),
             backgroundColor: VibraTheme.kAccent,
           ),
         );
@@ -492,7 +496,8 @@ class _BoostButtonState extends ConsumerState<_BoostButton> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to boost: ${e.response?.statusCode ?? e.message}'),
+            content: Text(l10n.you_boost_failed(
+                '${e.response?.statusCode ?? e.message}')),
             backgroundColor: Colors.red,
           ),
         );
@@ -501,7 +506,7 @@ class _BoostButtonState extends ConsumerState<_BoostButton> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to boost: $e'),
+            content: Text(l10n.you_boost_failed('$e')),
             backgroundColor: Colors.red,
           ),
         );
@@ -513,6 +518,7 @@ class _BoostButtonState extends ConsumerState<_BoostButton> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final activeAsync = ref.watch(activeBoostProvider);
     final active = activeAsync is AsyncData<Boost?> ? activeAsync.value : null;
@@ -533,7 +539,7 @@ class _BoostButtonState extends ConsumerState<_BoostButton> {
             Icon(Icons.bolt, color: theme.colorScheme.primary, size: 18),
             const SizedBox(width: 6),
             Text(
-              'BOOSTED · ${active.minutesRemaining}m left',
+              l10n.you_boost_active(active.minutesRemaining),
               style: TextStyle(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.bold,
@@ -559,7 +565,7 @@ class _BoostButtonState extends ConsumerState<_BoostButton> {
                 ),
               )
             : const Icon(Icons.bolt),
-        label: Text(_activating ? 'Boosting...' : 'Boost'),
+        label: Text(_activating ? l10n.you_boosting : l10n.boost),
         style: FilledButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: Colors.black,
@@ -577,6 +583,7 @@ class _BoostBadge extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeAsync = ref.watch(activeBoostProvider);
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final active =
         activeAsync is AsyncData<Boost?> ? activeAsync.value : null;
@@ -591,12 +598,12 @@ class _BoostBadge extends ConsumerWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: const [
-          Icon(Icons.bolt, color: Colors.black, size: 14),
-          SizedBox(width: 2),
+        children: [
+          const Icon(Icons.bolt, color: Colors.black, size: 14),
+          const SizedBox(width: 2),
           Text(
-            'BOOSTED',
-            style: TextStyle(
+            l10n.you_boosted_badge,
+            style: const TextStyle(
               color: Colors.black,
               fontWeight: FontWeight.bold,
               fontSize: 10,
@@ -614,6 +621,7 @@ class _BoostBadge extends ConsumerWidget {
 class _ViewedMeSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final viewersAsync = ref.watch(viewedMeProvider);
 
@@ -623,7 +631,7 @@ class _ViewedMeSection extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
-            'VIEWED ME',
+            l10n.you_viewed_me,
             style: theme.textTheme.labelSmall?.copyWith(
               color: Colors.grey,
               letterSpacing: 1.2,
@@ -647,7 +655,7 @@ class _ViewedMeSection extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: Text(
-                  'Could not load viewers',
+                  l10n.you_viewers_error,
                   style: TextStyle(color: Colors.grey.shade400),
                 ),
               ),
@@ -664,8 +672,8 @@ class _ViewedMeSection extends ConsumerWidget {
                         const Icon(Icons.visibility_off_outlined,
                             size: 36, color: VibraTheme.kTextMuted),
                         const SizedBox(height: 8),
-                        const Text(
-                          'No one has viewed you yet',
+                        Text(
+                          l10n.nadieHaVistoPerfil,
                           style: TextStyle(
                               color: VibraTheme.kTextSecondary, fontSize: 13),
                         ),

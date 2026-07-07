@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/features/you_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -81,55 +83,60 @@ class _AuthenticatedNotifier extends AuthNotifier {
   Future<void> logout() async {}
 }
 
+Widget _buildScreen(Dio dio, {String? email}) {
+  return ProviderScope(
+    overrides: [
+      authStateProvider.overrideWith(
+        () => _AuthenticatedNotifier(email: email),
+      ),
+      dioProvider.overrideWithValue(dio),
+    ],
+    child: MaterialApp(
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const YouScreen(),
+    ),
+  );
+}
+
 void main() {
   group('YouScreen (replaces SettingsScreen)', () {
     testWidgets('shows user email and logout option', (tester) async {
       final dio = Dio()..httpClientAdapter = _CombinedAdapter();
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(
-              () => _AuthenticatedNotifier(email: 'test@example.com'),
-            ),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: YouScreen()),
-        ),
+        _buildScreen(dio, email: 'test@example.com'),
       );
 
       await tester.pumpAndSettle();
 
       expect(find.text('@test'), findsOneWidget);
 
-      // Scroll down to find the Logout + Delete Account rows.
+      // Scroll down to find the Log Out + Delete account rows.
       await tester.scrollUntilVisible(
-        find.text('Logout'),
+        find.text('Log Out'),
         100,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('Logout'), findsOneWidget);
+      expect(find.text('Log Out'), findsOneWidget);
       await tester.scrollUntilVisible(
-        find.text('Delete Account'),
+        find.text('Delete account'),
         100,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('Delete Account'), findsOneWidget);
+      expect(find.text('Delete account'), findsOneWidget);
     });
 
     testWidgets('shows profile email when auth email is null', (tester) async {
       final dio = Dio()..httpClientAdapter = _CombinedAdapter();
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authStateProvider.overrideWith(
-              () => _AuthenticatedNotifier(email: null),
-            ),
-            dioProvider.overrideWithValue(dio),
-          ],
-          child: const MaterialApp(home: YouScreen()),
-        ),
+        _buildScreen(dio, email: null),
       );
 
       await tester.pumpAndSettle();

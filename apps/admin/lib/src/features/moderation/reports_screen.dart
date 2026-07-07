@@ -195,7 +195,7 @@ class ReportsScreen extends ConsumerWidget {
                 _dialogInfo('Status', report.status),
                 const Divider(height: 24),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedAction,
+                  value: selectedAction,
                   decoration: const InputDecoration(
                     labelText: 'Action',
                     border: OutlineInputBorder(),

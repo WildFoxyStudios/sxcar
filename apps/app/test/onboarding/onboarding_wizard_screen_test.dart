@@ -1,4 +1,8 @@
+import 'package:app/src/auth/auth_provider.dart';
+import 'package:app/src/nsfw/nsfw_service.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/src/auth/api_client.dart';
 import 'package:app/src/onboarding/models.dart';
@@ -23,11 +27,21 @@ class _MockApi extends ApiClient {
   }
 }
 
-Widget _wrap(Widget child) => MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      locale: const Locale('en'),
-      home: child,
+Widget _wrap(Widget child) => ProviderScope(
+      overrides: [
+        dioProvider.overrideWithValue(Dio()),
+        nsfwServiceProvider.overrideWithValue(
+          NsfwService.withClassifier(
+            (_) async => const NsfwResult(score: 0, isNsfw: false),
+          ),
+        ),
+      ],
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: child,
+      ),
     );
 
 void main() {

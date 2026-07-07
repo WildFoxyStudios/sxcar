@@ -280,7 +280,7 @@ pub async fn update_own(
         if let Some(ref r2) = state.r2 {
             let now = time::OffsetDateTime::now_utc();
             // 7-day presigned URL — regenerated on each profile update.
-            let url = crate::media::presign(r2, "GET", &r2.bucket_media, key, 604800, now);
+            let _url = crate::media::presign(r2, "GET", &r2.bucket_media, key, 604800, now);
             sqlx::query(
                 "UPDATE profiles SET profile_photo_key = $1 WHERE user_id = $2",
             )

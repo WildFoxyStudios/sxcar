@@ -36,6 +36,18 @@ class NsfwService {
   /// Production constructor — uses [NsfwDetector].
   NsfwService() : _classifyOverride = null;
 
+  /// Returns the [NsfwResult] to use when classification fails.
+  /// In release mode, fails CLOSED — blocks uploads.
+  /// In debug mode, fails open — allows uploads for development without the model.
+  static NsfwResult classifyErrorFallback({required bool isRelease}) {
+    if (isRelease) {
+      // Fail-closed: block the upload when NSFW detection is unavailable.
+      return const NsfwResult(score: 1.0, isNsfw: true);
+    }
+    // Debug/dev: allow the upload so developers can test without the model.
+    return const NsfwResult(score: 0.0, isNsfw: false);
+  }
+
   /// Test constructor — injects a fake classifier.
   NsfwService.withClassifier(NsfwClassifyFn classify)
       : _classifyOverride = classify;
@@ -55,7 +67,7 @@ class NsfwService {
         return await override(imageBytes);
       } catch (e) {
         debugPrint('[NsfwService] override error (fail-open): $e');
-        return const NsfwResult(score: 0.0, isNsfw: false);
+        return classifyErrorFallback(isRelease: kReleaseMode);
       }
     }
 
@@ -64,7 +76,7 @@ class NsfwService {
     final detector = _detector;
     if (detector == null) {
       debugPrint('[NsfwService] detector not initialised (fail-open)');
-      return const NsfwResult(score: 0.0, isNsfw: false);
+      return classifyErrorFallback(isRelease: kReleaseMode);
     }
 
     try {
@@ -76,7 +88,7 @@ class NsfwService {
     } catch (e) {
       // Fail open — an inference error must not block a legitimate upload.
       debugPrint('[NsfwService] classify error (fail-open): $e');
-      return const NsfwResult(score: 0.0, isNsfw: false);
+      return classifyErrorFallback(isRelease: kReleaseMode);
     }
   }
 

@@ -12,6 +12,7 @@ pub mod grindr_t1;
 pub mod health;
 pub mod me;
 pub mod media;
+pub mod meta;
 pub mod msgpack;
 pub mod notifications;
 pub mod onboarding;
@@ -87,6 +88,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
 
     let mut router = Router::new()
         .route("/health", get(health::health))
+        .route("/meta/filters", get(meta::get_filters))
         .route("/.well-known/apple-app-site-association", get(well_known::apple_site_association))
         .route("/.well-known/assetlinks.json", get(well_known::assetlinks))
         .route("/grid/nearby", get(grid::nearby))

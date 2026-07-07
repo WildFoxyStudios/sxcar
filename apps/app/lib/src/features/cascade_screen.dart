@@ -73,19 +73,17 @@ class NearbyUser {
   String distanceLabel(int units) => formatDistance(distanceM.round(), units);
 }
 
-/// Common tribe options for filter chips.
-const _kTribes = [
+/// Default filter options (hardcoded fallback if the API is unreachable).
+const _kDefaultTribes = [
   'Bear', 'Otter', 'Twink', 'Jock', 'Daddy', 'Geek',
   'Muscle', 'Chub', 'Leather', 'Trans', 'Queer',
 ];
 
-/// Common body type options.
-const _kBodyTypes = [
+const _kDefaultBodyTypes = [
   'Slim', 'Average', 'Athletic', 'Muscular', 'Curvy', 'Stocky', 'Large',
 ];
 
-/// Common looking-for / intent options.
-const _kLookingFor = [
+const _kDefaultLookingFor = [
   'Chat', 'Friends', 'Dates', 'Relationship', 'Networking', 'Right Now',
 ];
 
@@ -128,11 +126,17 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   String? _position; // backend enum value (lowercase, e.g. 'bottom', 'top')
   bool _notChatted = false;
 
+  // ── Dynamic filter options (fetched from /meta/filters on init) ──────────
+  List<String> _tribes = _kDefaultTribes;
+  List<String> _bodyTypes = _kDefaultBodyTypes;
+  List<String> _lookingForOptions = _kDefaultLookingFor;
+
   @override
   void initState() {
     super.initState();
     _nearbyUsersFuture = _initAndFetch();
     _loadFavorites();
+    _loadFilterOptions();
   }
 
   /// Waits for auth, fetches GPS, then fetches nearby users.
@@ -167,6 +171,35 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       }
     } catch (_) {
       // Favorites are optional — the chip simply filters nothing on failure.
+    }
+  }
+
+  /// Fetches filter options from /meta/filters on startup.
+  /// Falls back to hardcoded defaults if the API is unreachable.
+  void _loadFilterOptions() async {
+    try {
+      await ref.read(authReadyProvider.future);
+      final dio = ref.read(dioProvider);
+      final resp = await dio.get<Map<String, dynamic>>('/meta/filters');
+      final data = resp.data!;
+      if (mounted) {
+        setState(() {
+          _tribes = (data['tribes'] as List<dynamic>?)
+                  ?.map((e) => e as String)
+                  .toList() ??
+              _kDefaultTribes;
+          _bodyTypes = (data['body_types'] as List<dynamic>?)
+                  ?.map((e) => e as String)
+                  .toList() ??
+              _kDefaultBodyTypes;
+          _lookingForOptions = (data['looking_for'] as List<dynamic>?)
+                  ?.map((e) => e as String)
+                  .toList() ??
+              _kDefaultLookingFor;
+        });
+      }
+    } catch (_) {
+      // API unreachable — keep the hardcoded defaults.
     }
   }
 
@@ -998,7 +1031,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
-                  children: _kTribes.map((tribe) {
+                  children: _tribes.map((tribe) {
                     final selected = localTribes.contains(tribe);
                     return FilterChip(
                       label:
@@ -1037,7 +1070,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                         EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                   hint: const Text('Any'),
-                  items: _kBodyTypes
+                  items: _bodyTypes
                       .map((bt) =>
                           DropdownMenuItem(value: bt, child: Text(bt)))
                       .toList(),
@@ -1059,7 +1092,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                         EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                   hint: const Text('Any'),
-                  items: _kLookingFor
+                  items: _lookingForOptions
                       .map((lf) =>
                           DropdownMenuItem(value: lf, child: Text(lf)))
                       .toList(),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../auth/auth_provider.dart';
 import '../rightnow/rightnow_service.dart';
 import '../theme/app_theme.dart';
@@ -14,13 +15,14 @@ class RightNowScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: VibraTheme.kBg,
       appBar: AppBar(
         backgroundColor: VibraTheme.kBg,
-        title: const Text(
-          'Right Now',
-          style: TextStyle(
+        title: Text(
+          l10n.right_now_title,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 22,
@@ -33,13 +35,14 @@ class RightNowScreen extends ConsumerWidget {
         backgroundColor: VibraTheme.kRightNow,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.water_drop),
-        label: const Text('Right Now'),
+        label: Text(l10n.right_now_title),
       ),
       body: const _RightNowFeed(),
     );
   }
 
   void _showPostSheet(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     final controller = TextEditingController();
     int minutes = 60;
@@ -62,9 +65,9 @@ class RightNowScreen extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Post Right Now',
-                    style: TextStyle(
+                  Text(
+                    l10n.right_now_post,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -76,28 +79,33 @@ class RightNowScreen extends ConsumerWidget {
                     autofocus: true,
                     maxLength: 140,
                     style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: '¿Qué estás haciendo ahora mismo?',
-                      hintStyle: TextStyle(color: Colors.grey),
+                    decoration: InputDecoration(
+                      hintText: l10n.right_now_hint,
+                      hintStyle: const TextStyle(color: Colors.grey),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Text(
-                        'Expira en:',
-                        style: TextStyle(color: Colors.grey),
+                      Text(
+                        l10n.right_now_expires_label,
+                        style: const TextStyle(color: Colors.grey),
                       ),
                       const SizedBox(width: 12),
                       DropdownButton<int>(
                         value: minutes,
                         dropdownColor: VibraTheme.kSurface,
                         style: const TextStyle(color: Colors.white),
-                        items: const [
-                          DropdownMenuItem(value: 30, child: Text('30 min')),
-                          DropdownMenuItem(value: 60, child: Text('1 hora')),
+                        items: [
                           DropdownMenuItem(
-                              value: 120, child: Text('2 horas')),
+                              value: 30,
+                              child: Text(l10n.right_now_duration_30min)),
+                          DropdownMenuItem(
+                              value: 60,
+                              child: Text(l10n.right_now_duration_1h)),
+                          DropdownMenuItem(
+                              value: 120,
+                              child: Text(l10n.right_now_duration_2h)),
                         ],
                         onChanged: (v) => setSheet(() => minutes = v ?? 60),
                       ),
@@ -119,14 +127,14 @@ class RightNowScreen extends ConsumerWidget {
                               .read(rightNowServiceProvider)
                               .create(text, minutes);
                           ref.invalidate(rightNowFeedProvider);
-                          messenger.showSnackBar(const SnackBar(
-                              content: Text('Publicado en Right Now')));
+                          messenger.showSnackBar(SnackBar(
+                              content: Text(l10n.right_now_published)));
                         } catch (_) {
-                          messenger.showSnackBar(const SnackBar(
-                              content: Text('No se pudo publicar')));
+                          messenger.showSnackBar(SnackBar(
+                              content: Text(l10n.right_now_publish_error)));
                         }
                       },
-                      child: const Text('Publicar'),
+                      child: Text(l10n.right_now_publish),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -146,6 +154,7 @@ class _RightNowFeed extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final feedAsync = ref.watch(rightNowFeedProvider);
     final currentUserId = ref.watch(authStateProvider).userId;
 
@@ -157,38 +166,38 @@ class _RightNowFeed extends ConsumerWidget {
           children: [
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 12),
-            const Text(
-              'No se pudo cargar el feed',
-              style: TextStyle(color: Colors.white),
+            Text(
+              l10n.right_now_error,
+              style: const TextStyle(color: Colors.white),
             ),
             const SizedBox(height: 12),
             FilledButton(
               onPressed: () => ref.invalidate(rightNowFeedProvider),
-              child: const Text('Reintentar'),
+              child: Text(l10n.right_now_retry),
             ),
           ],
         ),
       ),
       data: (intents) {
         if (intents.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.water_drop_outlined,
+                const Icon(Icons.water_drop_outlined,
                     size: 56, color: VibraTheme.kRightNow),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
-                  'Nadie por aquí ahora mismo',
-                  style: TextStyle(
+                  l10n.right_now_empty_title,
+                  style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  'Sé el primero en publicar',
-                  style: TextStyle(color: VibraTheme.kTextSecondary),
+                  l10n.right_now_empty_subtitle,
+                  style: const TextStyle(color: VibraTheme.kTextSecondary),
                 ),
               ],
             ),
@@ -217,8 +226,8 @@ class _RightNowFeed extends ConsumerWidget {
                               .delete(intent.id);
                           ref.invalidate(rightNowFeedProvider);
                         } catch (_) {
-                          messenger.showSnackBar(const SnackBar(
-                              content: Text('No se pudo eliminar')));
+                          messenger.showSnackBar(SnackBar(
+                              content: Text(l10n.right_now_delete_error)));
                         }
                       }
                     : null,

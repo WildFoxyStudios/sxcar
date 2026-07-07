@@ -890,4 +890,61 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get deleteAccountError =>
       'Error al eliminar la cuenta. Intenta de nuevo.';
+
+  @override
+  String get right_now_title => 'Right Now';
+
+  @override
+  String get right_now_post => 'Publicar en Right Now';
+
+  @override
+  String get right_now_hint => '¿Qué estás haciendo ahora mismo?';
+
+  @override
+  String get right_now_expires_label => 'Expira en:';
+
+  @override
+  String get right_now_duration_30min => '30 min';
+
+  @override
+  String get right_now_duration_1h => '1 hora';
+
+  @override
+  String get right_now_duration_2h => '2 horas';
+
+  @override
+  String get right_now_duration_4h => '4 horas';
+
+  @override
+  String get right_now_duration_6h => '6 horas';
+
+  @override
+  String get right_now_publish => 'Publicar';
+
+  @override
+  String get right_now_published => 'Publicado en Right Now';
+
+  @override
+  String get right_now_publish_error => 'No se pudo publicar';
+
+  @override
+  String get right_now_delete_error => 'No se pudo eliminar';
+
+  @override
+  String get right_now_retry => 'Reintentar';
+
+  @override
+  String get right_now_error => 'No se pudo cargar el feed';
+
+  @override
+  String get right_now_empty_title => 'Nadie por aquí ahora mismo';
+
+  @override
+  String get right_now_empty_subtitle => 'Sé el primero en publicar';
+
+  @override
+  String get right_now_no_location => 'Sin ubicación';
+
+  @override
+  String get right_now_location_permission => 'Permiso de ubicación requerido';
 }

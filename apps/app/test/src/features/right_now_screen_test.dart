@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/features/right_now_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -75,7 +77,16 @@ Widget _buildScreen(Dio dio) {
       authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
       dioProvider.overrideWithValue(dio),
     ],
-    child: const MaterialApp(home: RightNowScreen()),
+    child: MaterialApp(
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const RightNowScreen(),
+    ),
   );
 }
 
@@ -87,8 +98,8 @@ void main() {
       await tester.pumpWidget(_buildScreen(dio));
       await tester.pumpAndSettle();
 
-      expect(find.text('Nadie por aquí ahora mismo'), findsOneWidget);
-      expect(find.text('Sé el primero en publicar'), findsOneWidget);
+      expect(find.text('No one around right now'), findsOneWidget);
+      expect(find.text('Be the first to post'), findsOneWidget);
     });
 
     testWidgets('shows feed intents when available', (tester) async {
@@ -135,8 +146,6 @@ void main() {
     });
 
     testWidgets('own intent shows delete button', (tester) async {
-      // JWT sub = user-1 encoded in the test token
-      // We just test the delete icon is NOT shown for other users' intents.
       final dio = Dio()
         ..httpClientAdapter = _MockRightNowAdapter(intents: [
           {

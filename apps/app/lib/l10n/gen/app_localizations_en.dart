@@ -887,4 +887,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountError => 'Error deleting account. Try again.';
+
+  @override
+  String get right_now_title => 'Right Now';
+
+  @override
+  String get right_now_post => 'Post Right Now';
+
+  @override
+  String get right_now_hint => 'What are you doing right now?';
+
+  @override
+  String get right_now_expires_label => 'Expires in:';
+
+  @override
+  String get right_now_duration_30min => '30 min';
+
+  @override
+  String get right_now_duration_1h => '1 hour';
+
+  @override
+  String get right_now_duration_2h => '2 hours';
+
+  @override
+  String get right_now_duration_4h => '4 hours';
+
+  @override
+  String get right_now_duration_6h => '6 hours';
+
+  @override
+  String get right_now_publish => 'Publish';
+
+  @override
+  String get right_now_published => 'Posted on Right Now';
+
+  @override
+  String get right_now_publish_error => 'Could not post';
+
+  @override
+  String get right_now_delete_error => 'Could not delete';
+
+  @override
+  String get right_now_retry => 'Retry';
+
+  @override
+  String get right_now_error => 'Could not load feed';
+
+  @override
+  String get right_now_empty_title => 'No one around right now';
+
+  @override
+  String get right_now_empty_subtitle => 'Be the first to post';
+
+  @override
+  String get right_now_no_location => 'No location';
+
+  @override
+  String get right_now_location_permission => 'Location permission required';
 }

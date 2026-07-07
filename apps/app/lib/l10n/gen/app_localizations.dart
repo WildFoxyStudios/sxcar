@@ -1801,6 +1801,120 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Error al eliminar la cuenta. Intenta de nuevo.'**
   String get deleteAccountError;
+
+  /// Título de la pantalla Right Now y etiqueta del FAB
+  ///
+  /// In es, this message translates to:
+  /// **'Right Now'**
+  String get right_now_title;
+
+  /// Título del bottom sheet para crear una publicación en Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'Publicar en Right Now'**
+  String get right_now_post;
+
+  /// Placeholder del campo de texto de Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué estás haciendo ahora mismo?'**
+  String get right_now_hint;
+
+  /// Etiqueta de duración antes del desplegable en Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'Expira en:'**
+  String get right_now_expires_label;
+
+  /// Opción de duración: 30 minutos
+  ///
+  /// In es, this message translates to:
+  /// **'30 min'**
+  String get right_now_duration_30min;
+
+  /// Opción de duración: 1 hora
+  ///
+  /// In es, this message translates to:
+  /// **'1 hora'**
+  String get right_now_duration_1h;
+
+  /// Opción de duración: 2 horas
+  ///
+  /// In es, this message translates to:
+  /// **'2 horas'**
+  String get right_now_duration_2h;
+
+  /// Opción de duración: 4 horas
+  ///
+  /// In es, this message translates to:
+  /// **'4 horas'**
+  String get right_now_duration_4h;
+
+  /// Opción de duración: 6 horas
+  ///
+  /// In es, this message translates to:
+  /// **'6 horas'**
+  String get right_now_duration_6h;
+
+  /// Botón de publicar en Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'Publicar'**
+  String get right_now_publish;
+
+  /// Snackbar de éxito al publicar en Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'Publicado en Right Now'**
+  String get right_now_published;
+
+  /// Snackbar de error al publicar en Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo publicar'**
+  String get right_now_publish_error;
+
+  /// Snackbar de error al eliminar una publicación de Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo eliminar'**
+  String get right_now_delete_error;
+
+  /// Botón de reintentar en estado de error de Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get right_now_retry;
+
+  /// Mensaje de error cuando falla la carga del feed de Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar el feed'**
+  String get right_now_error;
+
+  /// Título de estado vacío de Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'Nadie por aquí ahora mismo'**
+  String get right_now_empty_title;
+
+  /// Subtítulo de estado vacío de Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'Sé el primero en publicar'**
+  String get right_now_empty_subtitle;
+
+  /// Etiqueta de ubicación no disponible en Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'Sin ubicación'**
+  String get right_now_no_location;
+
+  /// Mensaje de permiso de ubicación en Right Now
+  ///
+  /// In es, this message translates to:
+  /// **'Permiso de ubicación requerido'**
+  String get right_now_location_permission;
 }
 
 class _AppLocalizationsDelegate

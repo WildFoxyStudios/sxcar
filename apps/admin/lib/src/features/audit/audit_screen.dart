@@ -3,6 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/admin_theme.dart';
 import '../../widgets/admin_http_client.dart';
 import '../../widgets/admin_layout.dart';
+import '../../widgets/page_controls.dart';
+
+const _pageSize = 50;
+
+final _auditOffsetProvider = StateProvider.autoDispose<int>((ref) => 0);
 
 class AuditEntry {
   final String id;
@@ -34,9 +39,10 @@ class AuditEntry {
 }
 
 final auditProvider = FutureProvider.autoDispose<List<AuditEntry>>((ref) async {
+  final offset = ref.watch(_auditOffsetProvider);
   final client = ref.read(adminHttpClientProvider);
   final response = await client.dio.get('/admin/audit',
-      queryParameters: {'limit': '50', 'offset': '0'});
+      queryParameters: {'limit': '$_pageSize', 'offset': '$offset'});
   final data = response.data as Map<String, dynamic>;
   final list = (data['entries'] as List<dynamic>?)
           ?.map((e) => AuditEntry.fromJson(e as Map<String, dynamic>))
@@ -59,7 +65,7 @@ class AuditScreen extends ConsumerWidget {
         children: [
           _header(),
           const Divider(height: 1),
-          Expanded(child: _body(async)),
+          Expanded(child: _body(async, ref)),
         ],
       ),
     );
@@ -88,7 +94,7 @@ class AuditScreen extends ConsumerWidget {
     );
   }
 
-  Widget _body(AsyncValue<List<AuditEntry>> async) {
+  Widget _body(AsyncValue<List<AuditEntry>> async, WidgetRef ref) {
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
@@ -118,6 +124,10 @@ class AuditScreen extends ConsumerWidget {
             ),
           );
         }
+        final currentPage = ref.watch(_auditOffsetProvider) ~/ _pageSize;
+        final totalPages = entries.length < _pageSize
+            ? currentPage + 1
+            : currentPage + 2;
         return Column(
           children: [
             _tableHeader(),
@@ -127,7 +137,13 @@ class AuditScreen extends ConsumerWidget {
                 itemBuilder: (_, i) => _AuditRow(entry: entries[i]),
               ),
             ),
-            _tableFooter(entries.length),
+            PageControls(
+              currentPage: currentPage,
+              totalPages: totalPages,
+              onPageChanged: (page) =>
+                  ref.read(_auditOffsetProvider.notifier).state =
+                      page * _pageSize,
+            ),
           ],
         );
       },
@@ -150,20 +166,6 @@ class AuditScreen extends ConsumerWidget {
           SizedBox(width: 170, child: _ColHeader('TIMESTAMP')),
         ],
       ),
-    );
-  }
-
-  Widget _tableFooter(int count) {
-    return Container(
-      height: 36,
-      decoration: const BoxDecoration(
-        color: AdminTheme.kSurface,
-        border: Border(top: BorderSide(color: AdminTheme.kBorder)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Text('$count entry(ies)',
-          style:
-              const TextStyle(color: AdminTheme.kMuted, fontSize: 11)),
     );
   }
 }

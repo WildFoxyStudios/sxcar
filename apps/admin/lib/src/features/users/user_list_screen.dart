@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../theme/admin_theme.dart';
 import '../../widgets/admin_http_client.dart';
 import '../../widgets/admin_layout.dart';
+import '../../widgets/page_controls.dart';
+
+const _pageSize = 20;
 
 class UserRow {
   final String id;
@@ -63,13 +66,13 @@ class UserListResponse {
 }
 
 final userListProvider =
-    FutureProvider.autoDispose.family<UserListResponse, String>(
-        (ref, query) async {
+    FutureProvider.autoDispose.family<UserListResponse, ({String query, int offset})>(
+        (ref, params) async {
   final client = ref.read(adminHttpClientProvider);
   final response = await client.dio.get('/admin/users', queryParameters: {
-    'q':      query,
-    'limit':  '20',
-    'offset': '0',
+    'q':      params.query,
+    'limit':  '$_pageSize',
+    'offset': '${params.offset}',
   });
   return UserListResponse.fromJson(response.data as Map<String, dynamic>);
 });
@@ -84,6 +87,7 @@ class UserListScreen extends ConsumerStatefulWidget {
 class _UserListScreenState extends ConsumerState<UserListScreen> {
   final _searchController = TextEditingController();
   String _currentQuery = '';
+  int _offset = 0;
 
   @override
   void dispose() {
@@ -92,12 +96,15 @@ class _UserListScreenState extends ConsumerState<UserListScreen> {
   }
 
   void _onSearch(String query) {
-    setState(() => _currentQuery = query.trim());
+    setState(() {
+      _currentQuery = query.trim();
+      _offset = 0;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final usersAsync = ref.watch(userListProvider(_currentQuery));
+    final usersAsync = ref.watch(userListProvider((query: _currentQuery, offset: _offset)));
 
     return AdminLayout(
       selectedIndex: 1,
@@ -255,24 +262,13 @@ class _UserListScreenState extends ConsumerState<UserListScreen> {
           ),
         ),
         // Footer
-        Container(
-          height: 36,
-          decoration: const BoxDecoration(
-            color: AdminTheme.kSurface,
-            border: Border(top: BorderSide(color: AdminTheme.kBorder)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Row(
-            children: [
-              Text(
-                'Showing ${response.users.length} of ${response.total} users',
-                style: const TextStyle(
-                  color: AdminTheme.kMuted,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
+        PageControls(
+          currentPage: _offset ~/ _pageSize,
+          totalPages: response.total > 0
+              ? (response.total + _pageSize - 1) ~/ _pageSize
+              : 1,
+          onPageChanged: (page) =>
+              setState(() => _offset = page * _pageSize),
         ),
       ],
     );

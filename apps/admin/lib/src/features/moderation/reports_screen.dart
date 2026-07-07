@@ -4,8 +4,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/admin_theme.dart';
 import '../../widgets/admin_http_client.dart';
 import '../../widgets/admin_layout.dart';
+import '../../widgets/page_controls.dart';
 
-class ReportItem {
+const _pageSize = 50;
+
+final _reportsOffsetProvider = StateProvider.autoDispose<int>((ref) => 0);
+
+final reportsProvider = FutureProvider.autoDispose<List<ReportItem>>((ref) async {
+  final offset = ref.watch(_reportsOffsetProvider);
+  final client = ref.read(adminHttpClientProvider);
+  final response = await client.dio.get('/admin/reports', queryParameters: {
+    'status': 'open',
+    'limit':  '$_pageSize',
+    'offset': '$offset',
+  });
+  final data = response.data as Map<String, dynamic>;
+  final reportsList = (data['reports'] as List<dynamic>?)
+          ?.map((e) => ReportItem.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [];
+  return reportsList;
+});
   final String id;
   final String? reporterId;
   final String? targetUserId;
@@ -42,21 +61,6 @@ class ReportItem {
     );
   }
 }
-
-final reportsProvider = FutureProvider.autoDispose<List<ReportItem>>((ref) async {
-  final client = ref.read(adminHttpClientProvider);
-  final response = await client.dio.get('/admin/reports', queryParameters: {
-    'status': 'open',
-    'limit':  '50',
-    'offset': '0',
-  });
-  final data = response.data as Map<String, dynamic>;
-  final reportsList = (data['reports'] as List<dynamic>?)
-          ?.map((e) => ReportItem.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-      [];
-  return reportsList;
-});
 
 class ReportsScreen extends ConsumerWidget {
   const ReportsScreen({super.key});
@@ -143,25 +147,40 @@ class ReportsScreen extends ConsumerWidget {
               ),
               data: (reports) => reports.isEmpty
                   ? const _EmptyQueue()
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: reports.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: 10),
-                      itemBuilder: (ctx, i) => _ReportCard(
-                        report: reports[i],
-                        onResolve: (resolution, action, note) =>
-                            _resolveReport(
-                          context,
-                          ref,
-                          reports[i].id,
-                          resolution,
-                          action,
-                          note,
+                  : Column(
+                      children: [
+                        Expanded(
+                          child: ListView.separated(
+                            padding: const EdgeInsets.all(20),
+                            itemCount: reports.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (ctx, i) => _ReportCard(
+                              report: reports[i],
+                              onResolve: (resolution, action, note) =>
+                                  _resolveReport(
+                                context,
+                                ref,
+                                reports[i].id,
+                                resolution,
+                                action,
+                                note,
+                              ),
+                              onShowDetail: () =>
+                                  _showReportDialog(context, ref, reports[i]),
+                            ),
+                          ),
                         ),
-                        onShowDetail: () =>
-                            _showReportDialog(context, ref, reports[i]),
-                      ),
+                        PageControls(
+                          currentPage: ref.watch(_reportsOffsetProvider) ~/ _pageSize,
+                          totalPages: reports.length < _pageSize
+                              ? ref.watch(_reportsOffsetProvider) ~/ _pageSize + 1
+                              : ref.watch(_reportsOffsetProvider) ~/ _pageSize + 2,
+                          onPageChanged: (page) =>
+                              ref.read(_reportsOffsetProvider.notifier).state =
+                                  page * _pageSize,
+                        ),
+                      ],
                     ),
             ),
           ),

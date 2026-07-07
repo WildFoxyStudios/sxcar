@@ -4,8 +4,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/admin_theme.dart';
 import '../../widgets/admin_http_client.dart';
 import '../../widgets/admin_layout.dart';
+import '../../widgets/page_controls.dart';
 
-class CsamItem {
+const _pageSize = 50;
+
+final _csamOffsetProvider = StateProvider.autoDispose<int>((ref) => 0);
+
+final csamProvider = FutureProvider.autoDispose<List<CsamItem>>((ref) async {
+  final offset = ref.watch(_csamOffsetProvider);
+  final client = ref.read(adminHttpClientProvider);
+  final response =
+      await client.dio.get('/admin/csam', queryParameters: {'limit': '$_pageSize', 'offset': '$offset'});
+  final data = response.data as Map<String, dynamic>;
+  final list = (data['hits'] as List<dynamic>?)
+          ?.map((e) => CsamItem.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [];
+  return list;
+});
   final String id;
   final String contentHash;
   final String matchedBy;
@@ -33,18 +49,6 @@ class CsamItem {
     );
   }
 }
-
-final csamProvider = FutureProvider.autoDispose<List<CsamItem>>((ref) async {
-  final client = ref.read(adminHttpClientProvider);
-  final response =
-      await client.dio.get('/admin/csam', queryParameters: {'limit': '50'});
-  final data = response.data as Map<String, dynamic>;
-  final list = (data['hits'] as List<dynamic>?)
-          ?.map((e) => CsamItem.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-      [];
-  return list;
-});
 
 class CsamsScreen extends ConsumerWidget {
   const CsamsScreen({super.key});
@@ -121,6 +125,10 @@ class CsamsScreen extends ConsumerWidget {
             ),
           );
         }
+        final currentPage = ref.watch(_csamOffsetProvider) ~/ _pageSize;
+        final totalPages = items.length < _pageSize
+            ? currentPage + 1
+            : currentPage + 2;
         return Column(
           children: [
             _tableHeader(),
@@ -133,7 +141,13 @@ class CsamsScreen extends ConsumerWidget {
                     onEscalate: () => _act(context, ref, items[i].id, 'escalated')),
               ),
             ),
-            _tableFooter(items.length),
+            PageControls(
+              currentPage: currentPage,
+              totalPages: totalPages,
+              onPageChanged: (page) =>
+                  ref.read(_csamOffsetProvider.notifier).state =
+                      page * _pageSize,
+            ),
           ],
         );
       },
@@ -158,20 +172,6 @@ class CsamsScreen extends ConsumerWidget {
           SizedBox(width: 140, child: _ColHeader('ACTION')),
         ],
       ),
-    );
-  }
-
-  Widget _tableFooter(int count) {
-    return Container(
-      height: 36,
-      decoration: const BoxDecoration(
-        color: AdminTheme.kSurface,
-        border: Border(top: BorderSide(color: AdminTheme.kBorder)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Text('$count hit(s)',
-          style:
-              const TextStyle(color: AdminTheme.kMuted, fontSize: 11)),
     );
   }
 

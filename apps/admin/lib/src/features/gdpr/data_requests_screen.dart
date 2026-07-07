@@ -4,8 +4,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/admin_theme.dart';
 import '../../widgets/admin_http_client.dart';
 import '../../widgets/admin_layout.dart';
+import '../../widgets/page_controls.dart';
 
-class DataRequest {
+const _pageSize = 50;
+
+final _dataRequestsOffsetProvider = StateProvider.autoDispose<int>((ref) => 0);
+
+final dataRequestsProvider =
+    FutureProvider.autoDispose<List<DataRequest>>((ref) async {
+  final offset = ref.watch(_dataRequestsOffsetProvider);
+  final client = ref.read(adminHttpClientProvider);
+  final response = await client.dio.get('/admin/gdpr/data-requests',
+      queryParameters: {'status': 'pending', 'limit': '$_pageSize', 'offset': '$offset'});
+  final data = response.data as Map<String, dynamic>;
+  final list = (data['requests'] as List<dynamic>?)
+          ?.map((e) => DataRequest.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [];
+  return list;
+});
   final String id;
   final String userId;
   final String type;
@@ -30,19 +47,6 @@ class DataRequest {
     );
   }
 }
-
-final dataRequestsProvider =
-    FutureProvider.autoDispose<List<DataRequest>>((ref) async {
-  final client = ref.read(adminHttpClientProvider);
-  final response = await client.dio.get('/admin/gdpr/data-requests',
-      queryParameters: {'status': 'pending', 'limit': '50', 'offset': '0'});
-  final data = response.data as Map<String, dynamic>;
-  final list = (data['requests'] as List<dynamic>?)
-          ?.map((e) => DataRequest.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-      [];
-  return list;
-});
 
 class DataRequestsScreen extends ConsumerWidget {
   const DataRequestsScreen({super.key});
@@ -119,6 +123,10 @@ class DataRequestsScreen extends ConsumerWidget {
             ),
           );
         }
+        final currentPage = ref.watch(_dataRequestsOffsetProvider) ~/ _pageSize;
+        final totalPages = requests.length < _pageSize
+            ? currentPage + 1
+            : currentPage + 2;
         return Column(
           children: [
             _tableHeader(),
@@ -129,7 +137,13 @@ class DataRequestsScreen extends ConsumerWidget {
                     _RequestRow(request: requests[i], ref: ref),
               ),
             ),
-            _tableFooter(requests.length),
+            PageControls(
+              currentPage: currentPage,
+              totalPages: totalPages,
+              onPageChanged: (page) =>
+                  ref.read(_dataRequestsOffsetProvider.notifier).state =
+                      page * _pageSize,
+            ),
           ],
         );
       },
@@ -156,18 +170,6 @@ class DataRequestsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _tableFooter(int count) {
-    return Container(
-      height: 36,
-      decoration: const BoxDecoration(
-        color: AdminTheme.kSurface,
-        border: Border(top: BorderSide(color: AdminTheme.kBorder)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Text('$count request(s)',
-          style:
-              const TextStyle(color: AdminTheme.kMuted, fontSize: 11)),
-    );
   }
 }
 

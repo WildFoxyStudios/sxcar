@@ -140,7 +140,11 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
     if (yes == true) {
       await widget.provider.forceComplete();
       widget.onCompleted?.call();
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) Navigator.of(context).pop(true);
+        });
+      }
     }
   }
 
@@ -189,7 +193,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
                 );
               } else {
                 widget.onCompleted?.call();
-                Navigator.of(context).pop(true);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) Navigator.of(context).pop(true);
+                });
               }
             });
           },

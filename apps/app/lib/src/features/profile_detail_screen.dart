@@ -9,7 +9,7 @@ import '../presence/presence_service.dart';
 import '../reports/report_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
-import 'cascade_screen.dart' show NearbyUser;
+import 'navegar_screen.dart' show NearbyUser;
 import 'profile_screen.dart' show UserProfile;
 
 /// Full-screen profile of another user — Grindr-style redesign (T4).
@@ -164,34 +164,6 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
         await dio.post('/favorites', data: {'user_id': widget.userId});
       }
       if (mounted) setState(() => _isFavorited = !_isFavorited);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e')),
-        );
-      }
-    }
-  }
-
-  // Keep _toggleBlock for future use — no block button in the new UI.
-  // ignore: unused_element
-  Future<void> _toggleBlock() async {
-    try {
-      final dio = ref.read(dioProvider);
-      if (_isBlocked) {
-        await dio.delete('/blocks/${widget.userId}');
-      } else {
-        await dio.post('/blocks',
-            data: {'user_id': widget.userId, 'reason': null});
-      }
-      if (mounted) setState(() => _isBlocked = !_isBlocked);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_isBlocked ? 'User blocked' : 'User unblocked'),
-          ),
-        );
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
 
 use crate::error::AuthError;
 
@@ -153,30 +153,60 @@ async fn verify_google_token(token: &str, client_id: &str) -> Result<OAuthIdenti
     })
 }
 
-/// Verify an Apple id_token by decoding its JWT payload (without signature verification).
-/// The full implementation would fetch Apple's public keys from
-/// https://appleid.apple.com/auth/keys and verify the JWT signature.
+/// Verify an Apple id_token by fetching Apple's public JWKS and validating the
+/// RSA-256 signature on the JWT.
 async fn verify_apple_token(token: &str, client_id: &str) -> Result<OAuthIdentity, AuthError> {
-    let parts: Vec<&str> = token.split('.').collect();
-    if parts.len() != 3 {
-        return Err(AuthError::OAuth("invalid JWT".into()));
-    }
-    let payload_bytes =
-        URL_SAFE_NO_PAD
-            .decode(parts[1])
-            .map_err(|_| AuthError::OAuth("base64 decode failed".into()))?;
-    let payload: serde_json::Value = serde_json::from_slice(&payload_bytes)
-        .map_err(|_| AuthError::OAuth("payload parse failed".into()))?;
+    let jwks: serde_json::Value = reqwest::get("https://appleid.apple.com/auth/keys")
+        .await
+        .map_err(|e| AuthError::OAuth(format!("jwks fetch: {e}")))?
+        .json()
+        .await
+        .map_err(|e| AuthError::OAuth(format!("jwks parse: {e}")))?;
 
-    // Verify audience matches our client_id
-    if payload["aud"].as_str() != Some(client_id) {
-        return Err(AuthError::OAuth("aud mismatch".into()));
-    }
+    verify_apple_token_with_jwks(token, client_id, &jwks)
+}
 
-    let sub = payload["sub"]
+/// Verify an Apple id_token using a pre-fetched JWKS value (factored out for
+/// testability).
+fn verify_apple_token_with_jwks(
+    token: &str,
+    client_id: &str,
+    jwks: &serde_json::Value,
+) -> Result<OAuthIdentity, AuthError> {
+    let header = decode_header(token).map_err(|e| AuthError::OAuth(format!("jwt header: {e}")))?;
+    let kid = header
+        .kid
+        .ok_or_else(|| AuthError::OAuth("no kid in header".into()))?;
+
+    let keys = jwks["keys"]
+        .as_array()
+        .ok_or_else(|| AuthError::OAuth("jwks has no keys array".into()))?;
+    let key = keys
+        .iter()
+        .find(|k| k["kid"].as_str() == Some(kid.as_str()))
+        .ok_or_else(|| AuthError::OAuth(format!("key not found for kid {kid}")))?;
+
+    let n = key["n"]
         .as_str()
-        .ok_or(AuthError::OAuth("no sub".into()))?;
-    let email = payload["email"].as_str().unwrap_or("");
+        .ok_or_else(|| AuthError::OAuth("key missing n".into()))?;
+    let e = key["e"]
+        .as_str()
+        .ok_or_else(|| AuthError::OAuth("key missing e".into()))?;
+
+    let decoding_key =
+        DecodingKey::from_rsa_components(n, e).map_err(|e| AuthError::OAuth(format!("decoding key: {e}")))?;
+
+    let mut validation = Validation::new(Algorithm::RS256);
+    validation.set_audience(&[client_id]);
+
+    let token_data = decode::<serde_json::Value>(token, &decoding_key, &validation)
+        .map_err(|e| AuthError::OAuth(format!("apple jwt verify: {e}")))?;
+
+    let claims = token_data.claims;
+    let sub = claims["sub"]
+        .as_str()
+        .ok_or_else(|| AuthError::OAuth("no sub in claims".into()))?;
+    let email = claims["email"].as_str().unwrap_or("");
 
     Ok(OAuthIdentity {
         provider_uid: sub.into(),
@@ -187,6 +217,7 @@ async fn verify_apple_token(token: &str, client_id: &str) -> Result<OAuthIdentit
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 
     #[tokio::test]
     async fn dev_verifier_parses() {
@@ -245,51 +276,110 @@ mod tests {
         assert!(result.is_err());
     }
 
+    // ------------------------------------------------------------------
+    // Apple JWT signature verification (verify_apple_token_with_jwks)
+    // ------------------------------------------------------------------
+
+    /// A valid-looking modulus (base64url-encoded) for test JWKs.
+    /// These bytes decode to a large integer > 1 so `RsaPublicKey::new` won't
+    /// reject them. Combined with the standard exponent 65537 ("AQAB") this
+    /// forms a syntactically-valid RSA public key that will pass
+    /// `DecodingKey::from_rsa_components` but cause any real JWT signature
+    /// check to fail (since no corresponding private key exists).
+    static TEST_MODULUS: &str = "nzXmY7q8w9e0r1t2y3u4i5o6p7a8s9d0f1g2h3j4k5l6z7x8c9v0b1n2m3";
+
+    /// A syntactically-valid header for an RS256 JWT with a known kid.
+    fn make_rs256_header_b64(kid: &str) -> String {
+        let header_json = serde_json::json!({"alg": "RS256", "kid": kid});
+        URL_SAFE_NO_PAD.encode(serde_json::to_string(&header_json).unwrap())
+    }
+
+    fn make_jwks_with_key(kid: &str) -> serde_json::Value {
+        serde_json::json!({
+            "keys": [{
+                "kty": "RSA",
+                "kid": kid,
+                "use": "sig",
+                "alg": "RS256",
+                "n": TEST_MODULUS,
+                "e": "AQAB"
+            }]
+        })
+    }
+
     #[test]
-    fn apple_verify_invalid_jwt_rejected() {
-        // Not 3 parts
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(verify_apple_token("not.a.jwt", "client-id"));
+    fn apple_verify_rejects_malformed_jwt() {
+        // 2 parts — decode_header should fail
+        let jwks = make_jwks_with_key("k1");
+        let result = verify_apple_token_with_jwks("not.a.jwt", "client-id", &jwks);
         assert!(result.is_err());
     }
 
     #[test]
-    fn apple_verify_bad_base64_rejected() {
-        // 3 parts but payload is not valid base64url
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(verify_apple_token("header.!!!-invalid-payload.signature", "client-id"));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn apple_verify_aud_mismatch_rejected() {
-        // Create a JWT with wrong aud
-        let payload = serde_json::json!({"sub": "user123", "aud": "wrong-client", "email": "a@b.com"});
+    fn apple_verify_rejects_unsigned_token() {
+        let jwks = make_jwks_with_key("test-key");
+        let header_b64 = make_rs256_header_b64("test-key");
+        let payload = serde_json::json!({
+            "sub": "user123",
+            "aud": "com.example.app",
+            "email": "user@privaterelay.apple.com"
+        });
         let payload_b64 = URL_SAFE_NO_PAD.encode(serde_json::to_string(&payload).unwrap());
-        let token = format!("header.{payload_b64}.signature");
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(verify_apple_token(&token, "my-client-id"));
-        assert!(result.is_err());
-    }
+        let token = format!("{header_b64}.{payload_b64}.forgedsignature");
 
-    #[test]
-    fn apple_verify_valid_token_succeeds() {
-        let payload =
-            serde_json::json!({"sub": "apple-user-1", "aud": "com.example.app", "email": "user@privaterelay.apple.com"});
-        let payload_b64 = URL_SAFE_NO_PAD.encode(serde_json::to_string(&payload).unwrap());
-        let token = format!("header.{payload_b64}.signature");
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(verify_apple_token(&token, "com.example.app"));
-        assert!(result.is_ok());
-        let identity = result.unwrap();
-        assert_eq!(identity.provider_uid, "apple-user-1");
-        assert_eq!(
-            identity.email.as_deref(),
-            Some("user@privaterelay.apple.com")
+        let result = verify_apple_token_with_jwks(&token, "com.example.app", &jwks);
+        assert!(
+            result.is_err(),
+            "unsigned/forged token must be rejected by RSA signature verification"
         );
+    }
+
+    #[test]
+    fn apple_verify_rejects_missing_kid() {
+        // Token header without kid
+        let header_b64 = URL_SAFE_NO_PAD.encode(br#"{"alg":"RS256"}"#);
+        let payload = serde_json::json!({"sub": "u1", "aud": "app"});
+        let payload_b64 = URL_SAFE_NO_PAD.encode(serde_json::to_string(&payload).unwrap());
+        let token = format!("{header_b64}.{payload_b64}.sig");
+
+        let jwks = make_jwks_with_key("any-key");
+        let result = verify_apple_token_with_jwks(&token, "app", &jwks);
+        assert!(result.is_err(), "token without kid must be rejected");
+    }
+
+    #[test]
+    fn apple_verify_rejects_unknown_kid() {
+        let header_b64 = make_rs256_header_b64("unknown-kid");
+        let payload = serde_json::json!({"sub": "u1", "aud": "app"});
+        let payload_b64 = URL_SAFE_NO_PAD.encode(serde_json::to_string(&payload).unwrap());
+        let token = format!("{header_b64}.{payload_b64}.sig");
+
+        let jwks = make_jwks_with_key("known-key");
+        let result = verify_apple_token_with_jwks(&token, "app", &jwks);
+        assert!(result.is_err(), "token with non-matching kid must be rejected");
+    }
+
+    #[test]
+    fn apple_verify_rejects_empty_jwks() {
+        let header_b64 = make_rs256_header_b64("k1");
+        let payload = serde_json::json!({"sub": "u1", "aud": "app"});
+        let payload_b64 = URL_SAFE_NO_PAD.encode(serde_json::to_string(&payload).unwrap());
+        let token = format!("{header_b64}.{payload_b64}.sig");
+
+        let jwks = serde_json::json!({"keys": []});
+        let result = verify_apple_token_with_jwks(&token, "app", &jwks);
+        assert!(result.is_err(), "empty JWKS keys must be rejected");
+    }
+
+    #[test]
+    fn apple_verify_rejects_missing_keys_field() {
+        let header_b64 = make_rs256_header_b64("k1");
+        let payload = serde_json::json!({"sub": "u1", "aud": "app"});
+        let payload_b64 = URL_SAFE_NO_PAD.encode(serde_json::to_string(&payload).unwrap());
+        let token = format!("{header_b64}.{payload_b64}.sig");
+
+        let jwks = serde_json::json!({"not_keys": []});
+        let result = verify_apple_token_with_jwks(&token, "app", &jwks);
+        assert!(result.is_err(), "JWKS without keys array must be rejected");
     }
 }

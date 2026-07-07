@@ -118,7 +118,7 @@ class _CirclesScreenState extends ConsumerState<CirclesScreen> {
                 final group = groups[i];
                 return _GroupTile(
                   groupId: group['group_id'] as String,
-                  name: group['name'] as String? ?? 'Group',
+                  name: group['name'] as String? ?? l10n.circleGroupFallback,
                   memberCount: (group['member_count'] as num?)?.toInt() ?? 0,
                   lastMessage: group['last_message_preview'] as String?,
                   lastMessageAt: group['last_message_at'] as String?,
@@ -162,6 +162,7 @@ class _GroupTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -213,7 +214,7 @@ class _GroupTile extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        '$memberCount members',
+                        l10n.circleMembers(memberCount),
                         style: const TextStyle(
                           color: VibraTheme.kTextSecondary,
                           fontSize: 12,

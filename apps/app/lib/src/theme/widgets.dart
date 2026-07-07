@@ -474,6 +474,7 @@ class PlanDurationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -515,7 +516,7 @@ class PlanDurationCard extends StatelessWidget {
                 if (savingsPercent != null) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'Ahorra $savingsPercent%',
+                    l10n?.ahorra(int.parse(savingsPercent!)) ?? 'Save $savingsPercent%',
                     style: const TextStyle(
                       color: VibraTheme.kTextSecondary,
                       fontSize: 12,
@@ -537,8 +538,8 @@ class PlanDurationCard extends StatelessWidget {
                     color: VibraTheme.kTextTertiary,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
-                    'POPULAR',
+                  child: Text(
+                    l10n?.badgePopular ?? 'POPULAR',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,

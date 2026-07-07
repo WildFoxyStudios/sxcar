@@ -360,7 +360,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                     icon: _muted ? Icons.mic_off : Icons.mic,
                     color:
                         _muted ? Colors.redAccent : Colors.white.withValues(alpha: 0.8),
-                    label: _muted ? 'Unmute' : 'Mute',
+                    label: _muted ? (l10n?.callUnmute ?? 'Unmute') : (l10n?.callMute ?? 'Mute'),
                     size: 20,
                     onTap: _toggleMute,
                   ),
@@ -370,7 +370,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                     _ActionButton(
                       icon: _speakerOn ? Icons.volume_up : Icons.volume_down,
                       color: Colors.white.withValues(alpha: 0.8),
-                      label: _speakerOn ? 'Speaker' : 'Earpiece',
+                      label: _speakerOn ? (l10n?.callSpeaker ?? 'Speaker') : (l10n?.callEarpiece ?? 'Earpiece'),
                       size: 20,
                       onTap: _toggleSpeaker,
                     ),
@@ -380,7 +380,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   _ActionButton(
                     icon: Icons.call_end,
                     color: VibraTheme.kError,
-                    label: l10n?.callEnded ?? 'Hangup',
+                    label: l10n?.callHangup ?? 'Hang up',
                     onTap: _hangup,
                   ),
                 ],

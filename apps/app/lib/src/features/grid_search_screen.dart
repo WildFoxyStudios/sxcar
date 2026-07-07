@@ -318,13 +318,13 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
               isRoam: true,
             );
             outerMessenger.showSnackBar(
-              SnackBar(content: Text('Roaming to ${place.name}')),
+              SnackBar(content: Text(l10n.roamRoamingTo(place.name))),
             );
           } catch (e) {
             if (outerContext.mounted) {
               outerMessenger.showSnackBar(
                 SnackBar(
-                  content: Text('Failed to set roam: $e'),
+                  content: Text(l10n.roamFailedToSet(e.toString())),
                   backgroundColor: Colors.red,
                 ),
               );
@@ -338,9 +338,9 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
               if (outerContext.mounted) {
                 Navigator.of(ctx).pop();
                 outerMessenger.showSnackBar(
-                  const SnackBar(
+                  SnackBar(
                     content: Text(
-                        'Location unavailable — enable GPS permission in settings'),
+                        l10n.roamLocationUnavailable),
                   ),
                 );
               }
@@ -355,13 +355,13 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
             Navigator.of(ctx).pop();
             _applyRoam(lat: lat, lon: lon, name: '', isRoam: false);
             outerMessenger.showSnackBar(
-              const SnackBar(content: Text('Using your real location')),
+              SnackBar(content: Text(l10n.roamUsingRealLocation)),
             );
           } catch (e) {
             if (outerContext.mounted) {
               outerMessenger.showSnackBar(
                 SnackBar(
-                  content: Text('Failed: $e'),
+                  content: Text(l10n.roamFailedGeneric(e.toString())),
                   backgroundColor: Colors.red,
                 ),
               );
@@ -454,7 +454,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
               Icons.explore_outlined,
               color: _isRoam ? VibraTheme.kYellow : Colors.white,
             ),
-            tooltip: 'Roam',
+            tooltip: l10n.roamTooltip,
             onPressed: _showRoamSheet,
           ),
         ],
@@ -721,7 +721,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    'Failed to load global users',
+                    l10n.gridFailedToLoad,
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 16),
@@ -729,7 +729,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                     onPressed: () => setState(() {
                       _globalUsersFuture = _fetchGlobalUsers();
                     }),
-                    child: const Text('Retry'),
+                    child: Text(l10n.reintentar),
                   ),
                 ],
               ),
@@ -759,7 +759,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'No users found in this area',
+                      l10n.gridNoUsersTitle,
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: VibraTheme.kTextPrimary,
                         fontWeight: FontWeight.bold,
@@ -1001,7 +1001,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to add place: $e'),
+            content: Text(l10n.roamFailedToAddPlace(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -1116,13 +1116,13 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                     children: [
                       TextFormField(
                         controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Name',
+                        decoration: InputDecoration(
+                          labelText: l10n.roamNameLabel,
                           border: OutlineInputBorder(),
                         ),
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            return 'Name is required';
+                            return l10n.roamNameRequired;
                           }
                           return null;
                         },
@@ -1130,8 +1130,8 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _latController,
-                        decoration: const InputDecoration(
-                          labelText: 'Latitude',
+                        decoration: InputDecoration(
+                          labelText: l10n.roamLatitudeLabel,
                           border: OutlineInputBorder(),
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
@@ -1140,16 +1140,16 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                         ),
                         validator: (v) {
                           final n = double.tryParse((v ?? '').trim());
-                          if (n == null) return 'Must be a number';
-                          if (n < -90 || n > 90) return 'Range: -90..90';
+                          if (n == null) return l10n.roamMustBeNumber;
+                          if (n < -90 || n > 90) return l10n.roamLatRange;
                           return null;
                         },
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _lonController,
-                        decoration: const InputDecoration(
-                          labelText: 'Longitude',
+                        decoration: InputDecoration(
+                          labelText: l10n.roamLongitudeLabel,
                           border: OutlineInputBorder(),
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
@@ -1158,8 +1158,8 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                         ),
                         validator: (v) {
                           final n = double.tryParse((v ?? '').trim());
-                          if (n == null) return 'Must be a number';
-                          if (n < -180 || n > 180) return 'Range: -180..180';
+                          if (n == null) return l10n.roamMustBeNumber;
+                          if (n < -180 || n > 180) return l10n.roamLonRange;
                           return null;
                         },
                       ),
@@ -1176,7 +1176,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                                         _latController.clear();
                                         _lonController.clear();
                                       }),
-                              child: const Text('Cancel'),
+                              child: Text(l10n.cancelar),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -1192,7 +1192,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : const Text('Add & Roam'),
+                                  : Text(l10n.roamAddAndRoam),
                             ),
                           ),
                         ],

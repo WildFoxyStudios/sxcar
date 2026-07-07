@@ -1,8 +1,26 @@
+import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/features/register_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+Widget _wrap({required Widget child, ProviderContainer? container}) {
+  final inner = MaterialApp(
+    locale: const Locale('en'),
+    supportedLocales: AppLocalizations.supportedLocales,
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+    ],
+    home: child,
+  );
+  if (container == null) return ProviderScope(child: inner);
+  return UncontrolledProviderScope(container: container, child: inner);
+}
 
 void main() {
   group('RegisterScreen', () {
@@ -15,9 +33,13 @@ void main() {
               () => _UnauthenticatedNotifier(),
             ),
           ],
-          child: const MaterialApp(home: RegisterScreen()),
+          child: _wrap(
+            child: const RegisterScreen(),
+          ),
         ),
       );
+
+      await tester.pumpAndSettle();
 
       expect(find.text('Register'), findsWidgets);
       expect(find.text('Email'), findsOneWidget);

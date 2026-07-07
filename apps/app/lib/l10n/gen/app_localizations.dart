@@ -2101,6 +2101,318 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Hace {count}d'**
   String daysAgo(int count);
+
+  /// Título de la barra de inicio de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'Iniciar sesión'**
+  String get login_title;
+
+  /// Etiqueta del campo de correo electrónico en inicio de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'Correo electrónico'**
+  String get login_email_label;
+
+  /// Error de validación: campo de correo vacío en inicio de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'Por favor, introduce tu correo electrónico'**
+  String get login_email_empty_error;
+
+  /// Error de validación: formato de correo inválido en inicio de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'Formato de correo electrónico no válido'**
+  String get login_email_invalid_error;
+
+  /// Etiqueta del campo de contraseña en inicio de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'Contraseña'**
+  String get login_password_label;
+
+  /// Error de validación: campo de contraseña vacío en inicio de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'Por favor, introduce tu contraseña'**
+  String get login_password_empty_error;
+
+  /// Botón de inicio de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'Iniciar sesión'**
+  String get login_button;
+
+  /// Texto del divisor 'o' entre métodos de inicio de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'o'**
+  String get login_or_divider;
+
+  /// Botón de inicio de sesión con Google
+  ///
+  /// In es, this message translates to:
+  /// **'Iniciar sesión con Google'**
+  String get login_google_button;
+
+  /// Enlace a la pantalla de registro desde inicio de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'¿No tienes cuenta? Regístrate'**
+  String get login_register_link;
+
+  /// Mensaje de error genérico de Google Sign-In
+  ///
+  /// In es, this message translates to:
+  /// **'Error al iniciar sesión con Google. Inténtalo de nuevo.'**
+  String get login_error_google;
+
+  /// Mensaje de error genérico de inicio de sesión
+  ///
+  /// In es, this message translates to:
+  /// **'Error al iniciar sesión. Inténtalo de nuevo.'**
+  String get login_error_network;
+
+  /// Título de la barra de registro
+  ///
+  /// In es, this message translates to:
+  /// **'Registrarse'**
+  String get register_title;
+
+  /// Etiqueta del campo de correo electrónico en registro
+  ///
+  /// In es, this message translates to:
+  /// **'Correo electrónico'**
+  String get register_email_label;
+
+  /// Error de validación: campo de correo vacío en registro
+  ///
+  /// In es, this message translates to:
+  /// **'Por favor, introduce tu correo electrónico'**
+  String get register_email_empty_error;
+
+  /// Error de validación: formato de correo inválido en registro
+  ///
+  /// In es, this message translates to:
+  /// **'Formato de correo electrónico no válido'**
+  String get register_email_invalid_error;
+
+  /// Etiqueta del campo de contraseña en registro
+  ///
+  /// In es, this message translates to:
+  /// **'Contraseña (mín. 8 caracteres)'**
+  String get register_password_label;
+
+  /// Error de validación: campo de contraseña vacío en registro
+  ///
+  /// In es, this message translates to:
+  /// **'Por favor, introduce una contraseña'**
+  String get register_password_empty_error;
+
+  /// Error de validación: longitud mínima de contraseña
+  ///
+  /// In es, this message translates to:
+  /// **'La contraseña debe tener al menos 8 caracteres'**
+  String get register_password_min_length_error;
+
+  /// Etiqueta del campo de fecha de nacimiento en registro
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha de nacimiento'**
+  String get register_dob_label;
+
+  /// Texto de ayuda del campo de fecha de nacimiento
+  ///
+  /// In es, this message translates to:
+  /// **'Toca para seleccionar'**
+  String get register_dob_hint;
+
+  /// Texto de ayuda del selector de fecha
+  ///
+  /// In es, this message translates to:
+  /// **'Selecciona tu fecha de nacimiento'**
+  String get register_dob_picker_help;
+
+  /// Etiqueta del campo del selector de fecha
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha de nacimiento'**
+  String get register_dob_picker_field_label;
+
+  /// Error de validación: fecha de nacimiento vacía
+  ///
+  /// In es, this message translates to:
+  /// **'Por favor, selecciona tu fecha de nacimiento'**
+  String get register_dob_empty_error;
+
+  /// Error de validación: restricción de edad mínima
+  ///
+  /// In es, this message translates to:
+  /// **'Debes tener al menos 18 años'**
+  String get register_age_gate;
+
+  /// Etiqueta del checkbox de consentimiento en registro
+  ///
+  /// In es, this message translates to:
+  /// **'Acepto los términos y la política de privacidad (soy mayor de 18 años)'**
+  String get register_consent_label;
+
+  /// Error de validación: consentimiento no aceptado
+  ///
+  /// In es, this message translates to:
+  /// **'Debes aceptar los términos y la política de privacidad'**
+  String get register_consent_error;
+
+  /// Botón de registro
+  ///
+  /// In es, this message translates to:
+  /// **'Registrarse'**
+  String get register_button;
+
+  /// Mensaje de error: correo electrónico ya registrado
+  ///
+  /// In es, this message translates to:
+  /// **'El correo electrónico ya está registrado'**
+  String get register_error_email_taken;
+
+  /// Mensaje de error genérico de registro
+  ///
+  /// In es, this message translates to:
+  /// **'Error al registrarse. Inténtalo de nuevo.'**
+  String get register_error_network;
+
+  /// Enlace a la pantalla de inicio de sesión desde registro
+  ///
+  /// In es, this message translates to:
+  /// **'¿Ya tienes cuenta? Inicia sesión'**
+  String get register_login_link;
+
+  /// Título de la barra de perfil propio
+  ///
+  /// In es, this message translates to:
+  /// **'Mi perfil'**
+  String get profile_title_self;
+
+  /// Título de la barra de perfil de otro usuario
+  ///
+  /// In es, this message translates to:
+  /// **'Perfil'**
+  String get profile_title_other;
+
+  /// Mensaje de error al cargar el perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Error al cargar el perfil: {error}'**
+  String profile_load_error(String error);
+
+  /// Botón de reintentar en estado de error del perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get profile_retry;
+
+  /// Estado vacío cuando no hay datos de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Sin datos de perfil'**
+  String get profile_no_data;
+
+  /// Etiqueta de altura en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Altura'**
+  String get profile_height_label;
+
+  /// Etiqueta de peso en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Peso'**
+  String get profile_weight_label;
+
+  /// Etiqueta de tipo de cuerpo en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo de cuerpo'**
+  String get profile_body_type_label;
+
+  /// Etiqueta de estado civil en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Estado civil'**
+  String get profile_relationship_label;
+
+  /// Etiqueta de posición en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Posición'**
+  String get profile_position_label;
+
+  /// Etiqueta de etnia en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Etnia'**
+  String get profile_ethnicity_label;
+
+  /// Etiqueta de pronombres en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Pronombres'**
+  String get profile_pronouns_label;
+
+  /// Etiqueta de fecha de nacimiento en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha de nacimiento'**
+  String get profile_birthdate_label;
+
+  /// Encabezado de sección tribus en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Tribus'**
+  String get profile_tribes_header;
+
+  /// Encabezado de sección intereses en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Intereses'**
+  String get profile_tags_header;
+
+  /// Encabezado de sección 'busco' en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Busco'**
+  String get profile_looking_for_label;
+
+  /// Encabezado de sección 'quedar en' en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Quedar en'**
+  String get profile_meet_at_header;
+
+  /// Botón de editar perfil en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Editar perfil'**
+  String get profile_edit_button;
+
+  /// Formato de valor de altura con unidad en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'{value} cm'**
+  String profile_height_value(String value);
+
+  /// Formato de valor de peso con unidad en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'{value} kg'**
+  String profile_weight_value(String value);
+
+  /// Etiqueta de estado de carga en la pantalla de perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Cargando...'**
+  String get profile_loading;
 }
 
 class _AppLocalizationsDelegate

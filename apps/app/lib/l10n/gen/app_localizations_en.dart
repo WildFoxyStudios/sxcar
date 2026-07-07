@@ -1051,4 +1051,169 @@ class AppLocalizationsEn extends AppLocalizations {
   String daysAgo(int count) {
     return '${count}d ago';
   }
+
+  @override
+  String get login_title => 'Login';
+
+  @override
+  String get login_email_label => 'Email';
+
+  @override
+  String get login_email_empty_error => 'Please enter your email';
+
+  @override
+  String get login_email_invalid_error => 'Invalid email format';
+
+  @override
+  String get login_password_label => 'Password';
+
+  @override
+  String get login_password_empty_error => 'Please enter your password';
+
+  @override
+  String get login_button => 'Login';
+
+  @override
+  String get login_or_divider => 'or';
+
+  @override
+  String get login_google_button => 'Sign in with Google';
+
+  @override
+  String get login_register_link => 'Don\'t have an account? Register';
+
+  @override
+  String get login_error_google => 'Google Sign-In failed. Please try again.';
+
+  @override
+  String get login_error_network => 'Login failed. Please try again.';
+
+  @override
+  String get register_title => 'Register';
+
+  @override
+  String get register_email_label => 'Email';
+
+  @override
+  String get register_email_empty_error => 'Please enter your email';
+
+  @override
+  String get register_email_invalid_error => 'Invalid email format';
+
+  @override
+  String get register_password_label => 'Password (min 8 characters)';
+
+  @override
+  String get register_password_empty_error => 'Please enter a password';
+
+  @override
+  String get register_password_min_length_error =>
+      'Password must be at least 8 characters';
+
+  @override
+  String get register_dob_label => 'Date of Birth';
+
+  @override
+  String get register_dob_hint => 'Tap to select';
+
+  @override
+  String get register_dob_picker_help => 'Select your date of birth';
+
+  @override
+  String get register_dob_picker_field_label => 'Date of Birth';
+
+  @override
+  String get register_dob_empty_error => 'Please select your date of birth';
+
+  @override
+  String get register_age_gate => 'You must be at least 18 years old';
+
+  @override
+  String get register_consent_label =>
+      'I accept the terms and privacy policy (I am 18+)';
+
+  @override
+  String get register_consent_error =>
+      'You must accept the terms and privacy policy';
+
+  @override
+  String get register_button => 'Register';
+
+  @override
+  String get register_error_email_taken => 'Email already taken';
+
+  @override
+  String get register_error_network => 'Registration failed. Please try again.';
+
+  @override
+  String get register_login_link => 'Already have an account? Login';
+
+  @override
+  String get profile_title_self => 'My Profile';
+
+  @override
+  String get profile_title_other => 'Profile';
+
+  @override
+  String profile_load_error(String error) {
+    return 'Failed to load profile: $error';
+  }
+
+  @override
+  String get profile_retry => 'Retry';
+
+  @override
+  String get profile_no_data => 'No profile data';
+
+  @override
+  String get profile_height_label => 'Height';
+
+  @override
+  String get profile_weight_label => 'Weight';
+
+  @override
+  String get profile_body_type_label => 'Body Type';
+
+  @override
+  String get profile_relationship_label => 'Relationship';
+
+  @override
+  String get profile_position_label => 'Position';
+
+  @override
+  String get profile_ethnicity_label => 'Ethnicity';
+
+  @override
+  String get profile_pronouns_label => 'Pronouns';
+
+  @override
+  String get profile_birthdate_label => 'Birthdate';
+
+  @override
+  String get profile_tribes_header => 'Tribes';
+
+  @override
+  String get profile_tags_header => 'Tags';
+
+  @override
+  String get profile_looking_for_label => 'Looking for';
+
+  @override
+  String get profile_meet_at_header => 'Meet at';
+
+  @override
+  String get profile_edit_button => 'Edit Profile';
+
+  @override
+  String profile_height_value(String value) {
+    return '$value cm';
+  }
+
+  @override
+  String profile_weight_value(String value) {
+    return '$value kg';
+  }
+
+  @override
+  String get profile_loading => 'Loading...';
 }

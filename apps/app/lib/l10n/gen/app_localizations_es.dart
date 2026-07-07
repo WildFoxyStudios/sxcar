@@ -1055,4 +1055,179 @@ class AppLocalizationsEs extends AppLocalizations {
   String daysAgo(int count) {
     return 'Hace ${count}d';
   }
+
+  @override
+  String get login_title => 'Iniciar sesión';
+
+  @override
+  String get login_email_label => 'Correo electrónico';
+
+  @override
+  String get login_email_empty_error =>
+      'Por favor, introduce tu correo electrónico';
+
+  @override
+  String get login_email_invalid_error =>
+      'Formato de correo electrónico no válido';
+
+  @override
+  String get login_password_label => 'Contraseña';
+
+  @override
+  String get login_password_empty_error => 'Por favor, introduce tu contraseña';
+
+  @override
+  String get login_button => 'Iniciar sesión';
+
+  @override
+  String get login_or_divider => 'o';
+
+  @override
+  String get login_google_button => 'Iniciar sesión con Google';
+
+  @override
+  String get login_register_link => '¿No tienes cuenta? Regístrate';
+
+  @override
+  String get login_error_google =>
+      'Error al iniciar sesión con Google. Inténtalo de nuevo.';
+
+  @override
+  String get login_error_network =>
+      'Error al iniciar sesión. Inténtalo de nuevo.';
+
+  @override
+  String get register_title => 'Registrarse';
+
+  @override
+  String get register_email_label => 'Correo electrónico';
+
+  @override
+  String get register_email_empty_error =>
+      'Por favor, introduce tu correo electrónico';
+
+  @override
+  String get register_email_invalid_error =>
+      'Formato de correo electrónico no válido';
+
+  @override
+  String get register_password_label => 'Contraseña (mín. 8 caracteres)';
+
+  @override
+  String get register_password_empty_error =>
+      'Por favor, introduce una contraseña';
+
+  @override
+  String get register_password_min_length_error =>
+      'La contraseña debe tener al menos 8 caracteres';
+
+  @override
+  String get register_dob_label => 'Fecha de nacimiento';
+
+  @override
+  String get register_dob_hint => 'Toca para seleccionar';
+
+  @override
+  String get register_dob_picker_help => 'Selecciona tu fecha de nacimiento';
+
+  @override
+  String get register_dob_picker_field_label => 'Fecha de nacimiento';
+
+  @override
+  String get register_dob_empty_error =>
+      'Por favor, selecciona tu fecha de nacimiento';
+
+  @override
+  String get register_age_gate => 'Debes tener al menos 18 años';
+
+  @override
+  String get register_consent_label =>
+      'Acepto los términos y la política de privacidad (soy mayor de 18 años)';
+
+  @override
+  String get register_consent_error =>
+      'Debes aceptar los términos y la política de privacidad';
+
+  @override
+  String get register_button => 'Registrarse';
+
+  @override
+  String get register_error_email_taken =>
+      'El correo electrónico ya está registrado';
+
+  @override
+  String get register_error_network =>
+      'Error al registrarse. Inténtalo de nuevo.';
+
+  @override
+  String get register_login_link => '¿Ya tienes cuenta? Inicia sesión';
+
+  @override
+  String get profile_title_self => 'Mi perfil';
+
+  @override
+  String get profile_title_other => 'Perfil';
+
+  @override
+  String profile_load_error(String error) {
+    return 'Error al cargar el perfil: $error';
+  }
+
+  @override
+  String get profile_retry => 'Reintentar';
+
+  @override
+  String get profile_no_data => 'Sin datos de perfil';
+
+  @override
+  String get profile_height_label => 'Altura';
+
+  @override
+  String get profile_weight_label => 'Peso';
+
+  @override
+  String get profile_body_type_label => 'Tipo de cuerpo';
+
+  @override
+  String get profile_relationship_label => 'Estado civil';
+
+  @override
+  String get profile_position_label => 'Posición';
+
+  @override
+  String get profile_ethnicity_label => 'Etnia';
+
+  @override
+  String get profile_pronouns_label => 'Pronombres';
+
+  @override
+  String get profile_birthdate_label => 'Fecha de nacimiento';
+
+  @override
+  String get profile_tribes_header => 'Tribus';
+
+  @override
+  String get profile_tags_header => 'Intereses';
+
+  @override
+  String get profile_looking_for_label => 'Busco';
+
+  @override
+  String get profile_meet_at_header => 'Quedar en';
+
+  @override
+  String get profile_edit_button => 'Editar perfil';
+
+  @override
+  String profile_height_value(String value) {
+    return '$value cm';
+  }
+
+  @override
+  String profile_weight_value(String value) {
+    return '$value kg';
+  }
+
+  @override
+  String get profile_loading => 'Cargando...';
 }

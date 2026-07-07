@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/features/profile_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -55,6 +57,20 @@ class _MockAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+Widget _wrap({required Widget child}) {
+  return MaterialApp(
+    locale: const Locale('en'),
+    supportedLocales: AppLocalizations.supportedLocales,
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+    ],
+    home: child,
+  );
+}
+
 void main() {
   group('ProfileScreen (own profile)', () {
     late Dio dio;
@@ -72,7 +88,7 @@ void main() {
             ),
             dioProvider.overrideWithValue(dio),
           ],
-          child: const MaterialApp(home: ProfileScreen()),
+          child: _wrap(child: const ProfileScreen()),
         ),
       );
 
@@ -113,7 +129,7 @@ void main() {
             ),
             dioProvider.overrideWithValue(dio),
           ],
-          child: const MaterialApp(home: ProfileScreen()),
+          child: _wrap(child: const ProfileScreen()),
         ),
       );
 
@@ -147,8 +163,8 @@ void main() {
             ),
             dioProvider.overrideWithValue(dio),
           ],
-          child: const MaterialApp(
-            home: ProfileScreen(userId: 'some-other-user-id'),
+          child: _wrap(
+            child: const ProfileScreen(userId: 'some-other-user-id'),
           ),
         ),
       );

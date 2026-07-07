@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../auth/auth_provider.dart';
 import '../auth/models.dart';
 import '../utils/email_validator.dart';
@@ -41,13 +42,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _pickDate() async {
+    final l10n = AppLocalizations.of(context)!;
     final picked = await showDatePicker(
       context: context,
       initialDate: _birthDate ?? _maxBirthDate,
       firstDate: _minBirthDate,
       lastDate: _maxBirthDate,
-      helpText: 'Select your date of birth',
-      fieldLabelText: 'Date of Birth',
+      helpText: l10n.register_dob_picker_help,
+      fieldLabelText: l10n.register_dob_picker_field_label,
     );
     if (picked != null) {
       setState(() => _birthDate = picked);
@@ -56,16 +58,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context)!;
     if (_birthDate == null) {
-      setState(() => _error = 'Please select your date of birth');
+      setState(() => _error = l10n.register_dob_empty_error);
       return;
     }
     if (!_isAtLeast18(_birthDate!)) {
-      setState(() => _error = 'You must be at least 18 years old');
+      setState(() => _error = l10n.register_age_gate);
       return;
     }
     if (!_consentChecked) {
-      setState(() => _error = 'You must accept the terms and privacy policy');
+      setState(() => _error = l10n.register_consent_error);
       return;
     }
 
@@ -91,14 +94,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       if (statusCode == 409) {
-        setState(() => _error = 'Email already taken');
+        setState(() => _error = l10n.register_error_email_taken);
       } else if (statusCode == 403) {
-        setState(() => _error = 'You must be at least 18 years old');
+        setState(() => _error = l10n.register_age_gate);
       } else {
-        setState(() => _error = 'Registration failed. Please try again.');
+        setState(() => _error = l10n.register_error_network);
       }
     } catch (e) {
-      setState(() => _error = 'Registration failed. Please try again.');
+      setState(() => _error = l10n.register_error_network);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -106,8 +109,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(title: Text(l10n.register_title)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -117,17 +121,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.register_email_label,
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your email';
+                    return l10n.register_email_empty_error;
                   }
                   if (!validateEmail(email: value.trim())) {
-                    return 'Invalid email format';
+                    return l10n.register_email_invalid_error;
                   }
                   return null;
                 },
@@ -135,17 +139,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password (min 8 characters)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.register_password_label,
+                  border: const OutlineInputBorder(),
                 ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a password';
+                    return l10n.register_password_empty_error;
                   }
                   if (value.length < 8) {
-                    return 'Password must be at least 8 characters';
+                    return l10n.register_password_min_length_error;
                   }
                   return null;
                 },
@@ -156,8 +160,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 child: AbsorbPointer(
                   child: TextFormField(
                     decoration: InputDecoration(
-                      labelText: 'Date of Birth',
-                      hintText: 'Tap to select',
+                      labelText: l10n.register_dob_label,
+                      hintText: l10n.register_dob_hint,
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.calendar_today),
@@ -170,9 +174,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           : '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}',
                     ),
                     validator: (_) {
-                      if (_birthDate == null) return 'Please select your date of birth';
+                      if (_birthDate == null) return l10n.register_dob_empty_error;
                       if (!_isAtLeast18(_birthDate!)) {
-                        return 'You must be at least 18 years old';
+                        return l10n.register_age_gate;
                       }
                       return null;
                     },
@@ -181,9 +185,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               const SizedBox(height: 16),
               CheckboxListTile(
-                title: const Text(
-                  'I accept the terms and privacy policy (I am 18+)',
-                  style: TextStyle(fontSize: 14),
+                title: Text(
+                  l10n.register_consent_label,
+                  style: const TextStyle(fontSize: 14),
                 ),
                 value: _consentChecked,
                 onChanged: (v) => setState(() => _consentChecked = v ?? false),
@@ -207,13 +211,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Register'),
+                      : Text(l10n.register_button),
                 ),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: _isLoading ? null : () => context.go('/login'),
-                child: const Text('Already have an account? Login'),
+                child: Text(l10n.register_login_link),
               ),
             ],
           ),

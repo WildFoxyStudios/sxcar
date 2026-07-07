@@ -38,7 +38,20 @@ pub struct SmtpNotifier {
 
 impl SmtpNotifier {
     pub fn from_env() -> Option<Self> {
-        let api_key = std::env::var("SMTP_API_KEY").ok()?;
+        let api_key = match std::env::var("SMTP_API_KEY") {
+            Ok(k) => k,
+            Err(_) => {
+                if std::env::var("DEV_SMTP_ENABLED").as_deref() != Ok("true") {
+                    tracing::error!(
+                        target: "auth::notify",
+                        "SMTP_API_KEY is not set and DEV_SMTP_ENABLED != true. \
+                         Emails will not be sent in production. \
+                         Set SMTP_API_KEY or set DEV_SMTP_ENABLED=true for local development."
+                    );
+                }
+                return None;
+            }
+        };
         let from = std::env::var("SMTP_FROM").unwrap_or_else(|_| "noreply@turnend.win".into());
         let endpoint =
             std::env::var("SMTP_ENDPOINT").unwrap_or_else(|_| "https://api.mailgun.net/v3".into());
@@ -114,6 +127,26 @@ mod tests {
             std::env::remove_var("SMTP_API_KEY");
         }
         std::env::remove_var("SMTP_FROM");
+    }
+
+    #[test]
+    fn smtp_from_env_none_when_dev_enabled() {
+        // DEV_SMTP_ENABLED=true allows None silently (no error log)
+        let prev_key = std::env::var("SMTP_API_KEY").ok();
+        let prev_dev = std::env::var("DEV_SMTP_ENABLED").ok();
+        std::env::remove_var("SMTP_API_KEY");
+        std::env::set_var("DEV_SMTP_ENABLED", "true");
+        assert!(SmtpNotifier::from_env().is_none());
+        if let Some(v) = prev_key {
+            std::env::set_var("SMTP_API_KEY", v);
+        } else {
+            std::env::remove_var("SMTP_API_KEY");
+        }
+        if let Some(v) = prev_dev {
+            std::env::set_var("DEV_SMTP_ENABLED", v);
+        } else {
+            std::env::remove_var("DEV_SMTP_ENABLED");
+        }
     }
 
     #[tokio::test]

@@ -27,9 +27,17 @@ async fn main() -> anyhow::Result<()> {
             access_ttl_secs: config.access_ttl_secs,
         },
         refresh_ttl_secs: config.refresh_ttl_secs,
-        notifier: SmtpNotifier::from_env()
-            .map(|n| Arc::new(n) as Arc<dyn auth::notify::Notifier>)
-            .unwrap_or_else(|| Arc::new(DevNotifier)),
+        notifier: match SmtpNotifier::from_env() {
+            Some(n) => Arc::new(n) as Arc<dyn auth::notify::Notifier>,
+            None => {
+                tracing::warn!(
+                    target: "gate",
+                    "SMTP notifier unavailable — using DevNotifier (emails logged, not sent). \
+                     Set SMTP_API_KEY for production or DEV_SMTP_ENABLED=true for local dev."
+                );
+                Arc::new(DevNotifier)
+            }
+        },
         oauth: match auth::oauth::OAuthVerifierChoice::from_env() {
             Some(v) => Arc::new(v) as Arc<dyn auth::oauth::OAuthVerifier>,
             None => {

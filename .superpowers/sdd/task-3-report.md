@@ -1,37 +1,35 @@
-# Task 3 Report: P1-1 — Fix chat timestamp display logic
+# Task 3 Report: Share profile option lists between wizard and edit_profile
 
 ## Summary
 
-The `_shouldShowTimestamp()` method in `chat_screen.dart` was only returning `true` for index 0. Timestamps never appeared for any subsequent messages. Fixed by adding modulo-10 logic.
+Extracted all duplicated profile option lists into a single shared file to eliminate the drift between the onboarding wizard and the edit-profile screen.
 
-## TDD Evidence
+## Files created
 
-### Step 1: Write the failing test
-Created `apps/app/test/chat_timestamp_test.dart` with 3 test cases.
+- `apps/app/lib/src/models/profile_options.dart` — single source of truth containing all 12 shared const lists: `kHivStatusOptions`, `kGenderOptions`, `kTribeOptions`, `kRelationshipStatusOptions`, `kPositionOptions`, `kLookingForOptions`, `kEthnicityOptions`, `kPronounsOptions`, `kBodyTypeOptions`, `kMeetAtOptions`, `kTagOptions`, `kRoleOptions`.
 
-### Step 2: Verify test failure
-The fresh test would have failed against the original code (index % 10 cases returned `false`).
+## Files modified
 
-### Step 3: Apply the fix
-Changes to `apps/app/lib/src/features/chat_screen.dart`:
-- Extracted `_shouldShowTimestamp` as a public static method `ChatScreen.shouldShowTimestamp(int index, {int interval = 10})` for testability
-- Added modulo-10 check: `if (index % interval == 0) return true`
-- Updated call site from `_shouldShowTimestamp(index)` to `ChatScreen.shouldShowTimestamp(index)`
+- `apps/app/lib/src/features/edit_profile_screen.dart` — removed `_hivStatusOptions` and `_tribeOptions`; imports `kHivStatusOptions` and `kTribeOptions` from `profile_options.dart`.
+- `apps/app/lib/src/features/edit_profile/sheets.dart` — removed 10 private `_k*` const lists; imports public `k*` variants from `profile_options.dart`.
+- `apps/app/lib/src/onboarding/cards/tribes_card.dart` — removed `_options`; uses `kTribeOptions`.
+- `apps/app/lib/src/onboarding/cards/looking_for_card.dart` — removed `_options`; uses `kLookingForOptions`.
+- `apps/app/lib/src/onboarding/cards/relationship_status_card.dart` — removed `_options`; uses `kRelationshipStatusOptions`.
+- `apps/app/lib/src/onboarding/cards/ethnicity_card.dart` — removed `_options`; uses `kEthnicityOptions`.
+- `apps/app/lib/src/onboarding/cards/position_preference_card.dart` — removed `_options`; uses `kPositionOptions`.
+- `apps/app/lib/src/onboarding/cards/gender_position_card.dart` — removed `_genders` and inline `['Top', 'Bottom', 'Versatile', 'Side']` list; uses `kGenderOptions` and `kPositionOptions`.
 
-### Step 4: Verify all tests pass
+## In-scope exclusions (by design)
+
+- `vaccines_card.dart` / `vaccines_screen.dart` — lists differ in casing and values (wizard uses display labels, edit-profile uses backend keys).
+- `practices_card.dart` / `practices_screen.dart` — lists differ in language and content.
+
+## Test results
+
+474 passed, 1 skipped, 1 failed (pre-existing `pin_screen_test.dart` failure — unrelated to this change).
+
+## Commit
+
 ```
-00:00 +0: loading
-00:00 +1: returns true at index 0
-00:00 +2: returns true every 10 messages
-00:00 +3: returns false for non-milestone indices
-00:00 +3: All tests passed!
+d9d6e659 refactor(app): share profile option lists between wizard and edit_profile
 ```
-
-### Step 5: Commit
-```
-commit 75754a5d - fix(app): P1-1 — chat timestamps show every 10 messages
-```
-
-## Files changed
-- `apps/app/lib/src/features/chat_screen.dart` (modified)
-- `apps/app/test/chat_timestamp_test.dart` (created)

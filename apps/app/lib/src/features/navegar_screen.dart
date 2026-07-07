@@ -11,6 +11,7 @@ import '../location/location_service.dart';
 import '../presence/presence_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
+import '../settings/settings_providers.dart';
 import '../utils/distance_format.dart';
 import 'edit_profile/sheets.dart' show showPositionSheet;
 import 'profile_drawer.dart' show ownProfileProvider;
@@ -18,7 +19,9 @@ import 'profile_screen.dart' show UserProfile;
 import 'story_service.dart';
 import 'story_viewer_screen.dart';
 
-/// Model for a user in the nearby grid.
+/// Model for a user in the nearby grid (also used by the Discover section).
+/// Fields `age` and `topTribe` are returned by the `/discover` endpoint and
+/// are null for `/grid/nearby` responses.
 class NearbyUser {
   final String id;
   final String email;
@@ -29,6 +32,8 @@ class NearbyUser {
   final double distanceM;
   final bool isVerified;
   final String? createdAt; // ISO 8601 from /grid/nearby users[i].created_at (T5.2 idx, T5.8 M1)
+  final int? age; // From /discover
+  final String? topTribe; // From /discover
 
   const NearbyUser({
     required this.id,
@@ -40,6 +45,8 @@ class NearbyUser {
     required this.distanceM,
     this.isVerified = false,
     this.createdAt,
+    this.age,
+    this.topTribe,
   });
 
   factory NearbyUser.fromJson(Map<String, dynamic> json) {
@@ -53,6 +60,8 @@ class NearbyUser {
       distanceM: (json['distance_m'] as num).toDouble(),
       isVerified: json['verified'] == true,
       createdAt: json['created_at'] as String?,
+      age: json['age'] as int?,
+      topTribe: json['top_tribe'] as String?,
     );
   }
 
@@ -99,6 +108,7 @@ class NavegarScreen extends ConsumerStatefulWidget {
 
 class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   late Future<List<NearbyUser>> _nearbyUsersFuture;
+  Future<List<NearbyUser>>? _discoverUsersFuture;
 
   // ── Filter state (kept from original CascadeScreen) ────────────────────────
   RangeValues _ageRange = const RangeValues(18, 99);
@@ -135,6 +145,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   void initState() {
     super.initState();
     _nearbyUsersFuture = _initAndFetch();
+    _discoverUsersFuture = _initAndFetchDiscover();
     _loadFavorites();
     _loadFilterOptions();
   }
@@ -205,6 +216,44 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     }
   }
 
+  /// Initializes and fetches the Discover feed (waits for auth).
+  Future<List<NearbyUser>> _initAndFetchDiscover() async {
+    await ref.read(authReadyProvider.future);
+    return _fetchDiscoverUsers();
+  }
+
+  /// Fetches curated user profiles from GET /discover.
+  /// Returns an empty list on failure (silently — the strip simply won't show).
+  Future<List<NearbyUser>> _fetchDiscoverUsers() async {
+    var pos = _lastPosition;
+    if (pos == null) {
+      // No cached position — try to obtain one ourselves.
+      final service = ref.read(locationServiceProvider);
+      pos = await service.getCurrentPosition() ??
+          await service.getLastKnownPosition();
+    }
+    if (pos == null) return const [];
+    try {
+      final dio = ref.read(dioProvider);
+      final response = await dio.get<Map<String, dynamic>>(
+        '/discover',
+        queryParameters: {
+          'lat': pos.latitude,
+          'lon': pos.longitude,
+          'radius_m': 50000, // 50 km default radius for discover
+        },
+      );
+      final data = response.data!;
+      final usersJson = data['users'] as List<dynamic>;
+      return usersJson
+          .map((u) => NearbyUser.fromJson(u as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('[NavegarScreen] error: loading discover failed: $e');
+      return const [];
+    }
+  }
+
   Future<List<NearbyUser>> _fetchNearbyUsers() async {
     final pos = _lastPosition;
     if (pos == null) return const [];
@@ -254,6 +303,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   void _refresh() {
     setState(() {
       _nearbyUsersFuture = _initAndFetch();
+      _discoverUsersFuture = _initAndFetchDiscover();
     });
   }
 
@@ -394,6 +444,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
               _lastPosition = pos;
               _locationDenied = pos == null;
               _nearbyUsersFuture = _fetchNearbyUsers();
+              _discoverUsersFuture = _fetchDiscoverUsers();
             });
           }
         },
@@ -418,6 +469,11 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 // ── Stories bar (G12) ────────────────────────────────────
                 SliverToBoxAdapter(
                   child: _buildStoriesBar(context),
+                ),
+
+                // ── Discover strip (curated profiles, horizontal) ───────
+                SliverToBoxAdapter(
+                  child: _buildDiscoverStrip(context),
                 ),
 
                 // ── Location denied banner ───────────────────────────────
@@ -677,6 +733,53 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
         ),
         error: (_, _) => const SizedBox.shrink(),
       ),
+    );
+  }
+
+  // ── Discover strip (curated user cards, horizontal scroll) ─────────────────
+
+  /// Horizontal scrollable strip of curated profile cards from /discover.
+  /// Only renders when the future resolves to a non-empty list.
+  Widget _buildDiscoverStrip(BuildContext context) {
+    return FutureBuilder<List<NearbyUser>>(
+      future: _discoverUsersFuture,
+      builder: (context, snapshot) {
+        final users = snapshot.data ?? [];
+        if (users.isEmpty) return const SizedBox.shrink();
+        final l10n = AppLocalizations.of(context)!;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: Text(
+                l10n.discover,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 180,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                itemCount: users.length,
+                itemBuilder: (context, index) {
+                  final user = users[index];
+                  return _DiscoverCard(
+                    user: user,
+                    onTap: () => context.push('/profile/${user.id}'),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1399,5 +1502,108 @@ class _StoryAvatar extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Discover card widget — circular photo, name, age, distance, top tribe
+// ---------------------------------------------------------------------------
+
+/// Card for the horizontal Discover strip.
+/// Shows a circular profile photo, display name, age, distance, and top tribe.
+class _DiscoverCard extends ConsumerWidget {
+  final NearbyUser user;
+  final VoidCallback onTap;
+
+  const _DiscoverCard({required this.user, required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final units = ref.watch(unitsProvider);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 130,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: VibraTheme.kSurface,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Circular profile photo
+            CircleAvatar(
+              radius: 36,
+              backgroundColor: VibraTheme.kSurfaceElevated,
+              backgroundImage: user.profilePhotoUrl != null
+                  ? NetworkImage(user.profilePhotoUrl!)
+                  : null,
+              child: user.profilePhotoUrl == null
+                  ? Text(
+                      (user.displayName ?? user.email)[0].toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 28,
+                        color: VibraTheme.kTextMuted,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(height: 8),
+            // Display name
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                user.displayName ?? user.email,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 2),
+            // Age + distance
+            Text(
+              _discoverSubtitle(user, units),
+              style: const TextStyle(
+                color: VibraTheme.kTextSecondary,
+                fontSize: 11,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+            // Top tribe
+            if (user.topTribe != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  user.topTribe!,
+                  style: const TextStyle(
+                    color: VibraTheme.kAccent,
+                    fontSize: 10,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Formats the subtitle line: "25 · 500 m" or just the distance if age is null.
+  String _discoverSubtitle(NearbyUser user, int units) {
+    final dist = user.distanceLabel(units);
+    if (user.age != null) {
+      return '${user.age} · $dist';
+    }
+    return dist;
   }
 }

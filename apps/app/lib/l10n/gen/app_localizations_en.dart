@@ -1539,4 +1539,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridFailedToLoad => 'Failed to load global users';
+
+  @override
+  String get discover => 'Discover';
 }

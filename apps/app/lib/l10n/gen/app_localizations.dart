@@ -3007,6 +3007,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Error al cargar usuarios'**
   String get gridFailedToLoad;
+
+  /// Discover section header in Navegar screen
+  ///
+  /// In es, this message translates to:
+  /// **'Descubrir'**
+  String get discover;
 }
 
 class _AppLocalizationsDelegate

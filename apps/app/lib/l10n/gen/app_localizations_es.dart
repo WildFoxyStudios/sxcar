@@ -1553,4 +1553,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get gridFailedToLoad => 'Error al cargar usuarios';
+
+  @override
+  String get discover => 'Descubrir';
 }

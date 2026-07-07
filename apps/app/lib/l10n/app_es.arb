@@ -1194,5 +1194,8 @@
   "gridNoUsersSubtitle": "¡Prueba a viajar a otra ubicación!",
   "@gridNoUsersSubtitle": { "description": "Grid search screen empty state subtitle suggesting roam" },
   "gridFailedToLoad": "Error al cargar usuarios",
-  "@gridFailedToLoad": { "description": "Grid search screen error state message" }
+  "@gridFailedToLoad": { "description": "Grid search screen error state message" },
+
+  "discover": "Descubrir",
+  "@discover": { "description": "Discover section header in Navegar screen" }
 }

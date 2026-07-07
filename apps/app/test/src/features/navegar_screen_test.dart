@@ -57,6 +57,16 @@ class _MockCascadeAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    // Return empty for /discover so the strip doesn't duplicate names from the grid.
+    if (options.path == '/discover') {
+      return ResponseBody.fromString(
+        jsonEncode({'users': <dynamic>[]}),
+        200,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
     final body = jsonEncode({
       'users': [
         {
@@ -525,6 +535,16 @@ class _MockNuevoAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    // Return empty for /discover so the strip doesn't duplicate the name.
+    if (options.path == '/discover') {
+      return ResponseBody.fromString(
+        jsonEncode({'users': <dynamic>[]}),
+        200,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
     final created = DateTime.now().subtract(Duration(days: daysOld));
     final body = jsonEncode({
       'users': [

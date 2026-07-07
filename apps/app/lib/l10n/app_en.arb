@@ -886,5 +886,8 @@
   "gridNoUsersSubtitle": "Try roaming to a different location!",
   "@gridNoUsersSubtitle": { "description": "Grid search screen empty state subtitle suggesting roam" },
   "gridFailedToLoad": "Failed to load global users",
-  "@gridFailedToLoad": { "description": "Grid search screen error state message" }
+  "@gridFailedToLoad": { "description": "Grid search screen error state message" },
+
+  "discover": "Discover",
+  "@discover": { "description": "Discover section header in Navegar screen" }
 }

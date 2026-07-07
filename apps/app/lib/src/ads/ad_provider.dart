@@ -25,6 +25,12 @@ class AdMobAdProvider implements AdProvider {
   static const _nativeAdUnitId = String.fromEnvironment('ADMOB_NATIVE_UNIT_ID',
       defaultValue: _testNativeAdUnitId);
 
+  static void _warnIfMissing() {
+    if (kReleaseMode && const String.fromEnvironment('ADMOB_NATIVE_UNIT_ID').isEmpty) {
+      debugPrint('[AdProvider] WARNING: ADMOB_NATIVE_UNIT_ID not set — serving test ads in production');
+    }
+  }
+
   bool _initialized = false;
 
   @override
@@ -32,6 +38,7 @@ class AdMobAdProvider implements AdProvider {
 
   @override
   Future<void> initialize() async {
+    _warnIfMissing();
     if (_initialized || !isSupported) return;
     final config = RequestConfiguration(
       testDeviceIds: const <String>[],

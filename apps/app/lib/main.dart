@@ -34,6 +34,8 @@ import 'src/features/register_screen.dart';
 import 'src/features/right_now_screen.dart';
 import 'src/features/verify_email_screen.dart';
 import 'src/features/edit_profile_screen.dart';
+import 'src/features/event_detail_screen.dart';
+import 'src/features/events_screen.dart';
 import 'src/features/security_screen.dart';
 import 'src/features/settings_screen.dart';
 import 'src/phrases/phrases_screen.dart';
@@ -77,6 +79,7 @@ const Set<String> _knownTopLevelPaths = {
   '/settings',
   '/security',
   '/albums',
+  '/events',
   '/grid-search',
   // Legacy paths kept as redirect routes so old deep links / tests don't break
   '/cascade',
@@ -288,6 +291,20 @@ final GoRouter appRouter = GoRouter(
           path: ':albumId',
           builder: (_, state) => AlbumDetailScreen(
             albumId: state.pathParameters['albumId']!,
+          ),
+        ),
+      ],
+    ),
+
+    // ── Events routes ───────────────────────────────────────────────────────
+    GoRoute(
+      path: '/events',
+      builder: (_, _) => const EventsScreen(),
+      routes: [
+        GoRoute(
+          path: ':eventId',
+          builder: (_, state) => EventDetailScreen(
+            eventId: state.pathParameters['eventId']!,
           ),
         ),
       ],

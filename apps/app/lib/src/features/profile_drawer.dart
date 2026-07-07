@@ -321,6 +321,15 @@ class ProfileDrawer extends ConsumerWidget {
             ),
 
             _DrawerListTile(
+              icon: Icons.event_outlined,
+              label: l10n.events_title,
+              onTap: () {
+                Navigator.of(context).pop();
+                context.push('/events');
+              },
+            ),
+
+            _DrawerListTile(
               icon: Icons.favorite_border,
               label: l10n.saludSexual,
               onTap: () {

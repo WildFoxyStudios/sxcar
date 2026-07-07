@@ -6,6 +6,7 @@ pub mod chat;
 pub mod config;
 pub mod discover;
 pub mod cors;
+pub mod events;
 pub mod dev;
 pub mod fcm;
 pub mod grid;
@@ -145,6 +146,9 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/stories", post(stories::create_story).get(stories::list_stories))
         .route("/stories/:id", delete(stories::delete_story))
         .route("/stories/:id/view", post(stories::view_story))
+        .route("/events", get(events::list_nearby).post(events::create))
+        .route("/events/:id", get(events::get_by_id).delete(events::delete))
+        .route("/events/:id/attend", post(events::attend))
         .merge(auth_routes)
         .merge(admin::router(state.clone()))
         .merge(tier2::router())

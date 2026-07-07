@@ -3067,6 +3067,214 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Travel Pass activado — explorando {city}'**
   String travelPassSetSuccess(String city);
+
+  // -------------------------------------------------------------------------
+  // Events screen
+  // -------------------------------------------------------------------------
+
+  /// Events screen app bar title
+  ///
+  /// In es, this message translates to:
+  /// **'Eventos'**
+  String get events_title;
+
+  /// Create Event FAB / button label
+  ///
+  /// In es, this message translates to:
+  /// **'Crear evento'**
+  String get events_create;
+
+  /// Error message when event list fails to load
+  ///
+  /// In es, this message translates to:
+  /// **'Error al cargar eventos'**
+  String get events_load_error;
+
+  /// Empty state title when no events are found nearby
+  ///
+  /// In es, this message translates to:
+  /// **'No hay eventos cerca'**
+  String get events_empty_title;
+
+  /// Empty state subtitle encouraging user to create an event
+  ///
+  /// In es, this message translates to:
+  /// **'Sé el primero en crear uno'**
+  String get events_empty_subtitle;
+
+  /// Retry button on error states
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get events_retry;
+
+  /// Event card attendee count label, e.g. "3 attending"
+  ///
+  /// In es, this message translates to:
+  /// **'{count} asistiendo'**
+  String events_attendee_count(int count);
+
+  /// RSVP: Going status label
+  ///
+  /// In es, this message translates to:
+  /// **'Ir'**
+  String get events_going;
+
+  /// RSVP: Maybe status label
+  ///
+  /// In es, this message translates to:
+  /// **'Tal vez'**
+  String get events_maybe;
+
+  /// Event detail screen app bar title
+  ///
+  /// In es, this message translates to:
+  /// **'Detalles del evento'**
+  String get events_detail_title;
+
+  /// Event detail label for the event end date/time
+  ///
+  /// In es, this message translates to:
+  /// **'Termina'**
+  String get events_ends;
+
+  /// Event detail label for the attendees section
+  ///
+  /// In es, this message translates to:
+  /// **'Asistentes'**
+  String get events_attendees;
+
+  /// Create event form: title field label
+  ///
+  /// In es, this message translates to:
+  /// **'Título'**
+  String get events_form_title;
+
+  /// Create event form: title field hint
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del evento'**
+  String get events_form_title_hint;
+
+  /// Create event form: description field label
+  ///
+  /// In es, this message translates to:
+  /// **'Descripción'**
+  String get events_form_description;
+
+  /// Create event form: location field label
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación'**
+  String get events_form_location;
+
+  /// Create event form: location field hint
+  ///
+  /// In es, this message translates to:
+  /// **'¿Dónde será?'**
+  String get events_form_location_hint;
+
+  /// Create event form: date field label
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha'**
+  String get events_form_date;
+
+  /// Create event form: time field label
+  ///
+  /// In es, this message translates to:
+  /// **'Hora'**
+  String get events_form_time;
+
+  /// Create event form: submit button label
+  ///
+  /// In es, this message translates to:
+  /// **'Crear'**
+  String get events_form_create;
+
+  /// Snackbar success message when event is created
+  ///
+  /// In es, this message translates to:
+  /// **'¡Evento creado!'**
+  String get events_created;
+
+  /// Snackbar error message when event creation fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al crear evento'**
+  String get events_create_error;
+
+  /// Event detail badge: user is going
+  ///
+  /// In es, this message translates to:
+  /// **'Vas a ir'**
+  String get events_you_are_going;
+
+  /// Event detail badge: user marked maybe
+  ///
+  /// In es, this message translates to:
+  /// **'Tal vez vayas'**
+  String get events_you_are_maybe;
+
+  /// Creator action: cancel/delete event button
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar evento'**
+  String get events_cancel;
+
+  /// Cancel event confirmation dialog title
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cancelar evento?'**
+  String get events_cancel_confirm_title;
+
+  /// Cancel event confirmation dialog body
+  ///
+  /// In es, this message translates to:
+  /// **'Esto cancelará el evento para todos los asistentes.'**
+  String get events_cancel_confirm_body;
+
+  /// Cancel event confirmation: yes button
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, cancelar'**
+  String get events_cancel_yes;
+
+  /// Cancel event confirmation: no button
+  ///
+  /// In es, this message translates to:
+  /// **'No, mantener'**
+  String get events_cancel_no;
+
+  /// Snackbar when event is successfully cancelled
+  ///
+  /// In es, this message translates to:
+  /// **'Evento cancelado'**
+  String get events_cancelled;
+
+  /// Snackbar error when deleting event fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al eliminar evento'**
+  String get events_delete_error;
+
+  /// Snackbar success after RSVP "Going"
+  ///
+  /// In es, this message translates to:
+  /// **'¡Vas a ir!'**
+  String get events_rsvp_going;
+
+  /// Snackbar success after RSVP "Maybe"
+  ///
+  /// In es, this message translates to:
+  /// **'Marcado como tal vez'**
+  String get events_rsvp_maybe;
+
+  /// Snackbar error when RSVP fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al confirmar asistencia'**
+  String get events_rsvp_error;
 }
 
 class _AppLocalizationsDelegate

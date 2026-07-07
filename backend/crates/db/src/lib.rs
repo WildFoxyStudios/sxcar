@@ -6,6 +6,7 @@ pub mod albums;
 pub mod chat;
 pub mod config;
 pub mod enterprise;
+pub mod events;
 pub mod geo;
 pub mod moderation;
 pub mod notifications;

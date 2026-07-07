@@ -1580,4 +1580,114 @@ class AppLocalizationsEn extends AppLocalizations {
   String travelPassSetSuccess(String city) {
     return 'Travel pass activated — exploring $city';
   }
+
+  // -------------------------------------------------------------------------
+  // Events screen
+  // -------------------------------------------------------------------------
+
+  @override
+  String get events_title => 'Events';
+
+  @override
+  String get events_create => 'Create Event';
+
+  @override
+  String get events_load_error => 'Error loading events';
+
+  @override
+  String get events_empty_title => 'No events nearby';
+
+  @override
+  String get events_empty_subtitle => 'Be the first to create one';
+
+  @override
+  String get events_retry => 'Retry';
+
+  @override
+  String events_attendee_count(int count) {
+    if (count == 1) return '1 attending';
+    return '$count attending';
+  }
+
+  @override
+  String get events_going => 'Going';
+
+  @override
+  String get events_maybe => 'Maybe';
+
+  @override
+  String get events_detail_title => 'Event Details';
+
+  @override
+  String get events_ends => 'Ends';
+
+  @override
+  String get events_attendees => 'Attendees';
+
+  @override
+  String get events_form_title => 'Title';
+
+  @override
+  String get events_form_title_hint => 'Event name';
+
+  @override
+  String get events_form_description => 'Description';
+
+  @override
+  String get events_form_location => 'Location';
+
+  @override
+  String get events_form_location_hint => 'Where is it?';
+
+  @override
+  String get events_form_date => 'Date';
+
+  @override
+  String get events_form_time => 'Time';
+
+  @override
+  String get events_form_create => 'Create';
+
+  @override
+  String get events_created => 'Event created!';
+
+  @override
+  String get events_create_error => 'Error creating event';
+
+  @override
+  String get events_you_are_going => 'You are going';
+
+  @override
+  String get events_you_are_maybe => 'You might go';
+
+  @override
+  String get events_cancel => 'Cancel Event';
+
+  @override
+  String get events_cancel_confirm_title => 'Cancel event?';
+
+  @override
+  String get events_cancel_confirm_body =>
+      'This will cancel the event for all attendees.';
+
+  @override
+  String get events_cancel_yes => 'Yes, cancel';
+
+  @override
+  String get events_cancel_no => 'No, keep';
+
+  @override
+  String get events_cancelled => 'Event cancelled';
+
+  @override
+  String get events_delete_error => 'Error deleting event';
+
+  @override
+  String get events_rsvp_going => 'You\'re going!';
+
+  @override
+  String get events_rsvp_maybe => 'Marked as maybe';
+
+  @override
+  String get events_rsvp_error => 'Error updating RSVP';
 }

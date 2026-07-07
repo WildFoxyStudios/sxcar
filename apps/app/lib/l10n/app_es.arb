@@ -888,5 +888,63 @@
   "register_error_network": "Error al registrarse. Inténtalo de nuevo.",
   "@register_error_network": { "description": "Mensaje de error genérico de registro" },
   "register_login_link": "¿Ya tienes cuenta? Inicia sesión",
-  "@register_login_link": { "description": "Enlace a la pantalla de inicio de sesión desde registro" }
+  "@register_login_link": { "description": "Enlace a la pantalla de inicio de sesión desde registro" },
+
+  "profile_title_self": "Mi perfil",
+  "@profile_title_self": { "description": "Título de la barra de perfil propio" },
+  "profile_title_other": "Perfil",
+  "@profile_title_other": { "description": "Título de la barra de perfil de otro usuario" },
+  "profile_load_error": "Error al cargar el perfil: {error}",
+  "@profile_load_error": {
+    "description": "Mensaje de error al cargar el perfil",
+    "placeholders": {
+      "error": { "type": "String", "example": "Error de red" }
+    }
+  },
+  "profile_retry": "Reintentar",
+  "@profile_retry": { "description": "Botón de reintentar en estado de error del perfil" },
+  "profile_no_data": "Sin datos de perfil",
+  "@profile_no_data": { "description": "Estado vacío cuando no hay datos de perfil" },
+  "profile_height_label": "Altura",
+  "@profile_height_label": { "description": "Etiqueta de altura en la pantalla de perfil" },
+  "profile_weight_label": "Peso",
+  "@profile_weight_label": { "description": "Etiqueta de peso en la pantalla de perfil" },
+  "profile_body_type_label": "Tipo de cuerpo",
+  "@profile_body_type_label": { "description": "Etiqueta de tipo de cuerpo en la pantalla de perfil" },
+  "profile_relationship_label": "Estado civil",
+  "@profile_relationship_label": { "description": "Etiqueta de estado civil en la pantalla de perfil" },
+  "profile_position_label": "Posición",
+  "@profile_position_label": { "description": "Etiqueta de posición en la pantalla de perfil" },
+  "profile_ethnicity_label": "Etnia",
+  "@profile_ethnicity_label": { "description": "Etiqueta de etnia en la pantalla de perfil" },
+  "profile_pronouns_label": "Pronombres",
+  "@profile_pronouns_label": { "description": "Etiqueta de pronombres en la pantalla de perfil" },
+  "profile_birthdate_label": "Fecha de nacimiento",
+  "@profile_birthdate_label": { "description": "Etiqueta de fecha de nacimiento en la pantalla de perfil" },
+  "profile_tribes_header": "Tribus",
+  "@profile_tribes_header": { "description": "Encabezado de sección tribus en la pantalla de perfil" },
+  "profile_tags_header": "Intereses",
+  "@profile_tags_header": { "description": "Encabezado de sección intereses en la pantalla de perfil" },
+  "profile_looking_for_label": "Busco",
+  "@profile_looking_for_label": { "description": "Encabezado de sección 'busco' en la pantalla de perfil" },
+  "profile_meet_at_header": "Quedar en",
+  "@profile_meet_at_header": { "description": "Encabezado de sección 'quedar en' en la pantalla de perfil" },
+  "profile_edit_button": "Editar perfil",
+  "@profile_edit_button": { "description": "Botón de editar perfil en la pantalla de perfil" },
+  "profile_height_value": "{value} cm",
+  "@profile_height_value": {
+    "description": "Formato de valor de altura con unidad en la pantalla de perfil",
+    "placeholders": {
+      "value": { "type": "String", "example": "180" }
+    }
+  },
+  "profile_weight_value": "{value} kg",
+  "@profile_weight_value": {
+    "description": "Formato de valor de peso con unidad en la pantalla de perfil",
+    "placeholders": {
+      "value": { "type": "String", "example": "75" }
+    }
+  },
+  "profile_loading": "Cargando...",
+  "@profile_loading": { "description": "Etiqueta de estado de carga en la pantalla de perfil" }
 }

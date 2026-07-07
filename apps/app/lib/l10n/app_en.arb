@@ -580,5 +580,63 @@
   "register_error_network": "Registration failed. Please try again.",
   "@register_error_network": { "description": "Register screen generic registration error message" },
   "register_login_link": "Already have an account? Login",
-  "@register_login_link": { "description": "Register screen link to login screen" }
+  "@register_login_link": { "description": "Register screen link to login screen" },
+
+  "profile_title_self": "My Profile",
+  "@profile_title_self": { "description": "Profile screen AppBar title for own profile" },
+  "profile_title_other": "Profile",
+  "@profile_title_other": { "description": "Profile screen AppBar title for other user's profile" },
+  "profile_load_error": "Failed to load profile: {error}",
+  "@profile_load_error": {
+    "description": "Profile screen error message when loading profile fails",
+    "placeholders": {
+      "error": { "type": "String", "example": "Network error" }
+    }
+  },
+  "profile_retry": "Retry",
+  "@profile_retry": { "description": "Profile screen retry button on error state" },
+  "profile_no_data": "No profile data",
+  "@profile_no_data": { "description": "Profile screen empty state when no profile data" },
+  "profile_height_label": "Height",
+  "@profile_height_label": { "description": "Profile screen height stat row label" },
+  "profile_weight_label": "Weight",
+  "@profile_weight_label": { "description": "Profile screen weight stat row label" },
+  "profile_body_type_label": "Body Type",
+  "@profile_body_type_label": { "description": "Profile screen body type stat row label" },
+  "profile_relationship_label": "Relationship",
+  "@profile_relationship_label": { "description": "Profile screen relationship status stat row label" },
+  "profile_position_label": "Position",
+  "@profile_position_label": { "description": "Profile screen position stat row label" },
+  "profile_ethnicity_label": "Ethnicity",
+  "@profile_ethnicity_label": { "description": "Profile screen ethnicity stat row label" },
+  "profile_pronouns_label": "Pronouns",
+  "@profile_pronouns_label": { "description": "Profile screen pronouns stat row label" },
+  "profile_birthdate_label": "Birthdate",
+  "@profile_birthdate_label": { "description": "Profile screen birthdate stat row label" },
+  "profile_tribes_header": "Tribes",
+  "@profile_tribes_header": { "description": "Profile screen tribes section header" },
+  "profile_tags_header": "Tags",
+  "@profile_tags_header": { "description": "Profile screen tags section header" },
+  "profile_looking_for_label": "Looking for",
+  "@profile_looking_for_label": { "description": "Profile screen looking for section header" },
+  "profile_meet_at_header": "Meet at",
+  "@profile_meet_at_header": { "description": "Profile screen meet at section header" },
+  "profile_edit_button": "Edit Profile",
+  "@profile_edit_button": { "description": "Profile screen edit profile button" },
+  "profile_height_value": "{value} cm",
+  "@profile_height_value": {
+    "description": "Profile screen height value formatting with unit",
+    "placeholders": {
+      "value": { "type": "String", "example": "180" }
+    }
+  },
+  "profile_weight_value": "{value} kg",
+  "@profile_weight_value": {
+    "description": "Profile screen weight value formatting with unit",
+    "placeholders": {
+      "value": { "type": "String", "example": "75" }
+    }
+  },
+  "profile_loading": "Loading...",
+  "@profile_loading": { "description": "Profile screen loading state label" }
 }

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../auth/auth_provider.dart';
 
 /// Full profile model matching the backend's UserFullRow + arrays.
@@ -188,14 +189,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _isLoading = false;
       });
     } on DioException catch (e) {
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
         _isLoading = false;
-        _error = 'Failed to load profile: ${e.response?.statusCode ?? e.message}';
+        _error = l10n.profile_load_error('${e.response?.statusCode ?? e.message}');
       });
     } catch (e) {
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
         _isLoading = false;
-        _error = 'Failed to load profile: $e';
+        _error = l10n.profile_load_error('$e');
       });
     }
   }
@@ -206,15 +209,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.userId == null ? 'My Profile' : 'Profile'),
+        title: Text(widget.userId == null ? l10n.profile_title_self : l10n.profile_title_other),
       ),
       body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
+    final l10n = AppLocalizations.of(context)!;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -230,7 +235,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _loadProfile,
-              child: const Text('Retry'),
+              child: Text(l10n.profile_retry),
             ),
           ],
         ),
@@ -238,13 +243,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     if (_profile == null) {
-      return const Center(child: Text('No profile data'));
+      return Center(child: Text(l10n.profile_no_data));
     }
 
     return _buildView();
   }
 
   Widget _buildView() {
+    final l10n = AppLocalizations.of(context)!;
     final p = _profile!;
     final theme = Theme.of(context);
     final isOwn = widget.userId == null;
@@ -293,18 +299,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const Divider(),
 
         // Stats section
-        _buildStatRow(theme, 'Height', p.heightCm != null ? '${p.heightCm} cm' : null),
-        _buildStatRow(theme, 'Weight', p.weightKg != null ? '${p.weightKg} kg' : null),
-        _buildStatRow(theme, 'Body Type', p.bodyType),
-        _buildStatRow(theme, 'Relationship', p.relationshipStatus),
-        _buildStatRow(theme, 'Position', p.position),
-        _buildStatRow(theme, 'Ethnicity', p.ethnicity),
-        _buildStatRow(theme, 'Pronouns', p.pronouns),
-        _buildStatRow(theme, 'Birthdate', p.birthdate),
+        _buildStatRow(theme, l10n.profile_height_label, p.heightCm != null ? l10n.profile_height_value(p.heightCm.toString()) : null),
+        _buildStatRow(theme, l10n.profile_weight_label, p.weightKg != null ? l10n.profile_weight_value(p.weightKg.toString()) : null),
+        _buildStatRow(theme, l10n.profile_body_type_label, p.bodyType),
+        _buildStatRow(theme, l10n.profile_relationship_label, p.relationshipStatus),
+        _buildStatRow(theme, l10n.profile_position_label, p.position),
+        _buildStatRow(theme, l10n.profile_ethnicity_label, p.ethnicity),
+        _buildStatRow(theme, l10n.profile_pronouns_label, p.pronouns),
+        _buildStatRow(theme, l10n.profile_birthdate_label, p.birthdate),
 
         if (p.tribes.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text('Tribes', style: theme.textTheme.titleSmall),
+          Text(l10n.profile_tribes_header, style: theme.textTheme.titleSmall),
           const SizedBox(height: 4),
           Wrap(
             spacing: 6,
@@ -320,7 +326,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
         if (p.tags.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text('Tags', style: theme.textTheme.titleSmall),
+          Text(l10n.profile_tags_header, style: theme.textTheme.titleSmall),
           const SizedBox(height: 4),
           Wrap(
             spacing: 6,
@@ -336,7 +342,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
         if (p.lookingFor.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text('Looking for', style: theme.textTheme.titleSmall),
+          Text(l10n.profile_looking_for_label, style: theme.textTheme.titleSmall),
           const SizedBox(height: 4),
           Wrap(
             spacing: 6,
@@ -352,7 +358,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
         if (p.meetAt.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text('Meet at', style: theme.textTheme.titleSmall),
+          Text(l10n.profile_meet_at_header, style: theme.textTheme.titleSmall),
           const SizedBox(height: 4),
           Wrap(
             spacing: 6,
@@ -373,7 +379,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: FilledButton.icon(
               onPressed: _navigateToEditProfile,
               icon: const Icon(Icons.edit),
-              label: const Text('Edit Profile'),
+              label: Text(l10n.profile_edit_button),
             ),
           ),
         ],

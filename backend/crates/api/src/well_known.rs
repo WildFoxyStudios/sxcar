@@ -5,8 +5,8 @@ fn apple_team_id() -> String {
     std::env::var("APPLE_TEAM_ID").unwrap_or_else(|_| "CHANGE_ME_APPLE_TEAM_ID".into())
 }
 
-fn android_sha256() -> String {
-    std::env::var("ANDROID_SHA256_FINGERPRINT").unwrap_or_else(|_| android_sha256().into())
+pub fn android_sha256() -> String {
+    std::env::var("ANDROID_SHA256_FINGERPRINT").unwrap_or_else(|_| "CHANGE_ME".into())
 }
 
 /// `GET /.well-known/apple-app-site-association`
@@ -125,5 +125,21 @@ mod tests {
             entry["target"]["sha256_cert_fingerprints"],
             serde_json::json!([android_sha256()])
         );
+    }
+
+    #[test]
+    fn android_sha256_does_not_recurse_when_env_unset() {
+        // Ensure the env var is NOT set for this test.
+        std::env::remove_var("ANDROID_SHA256_FINGERPRINT");
+        let result = android_sha256();
+        // Must return a string without stack-overflowing.
+        assert!(!result.is_empty() || result.is_empty()); // just: did not crash
+    }
+
+    #[test]
+    fn android_sha256_returns_env_value_when_set() {
+        std::env::set_var("ANDROID_SHA256_FINGERPRINT", "DE:AD:BE:EF:00:01");
+        let result = android_sha256();
+        assert_eq!(result, "DE:AD:BE:EF:00:01");
     }
 }

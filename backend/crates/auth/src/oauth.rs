@@ -15,6 +15,61 @@ pub trait OAuthVerifier: Send + Sync {
     async fn verify(&self, provider: &str, id_token: &str) -> Result<OAuthIdentity, AuthError>;
 }
 
+/// Enum wrapper that selects the appropriate OAuth verifier based on environment config.
+///
+/// - `Real` — production Google/Apple token verification (requires `OAUTH_GOOGLE_CLIENT_ID`)
+/// - `Dev` — development-only forged token verifier (requires `DEV_OAUTH_ENABLED=true`)
+pub enum OAuthVerifierChoice {
+    Real(RealOAuthVerifier),
+    Dev(DevOAuthVerifier),
+}
+
+impl OAuthVerifierChoice {
+    /// Construct the appropriate verifier from environment variables.
+    ///
+    /// Returns `None` and logs an error when neither `OAUTH_GOOGLE_CLIENT_ID` nor
+    /// `DEV_OAUTH_ENABLED=true` is set. This prevents silent fallback to the dev
+    /// verifier in production.
+    pub fn from_env() -> Option<Self> {
+        let google_client_id = std::env::var("OAUTH_GOOGLE_CLIENT_ID").ok();
+        match google_client_id {
+            Some(id) => {
+                let apple = std::env::var("OAUTH_APPLE_CLIENT_ID").unwrap_or_default();
+                Some(Self::Real(RealOAuthVerifier {
+                    google_client_id: id,
+                    apple_client_id: apple,
+                }))
+            }
+            None => {
+                // Only allow DevOAuthVerifier when explicitly opted in.
+                if std::env::var("DEV_OAUTH_ENABLED").map_or(false, |v| v == "true") {
+                    tracing::warn!(
+                        "DEV MODE: OAuth accepts forged dev:<uid>:<email> tokens. \
+                         DO NOT USE IN PRODUCTION."
+                    );
+                    Some(Self::Dev(DevOAuthVerifier))
+                } else {
+                    tracing::error!(
+                        "OAUTH_GOOGLE_CLIENT_ID is not set and DEV_OAUTH_ENABLED \
+                         is not 'true'. Refusing to start with no OAuth verifier."
+                    );
+                    None
+                }
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl OAuthVerifier for OAuthVerifierChoice {
+    async fn verify(&self, provider: &str, id_token: &str) -> Result<OAuthIdentity, AuthError> {
+        match self {
+            Self::Real(r) => r.verify(provider, id_token).await,
+            Self::Dev(d) => d.verify(provider, id_token).await,
+        }
+    }
+}
+
 /// Verifier de DESARROLLO: acepta tokens con formato "dev:<provider_uid>:<email>".
 /// NO usar en producción (la impl real valida JWKS/firma/audience).
 pub struct DevOAuthVerifier;

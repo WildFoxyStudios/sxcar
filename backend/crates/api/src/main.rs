@@ -1,6 +1,6 @@
 use api::config::Config;
 use api::{app, AppDeps};
-use auth::{jwt::JwtConfig, notify::DevNotifier, notify::SmtpNotifier, oauth::DevOAuthVerifier, oauth::RealOAuthVerifier};
+use auth::{jwt::JwtConfig, notify::DevNotifier, notify::SmtpNotifier};
 use std::sync::Arc;
 
 #[tokio::main]
@@ -30,9 +30,16 @@ async fn main() -> anyhow::Result<()> {
         notifier: SmtpNotifier::from_env()
             .map(|n| Arc::new(n) as Arc<dyn auth::notify::Notifier>)
             .unwrap_or_else(|| Arc::new(DevNotifier)),
-        oauth: RealOAuthVerifier::from_env()
-            .map(|o| Arc::new(o) as Arc<dyn auth::oauth::OAuthVerifier>)
-            .unwrap_or_else(|| Arc::new(DevOAuthVerifier)),
+        oauth: match auth::oauth::OAuthVerifierChoice::from_env() {
+            Some(v) => Arc::new(v) as Arc<dyn auth::oauth::OAuthVerifier>,
+            None => {
+                tracing::error!(
+                    "No OAuth verifier configured. Set OAUTH_GOOGLE_CLIENT_ID \
+                     or DEV_OAUTH_ENABLED=true for local development."
+                );
+                std::process::exit(1);
+            }
+        },
     };
 
     let app = app(pool, deps);

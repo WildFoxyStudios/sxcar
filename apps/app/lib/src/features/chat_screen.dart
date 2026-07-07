@@ -29,6 +29,13 @@ class ChatScreen extends ConsumerStatefulWidget {
     this.conversationName,
   });
 
+  /// Show a timestamp divider every [interval] messages or at the first message.
+  static bool shouldShowTimestamp(int index, {int interval = 10}) {
+    if (index == 0) return true;
+    if (index % interval == 0) return true;
+    return false;
+  }
+
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
@@ -485,7 +492,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               final message = _messages[index];
                               final isMe =
                                   message.senderId == _currentUserId();
-                              final showTimestamp = _shouldShowTimestamp(
+                              final showTimestamp = ChatScreen.shouldShowTimestamp(
                                   index);
                               return Column(
                                 children: [
@@ -512,12 +519,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ],
       ),
     );
-  }
-
-  /// Show a timestamp divider every 10 messages or at the first message.
-  bool _shouldShowTimestamp(int index) {
-    if (index == 0) return true;
-    return false;
   }
 
   Widget _buildTimestamp(String iso) {

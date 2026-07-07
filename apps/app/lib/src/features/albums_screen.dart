@@ -101,30 +101,30 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Create Album'),
+          title: Text(l10n.albumCreateTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Album name',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.albumNameLabel,
+                  border: const OutlineInputBorder(),
                 ),
                 autofocus: true,
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description (optional)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.albumDescriptionOptional,
+                  border: const OutlineInputBorder(),
                 ),
                 maxLines: 2,
               ),
               const SizedBox(height: 12),
               CheckboxListTile(
-                title: const Text('Private album'),
+                title: Text(l10n.albumPrivateLabel),
                 value: isPrivate,
                 onChanged: (v) => setDialogState(() => isPrivate = v ?? false),
                 controlAffinity: ListTileControlAffinity.leading,
@@ -143,7 +143,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
                   Navigator.of(ctx).pop(true);
                 }
               },
-              child: const Text('Create'),
+              child: Text(l10n.albumCreateButton),
             ),
           ],
         ),
@@ -167,7 +167,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to create album: ${e.response?.statusCode ?? e.message}'),
+            content: Text('${l10n.albumFailedToCreateSimple}: ${e.response?.statusCode ?? e.message}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -176,7 +176,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to create album: $e'),
+            content: Text(l10n.albumFailedToCreateSimple),
             backgroundColor: Colors.red,
           ),
         );
@@ -501,6 +501,7 @@ class _AlbumTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -538,7 +539,7 @@ class _AlbumTile extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    album.name ?? 'Sin título',
+                    album.name ?? l10n.albumSinTitulo,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

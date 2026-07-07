@@ -1014,6 +1014,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final placesAsync = ref.watch(placesProvider);
 
     return Padding(

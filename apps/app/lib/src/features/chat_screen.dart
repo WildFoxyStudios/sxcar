@@ -284,10 +284,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         await ref.read(nsfwServiceProvider).check(bytes);
     if (!mounted) return;
     if (nsfwResult.isNsfw) {
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'This image appears to violate our content guidelines.',
+            l10n?.chatNsfwContent ?? 'This image appears to violate our content guidelines.',
           ),
           backgroundColor: Colors.red,
         ),
@@ -429,6 +430,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: VibraTheme.kBg,
@@ -442,13 +444,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 child: Icon(Icons.groups,
                     color: VibraTheme.kAccent, size: 20),
               ),
-            Text(widget.conversationName ?? 'Chat'),
+            Text(widget.conversationName ?? (l10n?.buzon ?? 'Chat')),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.phone, color: VibraTheme.kAccent, size: 22),
-            tooltip: 'Voice call',
+            tooltip: l10n?.chatVoiceCall ?? 'Voice call',
             onPressed: () {
               final callService = ref.read(callServiceProvider);
               if (!callService.isActive) {
@@ -547,6 +549,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildErrorState(ThemeData theme) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -562,7 +565,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   size: 32, color: VibraTheme.kError),
             ),
             const SizedBox(height: 16),
-            Text('Failed to load messages',
+            Text(l10n?.chatFailedToLoad ?? 'Failed to load messages',
                 style: theme.textTheme.titleMedium
                     ?.copyWith(color: VibraTheme.kTextPrimary)),
             const SizedBox(height: 16),
@@ -574,7 +577,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 });
                 _loadMessages();
               },
-              child: const Text('Retry'),
+              child: Text(l10n?.reintentar ?? 'Retry'),
             ),
           ],
         ),

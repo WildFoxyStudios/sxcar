@@ -7,7 +7,12 @@ import '../../widgets/page_controls.dart';
 
 const _pageSize = 50;
 
-final _auditOffsetProvider = StateProvider.autoDispose<int>((ref) => 0);
+class _AuditOffset extends Notifier<int> {
+  @override
+  int build() => 0;
+  void update(int v) => state = v;
+}
+final _auditOffsetProvider = NotifierProvider<_AuditOffset, int>(_AuditOffset.new);
 
 class AuditEntry {
   final String id;
@@ -141,8 +146,8 @@ class AuditScreen extends ConsumerWidget {
               currentPage: currentPage,
               totalPages: totalPages,
               onPageChanged: (page) =>
-                  ref.read(_auditOffsetProvider.notifier).state =
-                      page * _pageSize,
+                  ref.read(_auditOffsetProvider.notifier).update(
+                      page * _pageSize),
             ),
           ],
         );

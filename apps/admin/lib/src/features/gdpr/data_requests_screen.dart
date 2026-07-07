@@ -8,7 +8,12 @@ import '../../widgets/page_controls.dart';
 
 const _pageSize = 50;
 
-final _dataRequestsOffsetProvider = StateProvider.autoDispose<int>((ref) => 0);
+class _DataRequestsOffset extends Notifier<int> {
+  @override
+  int build() => 0;
+  void update(int v) => state = v;
+}
+final _dataRequestsOffsetProvider = NotifierProvider<_DataRequestsOffset, int>(_DataRequestsOffset.new);
 
 final dataRequestsProvider =
     FutureProvider.autoDispose<List<DataRequest>>((ref) async {
@@ -23,6 +28,8 @@ final dataRequestsProvider =
       [];
   return list;
 });
+
+class DataRequest {
   final String id;
   final String userId;
   final String type;
@@ -141,8 +148,8 @@ class DataRequestsScreen extends ConsumerWidget {
               currentPage: currentPage,
               totalPages: totalPages,
               onPageChanged: (page) =>
-                  ref.read(_dataRequestsOffsetProvider.notifier).state =
-                      page * _pageSize,
+                  ref.read(_dataRequestsOffsetProvider.notifier).update(
+                      page * _pageSize),
             ),
           ],
         );
@@ -168,8 +175,6 @@ class DataRequestsScreen extends ConsumerWidget {
         ],
       ),
     );
-  }
-
   }
 }
 

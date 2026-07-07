@@ -8,7 +8,12 @@ import '../../widgets/page_controls.dart';
 
 const _pageSize = 50;
 
-final _csamOffsetProvider = StateProvider.autoDispose<int>((ref) => 0);
+class _CsamOffset extends Notifier<int> {
+  @override
+  int build() => 0;
+  void update(int v) => state = v;
+}
+final _csamOffsetProvider = NotifierProvider<_CsamOffset, int>(_CsamOffset.new);
 
 final csamProvider = FutureProvider.autoDispose<List<CsamItem>>((ref) async {
   final offset = ref.watch(_csamOffsetProvider);
@@ -22,6 +27,8 @@ final csamProvider = FutureProvider.autoDispose<List<CsamItem>>((ref) async {
       [];
   return list;
 });
+
+class CsamItem {
   final String id;
   final String contentHash;
   final String matchedBy;
@@ -145,8 +152,8 @@ class CsamsScreen extends ConsumerWidget {
               currentPage: currentPage,
               totalPages: totalPages,
               onPageChanged: (page) =>
-                  ref.read(_csamOffsetProvider.notifier).state =
-                      page * _pageSize,
+                  ref.read(_csamOffsetProvider.notifier).update(
+                      page * _pageSize),
             ),
           ],
         );

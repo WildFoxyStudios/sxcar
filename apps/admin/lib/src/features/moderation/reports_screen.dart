@@ -8,7 +8,12 @@ import '../../widgets/page_controls.dart';
 
 const _pageSize = 50;
 
-final _reportsOffsetProvider = StateProvider.autoDispose<int>((ref) => 0);
+class _ReportsOffset extends Notifier<int> {
+  @override
+  int build() => 0;
+  void update(int v) => state = v;
+}
+final _reportsOffsetProvider = NotifierProvider<_ReportsOffset, int>(_ReportsOffset.new);
 
 final reportsProvider = FutureProvider.autoDispose<List<ReportItem>>((ref) async {
   final offset = ref.watch(_reportsOffsetProvider);
@@ -25,6 +30,8 @@ final reportsProvider = FutureProvider.autoDispose<List<ReportItem>>((ref) async
       [];
   return reportsList;
 });
+
+class ReportItem {
   final String id;
   final String? reporterId;
   final String? targetUserId;
@@ -177,8 +184,8 @@ class ReportsScreen extends ConsumerWidget {
                               ? ref.watch(_reportsOffsetProvider) ~/ _pageSize + 1
                               : ref.watch(_reportsOffsetProvider) ~/ _pageSize + 2,
                           onPageChanged: (page) =>
-                              ref.read(_reportsOffsetProvider.notifier).state =
-                                  page * _pageSize,
+                              ref.read(_reportsOffsetProvider.notifier).update(
+                                  page * _pageSize),
                         ),
                       ],
                     ),

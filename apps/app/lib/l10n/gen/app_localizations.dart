@@ -1789,6 +1789,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Añade tu etnia'**
   String get onboarding_card_ethnicity_cta;
+
+  /// Mensaje de éxito tras eliminar la cuenta
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta programada para eliminación'**
+  String get deleteAccountSuccess;
+
+  /// Mensaje de error al fallar la eliminación de cuenta
+  ///
+  /// In es, this message translates to:
+  /// **'Error al eliminar la cuenta. Intenta de nuevo.'**
+  String get deleteAccountError;
 }
 
 class _AppLocalizationsDelegate

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../auth/auth_provider.dart';
 import '../boost/boost_service.dart';
 import '../profile_views/viewed_me_provider.dart';
@@ -82,21 +83,63 @@ class _YouScreenState extends ConsumerState<YouScreen> {
     }
   }
 
-  void _deleteAccount() {
-    showDialog(
+  Future<void> _deleteAccount() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: VibraTheme.kSurface,
-        title: const Text('Delete Account'),
-        content: const Text('This feature is not yet available.'),
+        title: Text(l10n.confirmarEliminar),
+        content: Text(l10n.accionNoSePuedeDeshacer),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.cancelar),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              l10n.eliminar,
+              style: const TextStyle(color: VibraTheme.kError),
+            ),
           ),
         ],
       ),
     );
+
+    if (confirmed != true) return;
+
+    try {
+      final dio = ref.read(dioProvider);
+      await dio.delete('/me');
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.deleteAccountSuccess),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      await ref.read(authStateProvider.notifier).logout();
+    } on DioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.deleteAccountError}: ${e.response?.statusCode ?? e.message}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.deleteAccountError}: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   int? _calculateAge(String? birthdate) {

@@ -1,4 +1,4 @@
-//! Self-service user actions: GDPR data export.
+//! Self-service user actions: GDPR data export, account deletion.
 
 use axum::{extract::State, http::StatusCode, Json};
 use serde_json::{json, Value};
@@ -29,5 +29,36 @@ pub async fn export_data(
         "subscriptions_count": dossier.subscriptions.len(),
         "reports_against_count": dossier.reports_against.len(),
         "consent_records_count": dossier.consent_records.len(),
+    })))
+}
+
+/// DELETE /me
+///
+/// Self-service account deletion. Anonymizes all PII, revokes all active
+/// sessions, and marks the account as deleted. Per GDPR the underlying data
+/// is retained for 30 days before a hard-delete can be considered.
+pub async fn delete_account(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+) -> Result<Json<Value>, StatusCode> {
+    // Revoke all refresh tokens so the user is forcibly logged out.
+    db::users::revoke_all_refresh(&state.pool, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("delete_account revoke_all_refresh error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    // Anonymize and soft-delete.
+    let deletion_date = db::users::anonymize_user(&state.pool, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("delete_account anonymize_user error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    Ok(Json(json!({
+        "message": "Account scheduled for deletion",
+        "deletion_date": deletion_date.to_string(),
     })))
 }

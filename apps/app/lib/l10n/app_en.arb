@@ -368,5 +368,11 @@
   "onboarding_card_position_preference_label": "Position preference",
   "onboarding_card_position_preference_cta": "Set your position",
   "onboarding_card_ethnicity_label": "Ethnicity",
-  "onboarding_card_ethnicity_cta": "Add your ethnicity"
+  "onboarding_card_ethnicity_cta": "Add your ethnicity",
+
+  "deleteAccountSuccess": "Account scheduled for deletion",
+  "@deleteAccountSuccess": { "description": "Success message after deleting account" },
+
+  "deleteAccountError": "Error deleting account. Try again.",
+  "@deleteAccountError": { "description": "Error message when deleting account fails" }
 }

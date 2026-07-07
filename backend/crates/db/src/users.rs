@@ -487,3 +487,53 @@ pub async fn get_user_statuses(
         })
         .collect())
 }
+
+/// Anonymizes a user's PII and marks the account as deleted (soft-delete).
+/// Sets `deleted_at` to now() and returns the scheduled deletion date
+/// (30 days from now, after which a hard-delete can be considered).
+///
+/// GDPR: data is kept for 30 days after anonymization per audit trail policy.
+pub async fn anonymize_user(pool: &Pool, user_id: uuid::Uuid) -> anyhow::Result<time::OffsetDateTime> {
+    let anonymized_email = format!("deleted_{user_id}@anonymized");
+    let deletion_date = time::OffsetDateTime::now_utc() + time::Duration::days(30);
+
+    sqlx::query!(
+        r#"
+        WITH
+          upd_users AS (
+            UPDATE users
+            SET email            = $2,
+                password_hash    = NULL,
+                phone            = NULL,
+                phone_verified   = false,
+                email_verified   = false,
+                status           = 'deleted',
+                deleted_at       = now()
+            WHERE id = $1
+          )
+        UPDATE profiles
+        SET display_name       = NULL,
+            about              = NULL,
+            position           = NULL,
+            body_type          = NULL,
+            height_cm          = NULL,
+            weight_kg          = NULL,
+            relationship_status = NULL,
+            gender_identity    = NULL,
+            pronouns           = NULL,
+            hiv_status         = NULL,
+            last_tested_on     = NULL,
+            prep               = NULL,
+            profile_photo_id   = NULL,
+            profile_photo_key  = NULL,
+            details            = '{}'::jsonb
+        WHERE user_id = $1
+        "#,
+        user_id,
+        anonymized_email
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(deletion_date)
+}

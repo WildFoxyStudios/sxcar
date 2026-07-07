@@ -883,4 +883,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboarding_card_ethnicity_cta => 'Añade tu etnia';
+
+  @override
+  String get deleteAccountSuccess => 'Cuenta programada para eliminación';
+
+  @override
+  String get deleteAccountError =>
+      'Error al eliminar la cuenta. Intenta de nuevo.';
 }

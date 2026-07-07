@@ -676,5 +676,11 @@
   "onboarding_card_position_preference_label": "Preferencia de posición",
   "onboarding_card_position_preference_cta": "Define tu posición",
   "onboarding_card_ethnicity_label": "Etnia",
-  "onboarding_card_ethnicity_cta": "Añade tu etnia"
+  "onboarding_card_ethnicity_cta": "Añade tu etnia",
+
+  "deleteAccountSuccess": "Cuenta programada para eliminación",
+  "@deleteAccountSuccess": { "description": "Mensaje de éxito tras eliminar la cuenta" },
+
+  "deleteAccountError": "Error al eliminar la cuenta. Intenta de nuevo.",
+  "@deleteAccountError": { "description": "Mensaje de error al fallar la eliminación de cuenta" }
 }

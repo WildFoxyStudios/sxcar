@@ -7,8 +7,11 @@ use crate::AppState;
 
 #[derive(Deserialize)]
 pub struct NearbyQuery {
-    pub lat: f64,
-    pub lon: f64,
+    /// Optional — when omitted, the server checks for an active Travel Pass.
+    /// If no travel pass is active, a 400 Bad Request is returned.
+    pub lat: Option<f64>,
+    /// Optional — paired with `lat`.
+    pub lon: Option<f64>,
     #[serde(default = "default_radius")]
     pub radius_m: f64,
     #[serde(default = "default_limit")]
@@ -55,10 +58,30 @@ pub async fn nearby(
     State(state): State<AppState>,
     Query(params): Query<NearbyQuery>,
 ) -> Result<axum::Json<serde_json::Value>, StatusCode> {
+    // Resolve effective coordinates: if lat/lon not provided, check travel pass.
+    let (lon, lat) = match (params.lon, params.lat) {
+        (Some(lon), Some(lat)) => (lon, lat),
+        _ => {
+            // No explicit coordinates — try the user's active travel pass.
+            let travel = crate::travel::resolve_travel_location(&state.pool, current_user_id)
+                .await
+                .map_err(|e| {
+                    tracing::error!("travel resolution error: {e}");
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            match travel {
+                Some((tlat, tlon)) => (tlon, tlat),
+                None => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+    };
+
     let users = db::geo::find_nearby_users(
         &state.pool,
-        params.lon,
-        params.lat,
+        lon,
+        lat,
         params.radius_m,
         current_user_id,
         params.limit,

@@ -26,6 +26,7 @@ pub mod stories;
 pub mod tarpit;
 pub mod tier2;
 pub mod tier3;
+pub mod travel;
 pub mod well_known;
 
 use std::sync::Arc;
@@ -98,6 +99,7 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
         .route("/profile/:id", get(profile::get_by_id))
         .route("/me/export-data", post(me::export_data))
         .route("/me", delete(me::delete_account))
+        .route("/me/travel", post(travel::set_travel).get(travel::get_travel).delete(travel::delete_travel))
         .route("/chat/conversations", get(chat::list_conversations).post(chat::create_conversation))
         .route("/chat/conversations/:id/messages", get(chat::list_messages).post(chat::send_message))
         .route("/chat/conversations/:id", delete(chat::delete_conversation))

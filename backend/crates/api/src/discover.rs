@@ -7,8 +7,11 @@ use crate::AppState;
 
 #[derive(Deserialize)]
 pub struct DiscoverQuery {
-    pub lat: f64,
-    pub lon: f64,
+    /// Optional — when omitted, the server checks for an active Travel Pass.
+    /// If no travel pass is active, a 400 Bad Request is returned.
+    pub lat: Option<f64>,
+    /// Optional — paired with `lat`.
+    pub lon: Option<f64>,
     #[serde(default = "default_radius")]
     pub radius_m: f64,
     #[serde(default = "default_limit")]
@@ -36,6 +39,26 @@ pub async fn list(
     State(state): State<AppState>,
     Query(params): Query<DiscoverQuery>,
 ) -> Result<axum::Json<serde_json::Value>, StatusCode> {
+    // Resolve effective coordinates: if lat/lon not provided, check travel pass.
+    let (lon, lat) = match (params.lon, params.lat) {
+        (Some(lon), Some(lat)) => (lon, lat),
+        _ => {
+            // No explicit coordinates — try the user's active travel pass.
+            let travel = crate::travel::resolve_travel_location(&state.pool, current_user_id)
+                .await
+                .map_err(|e| {
+                    tracing::error!("travel resolution error: {e}");
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            match travel {
+                Some((tlat, tlon)) => (tlon, tlat),
+                None => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+    };
+
     let rows = sqlx::query_as::<_, db::geo::NearbyUserRow>(
         r#"
         SELECT u.id, u.email::text AS email,
@@ -58,8 +81,8 @@ pub async fn list(
         LIMIT $5
         "#,
     )
-    .bind(params.lon)
-    .bind(params.lat)
+    .bind(lon)
+    .bind(lat)
     .bind(params.radius_m)
     .bind(current_user_id)
     .bind(params.limit)

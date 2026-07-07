@@ -158,24 +158,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   UserProfile? _profile;
   bool _isLoading = true;
   String? _error;
-  bool _isEditing = false;
-  bool _isSaving = false;
-
-  // Controllers for edit mode
-  final _displayNameController = TextEditingController();
-  final _bioController = TextEditingController();
-  final _birthdateController = TextEditingController();
-  final _heightController = TextEditingController();
-  final _weightController = TextEditingController();
-  final _bodyTypeController = TextEditingController();
-  final _relationshipController = TextEditingController();
-  final _positionController = TextEditingController();
-  final _ethnicityController = TextEditingController();
-  final _pronounsController = TextEditingController();
-  final _tribesController = TextEditingController();
-  final _lookingForController = TextEditingController();
-  final _meetAtController = TextEditingController();
-  final _tagsController = TextEditingController();
 
   @override
   void initState() {
@@ -185,20 +167,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   void dispose() {
-    _displayNameController.dispose();
-    _bioController.dispose();
-    _birthdateController.dispose();
-    _heightController.dispose();
-    _weightController.dispose();
-    _bodyTypeController.dispose();
-    _relationshipController.dispose();
-    _positionController.dispose();
-    _ethnicityController.dispose();
-    _pronounsController.dispose();
-    _tribesController.dispose();
-    _lookingForController.dispose();
-    _meetAtController.dispose();
-    _tagsController.dispose();
     super.dispose();
   }
 
@@ -218,21 +186,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       setState(() {
         _profile = profile;
         _isLoading = false;
-        // Populate edit controllers
-        _displayNameController.text = profile.displayName ?? '';
-        _bioController.text = profile.bio ?? '';
-        _birthdateController.text = profile.birthdate ?? '';
-        _heightController.text = profile.heightCm?.toString() ?? '';
-        _weightController.text = profile.weightKg?.toString() ?? '';
-        _bodyTypeController.text = profile.bodyType ?? '';
-        _relationshipController.text = profile.relationshipStatus ?? '';
-        _positionController.text = profile.position ?? '';
-        _ethnicityController.text = profile.ethnicity ?? '';
-        _pronounsController.text = profile.pronouns ?? '';
-        _tribesController.text = profile.tribes.join(', ');
-        _lookingForController.text = profile.lookingFor.join(', ');
-        _meetAtController.text = profile.meetAt.join(', ');
-        _tagsController.text = profile.tags.join(', ');
       });
     } on DioException catch (e) {
       setState(() {
@@ -247,102 +200,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  Future<void> _saveProfile() async {
-    setState(() => _isSaving = true);
-
-    try {
-      final dio = ref.read(dioProvider);
-      final body = <String, dynamic>{
-        'display_name': _displayNameController.text.isEmpty
-            ? null
-            : _displayNameController.text,
-        'bio': _bioController.text.isEmpty ? null : _bioController.text,
-        'birthdate': _birthdateController.text.isEmpty
-            ? null
-            : _birthdateController.text,
-        'height_cm': _heightController.text.isEmpty
-            ? null
-            : int.tryParse(_heightController.text),
-        'weight_kg': _weightController.text.isEmpty
-            ? null
-            : int.tryParse(_weightController.text),
-        'body_type': _bodyTypeController.text.isEmpty
-            ? null
-            : _bodyTypeController.text,
-        'relationship_status': _relationshipController.text.isEmpty
-            ? null
-            : _relationshipController.text,
-        'position':
-            _positionController.text.isEmpty ? null : _positionController.text,
-        'ethnicity':
-            _ethnicityController.text.isEmpty ? null : _ethnicityController.text,
-        'pronouns':
-            _pronounsController.text.isEmpty ? null : _pronounsController.text,
-        'tribes': _tribesController.text.isEmpty
-            ? []
-            : _tribesController.text
-                .split(',')
-                .map((s) => s.trim())
-                .where((s) => s.isNotEmpty)
-                .toList(),
-        'looking_for': _lookingForController.text.isEmpty
-            ? []
-            : _lookingForController.text
-                .split(',')
-                .map((s) => s.trim())
-                .where((s) => s.isNotEmpty)
-                .toList(),
-        'meet_at': _meetAtController.text.isEmpty
-            ? []
-            : _meetAtController.text
-                .split(',')
-                .map((s) => s.trim())
-                .where((s) => s.isNotEmpty)
-                .toList(),
-        'tags': _tagsController.text.isEmpty
-            ? []
-            : _tagsController.text
-                .split(',')
-                .map((s) => s.trim())
-                .where((s) => s.isNotEmpty)
-                .toList(),
-      };
-
-      final response = await dio.put<Map<String, dynamic>>(
-        '/profile',
-        data: body,
-      );
-
-      final userJson = response.data!['user'] as Map<String, dynamic>;
-      final profile = UserProfile.fromJson(userJson);
-
-      setState(() {
-        _profile = profile;
-        _isEditing = false;
-        _isSaving = false;
-      });
-    } on DioException catch (e) {
-      setState(() => _isSaving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Failed to save: ${e.response?.statusCode ?? e.message}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      setState(() => _isSaving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  void _navigateToEditProfile() {
+    Navigator.of(context).pushNamed('/edit-profile');
   }
 
   @override
@@ -352,15 +211,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isOwn ? 'My Profile' : 'Profile'),
-        actions: [
-          if (isOwn && _profile != null && !_isLoading)
-            IconButton(
-              icon: Icon(_isEditing ? Icons.check : Icons.edit),
-              onPressed: _isEditing ? _saveProfile : () {
-                setState(() => _isEditing = true);
-              },
-            ),
-        ],
       ),
       body: _buildBody(),
     );
@@ -391,10 +241,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     if (_profile == null) {
       return const Center(child: Text('No profile data'));
-    }
-
-    if (_isEditing) {
-      return _buildEditForm();
     }
 
     return _buildView();
@@ -520,6 +366,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 .toList(),
           ),
         ],
+
+        // Edit Profile button for own profile
+        if (isOwn) ...[
+          const SizedBox(height: 24),
+          Center(
+            child: FilledButton.icon(
+              onPressed: _navigateToEditProfile,
+              icon: const Icon(Icons.edit),
+              label: const Text('Edit Profile'),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -542,65 +400,5 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildEditForm() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildTextField('Display Name', _displayNameController),
-        _buildTextField('Bio', _bioController, maxLines: 3),
-        _buildTextField('Birthdate (YYYY-MM-DD)', _birthdateController),
-        _buildTextField('Height (cm)', _heightController,
-            keyboardType: TextInputType.number),
-        _buildTextField('Weight (kg)', _weightController,
-            keyboardType: TextInputType.number),
-        _buildTextField('Body Type', _bodyTypeController),
-        _buildTextField('Relationship Status', _relationshipController),
-        _buildTextField('Position', _positionController),
-        _buildTextField('Ethnicity', _ethnicityController),
-        _buildTextField('Pronouns', _pronounsController),
-        _buildTextField('Tribes (comma-separated)', _tribesController),
-        _buildTextField('Looking For (comma-separated)', _lookingForController),
-        _buildTextField('Meet At (comma-separated)', _meetAtController),
-        _buildTextField('Tags (comma-separated)', _tagsController),
-        const SizedBox(height: 16),
-        if (_isSaving)
-          const Center(child: CircularProgressIndicator())
-        else
-          FilledButton(
-            onPressed: _saveProfile,
-            child: const Text('Save Changes'),
-          ),
-        const SizedBox(height: 8),
-        TextButton(
-          onPressed: () {
-            // Reset controllers to current profile values
-            setState(() {
-              _isEditing = false;
-            });
-          },
-          child: const Text('Cancel'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller, {
-    int maxLines = 1,
-    TextInputType? keyboardType,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-      ),
-    );
-  }
+  // _buildEditForm and _buildTextField removed — editing now handled by /edit-profile
 }

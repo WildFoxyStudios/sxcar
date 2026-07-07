@@ -10,11 +10,13 @@ class RelationshipStatusCard extends StatefulWidget {
     required this.card,
     required this.provider,
     required this.onComplete,
+    this.onSkip,
   });
 
   final OnboardingCard card;
   final OnboardingProvider provider;
   final ValueChanged<bool> onComplete;
+  final VoidCallback? onSkip;
 
   @override
   State<RelationshipStatusCard> createState() => _RelationshipStatusCardState();
@@ -41,6 +43,7 @@ class _RelationshipStatusCardState extends State<RelationshipStatusCard> {
       primaryLabel: l10n.onboarding_next,
       primaryEnabled: !_busy && _selected != null,
       onPrimary: _submit,
+      onSkip: widget.onSkip,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

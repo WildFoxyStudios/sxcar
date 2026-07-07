@@ -10,11 +10,13 @@ class EthnicityCard extends StatefulWidget {
     required this.card,
     required this.provider,
     required this.onComplete,
+    this.onSkip,
   });
 
   final OnboardingCard card;
   final OnboardingProvider provider;
   final ValueChanged<bool> onComplete;
+  final VoidCallback? onSkip;
 
   @override
   State<EthnicityCard> createState() => _EthnicityCardState();
@@ -45,6 +47,7 @@ class _EthnicityCardState extends State<EthnicityCard> {
       primaryLabel: l10n.onboarding_next,
       primaryEnabled: !_busy && _selected != null,
       onPrimary: _submit,
+      onSkip: widget.onSkip,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

@@ -10,11 +10,13 @@ class AboutMeCard extends StatefulWidget {
     required this.card,
     required this.provider,
     required this.onComplete,
+    this.onSkip,
   });
 
   final OnboardingCard card;
   final OnboardingProvider provider;
   final ValueChanged<bool> onComplete;
+  final VoidCallback? onSkip;
 
   @override
   State<AboutMeCard> createState() => _AboutMeCardState();
@@ -55,6 +57,7 @@ class _AboutMeCardState extends State<AboutMeCard> {
       primaryLabel: l10n.onboarding_next,
       primaryEnabled: !_busy && _ctrl.text.trim().isNotEmpty,
       onPrimary: _submit,
+      onSkip: widget.onSkip,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

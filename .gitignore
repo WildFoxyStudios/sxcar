@@ -21,6 +21,7 @@ dist
 crash.log
 crash.*.log
 override.tf
+*.tar.gz
 override.tf.json
 *_override.tf
 *_override.tf.json

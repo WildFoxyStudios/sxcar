@@ -10,11 +10,13 @@ class HeightCard extends StatefulWidget {
     required this.card,
     required this.provider,
     required this.onComplete,
+    this.onSkip,
   });
 
   final OnboardingCard card;
   final OnboardingProvider provider;
   final ValueChanged<bool> onComplete;
+  final VoidCallback? onSkip;
 
   @override
   State<HeightCard> createState() => _HeightCardState();
@@ -33,6 +35,7 @@ class _HeightCardState extends State<HeightCard> {
       primaryLabel: l10n.onboarding_next,
       primaryEnabled: !_busy,
       onPrimary: _submit,
+      onSkip: widget.onSkip,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [

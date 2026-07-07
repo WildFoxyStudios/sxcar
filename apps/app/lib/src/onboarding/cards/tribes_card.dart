@@ -10,11 +10,13 @@ class TribesCard extends StatefulWidget {
     required this.card,
     required this.provider,
     required this.onComplete,
+    this.onSkip,
   });
 
   final OnboardingCard card;
   final OnboardingProvider provider;
   final ValueChanged<bool> onComplete;
+  final VoidCallback? onSkip;
 
   @override
   State<TribesCard> createState() => _TribesCardState();
@@ -39,6 +41,7 @@ class _TribesCardState extends State<TribesCard> {
       primaryLabel: l10n.onboarding_next,
       primaryEnabled: !_busy,
       onPrimary: _submit,
+      onSkip: widget.onSkip,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

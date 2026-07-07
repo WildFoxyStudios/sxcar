@@ -64,25 +64,55 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       case 'gender_position':
         return GenderPositionCard(card: card, provider: p, onComplete: onComplete);
       case 'looking_for':
-        return LookingForCard(card: card, provider: p, onComplete: onComplete);
+        return LookingForCard(
+          card: card, provider: p, onComplete: onComplete,
+          onSkip: () => p.skipCards([card.id]),
+        );
       case 'tribes':
-        return TribesCard(card: card, provider: p, onComplete: onComplete);
+        return TribesCard(
+          card: card, provider: p, onComplete: onComplete,
+          onSkip: () => p.skipCards([card.id]),
+        );
       case 'vaccines':
-        return VaccinesCard(card: card, provider: p, onComplete: onComplete);
+        return VaccinesCard(
+          card: card, provider: p, onComplete: onComplete,
+          onSkip: () => p.skipCards([card.id]),
+        );
       case 'practices':
-        return PracticesCard(card: card, provider: p, onComplete: onComplete);
+        return PracticesCard(
+          card: card, provider: p, onComplete: onComplete,
+          onSkip: () => p.skipCards([card.id]),
+        );
       case 'about_me':
-        return AboutMeCard(card: card, provider: p, onComplete: onComplete);
+        return AboutMeCard(
+          card: card, provider: p, onComplete: onComplete,
+          onSkip: () => p.skipCards([card.id]),
+        );
       case 'height':
-        return HeightCard(card: card, provider: p, onComplete: onComplete);
+        return HeightCard(
+          card: card, provider: p, onComplete: onComplete,
+          onSkip: () => p.skipCards([card.id]),
+        );
       case 'weight':
-        return WeightCard(card: card, provider: p, onComplete: onComplete);
+        return WeightCard(
+          card: card, provider: p, onComplete: onComplete,
+          onSkip: () => p.skipCards([card.id]),
+        );
       case 'relationship_status':
-        return RelationshipStatusCard(card: card, provider: p, onComplete: onComplete);
+        return RelationshipStatusCard(
+          card: card, provider: p, onComplete: onComplete,
+          onSkip: () => p.skipCards([card.id]),
+        );
       case 'position_preference':
-        return PositionPreferenceCard(card: card, provider: p, onComplete: onComplete);
+        return PositionPreferenceCard(
+          card: card, provider: p, onComplete: onComplete,
+          onSkip: () => p.skipCards([card.id]),
+        );
       case 'ethnicity':
-        return EthnicityCard(card: card, provider: p, onComplete: onComplete);
+        return EthnicityCard(
+          card: card, provider: p, onComplete: onComplete,
+          onSkip: () => p.skipCards([card.id]),
+        );
       default:
         return const SizedBox.shrink();
     }

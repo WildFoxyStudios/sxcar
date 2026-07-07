@@ -10,11 +10,13 @@ class PositionPreferenceCard extends StatefulWidget {
     required this.card,
     required this.provider,
     required this.onComplete,
+    this.onSkip,
   });
 
   final OnboardingCard card;
   final OnboardingProvider provider;
   final ValueChanged<bool> onComplete;
+  final VoidCallback? onSkip;
 
   @override
   State<PositionPreferenceCard> createState() => _PositionPreferenceCardState();
@@ -42,6 +44,7 @@ class _PositionPreferenceCardState extends State<PositionPreferenceCard> {
       primaryLabel: l10n.onboarding_next,
       primaryEnabled: !_busy && _selected != null,
       onPrimary: _submit,
+      onSkip: widget.onSkip,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

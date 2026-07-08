@@ -317,7 +317,11 @@ pub async fn get_location(
 pub struct SetLocationReq {
     pub lat: f64,
     pub lon: f64,
+    // The app sends this field as `name`; accept both so the place label
+    // (city/roam name) is persisted instead of silently dropped.
+    #[serde(alias = "name")]
     pub place_name: Option<String>,
+    #[serde(default)]
     pub is_roam: bool,
 }
 

@@ -7,6 +7,7 @@ import 'package:app/src/features/edit_profile/practices_screen.dart';
 import 'package:app/src/features/edit_profile/profile_edit_provider.dart';
 import 'package:app/src/features/edit_profile/sheets.dart';
 import 'package:app/src/features/edit_profile/vaccines_screen.dart';
+import 'package:app/src/features/profile_drawer.dart' show ownProfileProvider;
 import 'package:app/src/features/profile_screen.dart' show UserProfile;
 import 'package:app/src/health/health_service.dart';
 import 'package:app/src/media/media_service.dart';
@@ -203,6 +204,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
 
       ref.read(profileEditProvider.notifier).loadFrom(updatedProfile);
+      // Refresh the header/drawer/grid avatar with the new photo.
+      ref.invalidate(ownProfileProvider);
 
       if (!mounted) return;
       setState(() => _isUploadingPhoto = false);
@@ -297,6 +300,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       );
       return;
     }
+
+    // Invalidate the cached own-profile provider so the header, drawer,
+    // and other screens re-fetch the updated profile (name, bio, photo, etc).
+    ref.invalidate(ownProfileProvider);
 
     // Show confirmation immediately on profile save success.
     if (!mounted) return;

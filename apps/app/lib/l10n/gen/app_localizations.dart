@@ -3421,6 +3421,42 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Tienda'**
   String get shopMenuItem;
+
+  /// Gallery editor: add photo tile label
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir foto'**
+  String get galleryAddPhoto;
+
+  /// Gallery editor: set photo as primary action
+  ///
+  /// In es, this message translates to:
+  /// **'Hacer principal'**
+  String get gallerySetPrimary;
+
+  /// Gallery editor: delete photo action
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar'**
+  String get galleryDelete;
+
+  /// Gallery editor: delete photo confirmation dialog body
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar esta foto de tu galería?'**
+  String get galleryDeleteConfirm;
+
+  /// Gallery editor: shown when photo limit (6) is reached
+  ///
+  /// In es, this message translates to:
+  /// **'Límite de 6 fotos alcanzado'**
+  String get galleryMaxReached;
+
+  /// Gallery editor: badge on the primary photo tile
+  ///
+  /// In es, this message translates to:
+  /// **'Principal'**
+  String get galleryPrimaryBadge;
 }
 
 class _AppLocalizationsDelegate

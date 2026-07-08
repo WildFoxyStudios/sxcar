@@ -3,6 +3,30 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 
+/// Model for a single gallery photo entry from the backend.
+class GalleryPhoto {
+  final String id;
+  final String url;
+  final bool isPrimary;
+  final int position;
+
+  const GalleryPhoto({
+    required this.id,
+    required this.url,
+    required this.isPrimary,
+    required this.position,
+  });
+
+  factory GalleryPhoto.fromJson(Map<String, dynamic> json) {
+    return GalleryPhoto(
+      id: json['id'] as String,
+      url: json['url'] as String,
+      isPrimary: json['is_primary'] as bool,
+      position: json['position'] as int,
+    );
+  }
+}
+
 /// Model for a presigned upload URL response from the backend.
 class UploadUrl {
   final String key;
@@ -72,5 +96,37 @@ class MediaService {
       data: bytes,
       options: Options(headers: {'Content-Type': contentType}),
     );
+  }
+
+  /// Fetch all gallery photos for the current user.
+  /// Returns photos ordered primary-first then by position.
+  Future<List<GalleryPhoto>> listPhotos() async {
+    final res = await _client.get<Map<String, dynamic>>('/media/photos');
+    final photosJson = (res.data!['photos'] as List<dynamic>);
+    return photosJson
+        .cast<Map<String, dynamic>>()
+        .map(GalleryPhoto.fromJson)
+        .toList();
+  }
+
+  /// Delete a gallery photo by id.
+  Future<void> deletePhoto(String id) async {
+    await _client.delete('/media/photos/$id');
+  }
+
+  /// Set a gallery photo as the primary profile photo.
+  Future<void> setPrimaryPhoto(String id) async {
+    await _client.put('/media/photos/$id/primary');
+  }
+
+  /// Create a gallery photo entry after uploading to R2.
+  Future<void> createPhoto({
+    required String r2Key,
+    bool isNsfw = false,
+  }) async {
+    await _client.post('/media/photos', data: {
+      'r2_key': r2Key,
+      'is_nsfw': isNsfw,
+    });
   }
 }

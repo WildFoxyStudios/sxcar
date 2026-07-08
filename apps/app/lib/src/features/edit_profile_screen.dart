@@ -41,8 +41,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   // ── Local state for fields NOT yet routed through ProfileEditProvider ────
   bool _isLoading = true;
   String? _error;
-  bool _isUploadingPhoto = false;
   bool _isSavingHealth = false;
+
+  // ── Gallery state ─────────────────────────────────────────────────────────
+  List<GalleryPhoto> _galleryPhotos = [];
+  bool _isLoadingGallery = false;
+  bool _isUploadingGallery = false;
 
   // Text controllers for the remaining inline text fields (displayName, bio,
   // ethnicity, pronouns). They are pushed into the draft on every change so
@@ -72,6 +76,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+    unawaited(_loadGallery());
   }
 
   @override
@@ -142,28 +147,55 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
-  Future<void> _pickAndUploadPhoto() async {
+  // ── Gallery methods ───────────────────────────────────────────────────────
+
+  Future<void> _loadGallery() async {
+    setState(() => _isLoadingGallery = true);
     try {
-      final picker = ImagePicker();
-      final XFile? picked = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
+      final svc = MediaService(ref.read(dioProvider));
+      final photos = await svc.listPhotos();
+      if (!mounted) return;
+      setState(() {
+        _galleryPhotos = photos;
+        _isLoadingGallery = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingGallery = false);
+    }
+  }
+
+  Future<void> _addGalleryPhoto() async {
+    if (_galleryPhotos.length >= 6) {
+      final l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n?.galleryMaxReached ?? 'Límite de 6 fotos alcanzado'),
+          backgroundColor: VibraTheme.kBadgeRed,
+        ),
       );
+      return;
+    }
 
-      if (picked == null) return;
+    final picker = ImagePicker();
+    final XFile? picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
 
-      setState(() => _isUploadingPhoto = true);
+    setState(() => _isUploadingGallery = true);
 
+    try {
       final bytes = await picked.readAsBytes();
 
       // On-device NSFW check before upload.
-      final nsfwResult =
-          await ref.read(nsfwServiceProvider).check(bytes);
+      final nsfwResult = await ref.read(nsfwServiceProvider).check(bytes);
       if (!mounted) return;
       if (nsfwResult.isNsfw) {
-        setState(() => _isUploadingPhoto = false);
+        setState(() => _isUploadingGallery = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -177,48 +209,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       final mediaService = MediaService(ref.read(dioProvider));
       final uploadUrl = await mediaService.getUploadUrl(kind: 'profile');
-      await mediaService.uploadToR2(uploadUrl.putUrl, bytes);
-
-      // Update profile via API with the new photo key.
-      final dio = ref.read(dioProvider);
-      final updateResponse = await dio.put<Map<String, dynamic>>(
-        '/profile',
-        data: {'profile_photo_key': uploadUrl.key},
-      );
-      final userJson = updateResponse.data!['user'] as Map<String, dynamic>;
-      final updatedProfile = UserProfile.fromJson(userJson);
-
-      // Verify the backend actually stored the photo key.
-      if (updatedProfile.profilePhotoKey != uploadUrl.key) {
-        if (!mounted) return;
-        setState(() => _isUploadingPhoto = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Photo uploaded but could not be linked to profile. Check R2 config.',
-            ),
-            backgroundColor: VibraTheme.kBadgeRed,
-          ),
-        );
-        return;
-      }
-
-      ref.read(profileEditProvider.notifier).loadFrom(updatedProfile);
-      // Refresh the header/drawer/grid avatar with the new photo.
-      ref.invalidate(ownProfileProvider);
-
       if (!mounted) return;
-      setState(() => _isUploadingPhoto = false);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile photo updated!'),
-          backgroundColor: VibraTheme.kSuccess,
-        ),
-      );
+      await mediaService.uploadToR2(uploadUrl.putUrl, bytes);
+      if (!mounted) return;
+      await mediaService.createPhoto(r2Key: uploadUrl.key);
+      if (!mounted) return;
+      await _loadGallery();
+      if (!mounted) return;
+      ref.invalidate(ownProfileProvider);
+      setState(() => _isUploadingGallery = false);
     } on DioException catch (e) {
       if (!mounted) return;
-      setState(() => _isUploadingPhoto = false);
+      setState(() => _isUploadingGallery = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -229,10 +231,65 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isUploadingPhoto = false);
+      setState(() => _isUploadingGallery = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Photo upload failed: $e'),
+          backgroundColor: VibraTheme.kBadgeRed,
+        ),
+      );
+    }
+  }
+
+  Future<void> _setPhotoPrimary(String id) async {
+    try {
+      await MediaService(ref.read(dioProvider)).setPrimaryPhoto(id);
+      if (!mounted) return;
+      await _loadGallery();
+      if (!mounted) return;
+      ref.invalidate(ownProfileProvider);
+    } on DioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.response?.statusCode ?? e.message}'),
+          backgroundColor: VibraTheme.kBadgeRed,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deletePhoto(String id) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n?.galleryDelete ?? 'Eliminar foto'),
+        content: Text(l10n?.galleryDeleteConfirm ?? '¿Eliminar esta foto?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n?.cancelar ?? 'Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n?.galleryDelete ?? 'Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await MediaService(ref.read(dioProvider)).deletePhoto(id);
+      if (!mounted) return;
+      await _loadGallery();
+      if (!mounted) return;
+      ref.invalidate(ownProfileProvider);
+    } on DioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.response?.statusCode ?? e.message}'),
           backgroundColor: VibraTheme.kBadgeRed,
         ),
       );
@@ -947,53 +1004,238 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Widget _buildPhotoSection(UserProfile p) {
     final l10n = AppLocalizations.of(context);
+
+    // Show loading spinner when gallery is loading and empty.
+    if (_isLoadingGallery && _galleryPhotos.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = VibraTheme.kPadPage * 2;
+    final spacing = 8.0;
+    final tileSize = (screenWidth - horizontalPadding - spacing * 2) / 3;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Center(
-          child: Stack(
-            children: [
-              CircleAvatar(
-                radius: 48,
-                backgroundColor: VibraTheme.kSurface,
-                backgroundImage: p.profilePhotoUrl != null
-                    ? NetworkImage(p.profilePhotoUrl!)
-                    : null,
-                child: p.profilePhotoUrl == null
-                    ? Text(
-                        (p.displayName ?? p.email)[0].toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 32,
-                          color: VibraTheme.kYellow,
-                        ),
-                      )
-                    : null,
-              ),
-              if (_isUploadingPhoto)
-                const CircleAvatar(
-                  radius: 48,
-                  backgroundColor: Colors.black54,
-                  child: CircularProgressIndicator(
-                    color: VibraTheme.kYellow,
-                  ),
-                ),
-            ],
+        // Section label
+        Text(
+          'FOTOS',
+          style: const TextStyle(
+            color: VibraTheme.kTextSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.0,
           ),
         ),
-        const SizedBox(height: 8),
-        Center(
-          child: _isUploadingPhoto
-              ? Text(
-                  l10n?.editProfileUploading ?? 'Uploading...',
-                  style: const TextStyle(
-                      color: VibraTheme.kTextSecondary, fontSize: 13),
-                )
-              : TextButton.icon(
-                  onPressed: _pickAndUploadPhoto,
-                  icon: const Icon(Icons.camera_alt, size: 18),
-                  label: Text(l10n?.editProfileChangePhoto ?? 'Change Photo'),
+        const SizedBox(height: 12),
+
+        // Photo grid using Wrap
+        Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            // Existing photo tiles
+            ..._galleryPhotos.map((photo) {
+              return _buildGalleryTile(photo, tileSize, l10n);
+            }),
+
+            // Add tile — shown when below 6 photos, or max-reached hint
+            if (_galleryPhotos.length < 6)
+              _buildAddTile(tileSize, l10n)
+            else
+              Container(
+                width: tileSize,
+                height: tileSize,
+                decoration: BoxDecoration(
+                  color: VibraTheme.kSurface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: VibraTheme.kDivider),
                 ),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      l10n?.galleryMaxReached ?? 'Límite de 6 fotos alcanzado',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: VibraTheme.kTextSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ],
+    );
+  }
+
+  Widget _buildGalleryTile(
+    GalleryPhoto photo,
+    double size,
+    AppLocalizations? l10n,
+  ) {
+    return GestureDetector(
+      onLongPress: () => _showPhotoMenu(photo, l10n),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: Image.network(
+                photo.url,
+                fit: BoxFit.cover,
+                errorBuilder: (ctx, err, stack) => Container(
+                  color: VibraTheme.kSurface,
+                  child: const Icon(Icons.broken_image,
+                      color: VibraTheme.kTextSecondary),
+                ),
+              ),
+            ),
+          ),
+          // Primary badge
+          if (photo.isPrimary)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: VibraTheme.kSuccess,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Text(
+                  l10n?.galleryPrimaryBadge ?? 'Principal',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          // Actions button (⋮)
+          Positioned(
+            top: 2,
+            right: 2,
+            child: GestureDetector(
+              onTap: () => _showPhotoMenu(photo, l10n),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: const Icon(
+                  Icons.more_vert,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddTile(double size, AppLocalizations? l10n) {
+    return GestureDetector(
+      onTap: _isUploadingGallery ? null : _addGalleryPhoto,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: VibraTheme.kSurface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: VibraTheme.kDivider,
+            style: BorderStyle.solid,
+            width: 1.5,
+          ),
+        ),
+        child: _isUploadingGallery
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: VibraTheme.kYellow,
+                  strokeWidth: 2,
+                ),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add,
+                      color: VibraTheme.kTextSecondary, size: 28),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n?.galleryAddPhoto ?? 'Añadir foto',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: VibraTheme.kTextSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  void _showPhotoMenu(GalleryPhoto photo, AppLocalizations? l10n) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: VibraTheme.kSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!photo.isPrimary)
+                ListTile(
+                  leading: const Icon(Icons.star_border,
+                      color: VibraTheme.kYellow),
+                  title: Text(
+                    l10n?.gallerySetPrimary ?? 'Hacer principal',
+                    style: const TextStyle(color: VibraTheme.kTextPrimary),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _setPhotoPrimary(photo.id);
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline,
+                    color: VibraTheme.kBadgeRed),
+                title: Text(
+                  l10n?.galleryDelete ?? 'Eliminar',
+                  style: const TextStyle(color: VibraTheme.kBadgeRed),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _deletePhoto(photo.id);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

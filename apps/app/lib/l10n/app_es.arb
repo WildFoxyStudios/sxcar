@@ -1439,5 +1439,18 @@
   "@shopPurchaseError": { "description": "Snackbar de error cuando falla la compra" },
 
   "shopMenuItem": "Tienda",
-  "@shopMenuItem": { "description": "Elemento del menú Tienda en el cajón de perfil" }
+  "@shopMenuItem": { "description": "Elemento del menú Tienda en el cajón de perfil" },
+
+  "galleryAddPhoto": "Añadir foto",
+  "@galleryAddPhoto": { "description": "Gallery editor: add photo tile label" },
+  "gallerySetPrimary": "Hacer principal",
+  "@gallerySetPrimary": { "description": "Gallery editor: set photo as primary action" },
+  "galleryDelete": "Eliminar",
+  "@galleryDelete": { "description": "Gallery editor: delete photo action" },
+  "galleryDeleteConfirm": "¿Eliminar esta foto de tu galería?",
+  "@galleryDeleteConfirm": { "description": "Gallery editor: delete photo confirmation dialog body" },
+  "galleryMaxReached": "Límite de 6 fotos alcanzado",
+  "@galleryMaxReached": { "description": "Gallery editor: shown when photo limit (6) is reached" },
+  "galleryPrimaryBadge": "Principal",
+  "@galleryPrimaryBadge": { "description": "Gallery editor: badge on the primary photo tile" }
 }

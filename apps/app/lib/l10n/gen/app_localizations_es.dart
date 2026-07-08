@@ -1779,4 +1779,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get shopMenuItem => 'Tienda';
+
+  @override
+  String get galleryAddPhoto => 'Añadir foto';
+
+  @override
+  String get gallerySetPrimary => 'Hacer principal';
+
+  @override
+  String get galleryDelete => 'Eliminar';
+
+  @override
+  String get galleryDeleteConfirm => '¿Eliminar esta foto de tu galería?';
+
+  @override
+  String get galleryMaxReached => 'Límite de 6 fotos alcanzado';
+
+  @override
+  String get galleryPrimaryBadge => 'Principal';
 }

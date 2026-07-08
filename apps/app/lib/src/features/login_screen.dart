@@ -38,6 +38,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       final result = await _googleSignIn.signIn();
+      if (!mounted) return;
       if (result.cancelled) {
         setState(() => _isGoogleLoading = false);
         return;
@@ -56,8 +57,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
       if (mounted) context.go('/');
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      if (mounted) setState(() => _error = e.message);
     } catch (e) {
+      if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
       setState(() => _error = l10n.login_error_google);
     } finally {

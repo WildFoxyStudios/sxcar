@@ -35,7 +35,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
       } else {
         file = await _picker.pickImage(source: source, imageQuality: 85);
       }
-      if (file != null) {
+      if (file != null && mounted) {
         setState(() {
           _mediaFile = file;
           _isVideo = video;

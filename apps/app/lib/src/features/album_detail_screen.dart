@@ -78,12 +78,14 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
           .map((p) => AlbumPhoto.fromJson(p as Map<String, dynamic>))
           .toList();
 
+      if (!mounted) return;
       setState(() {
         _album = album;
         _photos = photos;
         _isLoading = false;
       });
     } on DioException catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         if (e.response?.statusCode == 404) {
@@ -93,6 +95,7 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
         }
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorDetail = '$e';
@@ -104,7 +107,7 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
     final picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage();
 
-    if (pickedFiles.isEmpty) return;
+    if (pickedFiles.isEmpty || !mounted) return;
 
     setState(() => _isUploading = true);
 

@@ -430,6 +430,7 @@ class _VideoStoryState extends State<_VideoStory> {
         'https://api.turnend.win/media/get-url?key=${widget.mediaKey}&kind=story';
     await _player.setSource(UrlSource(url));
     await _player.resume();
+    if (!mounted) return;
     setState(() => _loaded = true);
   }
 

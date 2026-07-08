@@ -389,7 +389,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       firstDate: DateTime(1980),
       lastDate: now,
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() => _lastTestedOn = picked);
     }
   }

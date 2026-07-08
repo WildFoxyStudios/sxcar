@@ -92,7 +92,7 @@ mod tests {
         let json: serde_json::Value = serde_json::to_value(f).unwrap();
 
         assert_eq!(json["tribes"][0], "Bear");
-        assert!(json["looking_for"].as_array().unwrap().contains(&"Friends"));
+        assert!(json["looking_for"].as_array().unwrap().iter().any(|v| v == "Friends"));
         assert_eq!(json["body_types"].as_array().unwrap().len(), 3);
         assert_eq!(json["relationship_statuses"].as_array().unwrap().len(), 2);
         assert_eq!(json["genders"].as_array().unwrap().len(), 2);

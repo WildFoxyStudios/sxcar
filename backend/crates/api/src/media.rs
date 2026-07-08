@@ -5,9 +5,10 @@
 //! `host` con payload `UNSIGNED-PAYLOAD`, que es lo que R2 espera para URLs
 //! presignadas. La corrección de la firma se valida E2E contra R2.
 
-use axum::{extract::{Query, State}, http::StatusCode, routing::{get, post}, Json, Router};
+use axum::{extract::{Path, Query, State}, http::StatusCode, routing::{delete, get, post, put}, Json, Router};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use sha2::{Digest, Sha256};
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -276,20 +277,66 @@ pub async fn create_photo(
         return Err(StatusCode::BAD_GATEWAY);
     }
 
-    // 4. Insert photo record
-    let photo_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO photos (user_id, r2_key, blur_key, is_nsfw) VALUES ($1, $2, $3, $4) RETURNING id",
-    )
-    .bind(user_id)
-    .bind(&req.r2_key)
-    .bind(&blur_key)
-    .bind(req.is_nsfw)
-    .fetch_one(&state.pool)
-    .await
-    .map_err(|e| {
-        tracing::error!("insert photo failed: {e}");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    // 4. Insert photo record — for "profile" kind, set position + is_primary.
+    let photo_id: Uuid = if kind == "profile" {
+        // Count existing photos to determine position and primary status.
+        let existing_count = db::photos::count_user_photos(&state.pool, user_id)
+            .await
+            .map_err(|e| {
+                tracing::error!("count_user_photos failed: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+        let position = existing_count as i32;
+        let is_first = existing_count == 0;
+
+        let id: Uuid = sqlx::query_scalar(
+            "INSERT INTO photos (user_id, r2_key, blur_key, is_nsfw, position, is_primary) \
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+        )
+        .bind(user_id)
+        .bind(&req.r2_key)
+        .bind(&blur_key)
+        .bind(req.is_nsfw)
+        .bind(position)
+        .bind(is_first)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("insert photo failed: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        // Sync legacy field when this is the first (primary) photo.
+        if is_first {
+            sqlx::query(
+                "UPDATE profiles SET profile_photo_key = $1 WHERE user_id = $2",
+            )
+            .bind(&req.r2_key)
+            .bind(user_id)
+            .execute(&state.pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("sync profile_photo_key failed: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+        }
+
+        id
+    } else {
+        sqlx::query_scalar(
+            "INSERT INTO photos (user_id, r2_key, blur_key, is_nsfw) VALUES ($1, $2, $3, $4) RETURNING id",
+        )
+        .bind(user_id)
+        .bind(&req.r2_key)
+        .bind(&blur_key)
+        .bind(req.is_nsfw)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("insert photo failed: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+    };
 
     Ok((
         StatusCode::CREATED,
@@ -377,11 +424,94 @@ pub async fn get_url(
     Ok(Json(GetUrlRes { get_url: url }))
 }
 
+// ---------------------------------------------------------------------------
+// GET /media/photos — list authenticated user's profile photos
+// ---------------------------------------------------------------------------
+
+#[derive(Serialize)]
+struct GalleryPhotoItem {
+    id: Uuid,
+    url: String,
+    is_primary: bool,
+    position: i32,
+}
+
+pub async fn list_photos(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let cfg = state.r2.as_ref().ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
+    let rows = db::photos::list_user_photos(&state.pool, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("list_user_photos failed: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    let now = OffsetDateTime::now_utc();
+    let photos: Vec<GalleryPhotoItem> = rows
+        .into_iter()
+        .map(|r| GalleryPhotoItem {
+            id: r.id,
+            url: presign(cfg, "GET", &cfg.bucket_media, &r.r2_key, 604800, now),
+            is_primary: r.is_primary,
+            position: r.position,
+        })
+        .collect();
+    Ok(Json(json!({ "photos": photos })))
+}
+
+// ---------------------------------------------------------------------------
+// DELETE /media/photos/:id — delete own photo
+// ---------------------------------------------------------------------------
+
+pub async fn delete_photo(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+    Path(photo_id): Path<Uuid>,
+) -> Result<StatusCode, StatusCode> {
+    let deleted = db::photos::delete_photo(&state.pool, user_id, photo_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("delete_photo failed: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    if deleted {
+        Ok(StatusCode::OK)
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// PUT /media/photos/:id/primary — set as primary photo
+// ---------------------------------------------------------------------------
+
+pub async fn set_primary_photo(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+    Path(photo_id): Path<Uuid>,
+) -> Result<StatusCode, StatusCode> {
+    let updated = db::photos::set_primary_photo(&state.pool, user_id, photo_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("set_primary_photo failed: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    if updated {
+        Ok(StatusCode::OK)
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/media/upload-url", post(upload_url))
         .route("/media/get-url", get(get_url))
         .route("/media/photos", post(create_photo))
+        .route("/media/photos", get(list_photos))
+        .route("/media/photos/:id", delete(delete_photo))
+        .route("/media/photos/:id/primary", put(set_primary_photo))
 }
 
 #[cfg(test)]

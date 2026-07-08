@@ -34,6 +34,7 @@ fn user_full_to_json(
     looking_for: Vec<String>,
     meet_at: Vec<String>,
     tags: Vec<String>,
+    photos: Vec<Value>,
     r2: Option<&crate::media::R2Config>,
     apply_privacy_filter: bool,
 ) -> Value {
@@ -70,6 +71,7 @@ fn user_full_to_json(
         "profile_photo_id": u.profile_photo_id,
         "profile_photo_key": u.profile_photo_key,
         "profile_photo_url": photo_url,
+        "photos": photos,
         "tribes": tribes,
         "looking_for": looking_for,
         "meet_at": meet_at,
@@ -98,6 +100,26 @@ fn user_full_to_json(
     }
 
     user
+}
+
+/// Load gallery photos for `target_user_id` and convert to presigned-URL JSON items.
+async fn load_photos_json(
+    pool: &db::Pool,
+    r2: Option<&crate::media::R2Config>,
+    target_user_id: uuid::Uuid,
+) -> anyhow::Result<Vec<Value>> {
+    let rows = db::photos::list_user_photos(pool, target_user_id).await?;
+    let now = time::OffsetDateTime::now_utc();
+    let items = rows
+        .into_iter()
+        .map(|r| {
+            let url = r2.map(|cfg| {
+                crate::media::presign(cfg, "GET", &cfg.bucket_media, &r.r2_key, 604800, now)
+            });
+            json!({ "id": r.id, "url": url })
+        })
+        .collect();
+    Ok(items)
 }
 
 /// Recupera el perfil completo del usuario autenticado.
@@ -143,8 +165,15 @@ pub async fn get_own(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
+    let photos = load_photos_json(&state.pool, state.r2.as_deref(), user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("load_photos_json error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
     Ok(Json(json!({
-        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, state.r2.as_deref(), false)
+        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, photos, state.r2.as_deref(), false)
     })))
 }
 
@@ -354,8 +383,15 @@ pub async fn update_own(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
+    let photos = load_photos_json(&state.pool, state.r2.as_deref(), user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("load_photos_json error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
     Ok(Json(json!({
-        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, state.r2.as_deref(), false)
+        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, photos, state.r2.as_deref(), false)
     })))
 }
 
@@ -407,8 +443,15 @@ pub async fn get_by_id(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
+    let photos = load_photos_json(&state.pool, state.r2.as_deref(), user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("load_photos_json error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
     Ok(Json(json!({
-        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, state.r2.as_deref(), true)
+        "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, photos, state.r2.as_deref(), true)
     })))
 }
 

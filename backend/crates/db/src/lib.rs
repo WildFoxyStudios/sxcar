@@ -10,6 +10,7 @@ pub mod events;
 pub mod geo;
 pub mod moderation;
 pub mod notifications;
+pub mod photos;
 pub mod plans;
 pub mod social;
 pub mod stories;

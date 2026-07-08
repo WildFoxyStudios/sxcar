@@ -66,6 +66,7 @@ pub async fn list(
                p.about AS bio,
                (SELECT id FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1) AS profile_photo_id,
                p.profile_photo_key,
+               (SELECT r2_key FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1) AS profile_photo_url,
                ST_Distance(l.geog, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography)::float8 AS distance_m
         FROM users u
         JOIN profiles p ON p.user_id = u.id
@@ -76,7 +77,8 @@ pub async fn list(
           AND u.id != $4
           AND u.id NOT IN (SELECT target_id FROM blocks WHERE user_id = $4)
           AND u.id NOT IN (SELECT user_id FROM blocks WHERE target_id = $4)
-          AND EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = u.id AND ph.is_primary = true)
+          AND (p.profile_photo_key IS NOT NULL
+               OR EXISTS (SELECT 1 FROM photos ph WHERE ph.user_id = u.id AND ph.is_primary = true))
         ORDER BY u.last_seen_at DESC NULLS LAST
         LIMIT $5
         "#,
@@ -93,12 +95,16 @@ pub async fn list(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    // Generate presigned photo URLs for users with a profile photo key (R2).
+    // Generate presigned photo URLs. Priority:
+    // 1. profiles.profile_photo_key (R2 text key from profile edits)
+    // 2. photos.r2_key (legacy photos table, stored in profile_photo_url)
     let users_with_photos: Vec<serde_json::Value> = rows
         .iter()
         .map(|u| {
             let mut j = serde_json::to_value(u).unwrap_or_default();
-            if let Some(ref key) = u.profile_photo_key {
+            let r2_key = u.profile_photo_key.as_deref()
+                .or(u.profile_photo_url.as_deref());
+            if let Some(key) = r2_key {
                 if let Some(ref r2) = state.r2 {
                     let now = time::OffsetDateTime::now_utc();
                     let url = crate::media::presign(

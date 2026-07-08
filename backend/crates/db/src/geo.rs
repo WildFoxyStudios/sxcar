@@ -77,6 +77,7 @@ pub async fn find_nearby_users(
                p.about AS bio,
                (SELECT id FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1) AS profile_photo_id,
                p.profile_photo_key,
+               (SELECT r2_key FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1) AS profile_photo_url,
                ST_Distance(l.geog, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography)::float8 AS distance_m
         FROM users u
         JOIN profiles p ON p.user_id = u.id

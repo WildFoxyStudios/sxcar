@@ -295,13 +295,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Scroll until the PRACTICES header is visible (it's the 6th section,
-      // sandwiched between "What I like" and "Health").
-      await tester.scrollUntilVisible(
-        find.text('PRACTICES'),
-        300,
-        scrollable: find.byType(Scrollable).first,
-      );
+      // Scroll to where the PRACTICES section lives (6th section, between
+      // "What I like" and "Health"). Use a large drag — same pattern as the
+      // Health-section tests above — so PRACTICES lands well within the
+      // viewport rather than at the bottom edge.
+      await tester.drag(find.byType(ListView), const Offset(0, -900));
+      await tester.pumpAndSettle();
 
       // The Practices header is the section title; it should always render
       // (ExpansionTile renders the title regardless of collapse state).
@@ -313,6 +312,11 @@ void main() {
       expect(find.text('Select practices'), findsNothing);
 
       await tester.tap(find.text('PRACTICES'));
+      await tester.pumpAndSettle();
+
+      // Bring the freshly-expanded body into view (after the tap, the
+      // expanded content renders below PRACTICES and may be off-screen).
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
       await tester.pumpAndSettle();
 
       expect(find.text('Select practices'), findsOneWidget);

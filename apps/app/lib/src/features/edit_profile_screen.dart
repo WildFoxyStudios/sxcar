@@ -185,6 +185,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       imageQuality: 85,
     );
     if (picked == null) return;
+    if (!mounted) return;               // guard: widget may be disposed while picker was open
 
     setState(() => _isUploadingGallery = true);
 
@@ -253,6 +254,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.response?.statusCode ?? e.message}'),
+          backgroundColor: VibraTheme.kBadgeRed,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
           backgroundColor: VibraTheme.kBadgeRed,
         ),
       );
@@ -551,7 +560,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return ListView(
       padding: const EdgeInsets.all(VibraTheme.kPadPage),
       children: [
-        _buildPhotoSection(draft),
+        _buildPhotoSection(),
         const SizedBox(height: 24),
 
         // ── Basics ────────────────────────────────────────────────────────
@@ -1002,7 +1011,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  Widget _buildPhotoSection(UserProfile p) {
+  Widget _buildPhotoSection() {
     final l10n = AppLocalizations.of(context);
 
     // Show loading spinner when gallery is loading and empty.

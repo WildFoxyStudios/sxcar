@@ -343,6 +343,9 @@ pub async fn complete_card(
         "gender_position" => {
             let GenderPositionBody { gender, position } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
+            // Normalize position to lowercase to satisfy the profiles_position_check
+            // constraint (the app sends capitalized labels like "Top").
+            let position = position.to_lowercase();
             sqlx::query(
                 "INSERT INTO profiles (user_id, gender_identity, position) VALUES ($1, $2, $3)
                  ON CONFLICT (user_id) DO UPDATE SET gender_identity = EXCLUDED.gender_identity, position = EXCLUDED.position",

@@ -220,6 +220,9 @@ pub async fn update_own(
         }
     };
 
+    // Normalize position to lowercase to satisfy the profiles_position_check
+    // constraint (the app's picker sends capitalized labels like "Top").
+    let position_norm = body.position.as_ref().map(|p| p.to_lowercase());
     db::profiles::upsert_profile(
         &state.pool,
         user_id,
@@ -230,7 +233,7 @@ pub async fn update_own(
         body.weight_kg,
         body.body_type.as_deref(),
         body.relationship_status.as_deref(),
-        body.position.as_deref(),
+        position_norm.as_deref(),
         body.ethnicity.as_deref(),
         body.pronouns.as_deref(),
     )

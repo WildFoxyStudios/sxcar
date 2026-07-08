@@ -278,7 +278,9 @@ async fn completing_all_required_triggers_onboarding_completed_at() {
     for (path, body) in [
         ("/me/onboarding/cards/display_name/complete", json!({"display_name": "Eve"})),
         ("/me/onboarding/cards/age/complete",          json!({"age": 30})),
-        ("/me/onboarding/cards/gender_position/complete", json!({"gender": "male", "position": "top"})),
+        // Capitalized "Top" — the app sends label-case; backend must normalize
+        // to lowercase to satisfy the profiles_position_check constraint.
+        ("/me/onboarding/cards/gender_position/complete", json!({"gender": "Man", "position": "Top"})),
     ] {
         let req = axum::http::Request::builder()
             .method("POST")

@@ -4,6 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
 import '../auth/auth_provider.dart';
 
+/// A single profile gallery photo (id + presigned display URL).
+class ProfilePhoto {
+  final String id;
+  final String url;
+
+  const ProfilePhoto({required this.id, required this.url});
+
+  factory ProfilePhoto.fromJson(Map<String, dynamic> json) => ProfilePhoto(
+        id: json['id'] as String,
+        url: json['url'] as String,
+      );
+}
+
 /// Full profile model matching the backend's UserFullRow + arrays.
 class UserProfile {
   final String id;
@@ -25,6 +38,7 @@ class UserProfile {
   final String? profilePhotoId;
   final String? profilePhotoKey;
   final String? profilePhotoUrl;
+  final List<ProfilePhoto> photos;
   final bool isVerified;
   final List<String> tribes;
   final List<String> lookingFor;
@@ -59,6 +73,7 @@ class UserProfile {
     this.profilePhotoId,
     this.profilePhotoKey,
     this.profilePhotoUrl,
+    this.photos = const [],
     this.isVerified = false,
     this.tribes = const [],
     this.lookingFor = const [],
@@ -95,6 +110,11 @@ class UserProfile {
       profilePhotoId: json['profile_photo_id'] as String?,
       profilePhotoKey: json['profile_photo_key'] as String?,
       profilePhotoUrl: json['profile_photo_url'] as String?,
+      photos: (json['photos'] as List<dynamic>?)
+              ?.where((e) => (e as Map<String, dynamic>)['url'] != null)
+              .map((e) => ProfilePhoto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       isVerified: json['verified'] == true,
       tribes: (json['tribes'] as List<dynamic>?)
               ?.map((e) => e as String)

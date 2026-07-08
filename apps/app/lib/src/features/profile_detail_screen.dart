@@ -309,8 +309,11 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     final p = _profile!;
     final l10n = AppLocalizations.of(context)!;
     final screenHeight = MediaQuery.of(context).size.height;
-    // Build photo list — single URL today, structure supports N.
-    final photos = [if (p.profilePhotoUrl != null) p.profilePhotoUrl!];
+    // Build photo list from the gallery; fall back to the single primary
+    // URL for profiles that predate the multi-photo gallery.
+    final photos = p.photos.isNotEmpty
+        ? p.photos.map((ph) => ph.url).toList()
+        : [if (p.profilePhotoUrl != null) p.profilePhotoUrl!];
 
     return Scaffold(
       backgroundColor: VibraTheme.kBg,

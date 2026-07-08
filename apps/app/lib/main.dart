@@ -38,6 +38,7 @@ import 'src/features/event_detail_screen.dart';
 import 'src/features/events_screen.dart';
 import 'src/features/security_screen.dart';
 import 'src/features/settings_screen.dart';
+import 'src/features/verification_screen.dart';
 import 'src/phrases/phrases_screen.dart';
 import 'src/sessions/sessions_screen.dart';
 import 'src/shop/shop_screen.dart';
@@ -83,6 +84,7 @@ const Set<String> _knownTopLevelPaths = {
   '/albums',
   '/events',
   '/grid-search',
+  '/verify-profile',
   // Legacy paths kept as redirect routes so old deep links / tests don't break
   '/cascade',
   '/you',
@@ -314,6 +316,12 @@ final GoRouter appRouter = GoRouter(
           ),
         ),
       ],
+    ),
+
+    // ── Profile verification (blue-check) ─────────────────────────────────
+    GoRoute(
+      path: '/verify-profile',
+      builder: (_, _) => const VerificationScreen(),
     ),
 
     // ── Full-screen story screens ──────────────────────────────────────────

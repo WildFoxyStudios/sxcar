@@ -362,6 +362,15 @@ class ProfileDrawer extends ConsumerWidget {
             ),
 
             _DrawerListTile(
+              icon: Icons.verified_outlined,
+              label: l10n.verifyProfileMenuItem,
+              onTap: () {
+                Navigator.of(context).pop();
+                context.push('/verify-profile');
+              },
+            ),
+
+            _DrawerListTile(
               icon: Icons.verified_user_outlined,
               label: l10n.seguridadPrivacidad,
               onTap: () {

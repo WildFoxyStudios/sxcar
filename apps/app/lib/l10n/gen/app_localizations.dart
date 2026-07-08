@@ -3457,6 +3457,48 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Principal'**
   String get galleryPrimaryBadge;
+
+  /// Verification screen title and drawer menu item
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar perfil'**
+  String get verifyProfileTitle;
+
+  /// Verification screen explanation text shown before the user submits
+  ///
+  /// In es, this message translates to:
+  /// **'Verifica tu identidad tomándote una selfie. Nuestro equipo la revisará y añadirá un sello azul a tu perfil en 24-48 horas.'**
+  String get verifyProfileIntro;
+
+  /// Primary CTA button on the verification screen
+  ///
+  /// In es, this message translates to:
+  /// **'Tomar selfie de verificación'**
+  String get verifyTakeSelfie;
+
+  /// Message shown when verification has been submitted but is still pending review
+  ///
+  /// In es, this message translates to:
+  /// **'Tu verificación está en revisión. Te avisaremos cuando esté lista.'**
+  String get verifyPending;
+
+  /// Message shown when the user's profile has been verified (blue-check granted)
+  ///
+  /// In es, this message translates to:
+  /// **'¡Perfil verificado!'**
+  String get verifyVerified;
+
+  /// Snackbar error message when the verification upload or submit fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al enviar la verificación. Inténtalo de nuevo.'**
+  String get verifySubmitError;
+
+  /// Drawer menu item label for the profile verification screen
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar perfil'**
+  String get verifyProfileMenuItem;
 }
 
 class _AppLocalizationsDelegate

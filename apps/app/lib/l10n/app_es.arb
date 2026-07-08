@@ -1452,5 +1452,26 @@
   "galleryMaxReached": "Límite de 6 fotos alcanzado",
   "@galleryMaxReached": { "description": "Gallery editor: shown when photo limit (6) is reached" },
   "galleryPrimaryBadge": "Principal",
-  "@galleryPrimaryBadge": { "description": "Gallery editor: badge on the primary photo tile" }
+  "@galleryPrimaryBadge": { "description": "Gallery editor: badge on the primary photo tile" },
+
+  "verifyProfileTitle": "Verificar perfil",
+  "@verifyProfileTitle": { "description": "Verification screen title and drawer menu item" },
+
+  "verifyProfileIntro": "Verifica tu identidad tomándote una selfie. Nuestro equipo la revisará y añadirá un sello azul a tu perfil en 24-48 horas.",
+  "@verifyProfileIntro": { "description": "Verification screen explanation text shown before the user submits" },
+
+  "verifyTakeSelfie": "Tomar selfie de verificación",
+  "@verifyTakeSelfie": { "description": "Primary CTA button on the verification screen" },
+
+  "verifyPending": "Tu verificación está en revisión. Te avisaremos cuando esté lista.",
+  "@verifyPending": { "description": "Message shown when verification has been submitted but is still pending review" },
+
+  "verifyVerified": "¡Perfil verificado!",
+  "@verifyVerified": { "description": "Message shown when the user's profile has been verified (blue-check granted)" },
+
+  "verifySubmitError": "Error al enviar la verificación. Inténtalo de nuevo.",
+  "@verifySubmitError": { "description": "Snackbar error message when the verification upload or submit fails" },
+
+  "verifyProfileMenuItem": "Verificar perfil",
+  "@verifyProfileMenuItem": { "description": "Drawer menu item label for the profile verification screen" }
 }

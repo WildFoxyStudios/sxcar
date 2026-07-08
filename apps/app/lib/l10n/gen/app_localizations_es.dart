@@ -1797,4 +1797,28 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get galleryPrimaryBadge => 'Principal';
+
+  @override
+  String get verifyProfileTitle => 'Verificar perfil';
+
+  @override
+  String get verifyProfileIntro =>
+      'Verifica tu identidad tomándote una selfie. Nuestro equipo la revisará y añadirá un sello azul a tu perfil en 24-48 horas.';
+
+  @override
+  String get verifyTakeSelfie => 'Tomar selfie de verificación';
+
+  @override
+  String get verifyPending =>
+      'Tu verificación está en revisión. Te avisaremos cuando esté lista.';
+
+  @override
+  String get verifyVerified => '¡Perfil verificado!';
+
+  @override
+  String get verifySubmitError =>
+      'Error al enviar la verificación. Inténtalo de nuevo.';
+
+  @override
+  String get verifyProfileMenuItem => 'Verificar perfil';
 }

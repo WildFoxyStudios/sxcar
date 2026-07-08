@@ -155,8 +155,8 @@ async fn complete_required_card_updates_state() {
     let app = common::spawn_app().await;
     let token = common::register_user(&app, "carol@onb.test", "Pass123!aaa").await;
 
-    // Complete display_name card (serde tag requires "card_id" in body).
-    let body = json!({ "card_id": "display_name", "display_name": "Carol Updated" });
+    // Body mirrors the Flutter card exactly: no "card_id" field (card is in the path).
+    let body = json!({ "display_name": "Carol Updated" });
     let req = axum::http::Request::builder()
         .method("POST")
         .uri("/me/onboarding/cards/display_name/complete")
@@ -273,11 +273,12 @@ async fn completing_all_required_triggers_onboarding_completed_at() {
         .bind(false)
         .execute(&app.pool).await.unwrap();
 
-    // Complete display_name, age (dob already set by register), gender_position.
+    // Bodies mirror EXACTLY what the Flutter cards send: the card is identified
+    // by the URL path only, so NO `card_id` field appears in the body.
     for (path, body) in [
-        ("/me/onboarding/cards/display_name/complete", json!({"card_id": "display_name", "display_name": "Eve"})),
-        ("/me/onboarding/cards/age/complete",          json!({"card_id": "age", "dob": "1995-06-15"})),
-        ("/me/onboarding/cards/gender_position/complete", json!({"card_id": "gender_position", "gender": "male", "position": "top"})),
+        ("/me/onboarding/cards/display_name/complete", json!({"display_name": "Eve"})),
+        ("/me/onboarding/cards/age/complete",          json!({"age": 30})),
+        ("/me/onboarding/cards/gender_position/complete", json!({"gender": "male", "position": "top"})),
     ] {
         let req = axum::http::Request::builder()
             .method("POST")

@@ -253,27 +253,38 @@ async fn try_complete_onboarding(pool: &sqlx::PgPool, user_id: uuid::Uuid) -> Re
 // Card-specific bodies
 // ---------------------------------------------------------------------------
 
+// Each card is identified by the `:card_id` URL path param, so the JSON body
+// carries only that card's fields — no `card_id` discriminator. Each branch
+// deserializes `raw` into its own struct. Field names match exactly what the
+// Flutter cards send.
 #[derive(Deserialize)]
-#[serde(tag = "card_id", rename_all = "snake_case")]
-#[allow(dead_code)]
-pub enum CompleteBody {
-    ProfilePhoto { r2_key: String, is_nsfw: bool },
-    DisplayName { display_name: String },
-    Age { dob: String }, // parsed manually to time::Date
-    GenderPosition { gender: String, position: String },
-    LookingFor { looking_for: Vec<String> },
-    Tribes { tribes: Vec<String> },
-    Vaccines { vaccines: Vec<String> },
-    Practices { practices: Vec<String> },
-    AboutMe { about_me: String },
-    Height { height_cm: i32 },
-    Weight { weight_kg: i32 },
-    RelationshipStatus { status: String },
-    PositionPreference { position: String },
-    Ethnicity { ethnicity: String },
-    #[serde(other)]
-    Unknown,
-}
+struct ProfilePhotoBody { r2_key: String, #[serde(default)] is_nsfw: bool }
+#[derive(Deserialize)]
+struct DisplayNameBody { display_name: String }
+#[derive(Deserialize)]
+struct AgeBody { age: i32 }
+#[derive(Deserialize)]
+struct GenderPositionBody { gender: String, position: String }
+#[derive(Deserialize)]
+struct LookingForBody { looking_for: Vec<String> }
+#[derive(Deserialize)]
+struct TribesBody { tribes: Vec<String> }
+#[derive(Deserialize)]
+struct VaccinesBody { vaccines: Vec<String> }
+#[derive(Deserialize)]
+struct PracticesBody { practices: Vec<String> }
+#[derive(Deserialize)]
+struct AboutMeBody { bio: String }
+#[derive(Deserialize)]
+struct HeightBody { height_cm: i32 }
+#[derive(Deserialize)]
+struct WeightBody { weight_kg: i32 }
+#[derive(Deserialize)]
+struct RelationshipStatusBody { relationship_status: String }
+#[derive(Deserialize)]
+struct PositionPreferenceBody { position: String }
+#[derive(Deserialize)]
+struct EthnicityBody { ethnicity: String }
 
 // ---------------------------------------------------------------------------
 // POST /me/onboarding/cards/:card_id/complete
@@ -287,11 +298,8 @@ pub async fn complete_card(
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     let result = match card_id.as_str() {
         "profile_photo" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let ProfilePhotoBody { r2_key, is_nsfw } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::ProfilePhoto { r2_key, is_nsfw } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             let blur_key = format!("{}.blur.jpg", r2_key);
             sqlx::query_scalar::<_, uuid::Uuid>(
                 "INSERT INTO photos (user_id, r2_key, blur_key, is_nsfw) VALUES ($1, $2, $3, $4) RETURNING id",
@@ -302,11 +310,8 @@ pub async fn complete_card(
             Ok(())
         }
         "display_name" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let DisplayNameBody { display_name } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::DisplayName { display_name } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             if display_name.trim().is_empty() { return Err(StatusCode::BAD_REQUEST); }
             sqlx::query(
                 "INSERT INTO profiles (user_id, display_name) VALUES ($1, $2)
@@ -318,32 +323,26 @@ pub async fn complete_card(
             Ok(())
         }
         "age" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let AgeBody { age } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::Age { dob } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
-            // Parse the date string; time::Date expects YYYY-MM-DD.
-            let date_fmt = time::format_description::parse("[year]-[month]-[day]")
-                .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let parsed_dob = time::Date::parse(&dob, &date_fmt)
-                .map_err(|_| StatusCode::BAD_REQUEST)?;
-            // Age-gate: must be 18+.
+            // Age-gate: must be 18–120.
+            if !(18..=120).contains(&age) { return Err(StatusCode::UNPROCESSABLE_ENTITY); }
+            // Store an approximate DOB derived from the age (only the year matters
+            // for age-gating). Fall back to the 28th if today is Feb 29.
             let today = time::OffsetDateTime::now_utc().date();
-            let age_years = (today - parsed_dob).whole_days() / 365;
-            if age_years < 18 { return Err(StatusCode::UNPROCESSABLE_ENTITY); }
+            let birth_year = today.year() - age;
+            let dob = time::Date::from_calendar_date(birth_year, today.month(), today.day())
+                .or_else(|_| time::Date::from_calendar_date(birth_year, today.month(), 28))
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             sqlx::query("UPDATE users SET dob = $1 WHERE id = $2")
-                .bind(parsed_dob).bind(user_id)
+                .bind(dob).bind(user_id)
                 .execute(&state.pool).await
                 .map_err(|e| { tracing::error!("update dob: {e}"); StatusCode::INTERNAL_SERVER_ERROR })?;
             Ok(())
         }
         "gender_position" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let GenderPositionBody { gender, position } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::GenderPosition { gender, position } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             sqlx::query(
                 "INSERT INTO profiles (user_id, gender_identity, position) VALUES ($1, $2, $3)
                  ON CONFLICT (user_id) DO UPDATE SET gender_identity = EXCLUDED.gender_identity, position = EXCLUDED.position",
@@ -354,11 +353,8 @@ pub async fn complete_card(
             Ok(())
         }
         "looking_for" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let LookingForBody { looking_for } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::LookingFor { looking_for } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             if looking_for.is_empty() { return Err(StatusCode::BAD_REQUEST); }
             // Replace all entries in a transaction so a mid-way failure
             // rolls back the DELETE.
@@ -379,11 +375,8 @@ pub async fn complete_card(
             Ok(())
         }
         "tribes" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let TribesBody { tribes } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::Tribes { tribes } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             if tribes.is_empty() { return Err(StatusCode::BAD_REQUEST); }
             // Replace all entries in a transaction so a mid-way failure
             // rolls back the DELETE.
@@ -404,11 +397,8 @@ pub async fn complete_card(
             Ok(())
         }
         "vaccines" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let VaccinesBody { vaccines } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::Vaccines { vaccines } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             let val = serde_json::to_value(&vaccines).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             sqlx::query(
                 "INSERT INTO profiles (user_id, details) VALUES ($1, jsonb_set('{}'::jsonb, '{vaccines}', $2::jsonb))
@@ -420,11 +410,8 @@ pub async fn complete_card(
             Ok(())
         }
         "practices" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let PracticesBody { practices } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::Practices { practices } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             let val = serde_json::to_value(&practices).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             sqlx::query(
                 "INSERT INTO profiles (user_id, details) VALUES ($1, jsonb_set('{}'::jsonb, '{practices}', $2::jsonb))
@@ -436,26 +423,20 @@ pub async fn complete_card(
             Ok(())
         }
         "about_me" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let AboutMeBody { bio } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::AboutMe { about_me } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             sqlx::query(
                 "INSERT INTO profiles (user_id, about) VALUES ($1, $2)
                  ON CONFLICT (user_id) DO UPDATE SET about = EXCLUDED.about",
             )
-            .bind(user_id).bind(&about_me)
+            .bind(user_id).bind(&bio)
             .execute(&state.pool).await
             .map_err(|e| { tracing::error!("update about_me: {e}"); StatusCode::INTERNAL_SERVER_ERROR })?;
             Ok(())
         }
         "height" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let HeightBody { height_cm } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::Height { height_cm } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             if !(50..=272).contains(&height_cm) { return Err(StatusCode::BAD_REQUEST); }
             sqlx::query(
                 "INSERT INTO profiles (user_id, height_cm) VALUES ($1, $2)
@@ -467,11 +448,8 @@ pub async fn complete_card(
             Ok(())
         }
         "weight" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let WeightBody { weight_kg } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::Weight { weight_kg } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             if !(20..=500).contains(&weight_kg) { return Err(StatusCode::BAD_REQUEST); }
             sqlx::query(
                 "INSERT INTO profiles (user_id, weight_kg) VALUES ($1, $2)
@@ -483,26 +461,20 @@ pub async fn complete_card(
             Ok(())
         }
         "relationship_status" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let RelationshipStatusBody { relationship_status } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::RelationshipStatus { status } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             sqlx::query(
                 "INSERT INTO profiles (user_id, relationship_status) VALUES ($1, $2)
                  ON CONFLICT (user_id) DO UPDATE SET relationship_status = EXCLUDED.relationship_status",
             )
-            .bind(user_id).bind(&status)
+            .bind(user_id).bind(&relationship_status)
             .execute(&state.pool).await
             .map_err(|e| { tracing::error!("update relationship_status: {e}"); StatusCode::INTERNAL_SERVER_ERROR })?;
             Ok(())
         }
         "position_preference" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let PositionPreferenceBody { position } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::PositionPreference { position } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             let val = serde_json::json!(position);
             sqlx::query(
                 "INSERT INTO profiles (user_id, details) VALUES ($1, jsonb_set('{}'::jsonb, '{position_preference}', $2::jsonb))
@@ -514,11 +486,8 @@ pub async fn complete_card(
             Ok(())
         }
         "ethnicity" => {
-            let body: CompleteBody = serde_json::from_value(raw)
+            let EthnicityBody { ethnicity } = serde_json::from_value(raw)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
-            let CompleteBody::Ethnicity { ethnicity } = body else {
-                return Err(StatusCode::BAD_REQUEST);
-            };
             sqlx::query(
                 "INSERT INTO profiles (user_id, ethnicity) VALUES ($1, $2)
                  ON CONFLICT (user_id) DO UPDATE SET ethnicity = EXCLUDED.ethnicity",

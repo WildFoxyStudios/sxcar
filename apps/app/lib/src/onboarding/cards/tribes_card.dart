@@ -82,9 +82,9 @@ class _TribesCardState extends State<TribesCard> {
       });
       widget.onComplete(true);
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = e.toString());
     } finally {
-      setState(() => _busy = false);
+      if (mounted) setState(() => _busy = false);
     }
   }
 }

@@ -184,17 +184,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final userJson = response.data!['user'] as Map<String, dynamic>;
       final profile = UserProfile.fromJson(userJson);
 
+      if (!mounted) return;
       setState(() {
         _profile = profile;
         _isLoading = false;
       });
     } on DioException catch (e) {
+      if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
       setState(() {
         _isLoading = false;
         _error = l10n.profile_load_error('${e.response?.statusCode ?? e.message}');
       });
     } catch (e) {
+      if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
       setState(() {
         _isLoading = false;

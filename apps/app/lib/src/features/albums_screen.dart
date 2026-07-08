@@ -74,16 +74,19 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
           .map((a) => Album.fromJson(a as Map<String, dynamic>))
           .toList();
 
+      if (!mounted) return;
       setState(() {
         _albums = albums;
         _isLoading = false;
       });
     } on DioException catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _error = 'Failed to load albums: ${e.response?.statusCode ?? e.message}';
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _error = 'Failed to load albums: $e';

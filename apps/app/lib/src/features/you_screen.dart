@@ -40,16 +40,19 @@ class _YouScreenState extends ConsumerState<YouScreen> {
       final userJson = response.data!['user'] as Map<String, dynamic>;
       final profile = UserProfile.fromJson(userJson);
 
+      if (!mounted) return;
       setState(() {
         _profile = profile;
         _isLoading = false;
       });
     } on DioException catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorDetail = '${e.response?.statusCode ?? e.message}';
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorDetail = '$e';

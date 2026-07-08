@@ -35,9 +35,9 @@ class _DisplayNameCardState extends State<DisplayNameCard> {
           .completeCard('display_name', {'display_name': _ctrl.text});
       widget.onComplete(true);
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = e.toString());
     } finally {
-      setState(() => _busy = false);
+      if (mounted) setState(() => _busy = false);
     }
   }
 

@@ -91,9 +91,9 @@ class _WeightCardState extends State<WeightCard> {
           .completeCard('weight', {'weight_kg': _weightKg});
       widget.onComplete(true);
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = e.toString());
     } finally {
-      setState(() => _busy = false);
+      if (mounted) setState(() => _busy = false);
     }
   }
 }

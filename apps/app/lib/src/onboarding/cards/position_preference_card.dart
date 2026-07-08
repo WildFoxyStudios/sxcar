@@ -72,9 +72,9 @@ class _PositionPreferenceCardState extends State<PositionPreferenceCard> {
       });
       widget.onComplete(true);
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = e.toString());
     } finally {
-      setState(() => _busy = false);
+      if (mounted) setState(() => _busy = false);
     }
   }
 }

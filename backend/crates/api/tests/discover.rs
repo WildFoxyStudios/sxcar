@@ -178,8 +178,8 @@ async fn discover_returns_sorted_users_with_photos() {
 
     // ---------- Insert a primary photo for user B (required by discover) ----------
     sqlx::query!(
-        "INSERT INTO photos (user_id, is_primary, key, url)
-         VALUES ($1, true, 'test-key-b', 'https://example.com/b.jpg')",
+        "INSERT INTO photos (user_id, is_primary, r2_key, blur_key)
+         VALUES ($1, true, 'profile/test-b/photo.jpg', 'profile/test-b/photo.blur.jpg')",
         user_id_b,
     )
     .execute(&pool)

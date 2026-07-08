@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO profiles (user_id, display_name, about, body_type, birthdate)\n           VALUES ($1, $2, $3, $4, $5)\n           ON CONFLICT (user_id) DO UPDATE SET\n             display_name = $2, about = $3, body_type = $4, birthdate = $5",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "062bc355d28ed3abde6b5af9ef1c62149e365be0a555df2a4179cdbd27408f60"
+}

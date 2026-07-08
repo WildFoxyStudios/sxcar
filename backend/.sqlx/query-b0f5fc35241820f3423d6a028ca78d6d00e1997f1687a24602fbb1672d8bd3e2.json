@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO locations (user_id, geog) VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography)\n         ON CONFLICT (user_id) DO UPDATE SET geog = EXCLUDED.geog",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Float8",
+        "Float8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b0f5fc35241820f3423d6a028ca78d6d00e1997f1687a24602fbb1672d8bd3e2"
+}

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM screenshot_alerts WHERE user_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7bbf52067487fc3380a9f8b0a69b6a3b785fe76d6bbbc94e05ef6d5d542f6cdb"
+}

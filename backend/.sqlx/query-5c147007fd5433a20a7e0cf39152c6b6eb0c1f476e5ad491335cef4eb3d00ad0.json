@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM taps WHERE to_user = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5c147007fd5433a20a7e0cf39152c6b6eb0c1f476e5ad491335cef4eb3d00ad0"
+}

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO photos (user_id, is_primary, r2_key, blur_key)\n         VALUES ($1, true, 'profile/test-b/photo.jpg', 'profile/test-b/photo.blur.jpg')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "692e723d7be68abfb34ed8af982285db84495a6e0d0c6749bd1f360fedf20a1d"
+}

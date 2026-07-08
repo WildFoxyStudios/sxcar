@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT hiv_status, last_tested_on, prep\n           FROM profiles WHERE user_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "hiv_status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "last_tested_on",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 2,
+        "name": "prep",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "8ea7987f646f2697a2483c1acc1213bdb4404dd4b55f64538f84a26ff4a6fc27"
+}

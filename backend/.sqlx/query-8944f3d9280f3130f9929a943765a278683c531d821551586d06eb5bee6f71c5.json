@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO right_now_intents (user_id, body, expires_at)\n           VALUES ($1, $2, now() - interval '1 hour')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8944f3d9280f3130f9929a943765a278683c531d821551586d06eb5bee6f71c5"
+}

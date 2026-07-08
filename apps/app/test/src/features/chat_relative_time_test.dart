@@ -19,11 +19,15 @@ void main() {
     });
 
     test('same day returns HH:mm format', () {
-      final now = DateTime.now();
-      // 08:30 today is always in the past relative to `now`
-      final dt = DateTime(now.year, now.month, now.day, 8, 30);
+      // Inject a fixed clock so "08:30 same day" is deterministically in the
+      // past regardless of the wall-clock time the test runs at.
+      final clock = DateTime(2026, 6, 15, 18, 0);
+      final dt = DateTime(2026, 6, 15, 8, 30);
       final iso = dt.toIso8601String();
-      expect(ChatListScreen.relativeTime(iso, l10n), '08:30');
+      expect(
+        ChatListScreen.relativeTime(iso, l10n, clockNow: clock),
+        '08:30',
+      );
     });
 
     test('yesterday returns "Yesterday"', () {

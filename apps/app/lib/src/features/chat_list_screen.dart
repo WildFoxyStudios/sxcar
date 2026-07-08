@@ -33,10 +33,11 @@ class ChatListScreen extends ConsumerStatefulWidget {
   ///   - yesterday → l10n.yesterday
   ///   - < 7 days → l10n.daysAgo(days)
   ///   - older → dd/MM/yyyy
-  static String relativeTime(String iso, AppLocalizations l10n) {
+  static String relativeTime(String iso, AppLocalizations l10n,
+      {DateTime? clockNow}) {
     try {
       final dt = DateTime.parse(iso).toLocal();
-      final now = DateTime.now();
+      final now = clockNow ?? DateTime.now();
       final diff = now.difference(dt);
 
       if (diff.inMinutes < 1) {

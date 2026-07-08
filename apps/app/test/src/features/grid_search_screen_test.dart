@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/features/grid_search_screen.dart';
+import 'package:app/src/premium/premium_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -156,6 +157,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Roam is gated behind Travel Pass; grant it so the roam sheet
+            // opens instead of the premium upsell.
+            premiumStatusProvider.overrideWith(
+              (ref) => const PremiumStatus(
+                tier: 'unlimited',
+                features: PremiumFeatures(travelPass: true),
+              ),
+            ),
           ],
           child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -174,6 +183,12 @@ void main() {
     });
 
     testWidgets('opens roam bottom sheet on icon tap', (tester) async {
+      // Tall phone-sized surface so the roam bottom sheet fits without the
+      // default 600px test window reporting a (device-invisible) overflow.
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       final dio = Dio()..httpClientAdapter = _MockExploreAdapter();
 
       await tester.pumpWidget(
@@ -181,6 +196,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Roam is gated behind Travel Pass; grant it so the roam sheet
+            // opens instead of the premium upsell.
+            premiumStatusProvider.overrideWith(
+              (ref) => const PremiumStatus(
+                tier: 'unlimited',
+                features: PremiumFeatures(travelPass: true),
+              ),
+            ),
           ],
           child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -204,6 +227,12 @@ void main() {
     });
 
     testWidgets('lists saved places in roam sheet', (tester) async {
+      // Tall phone-sized surface so the roam bottom sheet fits without the
+      // default 600px test window reporting a (device-invisible) overflow.
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       final dio = Dio()
         ..httpClientAdapter = _MockExploreAdapter(places: [
           {'id': 'place-1', 'name': 'Coffee Shop', 'lat': 19.4, 'lon': -99.1},
@@ -214,6 +243,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Roam is gated behind Travel Pass; grant it so the roam sheet
+            // opens instead of the premium upsell.
+            premiumStatusProvider.overrideWith(
+              (ref) => const PremiumStatus(
+                tier: 'unlimited',
+                features: PremiumFeatures(travelPass: true),
+              ),
+            ),
           ],
           child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -249,6 +286,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Roam is gated behind Travel Pass; grant it so the roam sheet
+            // opens instead of the premium upsell.
+            premiumStatusProvider.overrideWith(
+              (ref) => const PremiumStatus(
+                tier: 'unlimited',
+                features: PremiumFeatures(travelPass: true),
+              ),
+            ),
           ],
           child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -282,6 +327,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Roam is gated behind Travel Pass; grant it so the roam sheet
+            // opens instead of the premium upsell.
+            premiumStatusProvider.overrideWith(
+              (ref) => const PremiumStatus(
+                tier: 'unlimited',
+                features: PremiumFeatures(travelPass: true),
+              ),
+            ),
           ],
           child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -315,6 +368,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Roam is gated behind Travel Pass; grant it so the roam sheet
+            // opens instead of the premium upsell.
+            premiumStatusProvider.overrideWith(
+              (ref) => const PremiumStatus(
+                tier: 'unlimited',
+                features: PremiumFeatures(travelPass: true),
+              ),
+            ),
           ],
           child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -339,6 +400,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Roam is gated behind Travel Pass; grant it so the roam sheet
+            // opens instead of the premium upsell.
+            premiumStatusProvider.overrideWith(
+              (ref) => const PremiumStatus(
+                tier: 'unlimited',
+                features: PremiumFeatures(travelPass: true),
+              ),
+            ),
           ],
           child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -367,6 +436,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Roam is gated behind Travel Pass; grant it so the roam sheet
+            // opens instead of the premium upsell.
+            premiumStatusProvider.overrideWith(
+              (ref) => const PremiumStatus(
+                tier: 'unlimited',
+                features: PremiumFeatures(travelPass: true),
+              ),
+            ),
           ],
           child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -402,6 +479,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Roam is gated behind Travel Pass; grant it so the roam sheet
+            // opens instead of the premium upsell.
+            premiumStatusProvider.overrideWith(
+              (ref) => const PremiumStatus(
+                tier: 'unlimited',
+                features: PremiumFeatures(travelPass: true),
+              ),
+            ),
           ],
           child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,

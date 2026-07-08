@@ -154,12 +154,14 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      // Scroll down to see menu items.
-      final listFinder = find.byType(ListView).first;
-      await tester.drag(listFinder, const Offset(0, -500));
-      await tester.pumpAndSettle();
-
-      // At least one menu item should be visible after scrolling.
+      // Scroll until the Settings menu item is visible. The drawer is a
+      // scrollable ListView and the exact offset depends on how many menu
+      // items exist, so scroll until found rather than a fixed drag.
+      await tester.scrollUntilVisible(
+        find.byIcon(Icons.settings_outlined),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
     });
 
@@ -178,6 +180,13 @@ void main() {
     });
 
     testWidgets('tapping Incógnito segment changes mode', (tester) async {
+      // Tall phone-sized surface: the drawer is a scrollable ListView whose
+      // content exceeds the default 600px test window and would otherwise
+      // report a (benign, device-invisible) overflow.
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       final dio = Dio()..httpClientAdapter = _MockProfileAdapter();
 
       await tester.pumpWidget(_buildDrawer(dio));

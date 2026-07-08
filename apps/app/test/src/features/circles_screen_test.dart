@@ -117,8 +117,8 @@ void main() {
 
       expect(find.text('Amigos'), findsOneWidget);
       expect(find.text('Work'), findsOneWidget);
-      expect(find.text('5 members'), findsOneWidget);
-      expect(find.text('3 members'), findsOneWidget);
+      expect(find.text('5 miembros'), findsOneWidget);
+      expect(find.text('3 miembros'), findsOneWidget);
     });
 
     testWidgets('shows error state on 500 response', (tester) async {

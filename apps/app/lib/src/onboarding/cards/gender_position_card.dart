@@ -42,22 +42,30 @@ class _GenderPositionCardState extends State<GenderPositionCard> {
           Text(l10n.onboarding_card_gender_position_label,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
-          ...kGenderOptions.map((g) => RadioListTile<String>(
-                title: Text(g),
-                value: g,
-                groupValue: _selectedGender,
-                onChanged: (v) => setState(() => _selectedGender = v),
-              )),
+          RadioGroup<String>(
+            groupValue: _selectedGender,
+            onChanged: (v) => setState(() => _selectedGender = v),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: kGenderOptions
+                  .map((g) => RadioListTile<String>(title: Text(g), value: g))
+                  .toList(),
+            ),
+          ),
           const Divider(height: 24),
           Text(l10n.onboarding_card_position_preference_label,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
-          ...kPositionOptions.map((p) => RadioListTile<String>(
-                title: Text(p),
-                value: p,
-                groupValue: _selectedPosition,
-                onChanged: (v) => setState(() => _selectedPosition = v),
-              )),
+          RadioGroup<String>(
+            groupValue: _selectedPosition,
+            onChanged: (v) => setState(() => _selectedPosition = v),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: kPositionOptions
+                  .map((p) => RadioListTile<String>(title: Text(p), value: p))
+                  .toList(),
+            ),
+          ),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),

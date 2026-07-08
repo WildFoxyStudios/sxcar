@@ -37,24 +37,26 @@ class _EthnicityCardState extends State<EthnicityCard> {
       primaryEnabled: !_busy && _selected != null,
       onPrimary: _submit,
       onSkip: widget.onSkip,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ...kEthnicityOptions.map((o) => RadioListTile<String>(
-                title: Text(o),
-                value: o,
-                groupValue: _selected,
-                onChanged: (v) => setState(() => _selected = v),
-              )),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+      child: RadioGroup<String>(
+        groupValue: _selected,
+        onChanged: (v) => setState(() => _selected = v),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ...kEthnicityOptions.map((o) => RadioListTile<String>(
+                  title: Text(o),
+                  value: o,
+                )),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -29,6 +29,8 @@ pub struct NearbyUserRow {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[sqlx(default)]
     pub profile_photo_url: Option<String>,
+    #[sqlx(default)]
+    pub verified: bool,
 }
 
 /// Busca usuarios activos cerca de una ubicación, ordenados por distancia,
@@ -73,6 +75,7 @@ pub async fn find_nearby_users(
     let rows = sqlx::query_as::<_, NearbyUserRow>(
         r#"
         SELECT u.id, u.email::text AS email,
+               u.verified,
                p.display_name,
                p.about AS bio,
                (SELECT id FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1) AS profile_photo_id,

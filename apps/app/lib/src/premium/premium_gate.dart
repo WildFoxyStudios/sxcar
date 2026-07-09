@@ -103,7 +103,7 @@ class PremiumStatusBadge extends ConsumerWidget {
 
     final (String label, Color color) = switch (status.tier) {
       'xtra' => (l10n.premiumTierXtra, VibraTheme.kYellow),
-      'unlimited' => (l10n.premiumTierUnlimited, const Color(0xFF00E5FF)),
+      'unlimited' => (l10n.premiumTierUnlimited, VibraTheme.kTierTop),
       _ => (l10n.premiumTierFree, VibraTheme.kTextSecondary),
     };
 
@@ -256,7 +256,7 @@ class _PremiumComparisonSheet extends StatelessWidget {
           const SizedBox(height: 12),
           _TierRow(
             tierName: l10n.premiumTierUnlimited,
-            tierColor: const Color(0xFF00E5FF),
+            tierColor: VibraTheme.kTierTop,
             features: [
               _FeatureRow(l10n.premiumFeatureUnlimitedGrid, true),
               _FeatureRow(l10n.premiumFeatureUnlimitedTribes, true),

@@ -21,7 +21,7 @@ final nearbyEventsProvider = FutureProvider<List<Event>>((ref) async {
 });
 
 /// Header image color for event cards.
-const Color _kEventAccent = Color(0xFF6C63FF);
+const Color _kEventAccent = VibraTheme.kEventAccent;
 
 // ---------------------------------------------------------------------------
 // EventsScreen — list of nearby events

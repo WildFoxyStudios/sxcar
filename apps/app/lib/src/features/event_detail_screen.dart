@@ -13,7 +13,7 @@ final eventDetailProvider = FutureProvider.family<Event, String>((ref, id) {
 });
 
 /// Accent color matching the events list.
-const Color _kEventAccent = Color(0xFF6C63FF);
+const Color _kEventAccent = VibraTheme.kEventAccent;
 
 /// Event detail screen shown after tapping an event card.
 class EventDetailScreen extends ConsumerWidget {

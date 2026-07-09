@@ -32,6 +32,15 @@ class VibraTheme {
   /// Alias: kAccent == kYellow (keeps existing references compiling).
   static const Color kAccent = kYellow;
 
+  /// Accent used for the Events feature surfaces.
+  static const Color kEventAccent = Color(0xFF6C63FF);
+
+  /// Accent used for the top premium tier badge/border.
+  static const Color kTierTop = Color(0xFF00E5FF);
+
+  /// Muted gold used for secondary highlight icons (e.g. active session).
+  static const Color kGold = Color(0xFFF4C542);
+
   /// Primary text — white.
   static const Color kText = Color(0xFFFFFFFF);
 

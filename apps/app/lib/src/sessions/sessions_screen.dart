@@ -1,3 +1,4 @@
+import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'sessions_service.dart';
@@ -42,7 +43,7 @@ class SessionsScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final s = list[index];
                 return ListTile(
-                  leading: const Icon(Icons.devices, color: Color(0xFFF4C542)),
+                  leading: const Icon(Icons.devices, color: VibraTheme.kGold),
                   title: Text(
                     s.deviceId != null ? 'Device ${s.deviceId}' : 'Unknown device',
                   ),

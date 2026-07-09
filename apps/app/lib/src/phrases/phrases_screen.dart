@@ -1,3 +1,4 @@
+import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'phrases_service.dart';
@@ -39,7 +40,7 @@ class PhrasesScreen extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: VibraTheme.kSurface,
         title: const Text('Add Phrase'),
         content: Form(
           key: formKey,
@@ -109,7 +110,7 @@ class _PhrasesList extends ConsumerWidget {
       itemCount: phrases.length,
       separatorBuilder: (_, _) => const Divider(
         height: 1,
-        color: Color(0xFF2A2A2A),
+        color: VibraTheme.kChip,
         indent: 16,
         endIndent: 16,
       ),

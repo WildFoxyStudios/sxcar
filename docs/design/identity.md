@@ -1,7 +1,11 @@
-# Halo — brand & design system
+# Vibra — brand & design system
 
-Original visual identity for the app. **Not derived from any third-party app.**
+**Product name: Vibra.** Visual identity: **Halo** (electric duotone).
+Original — **not derived from any third-party app.**
 Source of truth = this document + the tokens in `apps/app/lib/src/theme/app_theme.dart`.
+
+The app launcher name (Android `android:label`, iOS `CFBundleDisplayName`) and
+the `MaterialApp` title are all "Vibra".
 
 ## Positioning
 Electric duotone for a queer, location-based social/dating app. Energetic and
@@ -45,6 +49,6 @@ secondary; `kText` over all surfaces.
 Page padding `kPadPage` 16.
 
 ## Still to do (product decisions)
-- Final product **name** + logo/wordmark (codename today: "Vibra"/Halo palette).
-- App icon + discreet-icon variants in the new palette.
+- **Logo / wordmark** for "Vibra" (name is decided).
+- App icon + discreet-icon variants in the Halo palette.
 - Marketing site palette alignment.

@@ -81,7 +81,7 @@ class RightNowScreen extends ConsumerWidget {
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       hintText: l10n.right_now_hint,
-                      hintStyle: const TextStyle(color: Colors.grey),
+                      hintStyle: const TextStyle(color: VibraTheme.kTextSecondary),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -89,7 +89,7 @@ class RightNowScreen extends ConsumerWidget {
                     children: [
                       Text(
                         l10n.right_now_expires_label,
-                        style: const TextStyle(color: Colors.grey),
+                        style: const TextStyle(color: VibraTheme.kTextSecondary),
                       ),
                       const SizedBox(width: 12),
                       DropdownButton<int>(

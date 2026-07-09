@@ -1330,7 +1330,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
               const SizedBox(height: 8),
               Text(
                 l10n.roamSubtitle,
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                style: TextStyle(color: VibraTheme.kTextSecondary, fontSize: 13),
               ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
@@ -1360,7 +1360,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                       child: Text(
                         l10n.roamNoSavedPlaces,
                         style: TextStyle(
-                          color: Colors.grey.shade400,
+                          color: VibraTheme.kTextSecondary,
                           fontSize: 13,
                         ),
                         textAlign: TextAlign.center,
@@ -1379,7 +1379,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                             subtitle: Text(
                               '${p.lat.toStringAsFixed(4)}, ${p.lon.toStringAsFixed(4)}',
                               style: const TextStyle(
-                                color: Colors.grey,
+                                color: VibraTheme.kTextSecondary,
                                 fontSize: 12,
                               ),
                             ),

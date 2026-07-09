@@ -147,7 +147,7 @@ class _DetailContent extends ConsumerWidget {
             Text(
               l10n.events_form_description,
               style: const TextStyle(
-                color: Colors.grey,
+                color: VibraTheme.kTextSecondary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -170,7 +170,7 @@ class _DetailContent extends ConsumerWidget {
                     label: l10n.events_going,
                     icon: Icons.check_circle_outline,
                     isActive: event.myStatus == 'going',
-                    color: Colors.green,
+                    color: VibraTheme.kSuccess,
                     onPressed: () => _attend(context, ref, 'going'),
                   ),
                 ),
@@ -196,7 +196,7 @@ class _DetailContent extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: event.myStatus == 'going'
-                      ? Colors.green.withValues(alpha: 0.2)
+                      ? VibraTheme.kSuccess.withValues(alpha: 0.2)
                       : Colors.orange.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -205,7 +205,7 @@ class _DetailContent extends ConsumerWidget {
                       ? l10n.events_you_are_going
                       : l10n.events_you_are_maybe,
                   style: TextStyle(
-                    color: event.myStatus == 'going' ? Colors.green : Colors.orange,
+                    color: event.myStatus == 'going' ? VibraTheme.kSuccess : Colors.orange,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -277,7 +277,7 @@ class _DetailContent extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(l10n.events_cancel_no,
-                style: const TextStyle(color: Colors.grey)),
+                style: const TextStyle(color: VibraTheme.kTextSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -328,7 +328,7 @@ class _InfoRow extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           '$label: ',
-          style: const TextStyle(color: Colors.grey, fontSize: 14),
+          style: const TextStyle(color: VibraTheme.kTextSecondary, fontSize: 14),
         ),
         Text(
           value,
@@ -364,7 +364,7 @@ class _RsvpButton extends StatelessWidget {
         backgroundColor: isActive ? color.withValues(alpha: 0.3) : VibraTheme.kSurface,
         foregroundColor: isActive ? color : Colors.white70,
         side: BorderSide(
-          color: isActive ? color : Colors.grey.shade600,
+          color: isActive ? color : VibraTheme.kTextSecondary,
         ),
         padding: const EdgeInsets.symmetric(vertical: 12),
       ),

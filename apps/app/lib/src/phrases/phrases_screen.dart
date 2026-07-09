@@ -213,7 +213,7 @@ class _EmptyView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey.shade600),
+            Icon(Icons.chat_bubble_outline, size: 64, color: VibraTheme.kTextSecondary),
             const SizedBox(height: 16),
             Text(
               'No saved phrases',
@@ -224,7 +224,7 @@ class _EmptyView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Add a phrase to reuse it in your chats.',
-              style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+              style: TextStyle(color: VibraTheme.kTextSecondary, fontSize: 13),
               textAlign: TextAlign.center,
             ),
           ],

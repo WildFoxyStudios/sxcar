@@ -123,7 +123,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.deleteAccountSuccess),
-          backgroundColor: Colors.green,
+          backgroundColor: VibraTheme.kSuccess,
         ),
       );
 
@@ -259,7 +259,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
         Text(
           '@$emailPrefix',
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: Colors.grey,
+            color: VibraTheme.kTextSecondary,
             fontSize: 13,
           ),
           textAlign: TextAlign.center,
@@ -320,7 +320,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
           child: Text(
             l10n.you_settings_header,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: Colors.grey,
+              color: VibraTheme.kTextSecondary,
               letterSpacing: 1.2,
             ),
           ),
@@ -636,7 +636,7 @@ class _ViewedMeSection extends ConsumerWidget {
           child: Text(
             l10n.you_viewed_me,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: Colors.grey,
+              color: VibraTheme.kTextSecondary,
               letterSpacing: 1.2,
             ),
           ),
@@ -659,7 +659,7 @@ class _ViewedMeSection extends ConsumerWidget {
               child: Center(
                 child: Text(
                   l10n.you_viewers_error,
-                  style: TextStyle(color: Colors.grey.shade400),
+                  style: TextStyle(color: VibraTheme.kTextSecondary),
                 ),
               ),
             ),

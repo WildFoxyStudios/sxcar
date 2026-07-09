@@ -213,7 +213,7 @@ class _PremiumComparisonSheet extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: VibraTheme.kTextSecondary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -339,13 +339,13 @@ class _TierRow extends StatelessWidget {
                       f.available ? Icons.check : Icons.close,
                       size: 16,
                       color:
-                          f.available ? Colors.green[400] : Colors.grey[600],
+                          f.available ? VibraTheme.kSuccess : VibraTheme.kTextSecondary,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       f.label,
                       style: TextStyle(
-                        color: f.available ? Colors.white : Colors.grey[500],
+                        color: f.available ? Colors.white : VibraTheme.kTextSecondary,
                         fontSize: 13,
                       ),
                     ),

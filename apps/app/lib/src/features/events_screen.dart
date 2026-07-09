@@ -154,12 +154,12 @@ class _EventCard extends StatelessWidget {
               // Location
               Row(
                 children: [
-                  const Icon(Icons.location_on, color: Colors.grey, size: 16),
+                  const Icon(Icons.location_on, color: VibraTheme.kTextSecondary, size: 16),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       event.locationName,
-                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                      style: const TextStyle(color: VibraTheme.kTextSecondary, fontSize: 14),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -170,11 +170,11 @@ class _EventCard extends StatelessWidget {
               // Date/time
               Row(
                 children: [
-                  const Icon(Icons.access_time, color: Colors.grey, size: 16),
+                  const Icon(Icons.access_time, color: VibraTheme.kTextSecondary, size: 16),
                   const SizedBox(width: 4),
                   Text(
                     dateStr,
-                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                    style: const TextStyle(color: VibraTheme.kTextSecondary, fontSize: 14),
                   ),
                 ],
               ),
@@ -192,11 +192,11 @@ class _EventCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 16),
                   ],
-                  const Icon(Icons.people, color: Colors.grey, size: 16),
+                  const Icon(Icons.people, color: VibraTheme.kTextSecondary, size: 16),
                   const SizedBox(width: 4),
                   Text(
                     l10n.events_attendee_count(event.attendeeCount),
-                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    style: const TextStyle(color: VibraTheme.kTextSecondary, fontSize: 13),
                   ),
                   const Spacer(),
                   if (event.myStatus != null)
@@ -204,14 +204,14 @@ class _EventCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: event.myStatus == 'going'
-                            ? Colors.green.withValues(alpha: 0.2)
+                            ? VibraTheme.kSuccess.withValues(alpha: 0.2)
                             : Colors.orange.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         event.myStatus == 'going' ? l10n.events_going : l10n.events_maybe,
                         style: TextStyle(
-                          color: event.myStatus == 'going' ? Colors.green : Colors.orange,
+                          color: event.myStatus == 'going' ? VibraTheme.kSuccess : Colors.orange,
                           fontSize: 12,
                         ),
                       ),
@@ -250,7 +250,7 @@ class _EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.event, size: 64, color: Colors.grey.shade600),
+            Icon(Icons.event, size: 64, color: VibraTheme.kTextSecondary),
             const SizedBox(height: 16),
             Text(
               title,
@@ -260,7 +260,7 @@ class _EmptyView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: const TextStyle(color: Colors.grey, fontSize: 14),
+              style: const TextStyle(color: VibraTheme.kTextSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -448,9 +448,9 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: l10n.events_form_title,
-                  labelStyle: const TextStyle(color: Colors.grey),
+                  labelStyle: const TextStyle(color: VibraTheme.kTextSecondary),
                   hintText: l10n.events_form_title_hint,
-                  hintStyle: const TextStyle(color: Colors.grey),
+                  hintStyle: const TextStyle(color: VibraTheme.kTextSecondary),
                   border: const OutlineInputBorder(),
                 ),
               ),
@@ -461,7 +461,7 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: l10n.events_form_description,
-                  labelStyle: const TextStyle(color: Colors.grey),
+                  labelStyle: const TextStyle(color: VibraTheme.kTextSecondary),
                   border: const OutlineInputBorder(),
                 ),
               ),
@@ -471,9 +471,9 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: l10n.events_form_location,
-                  labelStyle: const TextStyle(color: Colors.grey),
+                  labelStyle: const TextStyle(color: VibraTheme.kTextSecondary),
                   hintText: l10n.events_form_location_hint,
-                  hintStyle: const TextStyle(color: Colors.grey),
+                  hintStyle: const TextStyle(color: VibraTheme.kTextSecondary),
                   border: const OutlineInputBorder(),
                 ),
               ),
@@ -487,9 +487,9 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         labelText: l10n.events_form_date,
-                        labelStyle: const TextStyle(color: Colors.grey),
+                        labelStyle: const TextStyle(color: VibraTheme.kTextSecondary),
                         suffixIcon: IconButton(
-                          icon: const Icon(Icons.calendar_today, color: Colors.grey),
+                          icon: const Icon(Icons.calendar_today, color: VibraTheme.kTextSecondary),
                           onPressed: _pickDate,
                         ),
                         border: const OutlineInputBorder(),
@@ -504,9 +504,9 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         labelText: l10n.events_form_time,
-                        labelStyle: const TextStyle(color: Colors.grey),
+                        labelStyle: const TextStyle(color: VibraTheme.kTextSecondary),
                         suffixIcon: IconButton(
-                          icon: const Icon(Icons.access_time, color: Colors.grey),
+                          icon: const Icon(Icons.access_time, color: VibraTheme.kTextSecondary),
                           onPressed: _pickTime,
                         ),
                         border: const OutlineInputBorder(),

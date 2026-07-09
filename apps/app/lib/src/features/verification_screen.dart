@@ -136,7 +136,7 @@ class _VerifiedPanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.verified, size: 80, color: Colors.green),
+            const Icon(Icons.verified, size: 80, color: VibraTheme.kSuccess),
             const SizedBox(height: 24),
             Text(
               l10n.verifyVerified,

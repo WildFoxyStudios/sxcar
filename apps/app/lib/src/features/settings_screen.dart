@@ -31,12 +31,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notifLoading = true;
   String? _notifError;
 
-  // Privacy toggle state (synced via ProfileEditProvider PUT /profile).
-  bool _showAlbumUpdates = true;
-  bool _showCarousel = true;
-  bool _markChatted = true;
-  bool _chatSync = true;
-  bool _keepUnlocked = false;
+  // Display/privacy toggles persist locally via SharedPreferences-backed
+  // providers (showAlbumUpdatesProvider et al. in settings_providers.dart).
 
   @override
   void initState() {
@@ -122,6 +118,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final units = ref.watch(unitsProvider);
     final discreetIcon = ref.watch(discreetIconProvider);
     final pinEnabled = ref.watch(pinEnabledProvider);
+    final showAlbumUpdates = ref.watch(showAlbumUpdatesProvider);
+    final showCarousel = ref.watch(showCarouselProvider);
+    final markChatted = ref.watch(markChattedProvider);
+    final chatSync = ref.watch(chatSyncProvider);
+    final keepUnlocked = ref.watch(keepScreenUnlockedProvider);
     final visitorStatus = ref.watch(visitorStatusProvider);
 
     return Scaffold(
@@ -158,17 +159,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // ── MULTIMEDIA ─────────────────────────────────────────────────
           _sectionHeader(l10n.multimedia, 'multimedia'),
-          // TODO(persist): no backend endpoint for these multimedia/display
-          // privacy toggles yet — they are local UI state only. Wire each
-          // onChanged to PUT /profile (or shared_preferences) once the
-          // backend supports these fields.
           SettingRow(
             icon: Icons.photo_album_outlined,
             title: l10n.mostrarActualizacionesAlbumes,
             trailing: Switch(
-              value: _showAlbumUpdates,
+              value: showAlbumUpdates,
               activeThumbColor: VibraTheme.kBrandPrimary,
-              onChanged: (v) => setState(() => _showAlbumUpdates = v),
+              onChanged: (v) =>
+                  ref.read(showAlbumUpdatesProvider.notifier).set(v),
             ),
           ),
           const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
@@ -176,9 +174,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: Icons.view_carousel_outlined,
             title: l10n.mostrarCarruselBandeja,
             trailing: Switch(
-              value: _showCarousel,
+              value: showCarousel,
               activeThumbColor: VibraTheme.kBrandPrimary,
-              onChanged: (v) => setState(() => _showCarousel = v),
+              onChanged: (v) => ref.read(showCarouselProvider.notifier).set(v),
             ),
           ),
 
@@ -188,9 +186,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: Icons.screen_lock_portrait_outlined,
             title: l10n.mantenerPantallaDesbloqueada,
             trailing: Switch(
-              value: _keepUnlocked,
+              value: keepUnlocked,
               activeThumbColor: VibraTheme.kBrandPrimary,
-              onChanged: (v) => setState(() => _keepUnlocked = v),
+              onChanged: (v) =>
+                  ref.read(keepScreenUnlockedProvider.notifier).set(v),
             ),
           ),
 
@@ -218,15 +217,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => context.push('/settings/blocks'),
           ),
           const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
-          // TODO(persist): _markChatted and _chatSync are local UI state only.
-          // Wire to PUT /profile once the backend exposes these fields.
           SettingRow(
             icon: Icons.chat_bubble_outline,
             title: l10n.marcarConQuienChateeado,
             trailing: Switch(
-              value: _markChatted,
+              value: markChatted,
               activeThumbColor: VibraTheme.kBrandPrimary,
-              onChanged: (v) => setState(() => _markChatted = v),
+              onChanged: (v) => ref.read(markChattedProvider.notifier).set(v),
             ),
           ),
           const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
@@ -234,9 +231,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: Icons.sync,
             title: l10n.sincronizacionMensajes,
             trailing: Switch(
-              value: _chatSync,
+              value: chatSync,
               activeThumbColor: VibraTheme.kBrandPrimary,
-              onChanged: (v) => setState(() => _chatSync = v),
+              onChanged: (v) => ref.read(chatSyncProvider.notifier).set(v),
             ),
           ),
           const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),

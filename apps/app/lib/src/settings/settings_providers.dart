@@ -164,3 +164,48 @@ class VisitorStatusNotifier extends Notifier<int> {
 
 final visitorStatusProvider =
     NotifierProvider<VisitorStatusNotifier, int>(VisitorStatusNotifier.new);
+
+// ────────────────────────────────────────────────────────────────────────────
+// Boolean display/privacy preference toggles (device-local, SharedPreferences).
+// Previously these lived as ephemeral local state in SettingsScreen and reset
+// on navigation; now each persists via its own key.
+// ────────────────────────────────────────────────────────────────────────────
+
+class _BoolPrefNotifier extends Notifier<bool> {
+  _BoolPrefNotifier(this._key, this._default);
+  final String _key;
+  final bool _default;
+
+  @override
+  bool build() {
+    _hydrate();
+    return _default;
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final v = prefs.getBool(_key) ?? _default;
+    if (state != v) state = v;
+  }
+
+  Future<void> set(bool v) async {
+    state = v;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_key, v);
+  }
+}
+
+final showAlbumUpdatesProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier('settings_show_album_updates', true));
+
+final showCarouselProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier('settings_show_carousel', true));
+
+final markChattedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier('settings_mark_chatted', true));
+
+final chatSyncProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier('settings_chat_sync', true));
+
+final keepScreenUnlockedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier('settings_keep_unlocked', false));

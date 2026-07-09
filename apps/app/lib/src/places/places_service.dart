@@ -35,10 +35,12 @@ class PlacesService {
   /// GET /places — list the current user's saved places.
   Future<List<Place>> list() async {
     final response = await _dio.get<Map<String, dynamic>>('/places');
-    final data = response.data!;
-    final list = data['places'] as List<dynamic>;
+    final data = response.data;
+    if (data == null) return const <Place>[];
+    final list = (data['places'] as List?) ?? const [];
     return list
-        .map((p) => Place.fromJson(p as Map<String, dynamic>))
+        .whereType<Map>()
+        .map((p) => Place.fromJson(Map<String, dynamic>.from(p)))
         .toList();
   }
 
@@ -48,7 +50,11 @@ class PlacesService {
       '/places',
       data: {'name': name, 'lat': lat, 'lon': lon},
     );
-    return Place.fromJson(response.data!['place'] as Map<String, dynamic>);
+    final place = (response.data?['place'] as Map?);
+    if (place == null) {
+      throw StateError('POST /places returned no "place" object');
+    }
+    return Place.fromJson(Map<String, dynamic>.from(place));
   }
 
   /// DELETE /places/:id — remove a place.
@@ -64,7 +70,7 @@ final placesServiceProvider = Provider<PlacesService>((ref) {
 });
 
 /// FutureProvider for the list of saved places.
-final placesProvider = FutureProvider<List<Place>>((ref) async {
+final placesProvider = FutureProvider.autoDispose<List<Place>>((ref) async {
   final service = ref.watch(placesServiceProvider);
   return service.list();
 });

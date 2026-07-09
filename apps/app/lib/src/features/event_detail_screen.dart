@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../events/events_service.dart';
 import '../auth/auth_provider.dart';
@@ -68,8 +69,8 @@ class _DetailContent extends ConsumerWidget {
     final userId = ref.watch(authStateProvider).userId;
     final isCreator = userId == event.creatorId;
 
-    final startsAt = DateTime.tryParse(event.startsAt);
-    final endsAt = event.endsAt != null ? DateTime.tryParse(event.endsAt!) : null;
+    final startsAt = DateTime.tryParse(event.startsAt)?.toLocal();
+    final endsAt = event.endsAt != null ? DateTime.tryParse(event.endsAt!)?.toLocal() : null;
 
     final dateStr = startsAt != null
         ? '${startsAt.year}-${startsAt.month.toString().padLeft(2, '0')}-${startsAt.day.toString().padLeft(2, '0')}'
@@ -293,7 +294,7 @@ class _DetailContent extends ConsumerWidget {
         final service = ref.read(eventsServiceProvider);
         await service.delete(event.id);
         if (context.mounted) {
-          Navigator.of(context).pop(); // go back to list
+          context.pop(); // go back to list (GoRouter)
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.events_cancelled)),
           );

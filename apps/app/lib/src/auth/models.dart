@@ -5,9 +5,14 @@ class TokenPair {
   TokenPair({required this.access, required this.refresh});
 
   factory TokenPair.fromJson(Map<String, dynamic> json) {
+    final access = json['access'] as String?;
+    final refresh = json['refresh'] as String?;
+    if (access == null || refresh == null) {
+      throw AuthException('Malformed token response');
+    }
     return TokenPair(
-      access: json['access'] as String,
-      refresh: json['refresh'] as String,
+      access: access,
+      refresh: refresh,
     );
   }
 

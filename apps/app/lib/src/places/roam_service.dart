@@ -35,10 +35,11 @@ class RoamService {
   /// GET /me/location — returns the current Roam location, or null if none.
   Future<RoamLocation?> getCurrent() async {
     final response = await _dio.get<Map<String, dynamic>>('/me/location');
-    final data = response.data!;
-    final loc = data['location'];
+    final data = response.data;
+    if (data == null) return null;
+    final loc = data['location'] as Map?;
     if (loc == null) return null;
-    return RoamLocation.fromJson(loc as Map<String, dynamic>);
+    return RoamLocation.fromJson(Map<String, dynamic>.from(loc));
   }
 
   /// PUT /me/location — set the Roam location.
@@ -73,7 +74,7 @@ final roamServiceProvider = Provider<RoamService>((ref) {
 });
 
 /// FutureProvider for the current Roam location (null if none).
-final roamLocationProvider = FutureProvider<RoamLocation?>((ref) async {
+final roamLocationProvider = FutureProvider.autoDispose<RoamLocation?>((ref) async {
   final service = ref.watch(roamServiceProvider);
   return service.getCurrent();
 });

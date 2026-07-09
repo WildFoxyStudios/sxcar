@@ -38,7 +38,7 @@ class OnboardingProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       notifyListeners();
-      return _state?.onboardingCompleted ?? false;
+      rethrow;
     }
   }
 

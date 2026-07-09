@@ -64,8 +64,18 @@ class GoogleSignInService {
   }
 
   Future<void> signOut() async {
-    await GoogleSignIn.instance.signOut();
-    await _auth.signOut();
+    // Attempt both sign-outs independently so a failure in one does not
+    // leave the other provider still signed in.
+    try {
+      await GoogleSignIn.instance.signOut();
+    } catch (_) {
+      // Ignore: still attempt Firebase sign-out below.
+    }
+    try {
+      await _auth.signOut();
+    } catch (_) {
+      // Ignore: best-effort sign-out.
+    }
   }
 }
 

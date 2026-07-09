@@ -15,9 +15,12 @@ final nearbyEventsProvider = FutureProvider<List<Event>>((ref) async {
   final service = ref.watch(eventsServiceProvider);
   // Use .future to get the unwrapped Position? value
   final position = await ref.watch(currentPositionProvider.future);
-  final lat = position?.latitude ?? 0.0;
-  final lon = position?.longitude ?? 0.0;
-  return service.listNearby(lat: lat, lon: lon);
+  if (position == null) {
+    // Do not query (0,0) "Null Island" — surface an error so the UI shows
+    // its error state instead of garbage results with bogus distances.
+    throw Exception('location_unavailable');
+  }
+  return service.listNearby(lat: position.latitude, lon: position.longitude);
 });
 
 /// Header image color for event cards.
@@ -116,7 +119,7 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final startsAt = DateTime.tryParse(event.startsAt);
+    final startsAt = DateTime.tryParse(event.startsAt)?.toLocal();
     final dateStr = startsAt != null
         ? '${startsAt.month}/${startsAt.day} ${startsAt.hour.toString().padLeft(2, '0')}:${startsAt.minute.toString().padLeft(2, '0')}'
         : event.startsAt;

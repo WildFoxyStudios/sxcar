@@ -23,7 +23,15 @@ class GeocodingService {
 
   /// Searches for locations matching [query] using the native geocoder.
   /// Returns a list of [geo.Location] results (upstream typically returns 1-5).
-  Future<List<geo.Location>> search(String query) => _search(query);
+  Future<List<geo.Location>> search(String query) async {
+    // The native geocoder throws (e.g. PlatformException / no-match / offline).
+    // Callers expect an empty list rather than a native exception.
+    try {
+      return await _search(query);
+    } catch (_) {
+      return const [];
+    }
+  }
 }
 
 /// Provider for [GeocodingService].

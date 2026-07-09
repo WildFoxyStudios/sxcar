@@ -44,6 +44,10 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       if (mounted) context.go('/');
     } on AuthException catch (e) {
       setState(() => _error = e.message);
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      final message = (data is Map) ? data['message'] as String? : null;
+      setState(() => _error = message ?? l10n.verificacionFallida);
     } catch (e) {
       setState(() => _error = l10n.verificacionFallida);
     } finally {

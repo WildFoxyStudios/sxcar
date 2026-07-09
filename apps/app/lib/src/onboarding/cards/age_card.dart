@@ -26,15 +26,19 @@ class _AgeCardState extends State<AgeCard> {
   String? _error;
 
   Future<void> _submit() async {
+    final age = int.tryParse(_ctrl.text);
+    if (age == null || age < 18 || age > 120) {
+      setState(() {
+        _busy = false;
+        _error = AppLocalizations.of(context)!.onboarding_error_required;
+      });
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      final age = int.tryParse(_ctrl.text);
-      if (age == null || age < 18 || age > 120) {
-        throw Exception(AppLocalizations.of(context)!.onboarding_error_required);
-      }
       await widget.provider.completeCard('age', {'age': age});
       widget.onComplete(true);
     } catch (e) {

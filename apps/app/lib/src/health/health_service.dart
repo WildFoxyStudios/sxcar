@@ -45,6 +45,7 @@ class HealthService {
   Future<HealthInfo> fetchHealth() async {
     try {
       final response = await _dio.get<Map<String, dynamic>>('/profile/health');
+      if (response.data == null) return const HealthInfo();
       return HealthInfo.fromJson(response.data!);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {

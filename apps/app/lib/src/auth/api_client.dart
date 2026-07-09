@@ -83,8 +83,11 @@ Dio createAuthClient(TokenStorage tokenStorage, {void Function()? onSessionExpir
           data: {'refresh': refreshToken},
         );
 
-        final newAccess = response.data!['access'] as String;
-        final newRefresh = response.data!['refresh'] as String;
+        final newAccess = response.data?['access'] as String?;
+        final newRefresh = response.data?['refresh'] as String?;
+        if (newAccess == null || newRefresh == null) {
+          throw AuthException('Malformed refresh response');
+        }
         await tokenStorage.saveTokens(access: newAccess, refresh: newRefresh);
 
         final retryOptions = RequestOptions(

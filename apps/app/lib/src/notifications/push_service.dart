@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -26,8 +27,20 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 class PushService {
   final Dio _dio;
   bool _listenersRegistered = false;
+  StreamSubscription<String>? _tokenRefreshSub;
+  StreamSubscription<RemoteMessage>? _onMessageSub;
 
   PushService(this._dio);
+
+  /// Cancels FCM stream subscriptions. Call when the service is torn down to
+  /// avoid leaking listeners across re-auth / hot-restart.
+  void dispose() {
+    _tokenRefreshSub?.cancel();
+    _tokenRefreshSub = null;
+    _onMessageSub?.cancel();
+    _onMessageSub = null;
+    _listenersRegistered = false;
+  }
 
   /// Initialises Firebase Messaging and registers the FCM token.
   ///
@@ -49,23 +62,33 @@ class PushService {
         // ── Production path ────────────────────────────────────────────────
         // Request notification permission (Android 13+ POST_NOTIFICATIONS,
         // iOS alert/badge/sound).
-        await FirebaseMessaging.instance.requestPermission(
+        final settings = await FirebaseMessaging.instance.requestPermission(
           alert: true,
           badge: true,
           sound: true,
         );
+
+        // If the user denied notifications, do not obtain or register a token.
+        final status = settings.authorizationStatus;
+        if (status != AuthorizationStatus.authorized &&
+            status != AuthorizationStatus.provisional) {
+          debugPrint('[FCM] permission not granted ($status) — skipping token');
+          return;
+        }
 
         token = await FirebaseMessaging.instance.getToken();
 
         // Register listeners once — prevent accumulation on re-auth.
         if (!_listenersRegistered) {
           // Re-register whenever the token is rotated by FCM.
-          FirebaseMessaging.instance.onTokenRefresh.listen(_registerToken);
+          _tokenRefreshSub =
+              FirebaseMessaging.instance.onTokenRefresh.listen(_registerToken);
 
           // Foreground message handler: log + (future) in-app banner.
           // We deliberately do NOT add flutter_local_notifications here
           // (that is a separate dependency beyond G2 scope).
-          FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+          _onMessageSub =
+              FirebaseMessaging.onMessage.listen((RemoteMessage message) {
             final n = message.notification;
             debugPrint('[FCM] foreground: ${n?.title} — ${n?.body}');
           });
@@ -93,7 +116,9 @@ class PushService {
         '/notifications/register',
         data: {'device_token': token, 'platform': platform},
       );
-      debugPrint('[FCM] token registered (${token.length > 10 ? "${token.substring(0, 10)}..." : token})');
+      if (kDebugMode) {
+        debugPrint('[FCM] token registered (${token.length > 10 ? "${token.substring(0, 10)}..." : token})');
+      }
     } catch (e) {
       debugPrint('[FCM] register error: $e');
     }

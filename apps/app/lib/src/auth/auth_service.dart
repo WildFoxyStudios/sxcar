@@ -11,7 +11,11 @@ class AuthService {
       '/auth/register',
       data: data.toJson(),
     );
-    return TokenPair.fromJson(response.data!);
+    final body = response.data;
+    if (body == null) {
+      throw AuthException('Malformed token response');
+    }
+    return TokenPair.fromJson(body);
   }
 
   Future<TokenPair> login(LoginData data) async {
@@ -19,7 +23,11 @@ class AuthService {
       '/auth/login',
       data: data.toJson(),
     );
-    return TokenPair.fromJson(response.data!);
+    final body = response.data;
+    if (body == null) {
+      throw AuthException('Malformed token response');
+    }
+    return TokenPair.fromJson(body);
   }
 
   /// OAuth login with Google or Apple ID token.
@@ -29,7 +37,11 @@ class AuthService {
       '/auth/oauth/$provider',
       data: {'id_token': idToken},
     );
-    return TokenPair.fromJson(response.data!);
+    final body = response.data;
+    if (body == null) {
+      throw AuthException('Malformed token response');
+    }
+    return TokenPair.fromJson(body);
   }
 
   Future<void> verifyEmail(String code) async {

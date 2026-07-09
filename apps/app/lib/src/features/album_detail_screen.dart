@@ -122,33 +122,53 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
       final dio = ref.read(dioProvider);
       final mediaService = MediaService(dio);
       final List<String> r2Keys = [];
+      int failedCount = 0;
 
       for (final file in pickedFiles) {
-        final bytes = await file.readAsBytes();
-        final ext = file.path.split('.').lastOrNull;
+        // Presign + upload each file independently so one failure does not
+        // discard the keys that were already uploaded to R2.
+        try {
+          final bytes = await file.readAsBytes();
+          final ext = file.path.split('.').lastOrNull;
 
-        // Get presigned URL from backend
-        final uploadUrl =
-            await mediaService.getUploadUrl(kind: 'album', ext: ext);
+          // Get presigned URL from backend
+          final uploadUrl =
+              await mediaService.getUploadUrl(kind: 'album', ext: ext);
 
-        // Upload to R2
-        await mediaService.uploadToR2(
-          uploadUrl.putUrl,
-          bytes,
-          contentType: _contentType(ext),
-        );
+          // Upload to R2
+          await mediaService.uploadToR2(
+            uploadUrl.putUrl,
+            bytes,
+            contentType: _contentType(ext),
+          );
 
-        r2Keys.add(uploadUrl.key);
+          r2Keys.add(uploadUrl.key);
+        } catch (_) {
+          failedCount++;
+        }
       }
 
-      // Add all uploaded photos to album
-      await dio.post(
-        '/albums/${widget.albumId}/photos',
-        data: {'photo_keys': r2Keys},
-      );
+      // Attach whatever uploaded successfully (avoids orphaning R2 objects).
+      if (r2Keys.isNotEmpty) {
+        await dio.post(
+          '/albums/${widget.albumId}/photos',
+          data: {'photo_keys': r2Keys},
+        );
 
-      // Reload album photos
-      await _loadAlbum();
+        // Reload album photos
+        await _loadAlbum();
+      }
+
+      // Surface a partial-failure message if some files did not upload.
+      if (failedCount > 0 && mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.album_add_error('$failedCount')),
+            backgroundColor: VibraTheme.kError,
+          ),
+        );
+      }
     } on DioException catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;

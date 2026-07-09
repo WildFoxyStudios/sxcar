@@ -96,73 +96,22 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
 
   Future<void> _showCreateDialog() async {
     final l10n = AppLocalizations.of(context)!;
-    final nameController = TextEditingController();
-    final descriptionController = TextEditingController();
-    bool isPrivate = false;
-
-    final result = await showDialog<bool>(
+    // The dialog body owns its own TextEditingControllers and disposes them
+    // when its subtree is unmounted (after the dialog's exit animation),
+    // returning the captured values via Navigator.pop.
+    final result = await showDialog<_CreateAlbumResult>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(l10n.albumCreateTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: l10n.albumNameLabel,
-                  border: const OutlineInputBorder(),
-                ),
-                autofocus: true,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descriptionController,
-                decoration: InputDecoration(
-                  labelText: l10n.albumDescriptionOptional,
-                  border: const OutlineInputBorder(),
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 12),
-              CheckboxListTile(
-                title: Text(l10n.albumPrivateLabel),
-                value: isPrivate,
-                onChanged: (v) => setDialogState(() => isPrivate = v ?? false),
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(l10n.cancelar),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (nameController.text.trim().isNotEmpty) {
-                  Navigator.of(ctx).pop(true);
-                }
-              },
-              child: Text(l10n.albumCreateButton),
-            ),
-          ],
-        ),
-      ),
+      builder: (ctx) => _CreateAlbumDialog(l10n: l10n),
     );
 
-    if (result != true || nameController.text.trim().isEmpty) return;
+    if (result == null || result.name.isEmpty) return;
 
     try {
       final dio = ref.read(dioProvider);
       final body = <String, dynamic>{
-        'name': nameController.text.trim(),
-        'description': descriptionController.text.trim().isEmpty
-            ? null
-            : descriptionController.text.trim(),
-        'is_private': isPrivate,
+        'name': result.name,
+        'description': result.description.isEmpty ? null : result.description,
+        'is_private': result.isPrivate,
       };
       await dio.post<Map<String, dynamic>>('/albums', data: body);
       await _loadAlbums();
@@ -190,63 +139,19 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
   /// Opens the share sheet — a TextField-based user_id picker.
   Future<void> _showShareSheet(Album album) async {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController();
-    final result = await showModalBottomSheet<bool>(
+    // The sheet body owns its own TextEditingController and disposes it when
+    // its subtree is unmounted; it returns the entered user id via pop.
+    final userId = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: VibraTheme.kSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.compartirAlbum, // "Compartir álbum"
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.seleccionarUsuarios, // "Seleccionar usuarios"
-                style: const TextStyle(
-                    color: VibraTheme.kTextSecondary, fontSize: 13),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: controller,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: l10n.userIdHint,
-                  hintStyle: const TextStyle(color: VibraTheme.kTextTertiary),
-                ),
-              ),
-              const SizedBox(height: 16),
-              YellowPillButton(
-                label: l10n.compartirAlbum,
-                onPressed: () => Navigator.of(ctx).pop(true),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (ctx) => _ShareAlbumSheet(l10n: l10n),
     );
 
-    if (result != true) return;
-    final userId = controller.text.trim();
-    if (userId.isEmpty) return;
+    if (userId == null || userId.isEmpty) return;
 
     try {
       final dio = ref.read(dioProvider);
@@ -615,6 +520,166 @@ class _AlbumPlaceholder extends StatelessWidget {
       color: VibraTheme.kChip,
       child: const Icon(Icons.photo_album_outlined,
           color: VibraTheme.kTextSecondary, size: 28),
+    );
+  }
+}
+
+/// Result returned by [_CreateAlbumDialog].
+class _CreateAlbumResult {
+  final String name;
+  final String description;
+  final bool isPrivate;
+  const _CreateAlbumResult({
+    required this.name,
+    required this.description,
+    required this.isPrivate,
+  });
+}
+
+/// Create-album dialog body. Owns its own [TextEditingController]s and disposes
+/// them in [State.dispose] (runs after the dialog's exit animation), avoiding
+/// controller leaks and use-after-dispose during dismissal.
+class _CreateAlbumDialog extends StatefulWidget {
+  final AppLocalizations l10n;
+  const _CreateAlbumDialog({required this.l10n});
+
+  @override
+  State<_CreateAlbumDialog> createState() => _CreateAlbumDialogState();
+}
+
+class _CreateAlbumDialogState extends State<_CreateAlbumDialog> {
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  bool _isPrivate = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = widget.l10n;
+    return AlertDialog(
+      title: Text(l10n.albumCreateTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              labelText: l10n.albumNameLabel,
+              border: const OutlineInputBorder(),
+            ),
+            autofocus: true,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _descriptionController,
+            decoration: InputDecoration(
+              labelText: l10n.albumDescriptionOptional,
+              border: const OutlineInputBorder(),
+            ),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 12),
+          CheckboxListTile(
+            title: Text(l10n.albumPrivateLabel),
+            value: _isPrivate,
+            onChanged: (v) => setState(() => _isPrivate = v ?? false),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancelar),
+        ),
+        FilledButton(
+          onPressed: () {
+            final name = _nameController.text.trim();
+            if (name.isNotEmpty) {
+              Navigator.of(context).pop(_CreateAlbumResult(
+                name: name,
+                description: _descriptionController.text.trim(),
+                isPrivate: _isPrivate,
+              ));
+            }
+          },
+          child: Text(l10n.albumCreateButton),
+        ),
+      ],
+    );
+  }
+}
+
+/// Share-album bottom-sheet body. Owns its own [TextEditingController] and
+/// disposes it in [State.dispose]; returns the entered user id via pop.
+class _ShareAlbumSheet extends StatefulWidget {
+  final AppLocalizations l10n;
+  const _ShareAlbumSheet({required this.l10n});
+
+  @override
+  State<_ShareAlbumSheet> createState() => _ShareAlbumSheetState();
+}
+
+class _ShareAlbumSheetState extends State<_ShareAlbumSheet> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = widget.l10n;
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.compartirAlbum, // "Compartir álbum"
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            l10n.seleccionarUsuarios, // "Seleccionar usuarios"
+            style: const TextStyle(
+                color: VibraTheme.kTextSecondary, fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: l10n.userIdHint,
+              hintStyle: const TextStyle(color: VibraTheme.kTextTertiary),
+            ),
+          ),
+          const SizedBox(height: 16),
+          YellowPillButton(
+            label: l10n.compartirAlbum,
+            onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          ),
+        ],
+      ),
     );
   }
 }

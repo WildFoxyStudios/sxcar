@@ -94,8 +94,8 @@ class StoryService {
   /// Get all active stories for the current user and their connections.
   Future<Map<String, dynamic>> getStories() async {
     final res = await _client.get('/stories');
-    final data = res.data as Map<String, dynamic>;
-    return data;
+    final data = res.data as Map<String, dynamic>?;
+    return data ?? const <String, dynamic>{};
   }
 
   /// Create a new story.
@@ -109,7 +109,7 @@ class StoryService {
       'media_type': mediaType,
       if (caption != null && caption.isNotEmpty) 'caption': caption,
     });
-    return res.data as Map<String, dynamic>;
+    return (res.data as Map<String, dynamic>?) ?? const <String, dynamic>{};
   }
 
   /// Delete a story.
@@ -153,7 +153,7 @@ final mediaServiceProvider = Provider<MediaService>((ref) {
 final storiesListProvider = FutureProvider<List<StoryGroup>>((ref) async {
   final service = ref.watch(storyServiceProvider);
   final data = await service.getStories();
-  final groups = (data['grouped'] as List)
+  final groups = ((data['grouped'] as List?) ?? const [])
       .map((e) => StoryGroup.fromJson(e as Map<String, dynamic>))
       .toList();
   return groups;

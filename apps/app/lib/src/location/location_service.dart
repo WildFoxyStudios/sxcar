@@ -92,7 +92,7 @@ final locationServiceProvider = Provider<LocationService>((ref) {
 /// FutureProvider that tries [LocationService.getCurrentPosition] first, then
 /// falls back to [LocationService.getLastKnownPosition]. Returns null if both
 /// fail (caller should show a banner or fallback UI).
-final currentPositionProvider = FutureProvider<Position?>((ref) async {
+final currentPositionProvider = FutureProvider.autoDispose<Position?>((ref) async {
   final service = ref.watch(locationServiceProvider);
   return await service.getCurrentPosition() ??
       await service.getLastKnownPosition();

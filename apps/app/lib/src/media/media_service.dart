@@ -21,8 +21,8 @@ class GalleryPhoto {
     return GalleryPhoto(
       id: json['id'] as String,
       url: json['url'] as String,
-      isPrimary: json['is_primary'] as bool,
-      position: json['position'] as int,
+      isPrimary: json['is_primary'] as bool? ?? false,
+      position: (json['position'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -44,12 +44,18 @@ class UploadUrl {
   });
 
   factory UploadUrl.fromJson(Map<String, dynamic> json) {
+    final putUrl = json['put_url'] as String?;
+    final key = json['key'] as String?;
+    if (putUrl == null || key == null) {
+      throw FormatException(
+          'Invalid upload URL response: missing "put_url" or "key" ($json)');
+    }
     return UploadUrl(
-      key: json['key'] as String,
-      bucket: json['bucket'] as String,
-      putUrl: json['put_url'] as String,
-      getUrl: json['get_url'] as String,
-      expiresIn: json['expires_in'] as int,
+      key: key,
+      bucket: json['bucket'] as String? ?? '',
+      putUrl: putUrl,
+      getUrl: json['get_url'] as String? ?? '',
+      expiresIn: (json['expires_in'] as num?)?.toInt() ?? 0,
     );
   }
 

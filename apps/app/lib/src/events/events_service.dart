@@ -38,18 +38,18 @@ class Event {
 
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
-      id: json['id'] as String,
-      creatorId: json['creator_id'] as String,
-      title: json['title'] as String,
+      id: json['id'] as String? ?? '',
+      creatorId: json['creator_id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
       description: json['description'] as String?,
-      locationName: json['location_name'] as String,
-      lat: (json['lat'] as num).toDouble(),
-      lon: (json['lon'] as num).toDouble(),
-      startsAt: json['starts_at'] as String,
+      locationName: json['location_name'] as String? ?? '',
+      lat: (json['lat'] as num?)?.toDouble() ?? 0,
+      lon: (json['lon'] as num?)?.toDouble() ?? 0,
+      startsAt: json['starts_at'] as String? ?? '',
       endsAt: json['ends_at'] as String?,
-      maxAttendees: json['max_attendees'] as int,
-      createdAt: json['created_at'] as String,
-      attendeeCount: json['attendee_count'] as int,
+      maxAttendees: (json['max_attendees'] as num?)?.toInt() ?? 0,
+      createdAt: json['created_at'] as String? ?? '',
+      attendeeCount: (json['attendee_count'] as num?)?.toInt() ?? 0,
       distanceM: (json['distance_m'] as num?)?.toDouble(),
       myStatus: json['my_status'] as String?,
     );
@@ -78,7 +78,11 @@ class EventsService {
         'limit': limit,
       },
     );
-    final events = response.data!['events'] as List<dynamic>;
+    final data = response.data;
+    if (data == null) {
+      throw Exception('empty_response');
+    }
+    final events = (data['events'] as List<dynamic>?) ?? const [];
     return events
         .map((e) => Event.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -108,13 +112,21 @@ class EventsService {
         'max_attendees': maxAttendees,
       },
     );
-    return response.data!['id'] as String;
+    final data = response.data;
+    if (data == null || data['id'] == null) {
+      throw Exception('empty_response');
+    }
+    return data['id'] as String;
   }
 
   /// GET /events/:id — get event detail.
   Future<Event> getById(String id) async {
     final response = await _dio.get<Map<String, dynamic>>('/events/$id');
-    return Event.fromJson(response.data!['event'] as Map<String, dynamic>);
+    final data = response.data;
+    if (data == null || data['event'] == null) {
+      throw Exception('empty_response');
+    }
+    return Event.fromJson(data['event'] as Map<String, dynamic>);
   }
 
   /// POST /events/:id/attend — RSVP to an event.

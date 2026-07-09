@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../theme/app_theme.dart';
@@ -86,7 +87,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
       ref.invalidate(storiesListProvider);
 
       if (mounted) {
-        Navigator.of(context).pop(true);
+        context.pop(true);
       }
     } catch (e) {
       if (mounted) {
@@ -116,7 +117,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         actions: [
           if (_mediaFile != null)

@@ -25,6 +25,8 @@ class _FakeScreenshotsService extends ScreenshotsService {
 // ---------------------------------------------------------------------------
 
 class _FakeChatService extends ChatService {
+  @override
+  Future<void> markRead(String conversationId) async {}
   // sync: true ensures events are delivered synchronously when add() is called,
   // so a single tester.pump() is sufficient to trigger setState + rebuild.
   final _ctrl = StreamController<Map<String, dynamic>>.broadcast(sync: true);

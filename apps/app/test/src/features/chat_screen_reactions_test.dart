@@ -25,6 +25,8 @@ class _FakeScreenshotsService extends ScreenshotsService {
 // ---------------------------------------------------------------------------
 
 class _FakeChatService extends ChatService {
+  @override
+  Future<void> markRead(String conversationId) async {}
   final _ctrl = StreamController<Map<String, dynamic>>.broadcast(sync: true);
   final List<Message> _seeded;
 

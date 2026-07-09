@@ -39,6 +39,8 @@ void main() {
 // ---------------------------------------------------------------------------
 
 class _CapturingChatService extends ChatService {
+  @override
+  Future<void> markRead(String conversationId) async {}
   final List<Map<String, dynamic>> _captured;
 
   _CapturingChatService(this._captured) : super(Dio(), null);

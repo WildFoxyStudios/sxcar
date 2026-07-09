@@ -23,6 +23,8 @@ class _FakeScreenshotsService extends ScreenshotsService {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _FakeChatService extends ChatService {
+  @override
+  Future<void> markRead(String conversationId) async {}
   bool sendVoiceMessageCalled = false;
   final List<Message> messages;
 

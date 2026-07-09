@@ -12,6 +12,8 @@ import 'package:app/src/calls/call_service.dart';
 /// A minimal chat service stub that records sent messages and lets tests
 /// inject incoming WebSocket frames.
 class FakeChatService extends ChatService {
+  @override
+  Future<void> markRead(String conversationId) async {}
   final _sentMessages = <Map<String, dynamic>>[];
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
 

@@ -74,6 +74,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _connectWebSocket();
     _initScreenshotDetection();
     _loadScreenshotAlerts();
+    _markRead();
+  }
+
+  /// Marks the other participant's messages as read on the server (read
+  /// receipts). Fire-and-forget; never blocks or crashes the chat.
+  Future<void> _markRead() async {
+    try {
+      await ref.read(chatServiceProvider).markRead(widget.conversationId);
+    } catch (_) {
+      // Read receipts are best-effort.
+    }
   }
 
   @override
@@ -141,6 +152,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             _messages.add(message);
           });
           _scrollToBottom();
+          // I'm viewing this conversation → mark the incoming message read.
+          _markRead();
         }
       } else if (type == 'typing') {
         final convId = json['conversation_id'] as String?;
@@ -999,6 +1012,19 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
           child: bubble,
         ),
         if (message.reactions.isNotEmpty) _buildReactionChips(context, isMe),
+        // Read receipt on my own messages: single check = sent, double
+        // accent check = read by the recipient.
+        if (isMe && !widget.isGroup)
+          Padding(
+            padding: const EdgeInsets.only(right: 16, top: 2),
+            child: Icon(
+              message.readAt != null ? Icons.done_all : Icons.done,
+              size: 14,
+              color: message.readAt != null
+                  ? VibraTheme.kAccent
+                  : VibraTheme.kTextMuted,
+            ),
+          ),
       ],
     );
   }

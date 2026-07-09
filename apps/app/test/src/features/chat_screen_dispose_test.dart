@@ -23,6 +23,8 @@ class _FakeScreenshotsService extends ScreenshotsService {
 /// [Completer]s, so the test can dispose the widget between the call and
 /// the resolution to reproduce the original bug.
 class _FakeChatService extends ChatService {
+  @override
+  Future<void> markRead(String conversationId) async {}
   Completer<List<Message>>? getMessagesCompleter;
   Completer<String>? sendMessageCompleter;
 

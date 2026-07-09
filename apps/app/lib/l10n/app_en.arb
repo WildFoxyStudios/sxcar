@@ -32,6 +32,8 @@
   "noLeido": "Unread",
   "views": "Views",
   "taps": "Taps",
+  "tapsReceived": "Received",
+  "tapsSent": "Sent",
   "desbloquearTodo": "Unlock All",
   "elijaLaActualizacion": "Choose an Upgrade",
   "continuar": "Continue",

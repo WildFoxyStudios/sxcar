@@ -90,6 +90,8 @@
   "@views": { "description": "Views tab label in Interest screen" },
 
   "taps": "Taps",
+  "tapsReceived": "Recibidos",
+  "tapsSent": "Enviados",
   "@taps": { "description": "Taps tab label in Interest screen" },
 
   "desbloquearTodo": "Desbloquear todo",

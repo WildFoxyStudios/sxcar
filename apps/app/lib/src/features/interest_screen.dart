@@ -57,6 +57,8 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late Future<List<ReceivedTap>> _tapsFuture;
+  // false = taps received, true = taps sent (Grindr-style Received/Sent toggle).
+  bool _tapsSent = false;
 
   @override
   void initState() {
@@ -90,8 +92,8 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
   Future<List<ReceivedTap>> _fetchTaps() async {
     await _waitForAuth();
     final dio = ref.read(dioProvider);
-    final response =
-        await dio.get<Map<String, dynamic>>('/taps/received');
+    final response = await dio.get<Map<String, dynamic>>(
+        _tapsSent ? '/taps/sent' : '/taps/received');
     final data = response.data!;
     final tapsJson = data['taps'] as List<dynamic>;
     return tapsJson
@@ -197,11 +199,54 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
               controller: _tabController,
               children: [
                 const _ViewsListTab(),
-                _TapsListTab(tapsFuture: _tapsFuture, onRetry: () {
-                  setState(() {
-                    _tapsFuture = _fetchTaps();
-                  });
-                }),
+                Column(
+                  children: [
+                    // Received / Sent toggle (Grindr parity).
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          ChoiceChip(
+                            label: Text(l10n.tapsReceived),
+                            selected: !_tapsSent,
+                            onSelected: (_) {
+                              if (_tapsSent) {
+                                setState(() {
+                                  _tapsSent = false;
+                                  _tapsFuture = _fetchTaps();
+                                });
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          ChoiceChip(
+                            label: Text(l10n.tapsSent),
+                            selected: _tapsSent,
+                            onSelected: (_) {
+                              if (!_tapsSent) {
+                                setState(() {
+                                  _tapsSent = true;
+                                  _tapsFuture = _fetchTaps();
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: _TapsListTab(
+                        tapsFuture: _tapsFuture,
+                        onRetry: () {
+                          setState(() {
+                            _tapsFuture = _fetchTaps();
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

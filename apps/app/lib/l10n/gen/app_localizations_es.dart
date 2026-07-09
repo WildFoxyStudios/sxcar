@@ -99,6 +99,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get taps => 'Taps';
 
   @override
+  String get tapsReceived => 'Recibidos';
+
+  @override
+  String get tapsSent => 'Enviados';
+
+  @override
   String get desbloquearTodo => 'Desbloquear todo';
 
   @override

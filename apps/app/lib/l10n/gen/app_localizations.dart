@@ -278,6 +278,18 @@ abstract class AppLocalizations {
   /// **'Taps'**
   String get taps;
 
+  /// No description provided for @tapsReceived.
+  ///
+  /// In es, this message translates to:
+  /// **'Recibidos'**
+  String get tapsReceived;
+
+  /// No description provided for @tapsSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviados'**
+  String get tapsSent;
+
   /// Unlock everything CTA (Interest screen bottom bar)
   ///
   /// In es, this message translates to:

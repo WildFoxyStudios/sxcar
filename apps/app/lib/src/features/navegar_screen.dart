@@ -464,7 +464,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Boost activado por 30 min!'),
-            backgroundColor: VibraTheme.kBoost,
+            backgroundColor: VibraTheme.kAccentPulse,
           ),
         );
       }
@@ -947,7 +947,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             decoration: BoxDecoration(
               color: VibraTheme.kBg,
               borderRadius: const BorderRadius.all(Radius.circular(999)),
-              border: Border.all(color: VibraTheme.kBoost, width: 1),
+              border: Border.all(color: VibraTheme.kAccentPulse, width: 1),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
@@ -955,13 +955,13 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 Text(
                   'Boost',
                   style: TextStyle(
-                    color: VibraTheme.kBoost,
+                    color: VibraTheme.kAccentPulse,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                   ),
                 ),
                 SizedBox(width: 4),
-                Icon(Icons.bolt, color: VibraTheme.kBoost, size: 18),
+                Icon(Icons.bolt, color: VibraTheme.kAccentPulse, size: 18),
               ],
             ),
           ),
@@ -976,7 +976,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             decoration: BoxDecoration(
               color: VibraTheme.kBg,
               borderRadius: const BorderRadius.all(Radius.circular(999)),
-              border: Border.all(color: VibraTheme.kRightNow, width: 1),
+              border: Border.all(color: VibraTheme.kAccentGlow, width: 1),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
@@ -984,13 +984,13 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 Text(
                   'Right Now',
                   style: TextStyle(
-                    color: VibraTheme.kRightNow,
+                    color: VibraTheme.kAccentGlow,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                   ),
                 ),
                 SizedBox(width: 4),
-                Icon(Icons.water_drop, color: VibraTheme.kRightNow, size: 18),
+                Icon(Icons.water_drop, color: VibraTheme.kAccentGlow, size: 18),
               ],
             ),
           ),
@@ -1125,7 +1125,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          const Icon(Icons.flight_takeoff, size: 18, color: VibraTheme.kYellow),
+          const Icon(Icons.flight_takeoff, size: 18, color: VibraTheme.kBrandPrimary),
           const SizedBox(width: 10),
           Expanded(
             child: Column(

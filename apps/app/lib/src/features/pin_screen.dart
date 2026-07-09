@@ -152,7 +152,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: VibraTheme.kYellow,
+                          backgroundColor: VibraTheme.kBrandPrimary,
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),

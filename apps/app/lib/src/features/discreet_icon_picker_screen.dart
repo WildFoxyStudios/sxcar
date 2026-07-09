@@ -43,7 +43,7 @@ class _DiscreetIconPickerScreenState
       _IconOption(
         id: 'default',
         label: 'Vibra',
-        icon: const Icon(Icons.favorite, color: VibraTheme.kYellow, size: 36),
+        icon: const Icon(Icons.favorite, color: VibraTheme.kBrandPrimary, size: 36),
       ),
       _IconOption(
         id: 'discreet',
@@ -73,7 +73,7 @@ class _DiscreetIconPickerScreenState
                 color: VibraTheme.kSurface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: selected ? VibraTheme.kYellow : VibraTheme.kDivider,
+                  color: selected ? VibraTheme.kBrandPrimary : VibraTheme.kDivider,
                   width: selected ? 2 : 1,
                 ),
               ),
@@ -93,7 +93,7 @@ class _DiscreetIconPickerScreenState
                   ),
                   if (selected)
                     const Icon(Icons.check_circle,
-                        color: VibraTheme.kYellow, size: 22),
+                        color: VibraTheme.kBrandPrimary, size: 22),
                 ],
               ),
             ),

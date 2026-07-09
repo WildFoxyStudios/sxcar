@@ -159,7 +159,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: VibraTheme.kYellow,
+                color: VibraTheme.kBrandPrimary,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -267,7 +267,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.black,
-        foregroundColor: VibraTheme.kYellow,
+        foregroundColor: VibraTheme.kBrandPrimary,
         onPressed: () {
           ref.read(boostServiceProvider).activate();
         },

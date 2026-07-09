@@ -589,7 +589,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                 child: Text(
                   _roamName,
                   style: const TextStyle(
-                      color: VibraTheme.kYellow,
+                      color: VibraTheme.kBrandPrimary,
                       fontSize: 12,
                       fontWeight: FontWeight.w700),
                 ),
@@ -598,7 +598,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           IconButton(
             icon: Icon(
               Icons.explore_outlined,
-              color: _isRoam ? VibraTheme.kYellow : Colors.white,
+              color: _isRoam ? VibraTheme.kBrandPrimary : Colors.white,
             ),
             tooltip: l10n.roamTooltip,
             onPressed: () {
@@ -791,8 +791,8 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                             style: const TextStyle(fontSize: 12),
                           ),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: VibraTheme.kYellow,
-                            side: const BorderSide(color: VibraTheme.kYellow),
+                            foregroundColor: VibraTheme.kBrandPrimary,
+                            side: const BorderSide(color: VibraTheme.kBrandPrimary),
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -907,11 +907,11 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
       decoration: BoxDecoration(
         color: VibraTheme.kSurface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: VibraTheme.kYellow.withValues(alpha: 0.4)),
+        border: Border.all(color: VibraTheme.kBrandPrimary.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.flight_takeoff, size: 18, color: VibraTheme.kYellow),
+          const Icon(Icons.flight_takeoff, size: 18, color: VibraTheme.kBrandPrimary),
           const SizedBox(width: 8),
           Expanded(
             child: Column(

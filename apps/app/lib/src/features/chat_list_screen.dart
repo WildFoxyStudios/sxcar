@@ -98,7 +98,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: VibraTheme.kYellow,
+          indicatorColor: VibraTheme.kBrandPrimary,
           indicatorWeight: 2,
           labelColor: Colors.white,
           unselectedLabelColor: VibraTheme.kTextSecondary,
@@ -320,7 +320,7 @@ class _ConversationTile extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: const BoxDecoration(
-                  color: VibraTheme.kYellow,
+                  color: VibraTheme.kBrandPrimary,
                   borderRadius: BorderRadius.all(Radius.circular(999)),
                 ),
                 child: Text(
@@ -387,7 +387,7 @@ class _BoostFab extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     return FloatingActionButton.extended(
       backgroundColor: Colors.black,
-      foregroundColor: VibraTheme.kYellow,
+      foregroundColor: VibraTheme.kBrandPrimary,
       onPressed: () {
         ref.read(boostServiceProvider).activate();
       },

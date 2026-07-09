@@ -5,10 +5,10 @@ import 'app_theme.dart';
 
 // ────────────────────────────────────────────────────────────────────────────
 // YellowPillButton
-// Full-width 56 dp pill, kYellow background, black bold text.
+// Full-width 56 dp pill, kBrandPrimary background, black bold text.
 // ────────────────────────────────────────────────────────────────────────────
 
-/// Full-width primary CTA with kYellow background.
+/// Full-width primary CTA with kBrandPrimary background.
 ///
 /// - Height: 56 dp
 /// - Shape: rounded-full (radius 28)
@@ -38,9 +38,9 @@ class YellowPillButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: effectiveCallback,
           style: ElevatedButton.styleFrom(
-            backgroundColor: VibraTheme.kYellow,
+            backgroundColor: VibraTheme.kBrandPrimary,
             foregroundColor: Colors.black,
-            disabledBackgroundColor: VibraTheme.kYellow,
+            disabledBackgroundColor: VibraTheme.kBrandPrimary,
             disabledForegroundColor: Colors.black,
             elevation: 0,
             shape: const StadiumBorder(),
@@ -369,7 +369,7 @@ class FilterChipPill extends StatelessWidget {
 /// Upsell card used in the drawer and Tienda screen.
 ///
 /// - Default: dark linear gradient (kSurface → kChip), radius 16
-/// - Highlighted: yellow linear gradient (kYellow → Color(0xFFFFD633))
+/// - Highlighted: yellow linear gradient (kBrandPrimary → Color(0xFFFFD633))
 /// - Optional CTA pill at the bottom (highlighted → black bg + yellow text;
 ///   default → yellow bg + black text)
 class UpsellCard extends StatelessWidget {
@@ -392,7 +392,7 @@ class UpsellCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: highlighted
             ? const LinearGradient(
-                colors: [VibraTheme.kYellow, VibraTheme.kYellowLight],
+                colors: [VibraTheme.kBrandPrimary, VibraTheme.kBrandPrimaryLight],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
@@ -420,13 +420,13 @@ class UpsellCard extends StatelessWidget {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: highlighted ? Colors.black : VibraTheme.kYellow,
+                  color: highlighted ? Colors.black : VibraTheme.kBrandPrimary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   ctaLabel!,
                   style: TextStyle(
-                    color: highlighted ? VibraTheme.kYellow : Colors.black,
+                    color: highlighted ? VibraTheme.kBrandPrimary : Colors.black,
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                   ),
@@ -450,7 +450,7 @@ class UpsellCard extends StatelessWidget {
 ///
 /// - Shape: rounded 14, padding 12
 /// - Unselected: kSurface bg, kDivider border
-/// - Selected: kYellow 2 px border, yellow tint overlay (Color(0x33FFCC00))
+/// - Selected: kBrandPrimary 2 px border, yellow tint overlay (Color(0x33FFCC00))
 /// - Optional savings badge "Ahorra N%" (or local equivalent) when [savingsPercent]
 ///   is non-null
 /// - Optional popular badge (grey background, "POPULAR" label) when [popular]
@@ -481,11 +481,11 @@ class PlanDurationCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: selected
-              ? VibraTheme.kYellow.withValues(alpha: 0.2) // kYellow @ ~20% over kSurface
+              ? VibraTheme.kBrandPrimary.withValues(alpha: 0.2) // kBrandPrimary @ ~20% over kSurface
               : VibraTheme.kSurface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? VibraTheme.kYellow : VibraTheme.kDivider,
+            color: selected ? VibraTheme.kBrandPrimary : VibraTheme.kDivider,
             width: selected ? 2 : 1,
           ),
         ),
@@ -596,7 +596,7 @@ class NUEVOBadge extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: VibraTheme.kYellow,
+        color: VibraTheme.kBrandPrimary,
         borderRadius: BorderRadius.circular(radius),
       ),
       child: Text(
@@ -663,7 +663,7 @@ class SettingRow extends StatelessWidget {
               color: VibraTheme.kChip,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: iconColor ?? VibraTheme.kYellow, size: 20),
+            child: Icon(icon, color: iconColor ?? VibraTheme.kBrandPrimary, size: 20),
           )
         : null;
 
@@ -733,7 +733,7 @@ class SettingRow extends StatelessWidget {
 
 /// 3-way segmented control.
 ///
-/// - Selected segment: kYellow background, black text
+/// - Selected segment: kBrandPrimary background, black text
 /// - Unselected: transparent, white text
 /// - Pill shape (radius 999), full width of parent
 class Segmented3 extends StatelessWidget {
@@ -765,7 +765,7 @@ class Segmented3 extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: selected ? VibraTheme.kYellow : Colors.transparent,
+                  color: selected ? VibraTheme.kBrandPrimary : Colors.transparent,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Center(
@@ -911,7 +911,7 @@ class AlbumUpdateBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     if (count == 0) return const SizedBox.shrink();
     return Material(
-      color: VibraTheme.kYellow,
+      color: VibraTheme.kBrandPrimary,
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -1013,7 +1013,7 @@ class AlbumUpdatesEmptyState extends StatelessWidget {
 /// Multi-select chip row. Used by edit-profile selector sheets (tribes,
 /// looking_for, meet_at, tags, vaccines, practices) and section pickers.
 ///
-/// Tokens: kSurface unselected, kYellow.withValues(alpha: 0.2) selected,
+/// Tokens: kSurface unselected, kBrandPrimary.withValues(alpha: 0.2) selected,
 /// kTextSecondary unselected label, kTextPrimary selected label.
 ///
 /// Wraps to next line if horizontal scroll disabled. Default max visible
@@ -1101,7 +1101,7 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = selected
-        ? VibraTheme.kYellow.withValues(alpha: 0.2)
+        ? VibraTheme.kBrandPrimary.withValues(alpha: 0.2)
         : VibraTheme.kSurface;
     final fg = disabled
         ? VibraTheme.kTextTertiary

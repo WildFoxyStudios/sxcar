@@ -177,10 +177,10 @@
   "masAccesoMasAtencion": "Más acceso. Más atención.",
   "@masAccesoMasAtencion": { "description": "Hero subtitle on Tienda for Unlimited tier" },
 
-  "xtra": "XTRA",
+  "xtra": "Pulse",
   "@xtra": { "description": "XTRA tier label (legacy / Compat)" },
 
-  "unlimited": "UNLIMITED",
+  "unlimited": "Aura",
   "@unlimited": { "description": "Unlimited tier label" },
 
   "chatIlimitados": "Chats ilimitados en Explorar",
@@ -1248,10 +1248,10 @@
   "premiumTierFree": "Gratis",
   "@premiumTierFree": { "description": "Insignia del nivel gratuito" },
 
-  "premiumTierXtra": "Xtra",
+  "premiumTierXtra": "Pulse",
   "@premiumTierXtra": { "description": "Insignia del nivel Xtra" },
 
-  "premiumTierUnlimited": "Ilimitado",
+  "premiumTierUnlimited": "Aura",
   "@premiumTierUnlimited": { "description": "Insignia del nivel Unlimited" },
 
   "premiumUpgradePrompt": "Actualiza para usar {feature}",

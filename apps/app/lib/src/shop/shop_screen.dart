@@ -91,7 +91,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(l10n.continuar,
-                style: const TextStyle(color: VibraTheme.kYellow)),
+                style: const TextStyle(color: VibraTheme.kBrandPrimary)),
           ),
         ],
       ),
@@ -125,7 +125,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(l10n.shopPurchaseSuccess(product.name)),
-          backgroundColor: VibraTheme.kBoost,
+          backgroundColor: VibraTheme.kAccentPulse,
         ),
       );
     } on PlatformException catch (e) {
@@ -226,7 +226,7 @@ class _ProductCard extends StatelessWidget {
                 Text(
                   '\$${product.priceUsd.toStringAsFixed(2)}',
                   style: const TextStyle(
-                    color: VibraTheme.kYellow,
+                    color: VibraTheme.kBrandPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                   ),
@@ -242,9 +242,9 @@ class _ProductCard extends StatelessWidget {
   Color _badgeColor(String type) {
     switch (type) {
       case 'boost':
-        return VibraTheme.kBoost;
+        return VibraTheme.kAccentPulse;
       case 'highlight':
-        return VibraTheme.kYellow;
+        return VibraTheme.kBrandPrimary;
       case 'tribe_slot':
         return VibraTheme.kOnline;
       default:
@@ -287,7 +287,7 @@ class _ErrorRetry extends StatelessWidget {
           ElevatedButton(
             onPressed: onRetry,
             style: ElevatedButton.styleFrom(
-              backgroundColor: VibraTheme.kYellow,
+              backgroundColor: VibraTheme.kBrandPrimary,
             ),
             child: const Text('Retry', style: TextStyle(color: Colors.black)),
           ),

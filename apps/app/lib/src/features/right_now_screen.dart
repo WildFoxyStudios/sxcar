@@ -32,7 +32,7 @@ class RightNowScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showPostSheet(context, ref),
-        backgroundColor: VibraTheme.kRightNow,
+        backgroundColor: VibraTheme.kAccentGlow,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.water_drop),
         label: Text(l10n.right_now_title),
@@ -116,7 +116,7 @@ class RightNowScreen extends ConsumerWidget {
                     width: double.infinity,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
-                        backgroundColor: VibraTheme.kRightNow,
+                        backgroundColor: VibraTheme.kAccentGlow,
                       ),
                       onPressed: () async {
                         final text = controller.text.trim();
@@ -186,7 +186,7 @@ class _RightNowFeed extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.water_drop_outlined,
-                    size: 56, color: VibraTheme.kRightNow),
+                    size: 56, color: VibraTheme.kAccentGlow),
                 const SizedBox(height: 16),
                 Text(
                   l10n.right_now_empty_title,
@@ -206,7 +206,7 @@ class _RightNowFeed extends ConsumerWidget {
         }
 
         return RefreshIndicator(
-          color: VibraTheme.kRightNow,
+          color: VibraTheme.kAccentGlow,
           onRefresh: () async => ref.invalidate(rightNowFeedProvider),
           child: ListView.separated(
             padding: const EdgeInsets.all(16),
@@ -260,19 +260,19 @@ class _RightNowCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isMine
-            ? VibraTheme.kRightNow.withValues(alpha: 0.12)
+            ? VibraTheme.kAccentGlow.withValues(alpha: 0.12)
             : VibraTheme.kSurface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isMine
-              ? VibraTheme.kRightNow.withValues(alpha: 0.4)
+              ? VibraTheme.kAccentGlow.withValues(alpha: 0.4)
               : Colors.transparent,
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.water_drop, color: VibraTheme.kRightNow, size: 20),
+          const Icon(Icons.water_drop, color: VibraTheme.kAccentGlow, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

@@ -346,7 +346,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                       icon: Icon(
                         _isFavorited ? Icons.star : Icons.star_border,
                         color:
-                            _isFavorited ? VibraTheme.kYellow : Colors.white,
+                            _isFavorited ? VibraTheme.kBrandPrimary : Colors.white,
                       ),
                       onPressed: _toggleFavorite,
                     ),
@@ -460,7 +460,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: VibraTheme.kYellow,
+                                color: VibraTheme.kBrandPrimary,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Row(
@@ -605,7 +605,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: VibraTheme.kYellow,
+                                  color: VibraTheme.kBrandPrimary,
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
@@ -675,7 +675,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                   IconButton(
                     icon: const Icon(
                       Icons.local_fire_department,
-                      color: VibraTheme.kYellow,
+                      color: VibraTheme.kBrandPrimary,
                       size: 28,
                     ),
                     onPressed: _sendTap,
@@ -684,7 +684,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                   IconButton(
                     icon: const Icon(
                       Icons.chat_bubble_outline,
-                      color: VibraTheme.kYellow,
+                      color: VibraTheme.kBrandPrimary,
                       size: 28,
                     ),
                     onPressed: _startChat,

@@ -163,7 +163,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: l10n.mostrarActualizacionesAlbumes,
             trailing: Switch(
               value: _showAlbumUpdates,
-              activeThumbColor: VibraTheme.kYellow,
+              activeThumbColor: VibraTheme.kBrandPrimary,
               onChanged: (v) => setState(() => _showAlbumUpdates = v),
             ),
           ),
@@ -173,7 +173,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: l10n.mostrarCarruselBandeja,
             trailing: Switch(
               value: _showCarousel,
-              activeThumbColor: VibraTheme.kYellow,
+              activeThumbColor: VibraTheme.kBrandPrimary,
               onChanged: (v) => setState(() => _showCarousel = v),
             ),
           ),
@@ -185,7 +185,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: l10n.mantenerPantallaDesbloqueada,
             trailing: Switch(
               value: _keepUnlocked,
-              activeThumbColor: VibraTheme.kYellow,
+              activeThumbColor: VibraTheme.kBrandPrimary,
               onChanged: (v) => setState(() => _keepUnlocked = v),
             ),
           ),
@@ -219,7 +219,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: l10n.marcarConQuienChateeado,
             trailing: Switch(
               value: _markChatted,
-              activeThumbColor: VibraTheme.kYellow,
+              activeThumbColor: VibraTheme.kBrandPrimary,
               onChanged: (v) => setState(() => _markChatted = v),
             ),
           ),
@@ -229,7 +229,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: l10n.sincronizacionMensajes,
             trailing: Switch(
               value: _chatSync,
-              activeThumbColor: VibraTheme.kYellow,
+              activeThumbColor: VibraTheme.kBrandPrimary,
               onChanged: (v) => setState(() => _chatSync = v),
             ),
           ),
@@ -303,7 +303,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: l10n.mensajesNuevos,
               trailing: Switch(
                 value: _newMessages,
-                activeThumbColor: VibraTheme.kYellow,
+                activeThumbColor: VibraTheme.kBrandPrimary,
                 onChanged: (v) {
                   setState(() => _newMessages = v);
                   _updateNotificationPref('new_messages', v);
@@ -316,7 +316,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: l10n.tapsNuevos,
               trailing: Switch(
                 value: _newTaps,
-                activeThumbColor: VibraTheme.kYellow,
+                activeThumbColor: VibraTheme.kBrandPrimary,
                 onChanged: (v) {
                   setState(() => _newTaps = v);
                   _updateNotificationPref('new_taps', v);
@@ -329,7 +329,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: l10n.promociones,
               trailing: Switch(
                 value: _promotions,
-                activeThumbColor: VibraTheme.kYellow,
+                activeThumbColor: VibraTheme.kBrandPrimary,
                 onChanged: (v) {
                   setState(() => _promotions = v);
                   _updateNotificationPref('promotions', v);

@@ -59,8 +59,8 @@
   "gratis": "FREE",
   "encuentraMasMasRapido": "Find more, faster",
   "masAccesoMasAtencion": "More access. More attention.",
-  "xtra": "XTRA",
-  "unlimited": "UNLIMITED",
+  "xtra": "Pulse",
+  "unlimited": "Aura",
   "chatIlimitados": "Unlimited chats in Explore",
   "fotosIlimitadasSinCaducidad": "Unlimited photos without expiration",
   "traduccionChat": "Chat translation",
@@ -940,10 +940,10 @@
   "premiumTierFree": "Free",
   "@premiumTierFree": { "description": "Premium tier badge label: Free tier" },
 
-  "premiumTierXtra": "Xtra",
+  "premiumTierXtra": "Pulse",
   "@premiumTierXtra": { "description": "Premium tier badge label: Xtra tier" },
 
-  "premiumTierUnlimited": "Unlimited",
+  "premiumTierUnlimited": "Aura",
   "@premiumTierUnlimited": { "description": "Premium tier badge label: Unlimited tier" },
 
   "premiumUpgradePrompt": "Upgrade to use {feature}",

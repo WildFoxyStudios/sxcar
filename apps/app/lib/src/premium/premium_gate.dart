@@ -102,7 +102,7 @@ class PremiumStatusBadge extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
 
     final (String label, Color color) = switch (status.tier) {
-      'xtra' => (l10n.premiumTierXtra, VibraTheme.kYellow),
+      'xtra' => (l10n.premiumTierXtra, VibraTheme.kBrandPrimary),
       'unlimited' => (l10n.premiumTierUnlimited, VibraTheme.kTierTop),
       _ => (l10n.premiumTierFree, VibraTheme.kTextSecondary),
     };
@@ -142,29 +142,29 @@ class _DefaultUpgradeBanner extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: VibraTheme.kYellow.withValues(alpha: 0.1),
+            color: VibraTheme.kBrandPrimary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: VibraTheme.kYellow.withValues(alpha: 0.3),
+              color: VibraTheme.kBrandPrimary.withValues(alpha: 0.3),
             ),
           ),
           child: Row(
             children: [
               const Icon(Icons.lock_outline,
-                  color: VibraTheme.kYellow, size: 18),
+                  color: VibraTheme.kBrandPrimary, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   l10n.premiumUpgradePrompt(featureDisplayName),
                   style: const TextStyle(
-                    color: VibraTheme.kYellow,
+                    color: VibraTheme.kBrandPrimary,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
                 ),
               ),
               const Icon(Icons.arrow_forward_ios,
-                  color: VibraTheme.kYellow, size: 14),
+                  color: VibraTheme.kBrandPrimary, size: 14),
             ],
           ),
         ),
@@ -243,7 +243,7 @@ class _PremiumComparisonSheet extends StatelessWidget {
           const SizedBox(height: 12),
           _TierRow(
             tierName: l10n.premiumTierXtra,
-            tierColor: VibraTheme.kYellow,
+            tierColor: VibraTheme.kBrandPrimary,
             features: [
               _FeatureRow(l10n.premiumFeatureUnlimitedGrid, true),
               _FeatureRow(l10n.premiumFeatureAdvancedFilters, true),
@@ -275,7 +275,7 @@ class _PremiumComparisonSheet extends StatelessWidget {
                 Navigator.of(context).pushNamed('/tienda');
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: VibraTheme.kYellow,
+                backgroundColor: VibraTheme.kBrandPrimary,
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(

@@ -516,9 +516,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: ElevatedButton(
             onPressed: (state.isSaving || _isSavingHealth) ? null : _saveAll,
             style: ElevatedButton.styleFrom(
-              backgroundColor: VibraTheme.kYellow,
+              backgroundColor: VibraTheme.kBrandPrimary,
               foregroundColor: Colors.black,
-              disabledBackgroundColor: VibraTheme.kYellow,
+              disabledBackgroundColor: VibraTheme.kBrandPrimary,
               disabledForegroundColor: Colors.black,
               minimumSize: const Size.fromHeight(52),
               shape: RoundedRectangleBorder(
@@ -708,7 +708,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 ? 'Upgrade to Xtra for up to 3 tribes'
                                 : 'Upgrade to Unlimited for unlimited tribes',
                             style: const TextStyle(
-                              color: VibraTheme.kYellow,
+                              color: VibraTheme.kBrandPrimary,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1180,7 +1180,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         child: _isUploadingGallery
             ? const Center(
                 child: CircularProgressIndicator(
-                  color: VibraTheme.kYellow,
+                  color: VibraTheme.kBrandPrimary,
                   strokeWidth: 2,
                 ),
               )
@@ -1219,7 +1219,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               if (!photo.isPrimary)
                 ListTile(
                   leading: const Icon(Icons.star_border,
-                      color: VibraTheme.kYellow),
+                      color: VibraTheme.kBrandPrimary),
                   title: Text(
                     l10n?.gallerySetPrimary ?? 'Hacer principal',
                     style: const TextStyle(color: VibraTheme.kTextPrimary),
@@ -1276,7 +1276,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: VibraTheme.kYellow, width: 1.5),
+        borderSide: const BorderSide(color: VibraTheme.kBrandPrimary, width: 1.5),
       ),
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1296,7 +1296,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           Text(
             value ? (l10n?.editProfileOn ?? 'On') : (l10n?.editProfileOff ?? 'Off'),
             style: TextStyle(
-              color: value ? VibraTheme.kYellow : VibraTheme.kTextSecondary,
+              color: value ? VibraTheme.kBrandPrimary : VibraTheme.kTextSecondary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1314,7 +1314,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final trailing = current == null
         ? const Icon(Icons.chevron_right,
             color: VibraTheme.kTextSecondary)
-        : const Icon(Icons.check, color: VibraTheme.kYellow);
+        : const Icon(Icons.check, color: VibraTheme.kBrandPrimary);
     return ListTile(
       title: Text(label,
           style: const TextStyle(color: VibraTheme.kTextPrimary)),

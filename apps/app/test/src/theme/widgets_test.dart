@@ -445,7 +445,7 @@ void main() {
       ).first);
       final decoration = container.decoration as BoxDecoration;
       final gradient = decoration.gradient as LinearGradient;
-      expect(gradient.colors.first, VibraTheme.kYellow);
+      expect(gradient.colors.first, VibraTheme.kBrandPrimary);
     });
   });
 
@@ -501,7 +501,7 @@ void main() {
       ).first);
       final decoration = container.decoration as BoxDecoration;
       final border = decoration.border as Border;
-      expect(border.top.color, VibraTheme.kYellow);
+      expect(border.top.color, VibraTheme.kBrandPrimary);
     });
 
     testWidgets('invokes onTap', (tester) async {
@@ -548,11 +548,11 @@ void main() {
       expect(text.style?.fontSize, 9);
     });
 
-    testWidgets('default uses kYellow background and kBg text', (tester) async {
+    testWidgets('default uses kBrandPrimary background and kBg text', (tester) async {
       await tester.pumpWidget(_wrap(const NUEVOBadge()));
       final container = tester.widget<Container>(find.byType(Container).first);
       final box = container.decoration as BoxDecoration;
-      expect(box.color, equals(VibraTheme.kYellow));
+      expect(box.color, equals(VibraTheme.kBrandPrimary));
       final text = tester.widget<Text>(find.text('NUEVO'));
       expect(text.style?.color, equals(VibraTheme.kBg));
     });
@@ -639,7 +639,7 @@ void main() {
       final hasYellow = containers.any((c) {
         final dec = c.decoration;
         if (dec is! BoxDecoration) return false;
-        return dec.color == VibraTheme.kYellow;
+        return dec.color == VibraTheme.kBrandPrimary;
       });
       expect(hasYellow, true);
     });
@@ -839,7 +839,7 @@ void main() {
           onChanged: (_) {},
         ),
       ));
-      // 'a' and 'b' are selected (kYellow selected style).
+      // 'a' and 'b' are selected (kBrandPrimary selected style).
       // 'c' and 'd' must be disabled — opacity 0.5 wrapper means InkWell is
       // still in tree but onTap is null. The label color should be muted.
       final cText = tester.widget<Text>(find.text('c'));

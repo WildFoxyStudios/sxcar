@@ -64,7 +64,7 @@ class SecurityScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: VibraTheme.kYellow, size: 24),
+          Icon(icon, color: VibraTheme.kBrandPrimary, size: 24),
           const SizedBox(width: 14),
           Expanded(
             child: Column(

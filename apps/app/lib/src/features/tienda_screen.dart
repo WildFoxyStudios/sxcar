@@ -150,14 +150,14 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: VibraTheme.kYellow.withValues(alpha: 0.15),
+              color: VibraTheme.kBrandPrimary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: VibraTheme.kYellow, width: 1),
+              border: Border.all(color: VibraTheme.kBrandPrimary, width: 1),
             ),
             child: Row(
               children: [
                 const Icon(Icons.check_circle,
-                    color: VibraTheme.kYellow, size: 20),
+                    color: VibraTheme.kBrandPrimary, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -197,7 +197,7 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
               Text(
                 selectedPlan.name,
                 style: const TextStyle(
-                  color: VibraTheme.kYellow,
+                  color: VibraTheme.kBrandPrimary,
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                 ),
@@ -271,7 +271,7 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
                       width: 28,
                       height: 28,
                       decoration: const BoxDecoration(
-                        color: VibraTheme.kYellow,
+                        color: VibraTheme.kBrandPrimary,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.check,

@@ -101,7 +101,7 @@ class _AddTripScreenState extends State<AddTripScreen> {
               },
             ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: VibraTheme.kYellow,
+        backgroundColor: VibraTheme.kBrandPrimary,
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add),
         label: Text(l10n.editProfileAdd),

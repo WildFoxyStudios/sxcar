@@ -181,7 +181,7 @@ class ProfileDrawer extends ConsumerWidget {
             // Right Now row
             _DrawerListTile(
               icon: Icons.water_drop,
-              iconColor: VibraTheme.kRightNow,
+              iconColor: VibraTheme.kAccentGlow,
               label: l10n.rightNow,
               onTap: () {
                 Navigator.of(context).pop();
@@ -206,15 +206,15 @@ class ProfileDrawer extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: VibraTheme.kYellow.withValues(alpha: 0.15),
+                        color: VibraTheme.kBrandPrimary.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                         border:
-                            Border.all(color: VibraTheme.kYellow, width: 1),
+                            Border.all(color: VibraTheme.kBrandPrimary, width: 1),
                       ),
                       child: Row(
                         children: [
                           const Icon(Icons.check_circle,
-                              color: VibraTheme.kYellow, size: 20),
+                              color: VibraTheme.kBrandPrimary, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -447,7 +447,7 @@ class _PhotoPlaceholder extends StatelessWidget {
           initials,
           style: const TextStyle(
             fontSize: 60,
-            color: VibraTheme.kYellow,
+            color: VibraTheme.kBrandPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -493,7 +493,7 @@ class _BoostRowState extends ConsumerState<_BoostRow> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Boost activado por 30 min!'),
-            backgroundColor: VibraTheme.kBoost,
+            backgroundColor: VibraTheme.kAccentPulse,
           ),
         );
       }
@@ -539,14 +539,14 @@ class _BoostRowState extends ConsumerState<_BoostRow> {
 
     return _DrawerListTile(
       icon: Icons.bolt,
-      iconColor: VibraTheme.kBoost,
+      iconColor: VibraTheme.kAccentPulse,
       label: boostLabel,
       trailing: _activating
           ? const SizedBox(
               width: 16,
               height: 16,
               child: CircularProgressIndicator(
-                  strokeWidth: 2, color: VibraTheme.kBoost),
+                  strokeWidth: 2, color: VibraTheme.kAccentPulse),
             )
           : null,
       onTap: _handleBoost,

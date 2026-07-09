@@ -193,11 +193,11 @@ final GoRouter appRouter = GoRouter(
             children: [
               Text('V',
                   style: TextStyle(
-                      color: VibraTheme.kYellow,
+                      color: VibraTheme.kBrandPrimary,
                       fontSize: 48,
                       fontWeight: FontWeight.bold)),
               SizedBox(height: 16),
-              CircularProgressIndicator(color: VibraTheme.kYellow),
+              CircularProgressIndicator(color: VibraTheme.kBrandPrimary),
             ],
           ),
         ),
@@ -482,7 +482,7 @@ class MainShell extends ConsumerWidget {
         currentIndex: currentIndex,
         onTap: (index) => navigationShell.goBranch(index),
         backgroundColor: const Color(0xFF0D0D0D),
-        selectedItemColor: VibraTheme.kYellow,
+        selectedItemColor: VibraTheme.kBrandPrimary,
         unselectedItemColor: const Color(0xFF777777),
         type: BottomNavigationBarType.fixed,
         items: [

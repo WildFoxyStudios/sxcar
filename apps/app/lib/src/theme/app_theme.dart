@@ -10,72 +10,76 @@ import 'package:google_fonts/google_fonts.dart';
 class VibraTheme {
   VibraTheme._(); // prevent instantiation
 
-  // ── Color tokens (verbatim from Global Constraints) ──────────────────────
-  /// Pure black scaffold background.
-  static const Color kBg = Color(0xFF000000);
+  // ── HALO brand palette — original identity (electric duotone) ────────────
+  // Teal + magenta on a blue-black base. See docs/design/identity.md.
+  /// Scaffold background — blue-black.
+  static const Color kBg = Color(0xFF0B0E14);
 
   /// Elevated surface (cards, sheets).
-  static const Color kSurface = Color(0xFF1A1A1A);
+  static const Color kSurface = Color(0xFF151A24);
 
   /// Chip / segmented control background.
-  static const Color kChip = Color(0xFF2A2A2A);
+  static const Color kChip = Color(0xFF1E2430);
 
   /// Divider / separator line.
-  static const Color kDivider = Color(0xFF333333);
+  static const Color kDivider = Color(0xFF2A3140);
 
-  /// Primary yellow accent — text OVER this MUST be black.
-  static const Color kYellow = Color(0xFFFFCC00);
+  /// Brand primary — teal. Text OVER this MUST be dark (kBg).
+  static const Color kBrandPrimary = Color(0xFF00E0C6);
 
-  /// Lighter yellow used for gradient endpoints.
-  static const Color kYellowLight = Color(0xFFFFD633);
+  /// Lighter teal for gradient endpoints / hovers.
+  static const Color kBrandPrimaryLight = Color(0xFF33E8D2);
 
-  /// Alias: kAccent == kYellow (keeps existing references compiling).
-  static const Color kAccent = kYellow;
+  /// Brand secondary — magenta. The duotone counterpart to the teal primary.
+  static const Color kBrandSecondary = Color(0xFFFF3D8B);
 
-  /// Accent used for the Events feature surfaces.
+  /// Alias: kAccent == kBrandPrimary (keeps existing references compiling).
+  static const Color kAccent = kBrandPrimary;
+
+  /// Accent used for the Events feature surfaces (indigo, on-brand).
   static const Color kEventAccent = Color(0xFF6C63FF);
 
-  /// Accent used for the top premium tier badge/border.
+  /// Accent used for the top premium tier badge/border (bright cyan).
   static const Color kTierTop = Color(0xFF00E5FF);
 
   /// Muted gold used for secondary highlight icons (e.g. active session).
   static const Color kGold = Color(0xFFF4C542);
 
-  /// Primary text — white.
-  static const Color kText = Color(0xFFFFFFFF);
+  /// Primary text — cool white.
+  static const Color kText = Color(0xFFEAF6FF);
 
   /// Alias: kTextPrimary == kText (keeps existing references compiling).
   static const Color kTextPrimary = kText;
 
-  /// Secondary text — mid-grey.
-  static const Color kTextSecondary = Color(0xFF8E8E8E);
+  /// Secondary text — cool mid-grey.
+  static const Color kTextSecondary = Color(0xFF8A94A6);
 
-  /// Tertiary text — dark grey (section footers, counters).
-  static const Color kTextTertiary = Color(0xFF666666);
+  /// Tertiary text — cool dark grey (section footers, counters).
+  static const Color kTextTertiary = Color(0xFF5A6373);
 
   /// Alias: kTextMuted == kTextTertiary (keeps existing references compiling).
   static const Color kTextMuted = kTextTertiary;
 
-  /// Online presence dot.
-  static const Color kOnline = Color(0xFF1BD75E);
+  /// Online presence dot — brand success green.
+  static const Color kOnline = Color(0xFF2FD07A);
 
-  /// Boost feature accent.
-  static const Color kBoost = Color(0xFF26D944);
+  /// "Pulse" accent (formerly Boost) — kept green for "go/active".
+  static const Color kAccentPulse = Color(0xFF2FD07A);
 
-  /// Right-Now feature accent.
-  static const Color kRightNow = Color(0xFF9B51E0);
+  /// "Glow" accent (formerly Right-Now) — brand magenta for urgency.
+  static const Color kAccentGlow = kBrandSecondary;
 
-  /// Badge / error red.
-  static const Color kBadgeRed = Color(0xFFFF3B30);
+  /// Badge / danger red.
+  static const Color kBadgeRed = Color(0xFFFF4D5E);
 
   /// Success / positive feedback (snackbar backgrounds, badges).
-  static const Color kSuccess = Color(0xFF2E7D32);
+  static const Color kSuccess = Color(0xFF2FD07A);
 
-  /// Error colour (kept for theme).
-  static const Color kError = Color(0xFFCF6679);
+  /// Error / danger colour.
+  static const Color kError = Color(0xFFFF4D5E);
 
-  /// Elevated surface — kept for backward compat; same as kSurface.
-  static const Color kSurfaceElevated = Color(0xFF1F1F1F);
+  /// Elevated surface — slightly lighter than kSurface.
+  static const Color kSurfaceElevated = Color(0xFF1E2430);
 
   // ── Spacing / radius constants ────────────────────────────────────────────
   static const double kRadiusCard = 12.0;
@@ -124,11 +128,11 @@ class VibraTheme {
       scaffoldBackgroundColor: kBg,
 
       colorScheme: const ColorScheme.dark(
-        primary: kYellow,
-        secondary: kYellow,
+        primary: kBrandPrimary,
+        secondary: kBrandSecondary,
         surface: kSurface,
         onPrimary: Colors.black,
-        onSecondary: Colors.black,
+        onSecondary: Colors.white,
         onSurface: kTextPrimary,
         error: kError,
       ),
@@ -146,7 +150,7 @@ class VibraTheme {
 
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: kBg,
-        selectedItemColor: kYellow,
+        selectedItemColor: kBrandPrimary,
         unselectedItemColor: Color(0xFF777777),
         type: BottomNavigationBarType.fixed,
       ),
@@ -170,14 +174,14 @@ class VibraTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(kRadiusInput),
-          borderSide: const BorderSide(color: kYellow, width: 1.5),
+          borderSide: const BorderSide(color: kBrandPrimary, width: 1.5),
         ),
         hintStyle: const TextStyle(color: kTextMuted),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: kYellow,
+          backgroundColor: kBrandPrimary,
           foregroundColor: Colors.black,
           minimumSize: const Size(double.infinity, 48),
           shape: RoundedRectangleBorder(
@@ -189,12 +193,12 @@ class VibraTheme {
       ),
 
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: kYellow),
+        style: TextButton.styleFrom(foregroundColor: kBrandPrimary),
       ),
 
       chipTheme: ChipThemeData(
         backgroundColor: kChip,
-        selectedColor: kYellow.withValues(alpha: 0.2),
+        selectedColor: kBrandPrimary.withValues(alpha: 0.2),
         labelStyle: const TextStyle(color: kTextSecondary, fontSize: 12),
         side: BorderSide.none,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -205,11 +209,11 @@ class VibraTheme {
 
       dividerTheme: const DividerThemeData(color: kDivider, thickness: 1),
 
-      // Switch: track kYellow when ON, #4A4A4A when OFF; thumb always white.
+      // Switch: track kBrandPrimary when ON, #4A4A4A when OFF; thumb always white.
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.all(Colors.white),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return kYellow;
+          if (states.contains(WidgetState.selected)) return kBrandPrimary;
           return const Color(0xFF4A4A4A);
         }),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),

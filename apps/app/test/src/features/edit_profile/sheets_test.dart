@@ -167,7 +167,7 @@ void main() {
       // both texts still present, but their parent chip has selected style).
       expect(find.text('Chat'), findsOneWidget);
       expect(find.text('Dates'), findsOneWidget);
-      // Selected chips render with kYellow background. The test verifies the
+      // Selected chips render with kBrandPrimary background. The test verifies the
       // chips are in the tree; full visual diff is overkill here.
     });
   });

@@ -210,7 +210,7 @@ class _SingleSelectSheet extends StatelessWidget {
                                 ? Icons.radio_button_checked
                                 : Icons.radio_button_unchecked,
                             color: isSelected
-                                ? VibraTheme.kYellow
+                                ? VibraTheme.kBrandPrimary
                                 : VibraTheme.kTextSecondary,
                           ),
                           const SizedBox(width: 12),
@@ -290,7 +290,7 @@ class _MultiSelectSheetState extends State<_MultiSelectSheet> {
                     onPressed: () => Navigator.of(context).pop(_picked),
                     child: const Text('OK',
                         style: TextStyle(
-                            color: VibraTheme.kYellow,
+                            color: VibraTheme.kBrandPrimary,
                             fontWeight: FontWeight.bold)),
                   ),
                 ],
@@ -383,7 +383,7 @@ class _NumericSheetState extends State<_NumericSheet> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.remove_circle_outline,
-                        color: VibraTheme.kYellow, size: 36),
+                        color: VibraTheme.kBrandPrimary, size: 36),
                     onPressed: () => _bump(-widget.step),
                   ),
                   const SizedBox(width: 24),
@@ -398,7 +398,7 @@ class _NumericSheetState extends State<_NumericSheet> {
                   const SizedBox(width: 24),
                   IconButton(
                     icon: const Icon(Icons.add_circle_outline,
-                        color: VibraTheme.kYellow, size: 36),
+                        color: VibraTheme.kBrandPrimary, size: 36),
                     onPressed: () => _bump(widget.step),
                   ),
                 ],

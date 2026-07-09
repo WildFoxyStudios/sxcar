@@ -182,10 +182,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get masAccesoMasAtencion => 'More access. More attention.';
 
   @override
-  String get xtra => 'XTRA';
+  String get xtra => 'Pulse';
 
   @override
-  String get unlimited => 'UNLIMITED';
+  String get unlimited => 'Aura';
 
   @override
   String get chatIlimitados => 'Unlimited chats in Explore';
@@ -1591,10 +1591,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumTierFree => 'Free';
 
   @override
-  String get premiumTierXtra => 'Xtra';
+  String get premiumTierXtra => 'Pulse';
 
   @override
-  String get premiumTierUnlimited => 'Unlimited';
+  String get premiumTierUnlimited => 'Aura';
 
   @override
   String premiumUpgradePrompt(String feature) {

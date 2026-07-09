@@ -443,13 +443,13 @@ abstract class AppLocalizations {
   /// XTRA tier label (legacy / Compat)
   ///
   /// In es, this message translates to:
-  /// **'XTRA'**
+  /// **'Pulse'**
   String get xtra;
 
   /// Unlimited tier label
   ///
   /// In es, this message translates to:
-  /// **'UNLIMITED'**
+  /// **'Aura'**
   String get unlimited;
 
   /// Unlimited chats feature bullet
@@ -3089,13 +3089,13 @@ abstract class AppLocalizations {
   /// Insignia del nivel Xtra
   ///
   /// In es, this message translates to:
-  /// **'Xtra'**
+  /// **'Pulse'**
   String get premiumTierXtra;
 
   /// Insignia del nivel Unlimited
   ///
   /// In es, this message translates to:
-  /// **'Ilimitado'**
+  /// **'Aura'**
   String get premiumTierUnlimited;
 
   /// Mensaje para actualizar en funciones bloqueadas

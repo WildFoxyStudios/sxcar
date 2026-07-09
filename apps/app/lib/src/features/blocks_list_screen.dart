@@ -163,7 +163,7 @@ class _BlocksListScreenState extends ConsumerState<BlocksListScreen> {
                 onPressed: () => _unblock(user['user_id'] as String),
                 child: const Text(
                   'Desbloquear',
-                  style: TextStyle(color: VibraTheme.kYellow),
+                  style: TextStyle(color: VibraTheme.kBrandPrimary),
                 ),
               ),
             ],

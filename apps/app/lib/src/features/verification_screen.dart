@@ -104,7 +104,7 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
       ),
       body: statusAsync.when(
         loading: () => const Center(
-          child: CircularProgressIndicator(color: VibraTheme.kYellow),
+          child: CircularProgressIndicator(color: VibraTheme.kBrandPrimary),
         ),
         error: (err, _) => _ErrorPanel(
           onRetry: () => ref.invalidate(verificationStatusProvider),
@@ -169,7 +169,7 @@ class _PendingPanel extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.hourglass_top, size: 80,
-                color: VibraTheme.kYellow),
+                color: VibraTheme.kBrandPrimary),
             const SizedBox(height: 24),
             Text(
               l10n.verifyPending,
@@ -206,7 +206,7 @@ class _NotSubmittedPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Icon(Icons.verified_user, size: 72,
-              color: VibraTheme.kYellow),
+              color: VibraTheme.kBrandPrimary),
           const SizedBox(height: 24),
           Text(
             l10n.verifyProfileTitle,
@@ -251,9 +251,9 @@ class _NotSubmittedPanel extends StatelessWidget {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: VibraTheme.kYellow,
+                backgroundColor: VibraTheme.kBrandPrimary,
                 disabledBackgroundColor:
-                    VibraTheme.kYellow.withValues(alpha: 0.5),
+                    VibraTheme.kBrandPrimary.withValues(alpha: 0.5),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

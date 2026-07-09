@@ -102,6 +102,8 @@ pub async fn list(
         .iter()
         .map(|u| {
             let mut j = serde_json::to_value(u).unwrap_or_default();
+            // Location privacy: never expose the raw distance — snap to bucket.
+            j["distance_m"] = serde_json::json!(db::geo::fuzz_distance(u.distance_m));
             let r2_key = u.profile_photo_key.as_deref()
                 .or(u.profile_photo_url.as_deref());
             if let Some(key) = r2_key {

@@ -33,6 +33,55 @@ pub struct NearbyUserRow {
     pub verified: bool,
 }
 
+/// Location-privacy fuzzing granularity, in metres. Distances shown to clients
+/// are snapped to this bucket so exact distances can't be triangulated.
+pub const DISTANCE_BUCKET_M: f64 = 100.0;
+
+/// Snap a raw distance (metres) to a coarse bucket for location privacy.
+///
+/// Deterministic (stable per raw value) so an attacker cannot average many
+/// samples to recover the true distance, with a floor of one bucket so
+/// very-close users are never pinpointed to 0 m. Never expose the raw
+/// `ST_Distance` value to clients — always route grid/discover distances
+/// through this.
+pub fn fuzz_distance(raw_m: f64) -> f64 {
+    if !raw_m.is_finite() || raw_m <= 0.0 {
+        return DISTANCE_BUCKET_M;
+    }
+    let bucketed = (raw_m / DISTANCE_BUCKET_M).round() * DISTANCE_BUCKET_M;
+    bucketed.max(DISTANCE_BUCKET_M)
+}
+
+#[cfg(test)]
+mod fuzz_tests {
+    use super::{fuzz_distance, DISTANCE_BUCKET_M};
+
+    #[test]
+    fn snaps_to_bucket_multiples() {
+        for raw in [0.0, 30.0, 149.0, 150.0, 349.0, 1234.0, 98765.0] {
+            let f = fuzz_distance(raw);
+            assert!(
+                (f / DISTANCE_BUCKET_M).fract().abs() < 1e-9,
+                "{f} is not a multiple of {DISTANCE_BUCKET_M}"
+            );
+            assert!(f >= DISTANCE_BUCKET_M, "{f} below floor");
+        }
+    }
+
+    #[test]
+    fn is_deterministic() {
+        assert_eq!(fuzz_distance(342.0), fuzz_distance(342.0));
+    }
+
+    #[test]
+    fn floors_close_and_invalid_distances() {
+        assert_eq!(fuzz_distance(0.0), DISTANCE_BUCKET_M);
+        assert_eq!(fuzz_distance(-5.0), DISTANCE_BUCKET_M);
+        assert_eq!(fuzz_distance(10.0), DISTANCE_BUCKET_M);
+        assert_eq!(fuzz_distance(f64::NAN), DISTANCE_BUCKET_M);
+    }
+}
+
 /// Busca usuarios activos cerca de una ubicación, ordenados por distancia,
 /// con filtros opcionales de búsqueda.
 ///

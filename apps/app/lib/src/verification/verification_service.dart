@@ -11,8 +11,8 @@ class VerificationStatus {
 
   factory VerificationStatus.fromJson(Map<String, dynamic> json) {
     return VerificationStatus(
-      verified: json['verified'] as bool,
-      pending: json['pending'] as bool,
+      verified: json['verified'] as bool? ?? false,
+      pending: json['pending'] as bool? ?? false,
     );
   }
 }

@@ -62,9 +62,14 @@ class SessionsScreen extends ConsumerWidget {
   }
 
   String _shortDate(String iso) {
-    // Server sends e.g. "2026-07-01 19:40:51.975572 +00:00:00" — take the date.
-    final space = iso.indexOf(' ');
-    return space > 0 ? iso.substring(0, space) : iso;
+    // Server may send "2026-07-01 19:40:51.975572 +00:00:00" or ISO-8601 with
+    // a 'T' separator (e.g. "2026-07-01T19:40:51Z"). Parse and format to
+    // "YYYY-MM-DD HH:MM"; fall back to the raw string if parsing fails.
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return iso;
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${dt.year}-${two(dt.month)}-${two(dt.day)} '
+        '${two(dt.hour)}:${two(dt.minute)}';
   }
 
   Future<void> _confirmRevoke(

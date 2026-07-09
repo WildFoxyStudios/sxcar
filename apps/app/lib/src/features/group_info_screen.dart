@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../chat/chat_service.dart';
 import '../theme/app_theme.dart';
@@ -86,7 +87,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     if (myId == null) return;
     await _removeMember(myId);
     if (!mounted) return;
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (context.mounted) context.pop();
   }
 
   @override

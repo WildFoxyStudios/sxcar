@@ -209,17 +209,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (mounted) {
           Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => ProviderScope(
-                overrides: [],
-                child: CallScreen(
+              builder: (_) => CallScreen(
+                conversationId: convId,
+                incomingCall: IncomingCall(
                   conversationId: convId,
-                  incomingCall: IncomingCall(
-                    conversationId: convId,
-                    callerId: callerId,
-                    callerName: widget.conversationName,
-                    sdp: sdp,
-                    video: video,
-                  ),
+                  callerId: callerId,
+                  callerName: widget.conversationName,
+                  sdp: sdp,
+                  video: video,
                 ),
               ),
             ),
@@ -517,19 +514,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             icon: const Icon(Icons.phone, color: VibraTheme.kAccent, size: 22),
             tooltip: l10n?.chatVoiceCall ?? 'Voice call',
             onPressed: () {
-              final callService = ref.read(callServiceProvider);
-              if (!callService.isActive) {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => ProviderScope(
-                      overrides: [],
-                      child: CallScreen(
-                        conversationId: widget.conversationId,
-                      ),
-                    ),
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => CallScreen(
+                    conversationId: widget.conversationId,
                   ),
-                );
-              }
+                ),
+              );
             },
           ),
         ],

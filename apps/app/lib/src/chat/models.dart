@@ -137,12 +137,13 @@ class Message {
   /// do NOT include viewed/read timestamps — those are REST-only fields.
   factory Message.fromWebSocketJson(Map<String, dynamic> json) {
     return Message(
-      id: json['id'] as String,
-      conversationId: json['conversation_id'] as String,
-      senderId: json['sender_id'] as String,
+      id: json['id'] as String? ?? '',
+      conversationId: json['conversation_id'] as String? ?? '',
+      senderId: json['sender_id'] as String? ?? '',
       kind: json['kind'] as String? ?? 'text',
       body: json['body'] as String?,
-      createdAt: json['sent_at'] as String,
+      createdAt: (json['sent_at'] ?? json['created_at']) as String? ??
+          DateTime.now().toUtc().toIso8601String(),
       mediaKey: json['media_key'] as String?,
       mediaType: json['media_type'] as String?,
       // WS payload does not include viewed/read timestamps — REST-only fields.

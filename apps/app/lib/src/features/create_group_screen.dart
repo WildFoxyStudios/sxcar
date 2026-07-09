@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../chat/chat_service.dart';
 import '../theme/app_theme.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -65,7 +66,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
           content: Text(AppLocalizations.of(context)?.groupCreated ?? 'Group created'),
         ),
       );
-      Navigator.of(context).pop(true);
+      context.pop(true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

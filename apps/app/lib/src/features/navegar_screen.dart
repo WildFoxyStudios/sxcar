@@ -124,7 +124,6 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   // ── New state (T3) ─────────────────────────────────────────────────────────
   bool _showFavoritesOnly = false;
   bool _onlineOnly = false;
-  Set<String> _favoriteIds = {};
 
   // ── New state (T5.9) ───────────────────────────────────────────────────────
   // heartbeats-based "right now" filter (last_seen_at < now-30min).
@@ -154,7 +153,6 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     super.initState();
     _nearbyUsersFuture = _initAndFetch();
     _discoverUsersFuture = _initAndFetchDiscover();
-    _loadFavorites();
     _loadFilterOptions();
     _loadTravelPass();
   }
@@ -206,27 +204,6 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       });
     }
     return _fetchNearbyUsers();
-  }
-
-  /// Loads the user's favorites list from the API (client-side filter support).
-  void _loadFavorites() async {
-    try {
-      await ref.read(authReadyProvider.future);
-      final dio = ref.read(dioProvider);
-      final resp = await dio.get<Map<String, dynamic>>('/favorites');
-      final favsJson = (resp.data!['favorites'] as List<dynamic>);
-      if (mounted) {
-        setState(() {
-          _favoriteIds = favsJson
-              .map((f) => (f as Map<String, dynamic>)['user_id'] as String)
-              .toSet();
-
-        });
-      }
-    } catch (_) {
-      debugPrint('[NavegarScreen] error: loading favorites failed');
-      // Favorites are optional — the chip simply filters nothing on failure.
-    }
   }
 
   /// Fetches filter options from /meta/filters on startup.
@@ -388,8 +365,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     setState(() {
       _showFavoritesOnly = !_showFavoritesOnly;
       // T5.9: refetch so the server-side `favorites_only=true` actually runs.
-      // Without this, the chip flips but the API still returns the full set
-      // (the old client-side filter via _favoriteIds was the only path).
+      // The server returns the already-filtered set — no client-side re-filter.
       _nearbyUsersFuture = _fetchNearbyUsers();
     });
   }
@@ -484,7 +460,10 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.you_boosted_snackbar)),
+          SnackBar(
+            content: Text(l10n.navegarFailedToLoad),
+            backgroundColor: VibraTheme.kError,
+          ),
         );
       }
     }
@@ -519,12 +498,11 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             final isLoading =
                 snapshot.connectionState == ConnectionState.waiting;
             final hasError = snapshot.hasError;
-            final rawUsers = snapshot.data ?? [];
-            final users = _showFavoritesOnly
-                ? rawUsers
-                    .where((u) => _favoriteIds.contains(u.id))
-                    .toList()
-                : rawUsers;
+            // Favorites are already server-filtered (`favorites_only=true` is
+            // sent in _fetchNearbyUsers). The old client-side favorites
+            // re-filter emptied the grid before the favorites list loaded, so
+            // it's removed — the server response is authoritative.
+            final users = snapshot.data ?? [];
 
             return CustomScrollView(
               slivers: [

@@ -4,11 +4,16 @@ import 'package:app/src/boost/boost_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Mocks the REAL backend contract:
+///  - `POST /boost` → top-level `{ id, user_id, duration_secs, started_at,
+///    expires_at, source }` (no `boost` wrapper, no `minutes_remaining`).
+///  - `GET /boost/active` → `{ is_boosted, remaining_secs }`.
 class _MockBoostAdapter implements HttpClientAdapter {
-  final Map<String, dynamic>? activeResponse;
+  /// When non-null, `/boost/active` returns an active boost with these seconds.
+  final int? activeRemainingSecs;
   final List<String> paths = [];
 
-  _MockBoostAdapter({this.activeResponse});
+  _MockBoostAdapter({this.activeRemainingSecs});
 
   @override
   Future<ResponseBody> fetch(
@@ -21,11 +26,12 @@ class _MockBoostAdapter implements HttpClientAdapter {
     if (options.method == 'POST' && options.path == '/boost') {
       return ResponseBody.fromString(
         jsonEncode({
-          'boost': {
-            'id': 'boost-1',
-            'expires_at': '2026-07-01T12:00:00Z',
-            'minutes_remaining': 30,
-          }
+          'id': 'boost-1',
+          'user_id': 'user-1',
+          'duration_secs': 1800,
+          'started_at': '2026-07-01T12:00:00Z',
+          'expires_at': '2026-07-01T12:30:00Z',
+          'source': 'manual',
         }),
         201,
         headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
@@ -33,9 +39,9 @@ class _MockBoostAdapter implements HttpClientAdapter {
     }
 
     if (options.method == 'GET' && options.path == '/boost/active') {
-      final body = activeResponse == null
-          ? jsonEncode({'active': false, 'minutes_remaining': 0})
-          : jsonEncode({'active': true, ...activeResponse!});
+      final body = activeRemainingSecs == null
+          ? jsonEncode({'is_boosted': false, 'remaining_secs': 0})
+          : jsonEncode({'is_boosted': true, 'remaining_secs': activeRemainingSecs});
       return ResponseBody.fromString(
         body,
         200,
@@ -55,29 +61,16 @@ class _MockBoostAdapter implements HttpClientAdapter {
 }
 
 void main() {
-  group('Boost', () {
-    test('fromJson parses all fields', () {
-      final b = Boost.fromJson({
-        'id': '00000000-0000-0000-0000-000000000001',
-        'expires_at': '2026-07-01T12:30:00Z',
-        'minutes_remaining': 15,
-      });
-
-      expect(b.id, equals('00000000-0000-0000-0000-000000000001'));
-      expect(b.expiresAt, equals('2026-07-01T12:30:00Z'));
-      expect(b.minutesRemaining, equals(15));
-    });
-  });
-
   group('BoostService', () {
-    test('activate POSTs /boost and returns Boost', () async {
+    test('activate POSTs /boost and derives minutes from duration_secs', () async {
       final dio = Dio()..httpClientAdapter = _MockBoostAdapter();
       final service = BoostService(dio);
 
       final boost = await service.activate();
 
-      expect(boost.id, equals('boost-1'));
+      // 1800s / 60 = 30 min
       expect(boost.minutesRemaining, equals(30));
+      expect(boost.expiresAt, equals('2026-07-01T12:30:00Z'));
     });
 
     test('getActive returns null when not boosted', () async {
@@ -88,19 +81,17 @@ void main() {
       expect(boost, isNull);
     });
 
-    test('getActive returns parsed Boost when active', () async {
+    test('getActive returns parsed Boost (ceil minutes) when active', () async {
+      // 1300s / 60 = 21.67 → ceil → 22
       final dio = Dio()
-        ..httpClientAdapter = _MockBoostAdapter(activeResponse: {
-          'id': 'active-1',
-          'expires_at': '2026-07-01T13:00:00Z',
-          'minutes_remaining': 22,
-        });
+        ..httpClientAdapter = _MockBoostAdapter(activeRemainingSecs: 1300);
       final service = BoostService(dio);
 
       final boost = await service.getActive();
       expect(boost, isNotNull);
-      expect(boost!.id, equals('active-1'));
-      expect(boost.minutesRemaining, equals(22));
+      expect(boost!.minutesRemaining, equals(22));
+      // active endpoint carries no expires_at
+      expect(boost.expiresAt, isNull);
     });
 
     test('rethrows on error', () async {

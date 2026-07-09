@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../billing/revenuecat_providers.dart';
+import '../premium/premium_service.dart';
 import '../theme/app_theme.dart';
 import 'shop_service.dart';
 
@@ -122,6 +123,9 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
 
       await rcSvc.purchasePackage(pkg);
       ref.invalidate(customerInfoProvider);
+      // Refresh gating status so premium features unlock immediately
+      // after a successful purchase (no app restart needed).
+      ref.invalidate(premiumStatusProvider);
 
       if (!mounted) return;
       messenger.showSnackBar(

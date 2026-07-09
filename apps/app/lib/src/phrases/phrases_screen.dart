@@ -33,67 +33,99 @@ class PhrasesScreen extends ConsumerWidget {
     );
   }
 
-  void _showAddDialog(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    showDialog<void>(
+  Future<void> _showAddDialog(BuildContext context, WidgetRef ref) {
+    // The controller lives inside _AddPhraseDialog's State so it is disposed
+    // in State.dispose (after the route is fully removed), never mid-animation.
+    return showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: VibraTheme.kSurface,
-        title: const Text('Add Phrase'),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Phrase text',
-              border: OutlineInputBorder(),
-            ),
-            maxLength: 200,
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) {
-                return 'Phrase cannot be empty';
-              }
-              return null;
-            },
+      builder: (ctx) => _AddPhraseDialog(ref: ref, hostContext: context),
+    );
+  }
+}
+
+/// Add-phrase dialog. Owns its own [TextEditingController] so disposal happens
+/// safely in [State.dispose] rather than immediately after `showDialog`.
+class _AddPhraseDialog extends StatefulWidget {
+  final WidgetRef ref;
+
+  /// The screen context, used for the SnackBar after the dialog pops.
+  final BuildContext hostContext;
+
+  const _AddPhraseDialog({required this.ref, required this.hostContext});
+
+  @override
+  State<_AddPhraseDialog> createState() => _AddPhraseDialogState();
+}
+
+class _AddPhraseDialogState extends State<_AddPhraseDialog> {
+  final _controller = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final text = _controller.text.trim();
+    Navigator.of(context).pop();
+    final hostContext = widget.hostContext;
+    try {
+      final service = widget.ref.read(phrasesServiceProvider);
+      await service.add(text);
+      widget.ref.invalidate(phrasesProvider);
+      if (hostContext.mounted) {
+        ScaffoldMessenger.of(hostContext).showSnackBar(
+          const SnackBar(content: Text('Phrase added')),
+        );
+      }
+    } catch (e) {
+      if (hostContext.mounted) {
+        ScaffoldMessenger.of(hostContext).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add: $e'),
+            backgroundColor: VibraTheme.kError,
           ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: VibraTheme.kSurface,
+      title: const Text('Add Phrase'),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Phrase text',
+            border: OutlineInputBorder(),
+          ),
+          maxLength: 200,
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) {
+              return 'Phrase cannot be empty';
+            }
+            return null;
+          },
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              if (!(formKey.currentState?.validate() ?? false)) return;
-              final text = controller.text.trim();
-              Navigator.of(ctx).pop();
-              try {
-                final service = ref.read(phrasesServiceProvider);
-                await service.add(text);
-                ref.invalidate(phrasesProvider);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Phrase added')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to add: $e'),
-                      backgroundColor: VibraTheme.kError,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Add'),
+        ),
+      ],
     );
   }
 }

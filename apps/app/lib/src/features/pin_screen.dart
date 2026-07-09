@@ -36,6 +36,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
     await ref.read(pinCodeProvider.notifier).setPinCode(code);
     if (!mounted) return;
     await ref.read(pinEnabledProvider.notifier).setPinEnabled(true);
+    _controller.clear();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.pinActivated)),

@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'premium_service.dart';
@@ -46,12 +47,17 @@ class PremiumGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final premiumAsync = ref.watch(premiumStatusProvider);
-    final status = premiumAsync is AsyncData<PremiumStatus>
-        ? premiumAsync.value
-        : null;
 
-    final canAccess = status != null &&
-        _checkFeature(status.features, feature);
+    // While the status is still resolving (no data yet), show the child
+    // optimistically so a paying user isn't nagged with the locked banner
+    // on cold load. We only show the locked state once we have resolved
+    // AsyncData that denies access.
+    if (premiumAsync is! AsyncData<PremiumStatus>) {
+      return child;
+    }
+
+    final status = premiumAsync.value;
+    final canAccess = _checkFeature(status.features, feature);
 
     if (canAccess) return child;
 
@@ -176,8 +182,8 @@ class _DefaultUpgradeBanner extends StatelessWidget {
 /// Navigate to the shop tab.
 void _showUpgradeSheet(BuildContext context) {
   // Navigate to the Shop tab — the bottom nav's /tienda route.
-  // We use the context's closest GoRouter (or Navigator) to push /tienda.
-  Navigator.of(context).pushNamed('/tienda');
+  // We use the context's closest GoRouter to push /tienda.
+  context.push('/tienda');
 }
 
 /// Show a modal bottom sheet with a simple tier comparison.
@@ -272,7 +278,7 @@ class _PremiumComparisonSheet extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                Navigator.of(context).pushNamed('/tienda');
+                context.push('/tienda');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: VibraTheme.kBrandPrimary,

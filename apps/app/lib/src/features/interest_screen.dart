@@ -31,12 +31,12 @@ class ReceivedTap {
 
   factory ReceivedTap.fromJson(Map<String, dynamic> json) {
     return ReceivedTap(
-      id: json['id'] as String,
-      senderId: json['sender_id'] as String,
+      id: json['id'] as String? ?? '',
+      senderId: json['sender_id'] as String? ?? '',
       senderDisplayName: json['sender_display_name'] as String?,
       senderPhotoUrl: json['sender_photo_url'] as String?,
       tapType: json['tap_type'] as String? ?? 'wave',
-      createdAt: json['created_at'] as String,
+      createdAt: json['created_at'] as String? ?? '',
     );
   }
 }
@@ -106,8 +106,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
     final dio = ref.read(dioProvider);
     final response = await dio.get<Map<String, dynamic>>(
         _tapsSent ? '/taps/sent' : '/taps/received');
-    final data = response.data!;
-    final tapsJson = data['taps'] as List<dynamic>;
+    final tapsJson = (response.data?['taps'] as List?) ?? const [];
     return tapsJson
         .map((t) => ReceivedTap.fromJson(t as Map<String, dynamic>))
         .toList();

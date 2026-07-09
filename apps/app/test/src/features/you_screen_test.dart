@@ -69,13 +69,13 @@ class _CombinedAdapter implements HttpClientAdapter {
     if (options.path == '/boost/active') {
       if (activeBoost == null) {
         return ResponseBody.fromString(
-          jsonEncode({'active': false, 'minutes_remaining': 0}),
+          jsonEncode({'is_boosted': false, 'remaining_secs': 0}),
           200,
           headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
         );
       }
       return ResponseBody.fromString(
-        jsonEncode({'active': true, ...activeBoost!}),
+        jsonEncode({'is_boosted': true, ...activeBoost!}),
         200,
         headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
       );
@@ -84,11 +84,12 @@ class _CombinedAdapter implements HttpClientAdapter {
       boostPosts.add({'method': 'POST', 'path': '/boost'});
       return ResponseBody.fromString(
         jsonEncode({
-          'boost': {
-            'id': 'new-boost',
-            'expires_at': '2026-07-01T12:30:00Z',
-            'minutes_remaining': 30,
-          }
+          'id': 'new-boost',
+          'user_id': 'u-1',
+          'duration_secs': 1800,
+          'started_at': '2026-07-01T12:00:00Z',
+          'expires_at': '2026-07-01T12:30:00Z',
+          'source': 'manual',
         }),
         201,
         headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
@@ -243,11 +244,8 @@ void main() {
     testWidgets('shows BOOSTED badge when active', (tester) async {
       final dio = Dio()
         ..httpClientAdapter = _CombinedAdapter(
-          activeBoost: {
-            'id': 'b-1',
-            'expires_at': '2026-07-01T12:30:00Z',
-            'minutes_remaining': 22,
-          },
+          // 1320s / 60 = 22 min exactly.
+          activeBoost: {'remaining_secs': 1320},
         );
 
       await tester.pumpWidget(_buildScreen(dio));

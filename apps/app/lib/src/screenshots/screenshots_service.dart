@@ -19,10 +19,10 @@ class ScreenshotAlert {
 
   factory ScreenshotAlert.fromJson(Map<String, dynamic> json) {
     return ScreenshotAlert(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      conversationId: json['conversation_id'] as String,
-      reportedAt: json['reported_at'] as String,
+      id: json['id'] as String? ?? '',
+      userId: json['user_id'] as String? ?? '',
+      conversationId: json['conversation_id'] as String? ?? '',
+      reportedAt: json['reported_at'] as String? ?? '',
     );
   }
 }

@@ -23,6 +23,12 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   bool _creating = false;
 
   @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _memberIdController.dispose();
@@ -180,7 +186,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                     label: Text(
                       id.length > 12 ? '${id.substring(0, 12)}…' : id,
                       style: const TextStyle(
-                          color: Colors.white, fontSize: 12),
+                          color: VibraTheme.kTextPrimary, fontSize: 12),
                     ),
                     backgroundColor: VibraTheme.kChip,
                     deleteIcon: const Icon(Icons.close,

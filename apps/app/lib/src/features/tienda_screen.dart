@@ -43,7 +43,7 @@ final Map<String, ({String Function(AppLocalizations) title, String Function(App
 
 /// /tienda — user-facing shop screen.
 ///
-/// Shows a segmented tier switcher (XTRA / UNLIMITED), hero block, horizontal
+/// Shows a segmented tier switcher (Pulse / Aura), hero block, horizontal
 /// duration cards, feature list, summary line and a Continue CTA. If the user
 /// already has an active subscription, a yellow banner is shown and the
 /// Continue button is disabled.
@@ -108,38 +108,45 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
       );
     }
 
-    // Default selection to first tier if not in list.
-    if (!tiered.any((p) => p.code == _selectedPlanCode)) {
-      _selectedPlanCode = tiered.first.code;
-    }
+    // Resolve the active plan code — fall back to first if stale.
+    final activePlanCode = tiered.any((p) => p.code == _selectedPlanCode)
+        ? _selectedPlanCode
+        : tiered.first.code;
     final selectedPlan =
-        tiered.firstWhere((p) => p.code == _selectedPlanCode);
+        tiered.firstWhere((p) => p.code == activePlanCode);
 
-    // Default selection to first price in plan (defensive — empty prices
-    // shouldn't crash, see task brief).
-    if (selectedPlan.prices.isNotEmpty && _selectedPriceId == null) {
-      _selectedPriceId = selectedPlan.priceFor('monthly')?.id ??
-          (selectedPlan.prices.isEmpty ? null : selectedPlan.prices.first.id);
-    }
-
-    // If the currently-selected price id is no longer in the plan (e.g. plan
-    // changed via segmented control), fall back to the first available price.
-    PlanPrice selectedPrice;
+    // Resolve the active price id — fall back to monthly or first available.
     if (selectedPlan.prices.isEmpty) {
       // No prices — surface a graceful empty state instead of crashing.
       return _NoPricesState(onRetry: () => ref.invalidate(plansProvider));
     }
-    try {
-      selectedPrice = selectedPlan.prices
-          .firstWhere((p) => p.id == _selectedPriceId);
-    } catch (_) {
-      selectedPrice = selectedPlan.prices.first;
-      _selectedPriceId = selectedPrice.id;
+
+    // Compute effective priceId purely (no setState in build).
+    final effectivePriceId = _selectedPriceId != null &&
+            selectedPlan.prices.any((p) => p.id == _selectedPriceId)
+        ? _selectedPriceId!
+        : (selectedPlan.priceFor('monthly')?.id ??
+            selectedPlan.prices.first.id);
+
+    // If the resolved values differ from stored state, fix up after the frame.
+    if (activePlanCode != _selectedPlanCode ||
+        effectivePriceId != _selectedPriceId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _selectedPlanCode = activePlanCode;
+            _selectedPriceId = effectivePriceId;
+          });
+        }
+      });
     }
+
+    final selectedPrice =
+        selectedPlan.prices.firstWhere((p) => p.id == effectivePriceId);
 
     // Find the index of the currently-selected plan for the segmented control.
     final selectedIndex =
-        tiered.indexWhere((p) => p.code == _selectedPlanCode);
+        tiered.indexWhere((p) => p.code == activePlanCode);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -221,7 +228,7 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
             separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (_, i) {
               final price = selectedPlan.prices[i];
-              final isSelected = price.id == _selectedPriceId;
+              final isSelected = price.id == effectivePriceId;
               final durationLabel = price.period == 'monthly'
                   ? l10n.mes
                   : price.period == 'yearly'

@@ -34,6 +34,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
       return;
     }
     await ref.read(pinCodeProvider.notifier).setPinCode(code);
+    if (!mounted) return;
     await ref.read(pinEnabledProvider.notifier).setPinEnabled(true);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -58,6 +59,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
     );
     if (confirm != true) return;
     await ref.read(pinCodeProvider.notifier).setPinCode('');
+    if (!mounted) return;
     await ref.read(pinEnabledProvider.notifier).setPinEnabled(false);
     _controller.clear();
     if (!mounted) return;

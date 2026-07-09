@@ -6,6 +6,9 @@ import '../auth/auth_provider.dart';
 import '../theme/app_theme.dart';
 import 'story_service.dart';
 
+// Base URL for all media endpoints — keeps the domain in one place.
+const String _kMediaBase = 'https://api.turnend.win/media/get-url';
+
 /// Full-screen story viewer with auto-advancing progress timer.
 /// Swipe down to close, tap left/right to navigate between stories.
 class StoryViewerScreen extends ConsumerStatefulWidget {
@@ -56,6 +59,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
         // Silently ignore — viewing is best-effort
       }
     }
+    if (!mounted) return;
   }
 
   void _startProgress() {
@@ -74,10 +78,10 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
       if (_paused) return;
       setState(() {
         _progress += increment;
-        if (_progress >= 1.0) {
-          _advanceToNext();
-        }
       });
+      if (_progress >= 1.0) {
+        _advanceToNext();
+      }
     });
   }
 
@@ -197,7 +201,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                             radius: 18,
                             backgroundImage: group.avatarKey != null
                                 ? NetworkImage(
-                                    'https://api.turnend.win/media/get-url?key=${group.avatarKey}&kind=profile')
+                                    '$_kMediaBase?key=${group.avatarKey}&kind=profile')
                                 : null,
                             child: group.avatarKey == null
                                 ? const Icon(Icons.person,
@@ -363,7 +367,7 @@ class _ProgressBars extends StatelessWidget {
                           ),
                         ),
                       )
-                    : null,
+                    : const SizedBox.shrink(),
           ),
         );
       }),
@@ -383,7 +387,7 @@ class _PhotoStory extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.network(
-      'https://api.turnend.win/media/get-url?key=$mediaKey&kind=story',
+      '$_kMediaBase?key=$mediaKey&kind=story',
       fit: BoxFit.contain,
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child;
@@ -426,7 +430,7 @@ class _VideoStoryState extends State<_VideoStory> {
 
   Future<void> _initVideo() async {
     final url =
-        'https://api.turnend.win/media/get-url?key=${widget.mediaKey}&kind=story';
+        '$_kMediaBase?key=${widget.mediaKey}&kind=story';
     final controller = VideoPlayerController.networkUrl(Uri.parse(url));
     _controller = controller;
     try {

@@ -72,8 +72,14 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
       final dio = ref.read(dioProvider);
       final response =
           await dio.get<Map<String, dynamic>>('/albums/${widget.albumId}');
+      if (response.data == null) {
+        throw Exception('Empty response from server');
+      }
       final data = response.data!;
-      final album = data['album'] as Map<String, dynamic>;
+      final album = data['album'] as Map<String, dynamic>?;
+      if (album == null) {
+        throw Exception('Missing album in response');
+      }
       final photosJson = data['photos'] as List<dynamic>? ?? [];
       final photos = photosJson
           .map((p) => AlbumPhoto.fromJson(p as Map<String, dynamic>))
@@ -242,7 +248,7 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.photo_library_outlined, size: 64),
+            const Icon(Icons.photo_library_outlined, size: 64, color: VibraTheme.kTextSecondary),
             const SizedBox(height: 16),
             Text(
               l10n.album_no_photos,
@@ -297,7 +303,7 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) {
-        final l10n = AppLocalizations.of(context)!;
+        final l10n = AppLocalizations.of(ctx)!;
         return Dialog(
           backgroundColor: Colors.transparent,
           child: Column(
@@ -305,13 +311,15 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  photo.photoUrl,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => const Icon(
-                    Icons.broken_image,
-                    size: 64,
-                    color: Colors.white,
+                child: InteractiveViewer(
+                  child: Image.network(
+                    photo.photoUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const Icon(
+                      Icons.broken_image,
+                      size: 64,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),

@@ -82,10 +82,22 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
   /// refresh-on-401 in api_client cannot recover from (no refresh token yet
   /// either). Poll the provider until the token is present.
   Future<void> _waitForAuth() async {
-    while (mounted) {
+    // Use authReadyProvider when available; fall back to a capped busy-poll
+    // (max ~10 s / 600 iterations) so we never spin forever.
+    try {
+      await ref.read(authReadyProvider.future).timeout(
+            const Duration(seconds: 10),
+          );
+      return;
+    } catch (_) {
+      // authReadyProvider timed out or errored — fall through to poll.
+    }
+    int iterations = 0;
+    while (mounted && iterations < 600) {
       final token = ref.read(authStateProvider).accessToken;
       if (token != null && token.isNotEmpty) return;
       await Future<void>.delayed(const Duration(milliseconds: 16));
+      iterations++;
     }
   }
 
@@ -101,26 +113,23 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
         .toList();
   }
 
-  /// True when the current user has an active subscription. Used to gate
-  /// the NUEVO upsell (counts > 6 without entitlement).
-  bool _hasEntitlement() {
-    final sub = ref.read(mySubscriptionProvider);
-    if (sub is! AsyncData<Subscription?>) return false;
-    return sub.value != null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final viewsCountAsync = ref.watch(profileViewsCountProvider);
     final tapsCountAsync = ref.watch(tapsCountProvider);
+    // Watch subscription reactively so the upsell hides as soon as the user subscribes.
+    final subAsync = ref.watch(mySubscriptionProvider);
+    final hasEntitlement =
+        subAsync is AsyncData<Subscription?> && subAsync.value != null;
+
     final viewsCount = viewsCountAsync is AsyncData<int> ? viewsCountAsync.value : 0;
     final tapsTotal = tapsCountAsync is AsyncData<TapsCount>
         ? tapsCountAsync.value.total
         : 0;
 
     final maxCount = viewsCount > tapsTotal ? viewsCount : tapsTotal;
-    final showNUEVO = maxCount > 6 && !_hasEntitlement();
+    final showNUEVO = maxCount > 6 && !hasEntitlement;
 
     return Scaffold(
       backgroundColor: VibraTheme.kBg,
@@ -155,7 +164,9 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
         children: [
           // NUEVO badge row — visible only when count > 6 without entitlement.
           if (showNUEVO)
-            Container(
+            GestureDetector(
+              onTap: () => context.push('/tienda'),
+              child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -191,6 +202,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
                   const Icon(Icons.chevron_right, color: Colors.black),
                 ],
               ),
+            ),
             ),
 
           // Tab content
@@ -268,8 +280,23 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.black,
         foregroundColor: VibraTheme.kBrandPrimary,
-        onPressed: () {
-          ref.read(boostServiceProvider).activate();
+        onPressed: () async {
+          try {
+            await ref.read(boostServiceProvider).activate();
+            ref.invalidate(activeBoostProvider);
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.you_boosted_snackbar)),
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.you_boost_failed(e.toString())),
+                backgroundColor: VibraTheme.kError,
+              ),
+            );
+          }
         },
         icon: const Icon(Icons.bolt),
         label: Text(
@@ -352,7 +379,7 @@ class _ViewsListTab extends ConsumerWidget {
                 style: const TextStyle(color: Colors.white),
               ),
               subtitle: Text(
-                l10n.vistoEl(v.viewedAt.substring(0, 10)),
+                l10n.vistoEl(v.viewedAt.length >= 10 ? v.viewedAt.substring(0, 10) : v.viewedAt),
                 style: const TextStyle(
                   color: VibraTheme.kTextSecondary,
                   fontSize: 12,
@@ -437,7 +464,7 @@ class _TapsListTab extends StatelessWidget {
                 child: t.senderPhotoUrl == null
                     ? Text(
                         (t.senderDisplayName ?? '?').isNotEmpty
-                            ? t.senderDisplayName![0].toUpperCase()
+                            ? (t.senderDisplayName ?? '?')[0].toUpperCase()
                             : '?',
                         style: const TextStyle(color: Colors.white),
                       )

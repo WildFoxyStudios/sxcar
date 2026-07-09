@@ -116,18 +116,20 @@ class _CirclesScreenState extends ConsumerState<CirclesScreen> {
               itemCount: groups.length,
               itemBuilder: (_, i) {
                 final group = groups[i];
+                final groupId = group['group_id'] as String?;
+                if (groupId == null) return const SizedBox.shrink();
                 return _GroupTile(
-                  groupId: group['group_id'] as String,
+                  groupId: groupId,
                   name: group['name'] as String? ?? l10n.circleGroupFallback,
                   memberCount: (group['member_count'] as num?)?.toInt() ?? 0,
                   lastMessage: group['last_message_preview'] as String?,
                   lastMessageAt: group['last_message_at'] as String?,
                   onTap: () {
-                    context.push('/inbox/${group['group_id']}');
+                    context.push('/inbox/$groupId');
                   },
                   onInfoTap: () async {
                     await context.push(
-                      '/inbox/group-info/${group['group_id']}',
+                      '/inbox/group-info/$groupId',
                     );
                     _refresh();
                   },
@@ -194,7 +196,7 @@ class _GroupTile extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: VibraTheme.kTextPrimary,
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
                           ),

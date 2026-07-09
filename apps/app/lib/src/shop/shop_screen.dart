@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:flutter/services.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../billing/revenuecat_providers.dart';
@@ -19,6 +18,8 @@ class ShopScreen extends ConsumerStatefulWidget {
 }
 
 class _ShopScreenState extends ConsumerState<ShopScreen> {
+  bool _purchasing = false;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -62,7 +63,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
       itemCount: products.length,
       itemBuilder: (_, index) => _ProductCard(
         product: products[index],
-        onTap: () => _purchase(context, products[index]),
+        onTap: _purchasing ? null : () => _purchase(context, products[index]),
       ),
     );
   }
@@ -98,6 +99,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
     );
     if (confirmed != true) return;
 
+    setState(() => _purchasing = true);
     try {
       // Use RevenueCat to purchase the product by its revenuecat_id.
       final rcSvc = ref.read(revenueCatServiceProvider);
@@ -108,10 +110,10 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
       }
 
       // Find a package whose identifier matches the product's revenuecat_id.
-      final pkg = current.availablePackages.cast<Package?>().firstWhere(
-            (p) => p?.identifier == product.revenuecatId,
-            orElse: () => null,
-          );
+      // where(...).firstOrNull avoids both CastError and StateError.
+      final matches = current.availablePackages
+          .where((p) => p.identifier == product.revenuecatId);
+      final pkg = matches.isEmpty ? null : matches.first;
       if (pkg == null) {
         throw Exception(
           'No RevenueCat package found for ${product.revenuecatId}',
@@ -147,6 +149,8 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
           backgroundColor: VibraTheme.kError,
         ),
       );
+    } finally {
+      if (mounted) setState(() => _purchasing = false);
     }
   }
 }
@@ -157,7 +161,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
 
 class _ProductCard extends StatelessWidget {
   final ShopProduct product;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _ProductCard({required this.product, required this.onTap});
 

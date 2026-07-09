@@ -94,6 +94,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _textController.dispose();
     _scrollController.dispose();
     _screenshotCallback?.dispose();
+    _audioRecorder.dispose();
     super.dispose();
   }
 
@@ -277,12 +278,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
       // Assign fallback for any missing
       for (final uid in uniqueIds) {
-        _senderNames.putIfAbsent(uid, () => uid.substring(0, 8));
+        _senderNames.putIfAbsent(uid, () => uid.length >= 8 ? uid.substring(0, 8) : uid);
       }
     } catch (_) {
       // Silently fall back to truncated UUID
       for (final uid in uniqueIds) {
-        _senderNames.putIfAbsent(uid, () => uid.substring(0, 8));
+        _senderNames.putIfAbsent(uid, () => uid.length >= 8 ? uid.substring(0, 8) : uid);
       }
     }
   }
@@ -434,6 +435,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// Stop recording and send the voice message.
   Future<void> _stopRecording() async {
     final path = _recordingFilePath;
+    if (!mounted) return;
     setState(() => _isRecording = false);
     _recordingFilePath = null;
 
@@ -816,8 +818,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(Icons.send,
-                    color: Colors.black, size: 18),
+                icon: Icon(Icons.send,
+                    color: Theme.of(context).colorScheme.onPrimary, size: 18),
                 onPressed: _sendMessage,
                 padding: EdgeInsets.zero,
               ),
@@ -1619,10 +1621,6 @@ class _PhotoSendSheetState extends State<_PhotoSendSheet> {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Full-screen photo viewer
-// ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Screenshot alert banner

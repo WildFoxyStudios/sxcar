@@ -77,7 +77,6 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
       ref.invalidate(verificationStatusProvider);
     } catch (e) {
       if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.verifySubmitError)),
       );
@@ -141,7 +140,7 @@ class _VerifiedPanel extends StatelessWidget {
             Text(
               l10n.verifyVerified,
               style: const TextStyle(
-                color: Colors.white,
+                color: VibraTheme.kText,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
@@ -174,7 +173,7 @@ class _PendingPanel extends StatelessWidget {
             Text(
               l10n.verifyPending,
               style: const TextStyle(
-                color: Colors.white70,
+                color: VibraTheme.kTextSecondary,
                 fontSize: 18,
               ),
               textAlign: TextAlign.center,
@@ -221,7 +220,7 @@ class _NotSubmittedPanel extends StatelessWidget {
           Text(
             l10n.verifyProfileIntro,
             style: const TextStyle(
-              color: Colors.white70,
+              color: VibraTheme.kTextSecondary,
               fontSize: 15,
               height: 1.5,
             ),

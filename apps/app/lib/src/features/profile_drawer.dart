@@ -22,7 +22,7 @@ final ownProfileProvider = FutureProvider<UserProfile?>((ref) async {
   final authState = ref.watch(authStateProvider);
   if (authState.status != AuthStatus.authenticated) return null;
   try {
-    final dio = ref.watch(dioProvider);
+    final dio = ref.read(dioProvider);
     final response = await dio.get<Map<String, dynamic>>('/profile');
     final userJson = response.data!['user'] as Map<String, dynamic>;
     return UserProfile.fromJson(userJson);

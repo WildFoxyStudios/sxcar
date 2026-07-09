@@ -32,9 +32,16 @@ class _BlocksListScreenState extends ConsumerState<BlocksListScreen> {
     try {
       final dio = ref.read(dioProvider);
       final response = await dio.get<Map<String, dynamic>>('/blocks');
-      final list = (response.data!['blocks'] as List<dynamic>)
-          .map((b) => b as Map<String, dynamic>)
-          .toList();
+      final raw = response.data?['blocks'];
+      if (raw is! List) {
+        if (!mounted) return;
+        setState(() {
+          _error = 'Unexpected response format';
+          _loading = false;
+        });
+        return;
+      }
+      final list = raw.cast<Map<String, dynamic>>();
       if (!mounted) return;
       setState(() {
         _blocks = list;
@@ -123,7 +130,7 @@ class _BlocksListScreenState extends ConsumerState<BlocksListScreen> {
               Text(
                 'No hay usuarios bloqueados',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: VibraTheme.kTextPrimary,
                   fontWeight: FontWeight.w700,
                   fontSize: 17,
                 ),
@@ -153,14 +160,17 @@ class _BlocksListScreenState extends ConsumerState<BlocksListScreen> {
                 child: Text(
                   displayName,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: VibraTheme.kTextPrimary,
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
                   ),
                 ),
               ),
               TextButton(
-                onPressed: () => _unblock(user['user_id'] as String),
+                onPressed: () {
+                  final uid = user['user_id'] as String?;
+                  if (uid != null) _unblock(uid);
+                },
                 child: const Text(
                   'Desbloquear',
                   style: TextStyle(color: VibraTheme.kBrandPrimary),

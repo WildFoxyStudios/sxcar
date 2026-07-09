@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../theme/app_theme.dart';
 import 'story_service.dart';
 
 /// Screen to create a new story by taking a photo or video.
@@ -58,8 +59,10 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
 
     try {
       final bytes = await _mediaFile!.readAsBytes();
-      final ext = _mediaFile!.name.split('.').last;
-      final contentType = _isVideo ? 'video/mp4' : 'image/jpeg';
+      final ext = _mediaFile!.name.split('.').lastOrNull ?? 'jpg';
+      final contentType = _isVideo
+          ? (ext.toLowerCase() == 'mov' ? 'video/quicktime' : 'video/mp4')
+          : 'image/jpeg';
 
       // Step 1: Get presigned URL
       final service = ref.read(storyServiceProvider);
@@ -197,9 +200,9 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: loc.storyCaption,
-                  hintStyle: const TextStyle(color: Colors.white38),
+                  hintStyle: const TextStyle(color: VibraTheme.kTextTertiary),
                   filled: true,
-                  fillColor: Colors.white12,
+                  fillColor: VibraTheme.kChip.withValues(alpha: 0.5),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,

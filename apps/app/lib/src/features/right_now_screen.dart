@@ -42,109 +42,128 @@ class RightNowScreen extends ConsumerWidget {
   }
 
   void _showPostSheet(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final messenger = ScaffoldMessenger.of(context);
-    final controller = TextEditingController();
-    int minutes = 60;
-
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: VibraTheme.kSurface,
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 16,
-            right: 16,
-            top: 16,
+      builder: (ctx) => _PostSheetBody(ref: ref),
+    );
+  }
+}
+
+/// Stateful sheet body that owns (and disposes) the text controller.
+class _PostSheetBody extends StatefulWidget {
+  final WidgetRef ref;
+  const _PostSheetBody({required this.ref});
+
+  @override
+  State<_PostSheetBody> createState() => _PostSheetBodyState();
+}
+
+class _PostSheetBodyState extends State<_PostSheetBody> {
+  final TextEditingController _controller = TextEditingController();
+  int _minutes = 60;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 16,
+        right: 16,
+        top: 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.right_now_post,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          child: StatefulBuilder(
-            builder: (ctx, setSheet) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.right_now_post,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: controller,
-                    autofocus: true,
-                    maxLength: 140,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: l10n.right_now_hint,
-                      hintStyle: const TextStyle(color: VibraTheme.kTextSecondary),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Text(
-                        l10n.right_now_expires_label,
-                        style: const TextStyle(color: VibraTheme.kTextSecondary),
-                      ),
-                      const SizedBox(width: 12),
-                      DropdownButton<int>(
-                        value: minutes,
-                        dropdownColor: VibraTheme.kSurface,
-                        style: const TextStyle(color: Colors.white),
-                        items: [
-                          DropdownMenuItem(
-                              value: 30,
-                              child: Text(l10n.right_now_duration_30min)),
-                          DropdownMenuItem(
-                              value: 60,
-                              child: Text(l10n.right_now_duration_1h)),
-                          DropdownMenuItem(
-                              value: 120,
-                              child: Text(l10n.right_now_duration_2h)),
-                        ],
-                        onChanged: (v) => setSheet(() => minutes = v ?? 60),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: VibraTheme.kAccentGlow,
-                      ),
-                      onPressed: () async {
-                        final text = controller.text.trim();
-                        if (text.isEmpty) return;
-                        Navigator.of(ctx).pop();
-                        try {
-                          await ref
-                              .read(rightNowServiceProvider)
-                              .create(text, minutes);
-                          ref.invalidate(rightNowFeedProvider);
-                          messenger.showSnackBar(SnackBar(
-                              content: Text(l10n.right_now_published)));
-                        } catch (_) {
-                          debugPrint('[RightNowScreen] error: publish failed');
-                          messenger.showSnackBar(SnackBar(
-                              content: Text(l10n.right_now_publish_error)));
-                        }
-                      },
-                      child: Text(l10n.right_now_publish),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            maxLength: 140,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: l10n.right_now_hint,
+              hintStyle: const TextStyle(color: VibraTheme.kTextSecondary),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                l10n.right_now_expires_label,
+                style: const TextStyle(color: VibraTheme.kTextSecondary),
+              ),
+              const SizedBox(width: 12),
+              DropdownButton<int>(
+                value: _minutes,
+                dropdownColor: VibraTheme.kSurface,
+                style: const TextStyle(color: Colors.white),
+                items: [
+                  DropdownMenuItem(
+                      value: 30,
+                      child: Text(l10n.right_now_duration_30min)),
+                  DropdownMenuItem(
+                      value: 60,
+                      child: Text(l10n.right_now_duration_1h)),
+                  DropdownMenuItem(
+                      value: 120,
+                      child: Text(l10n.right_now_duration_2h)),
                 ],
-              );
-            },
+                onChanged: (v) => setState(() => _minutes = v ?? 60),
+              ),
+            ],
           ),
-        );
-      },
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: VibraTheme.kAccentGlow,
+              ),
+              onPressed: () async {
+                final text = _controller.text.trim();
+                if (text.isEmpty) return;
+                // Capture messenger before the async gap.
+                final messenger = ScaffoldMessenger.of(context);
+                Navigator.of(context).pop();
+                try {
+                  await widget.ref
+                      .read(rightNowServiceProvider)
+                      .create(text, _minutes);
+                  widget.ref.invalidate(rightNowFeedProvider);
+                  if (!context.mounted) return;
+                  messenger.showSnackBar(SnackBar(
+                      content: Text(l10n.right_now_published)));
+                } catch (_) {
+                  debugPrint('[RightNowScreen] error: publish failed');
+                  if (!context.mounted) return;
+                  messenger.showSnackBar(SnackBar(
+                      content: Text(l10n.right_now_publish_error)));
+                }
+              },
+              child: Text(l10n.right_now_publish),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 }

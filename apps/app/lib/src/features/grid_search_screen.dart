@@ -369,7 +369,8 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   /// Select a recent search from the history list.
   void _selectRecentSearch(String recent) {
     // Parse the label back to coordinates if possible, or re-geocode
-    _cityController.text = _cityController.text = recent;
+    _debounceTimer?.cancel();
+    _cityController.text = recent;
     // Trigger geocoding for the recent query
     final match = RegExp(r'\(([\d.-]+),\s*([\d.-]+)\)').firstMatch(recent);
     if (match != null) {
@@ -522,6 +523,8 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    // Watch premium status in build so the gate check is always up-to-date.
+    final premiumAsync = ref.watch(premiumStatusProvider);
 
     // Load persisted roam on first build, then apply once.
     ref.listen<AsyncValue<RoamLocation?>>(roamLocationProvider, (prev, next) {
@@ -603,7 +606,6 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
             tooltip: l10n.roamTooltip,
             onPressed: () {
               // Gate Travel Pass behind Xtra/Unlimited tier
-              final premiumAsync = ref.read(premiumStatusProvider);
               final data = premiumAsync is AsyncData ? premiumAsync.value : null;
               if (data == null || !data.features.travelPass) {
                 showPremiumComparisonSheet(context);
@@ -1065,6 +1067,9 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
             );
           }
 
+          // Read units once outside the per-item builder to avoid
+          // subscribing the provider once per grid cell.
+          final units = ref.watch(unitsProvider);
           return RefreshIndicator(
             onRefresh: () async => setState(() {
               _globalUsersFuture = _fetchGlobalUsers();
@@ -1086,7 +1091,6 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final user = users[index];
-                            final units = ref.watch(unitsProvider);
                             return _ExploreUserCard(user: user, units: units);
                           },
                           childCount: users.length,
@@ -1374,7 +1378,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                     children: places
                         .map(
                           (p) => ListTile(
-                            leading: const Icon(Icons.place, color: Colors.white70),
+                            leading: const Icon(Icons.place, color: VibraTheme.kTextSecondary),
                             title: Text(p.name),
                             subtitle: Text(
                               '${p.lat.toStringAsFixed(4)}, ${p.lon.toStringAsFixed(4)}',

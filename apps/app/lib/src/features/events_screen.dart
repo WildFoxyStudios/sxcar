@@ -14,7 +14,7 @@ import '../theme/app_theme.dart';
 final nearbyEventsProvider = FutureProvider<List<Event>>((ref) async {
   final service = ref.watch(eventsServiceProvider);
   // Use .future to get the unwrapped Position? value
-  final position = await ref.read(currentPositionProvider.future);
+  final position = await ref.watch(currentPositionProvider.future);
   final lat = position?.latitude ?? 0.0;
   final lon = position?.longitude ?? 0.0;
   return service.listNearby(lat: lat, lon: lon);
@@ -365,7 +365,7 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay(hour: 19, minute: 0),
+      initialTime: const TimeOfDay(hour: 19, minute: 0),
     );
     if (picked != null) {
       _timeCtrl.text =
@@ -386,9 +386,29 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
     try {
       final service = ref.read(eventsServiceProvider);
       final position = await ref.read(currentPositionProvider.future);
-      final locationLat = position?.latitude ?? 0.0;
-      final locationLon = position?.longitude ?? 0.0;
-      final startsAt = '${_dateCtrl.text}T${_timeCtrl.text}:00Z';
+      if (position == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location unavailable. Please enable location access and try again.')),
+          );
+          setState(() => _loading = false);
+        }
+        return;
+      }
+      final locationLat = position.latitude;
+      final locationLon = position.longitude;
+
+      // Parse date/time from picker fields and convert local → UTC.
+      final dateParts = _dateCtrl.text.split('-');
+      final timeParts = _timeCtrl.text.split(':');
+      final localDt = DateTime(
+        int.parse(dateParts[0]),
+        int.parse(dateParts[1]),
+        int.parse(dateParts[2]),
+        int.parse(timeParts[0]),
+        int.parse(timeParts[1]),
+      );
+      final startsAt = localDt.toUtc().toIso8601String();
 
       await service.create(
         title: _titleCtrl.text.trim(),

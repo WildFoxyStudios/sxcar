@@ -59,7 +59,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       final chatService = ref.read(chatServiceProvider);
       await chatService.addGroupMember(widget.groupId, id);
       _memberIdController.clear();
-      _loadMembers();
+      await _loadMembers();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,7 +72,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     try {
       final chatService = ref.read(chatServiceProvider);
       await chatService.removeGroupMember(widget.groupId, userId);
-      _loadMembers();
+      await _loadMembers();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -201,7 +201,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                             leading: CircleAvatar(
                               backgroundColor: VibraTheme.kSurface,
                               child: Text(
-                                (displayName ?? '?')[0].toUpperCase(),
+                                (displayName?.isNotEmpty == true ? displayName! : '?')[0].toUpperCase(),
                                 style: const TextStyle(
                                   color: VibraTheme.kTextPrimary,
                                   fontWeight: FontWeight.w700,

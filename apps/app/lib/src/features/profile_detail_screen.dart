@@ -66,11 +66,19 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
       final dio = ref.read(dioProvider);
       final response =
           await dio.get<Map<String, dynamic>>('/profile/${widget.userId}');
-      final userJson = response.data!['user'] as Map<String, dynamic>;
+      final userJson = response.data?['user'] as Map<String, dynamic>?;
+      if (userJson == null) {
+        if (!mounted) return;
+        setState(() {
+          _error = 'Failed to load profile: invalid response';
+          _isLoading = false;
+        });
+        return;
+      }
       final profile = UserProfile.fromJson(userJson);
-      final health = response.data!['health'] as Map<String, dynamic>?;
+      final health = response.data?['health'] as Map<String, dynamic>?;
       final details =
-          (response.data!['details'] as Map<String, dynamic>?) ?? {};
+          (response.data?['details'] as Map<String, dynamic>?) ?? {};
 
       if (!mounted) return;
       setState(() {
@@ -112,13 +120,14 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
           .toList();
       // T5.8 — capture each suggestion's `created_at` so the NUEVO badge
       // can be rendered per-tile without modifying [NearbyUser].
+      // Build from the same filtered `list` items to keep alignment correct.
       final createdAts = <String, DateTime?>{};
-      for (final entry in usersJson.take(4)) {
-        final m = entry as Map<String, dynamic>;
-        final id = m['id'] as String?;
-        if (id == null) continue;
-        final raw = m['created_at'] as String?;
-        createdAts[id] =
+      for (final u in list) {
+        final raw = (usersJson.firstWhere(
+          (e) => (e as Map<String, dynamic>)['id'] == u.id,
+          orElse: () => <String, dynamic>{},
+        ) as Map<String, dynamic>)['created_at'] as String?;
+        createdAts[u.id] =
             (raw == null || raw.isEmpty) ? null : DateTime.tryParse(raw);
       }
       if (mounted) {
@@ -895,17 +904,19 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     final h = _healthData!;
     final rows = <Widget>[];
 
-    if (h['hiv_status'] != null) {
+    final hivStatus = (h['hiv_status'] as String?)?.toString();
+    if (hivStatus != null) {
       rows.add(_statRowWithTooltip(
         Icons.health_and_safety_outlined,
-        h['hiv_status'] as String,
+        hivStatus,
         'Estado de VIH',
       ));
     }
-    if (h['last_tested_at'] != null) {
+    final lastTestedAt = (h['last_tested_at'] as String?)?.toString();
+    if (lastTestedAt != null) {
       rows.add(_statRow(
         Icons.calendar_today_outlined,
-        h['last_tested_at'] as String,
+        lastTestedAt,
       ));
     }
     final practices = h['safer_practices_list'] as List?;

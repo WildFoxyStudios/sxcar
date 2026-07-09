@@ -105,7 +105,7 @@ class _DetailContent extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   event.locationName,
-                  style: const TextStyle(color: Colors.white70, fontSize: 16),
+                  style: const TextStyle(color: VibraTheme.kTextSecondary, fontSize: 16),
                 ),
               ],
             ),
@@ -188,8 +188,8 @@ class _DetailContent extends ConsumerWidget {
             ),
           ],
 
-          // My status badge (creator or after RSVP)
-          if (event.myStatus != null) ...[
+          // My status badge — only shown to non-creators after RSVP
+          if (event.myStatus != null && !isCreator) ...[
             const SizedBox(height: 16),
             Center(
               child: Container(

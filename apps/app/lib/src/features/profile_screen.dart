@@ -2,6 +2,7 @@ import '../theme/app_theme.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
 import '../auth/auth_provider.dart';
 
@@ -187,11 +188,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _loadProfile();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   Future<void> _loadProfile() async {
     setState(() {
       _isLoading = true;
@@ -228,7 +224,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _navigateToEditProfile() {
-    Navigator.of(context).pushNamed('/edit-profile');
+    context.push('/edit-profile');
   }
 
   @override
@@ -287,13 +283,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: CircleAvatar(
             radius: 48,
             backgroundColor: theme.colorScheme.primaryContainer,
-            child: Text(
-              (p.displayName ?? p.email)[0].toUpperCase(),
-              style: TextStyle(
-                fontSize: 32,
-                color: theme.colorScheme.onPrimaryContainer,
-              ),
-            ),
+            backgroundImage: p.profilePhotoUrl != null
+                ? NetworkImage(p.profilePhotoUrl!)
+                : null,
+            child: p.profilePhotoUrl == null
+                ? Text(
+                    (p.displayName ?? p.email)[0].toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 32,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  )
+                : null,
           ),
         ),
         const SizedBox(height: 16),

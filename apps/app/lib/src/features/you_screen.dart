@@ -249,7 +249,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
           Text(
             p.displayName!,
             style: theme.textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
+              color: VibraTheme.kTextPrimary,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
@@ -753,7 +753,7 @@ class _ViewerTile extends StatelessWidget {
               displayName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 11),
+              style: const TextStyle(color: VibraTheme.kTextPrimary, fontSize: 11),
             ),
           ],
         ),

@@ -141,6 +141,9 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   TravelPass? _travelPass;
   bool _travelPassLoaded = false;
 
+  // ── Filter sheet controller (lifted to avoid leak) ─────────────────────────
+  final TextEditingController _filterSearchController = TextEditingController();
+
   // ── Dynamic filter options (fetched from /meta/filters on init) ──────────
   List<String> _tribes = _kDefaultTribes;
   List<String> _bodyTypes = _kDefaultBodyTypes;
@@ -154,6 +157,12 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     _loadFavorites();
     _loadFilterOptions();
     _loadTravelPass();
+  }
+
+  @override
+  void dispose() {
+    _filterSearchController.dispose();
+    super.dispose();
   }
 
   /// Load the current active travel pass from the server.
@@ -813,7 +822,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
               child: Text(
                 l10n.discover,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: VibraTheme.kTextPrimary,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1195,7 +1204,9 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     String? localBodyType = _bodyType;
     String? localLookingFor = _lookingFor;
     double localDistanceKm = _distanceKm;
-    final searchController = TextEditingController(text: _searchQuery);
+    // Reuse the state-level controller (reset to current query before opening).
+    _filterSearchController.text = _searchQuery;
+    final searchController = _filterSearchController;
 
     showModalBottomSheet(
       context: context,

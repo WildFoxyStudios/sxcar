@@ -100,7 +100,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           controller: _tabController,
           indicatorColor: VibraTheme.kBrandPrimary,
           indicatorWeight: 2,
-          labelColor: Colors.white,
+          labelColor: VibraTheme.kTextPrimary,
           unselectedLabelColor: VibraTheme.kTextSecondary,
           labelStyle:
               const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
@@ -184,7 +184,8 @@ class _BandejaTabState extends ConsumerState<_BandejaTab> {
               if (conversations.isEmpty) {
                 return Center(
                   child: Text(
-                    l10n.bandejaDeEntrada,
+                    // TODO(l10n): add a dedicated "no conversations yet" key
+                    l10n.noGroupsYet,
                     style: const TextStyle(color: VibraTheme.kTextSecondary),
                   ),
                 );
@@ -284,7 +285,7 @@ class _ConversationTile extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: VibraTheme.kTextPrimary,
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
                           ),
@@ -356,11 +357,7 @@ class _AlbumsTab extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (_, _) => _ErrorRetry(
         message: l10n.errorCargandoAlbumesCompartidos,
-        onRetry: () {
-          // Provider invalidation is best done in a callback that has the ref.
-          // The Retry button itself just signals; actual reload is via
-          // `ref.invalidate` from the parent scope when wired up.
-        },
+        onRetry: () => ref.invalidate(sharedAlbumsProvider),
       ),
       data: (albums) {
         if (albums.isEmpty) {
@@ -386,7 +383,7 @@ class _BoostFab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     return FloatingActionButton.extended(
-      backgroundColor: Colors.black,
+      backgroundColor: VibraTheme.kSurface,
       foregroundColor: VibraTheme.kBrandPrimary,
       onPressed: () {
         ref.read(boostServiceProvider).activate();

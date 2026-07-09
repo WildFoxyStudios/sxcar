@@ -158,6 +158,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // ── MULTIMEDIA ─────────────────────────────────────────────────
           _sectionHeader(l10n.multimedia, 'multimedia'),
+          // TODO(persist): no backend endpoint for these multimedia/display
+          // privacy toggles yet — they are local UI state only. Wire each
+          // onChanged to PUT /profile (or shared_preferences) once the
+          // backend supports these fields.
           SettingRow(
             icon: Icons.photo_album_outlined,
             title: l10n.mostrarActualizacionesAlbumes,
@@ -214,6 +218,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => context.push('/settings/blocks'),
           ),
           const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
+          // TODO(persist): _markChatted and _chatSync are local UI state only.
+          // Wire to PUT /profile once the backend exposes these fields.
           SettingRow(
             icon: Icons.chat_bubble_outline,
             title: l10n.marcarConQuienChateeado,

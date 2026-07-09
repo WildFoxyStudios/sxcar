@@ -150,6 +150,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   // ── Gallery methods ───────────────────────────────────────────────────────
 
   Future<void> _loadGallery() async {
+    if (!mounted) return;
     setState(() => _isLoadingGallery = true);
     try {
       final svc = MediaService(ref.read(dioProvider));
@@ -567,7 +568,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _CollapsibleSection(
           title: (l10n?.editProfileSectionBasics ?? 'Basic info').toUpperCase(),
           collapsed: _collapsedSections['basicInfo']!,
-          onExpansionChanged: (_) {},
+          onExpansionChanged: (v) =>
+              setState(() => _collapsedSections['basicInfo'] = !v),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -599,7 +601,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           title:
               (l10n?.editProfileSectionAppearance ?? 'Appearance').toUpperCase(),
           collapsed: _collapsedSections['appearance']!,
-          onExpansionChanged: (_) {},
+          onExpansionChanged: (v) =>
+              setState(() => _collapsedSections['appearance'] = !v),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -678,8 +681,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Tribes selection — gated by premium tier max_tribes limit
-              Builder(builder: (context) {
-                final premiumAsync = ref.read(premiumStatusProvider);
+              Consumer(builder: (context, ref, _) {
+                final premiumAsync = ref.watch(premiumStatusProvider);
                 final data = premiumAsync is AsyncData ? premiumAsync.value : null;
                 final maxTribes = data?.features.maxTribes ?? 1;
                 return Column(
@@ -886,7 +889,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _CollapsibleSection(
           title: (l10n?.editProfileSectionHealth ?? 'Health').toUpperCase(),
           collapsed: _collapsedSections['health']!,
-          onExpansionChanged: (_) {},
+          onExpansionChanged: (v) =>
+              setState(() => _collapsedSections['health'] = !v),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

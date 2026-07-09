@@ -194,7 +194,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _sectionHeader(l10n.centroSeguridad, 'privacidad'),
           SettingRow(
             icon: Icons.apps_outlined,
-            iconColor: Colors.blue,
+            iconColor: VibraTheme.kTierTop,
             title: l10n.iconoAplicacionDiscreto,
             subtitle: discreetIcon ? l10n.activado : l10n.desactivada,
             onTap: () => context.push('/settings/discreet-icon'),
@@ -202,7 +202,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
           SettingRow(
             icon: Icons.pin_outlined,
-            iconColor: Colors.orange,
+            iconColor: VibraTheme.kGold,
             title: l10n.pin,
             subtitle: pinEnabled ? l10n.activado : l10n.desactivada,
             onTap: () => context.push('/settings/pin'),

@@ -205,13 +205,13 @@ class _EventCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: event.myStatus == 'going'
                             ? VibraTheme.kSuccess.withValues(alpha: 0.2)
-                            : Colors.orange.withValues(alpha: 0.2),
+                            : VibraTheme.kGold.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         event.myStatus == 'going' ? l10n.events_going : l10n.events_maybe,
                         style: TextStyle(
-                          color: event.myStatus == 'going' ? VibraTheme.kSuccess : Colors.orange,
+                          color: event.myStatus == 'going' ? VibraTheme.kSuccess : VibraTheme.kGold,
                           fontSize: 12,
                         ),
                       ),

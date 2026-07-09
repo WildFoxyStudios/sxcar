@@ -48,7 +48,7 @@ class _DiscreetIconPickerScreenState
       _IconOption(
         id: 'discreet',
         label: l10n.iconoAplicacionDiscreto,
-        icon: const Icon(Icons.water_drop, color: Colors.blue, size: 36),
+        icon: const Icon(Icons.water_drop, color: VibraTheme.kTierTop, size: 36),
       ),
     ];
 

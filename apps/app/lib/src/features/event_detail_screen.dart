@@ -180,7 +180,7 @@ class _DetailContent extends ConsumerWidget {
                     label: l10n.events_maybe,
                     icon: Icons.help_outline,
                     isActive: event.myStatus == 'maybe',
-                    color: Colors.orange,
+                    color: VibraTheme.kGold,
                     onPressed: () => _attend(context, ref, 'maybe'),
                   ),
                 ),
@@ -197,7 +197,7 @@ class _DetailContent extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: event.myStatus == 'going'
                       ? VibraTheme.kSuccess.withValues(alpha: 0.2)
-                      : Colors.orange.withValues(alpha: 0.2),
+                      : VibraTheme.kGold.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -205,7 +205,7 @@ class _DetailContent extends ConsumerWidget {
                       ? l10n.events_you_are_going
                       : l10n.events_you_are_maybe,
                   style: TextStyle(
-                    color: event.myStatus == 'going' ? VibraTheme.kSuccess : Colors.orange,
+                    color: event.myStatus == 'going' ? VibraTheme.kSuccess : VibraTheme.kGold,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

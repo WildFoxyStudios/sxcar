@@ -1645,7 +1645,7 @@ class _ScreenshotAlertBanner extends StatelessWidget {
       child: Row(
         children: [
           const Icon(Icons.warning_amber_rounded,
-              color: Colors.amber, size: 18),
+              color: VibraTheme.kGold, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

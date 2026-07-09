@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
+import '../theme/app_theme.dart';
 import 'onboarding_provider.dart';
 import 'models.dart';
 import 'cards/profile_photo_card.dart';
@@ -162,15 +163,41 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
       canPop: false,
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: VibraTheme.kBg,
           title: Text(l10n.onboarding_title),
           leading: IconButton(
             icon: const Icon(Icons.close),
             onPressed: _confirmSkipAll,
           ),
+          actions: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20),
+                child: Text(
+                  '${_index + 1} / $total',
+                  style: const TextStyle(
+                    color: VibraTheme.kTextSecondary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(4),
-            child: LinearProgressIndicator(
-              value: total == 0 ? 0 : (_index + 1) / total,
+            preferredSize: const Size.fromHeight(18),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: total == 0 ? 0 : (_index + 1) / total,
+                  minHeight: 6,
+                  backgroundColor: VibraTheme.kChip,
+                  valueColor: const AlwaysStoppedAnimation(
+                      VibraTheme.kBrandPrimary),
+                ),
+              ),
             ),
           ),
         ),

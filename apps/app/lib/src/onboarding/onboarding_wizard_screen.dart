@@ -50,7 +50,21 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   }
 
   void _onChange() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    // A per-card skip removes that optional card from the refreshed list, so
+    // the list can shrink under us. If the current index now points past the
+    // end (e.g. the last card was skipped), clamp it and move the controller
+    // to the new last card so we never render a blank, out-of-bounds page.
+    final count = widget.provider.state?.cards.length ?? 0;
+    if (count > 0 && _index >= count) {
+      _index = count - 1;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _controller.hasClients) {
+          _controller.jumpToPage(_index);
+        }
+      });
+    }
+    setState(() {});
   }
 
   Widget _buildCard(

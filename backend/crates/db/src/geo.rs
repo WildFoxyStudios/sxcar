@@ -75,7 +75,7 @@ pub async fn find_nearby_users(
     let rows = sqlx::query_as::<_, NearbyUserRow>(
         r#"
         SELECT u.id, u.email::text AS email,
-               u.verified,
+               p.verified,
                p.display_name,
                p.about AS bio,
                (SELECT id FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1) AS profile_photo_id,

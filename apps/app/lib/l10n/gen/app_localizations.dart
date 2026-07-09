@@ -2168,11 +2168,101 @@ abstract class AppLocalizations {
   /// **'Iniciar sesión con Google'**
   String get login_google_button;
 
+  /// Subtítulo bajo el logo en login
+  ///
+  /// In es, this message translates to:
+  /// **'Conecta con quien tienes cerca'**
+  String get login_subtitle;
+
+  /// Enlace a recuperar contraseña
+  ///
+  /// In es, this message translates to:
+  /// **'¿Olvidaste tu contraseña?'**
+  String get login_forgot_password;
+
+  /// Prefijo antes del enlace de registro
+  ///
+  /// In es, this message translates to:
+  /// **'¿No tienes cuenta?'**
+  String get login_no_account;
+
   /// Enlace a la pantalla de registro desde inicio de sesión
   ///
   /// In es, this message translates to:
-  /// **'¿No tienes cuenta? Regístrate'**
+  /// **'Regístrate'**
   String get login_register_link;
+
+  /// Subtítulo bajo el logo en registro
+  ///
+  /// In es, this message translates to:
+  /// **'Crea tu cuenta en un momento'**
+  String get register_subtitle;
+
+  /// Prefijo antes del enlace de login
+  ///
+  /// In es, this message translates to:
+  /// **'¿Ya tienes cuenta?'**
+  String get register_have_account;
+
+  /// Título pantalla recuperar contraseña
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperar contraseña'**
+  String get recover_title;
+
+  /// Subtítulo recuperar contraseña
+  ///
+  /// In es, this message translates to:
+  /// **'Te enviaremos un código a tu correo'**
+  String get recover_subtitle;
+
+  /// Botón enviar código de recuperación
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar código'**
+  String get recover_send_code;
+
+  /// Campo del código de recuperación
+  ///
+  /// In es, this message translates to:
+  /// **'Código de 6 dígitos'**
+  String get recover_code_label;
+
+  /// Campo de nueva contraseña
+  ///
+  /// In es, this message translates to:
+  /// **'Nueva contraseña'**
+  String get recover_new_password_label;
+
+  /// Botón para confirmar el cambio de contraseña
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar contraseña'**
+  String get recover_reset_button;
+
+  /// Confirmación de envío de código
+  ///
+  /// In es, this message translates to:
+  /// **'Si el correo existe, te enviamos un código.'**
+  String get recover_code_sent;
+
+  /// Éxito al cambiar contraseña
+  ///
+  /// In es, this message translates to:
+  /// **'Contraseña cambiada. Inicia sesión.'**
+  String get recover_success;
+
+  /// Error genérico de recuperación
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo completar. Revisa el código e inténtalo de nuevo.'**
+  String get recover_error;
+
+  /// Validación: código vacío
+  ///
+  /// In es, this message translates to:
+  /// **'Introduce el código'**
+  String get recover_code_empty;
 
   /// Mensaje de error genérico de Google Sign-In
   ///
@@ -2297,7 +2387,7 @@ abstract class AppLocalizations {
   /// Enlace a la pantalla de inicio de sesión desde registro
   ///
   /// In es, this message translates to:
-  /// **'¿Ya tienes cuenta? Inicia sesión'**
+  /// **'Inicia sesión'**
   String get register_login_link;
 
   /// Título de la barra de perfil propio

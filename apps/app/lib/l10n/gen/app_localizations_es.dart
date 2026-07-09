@@ -1092,7 +1092,53 @@ class AppLocalizationsEs extends AppLocalizations {
   String get login_google_button => 'Iniciar sesión con Google';
 
   @override
-  String get login_register_link => '¿No tienes cuenta? Regístrate';
+  String get login_subtitle => 'Conecta con quien tienes cerca';
+
+  @override
+  String get login_forgot_password => '¿Olvidaste tu contraseña?';
+
+  @override
+  String get login_no_account => '¿No tienes cuenta?';
+
+  @override
+  String get login_register_link => 'Regístrate';
+
+  @override
+  String get register_subtitle => 'Crea tu cuenta en un momento';
+
+  @override
+  String get register_have_account => '¿Ya tienes cuenta?';
+
+  @override
+  String get recover_title => 'Recuperar contraseña';
+
+  @override
+  String get recover_subtitle => 'Te enviaremos un código a tu correo';
+
+  @override
+  String get recover_send_code => 'Enviar código';
+
+  @override
+  String get recover_code_label => 'Código de 6 dígitos';
+
+  @override
+  String get recover_new_password_label => 'Nueva contraseña';
+
+  @override
+  String get recover_reset_button => 'Cambiar contraseña';
+
+  @override
+  String get recover_code_sent => 'Si el correo existe, te enviamos un código.';
+
+  @override
+  String get recover_success => 'Contraseña cambiada. Inicia sesión.';
+
+  @override
+  String get recover_error =>
+      'No se pudo completar. Revisa el código e inténtalo de nuevo.';
+
+  @override
+  String get recover_code_empty => 'Introduce el código';
 
   @override
   String get login_error_google =>
@@ -1166,7 +1212,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Error al registrarse. Inténtalo de nuevo.';
 
   @override
-  String get register_login_link => '¿Ya tienes cuenta? Inicia sesión';
+  String get register_login_link => 'Inicia sesión';
 
   @override
   String get profile_title_self => 'Mi perfil';

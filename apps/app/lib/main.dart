@@ -31,6 +31,7 @@ import 'src/features/pin_screen.dart';
 import 'src/features/profile_detail_screen.dart';
 import 'src/features/profile_drawer.dart';
 import 'src/features/register_screen.dart';
+import 'src/features/recover_password_screen.dart';
 import 'src/features/right_now_screen.dart';
 import 'src/features/verify_email_screen.dart';
 import 'src/features/edit_profile_screen.dart';
@@ -67,6 +68,7 @@ const Set<String> _knownTopLevelPaths = {
   '/splash',
   '/login',
   '/register',
+  '/recover',
   '/verify-email',
   '/onboarding',
   '/profile',
@@ -131,7 +133,8 @@ String? appRedirect({
   }
 
   final isAuthRoute = matchedLocation == '/login' ||
-      matchedLocation == '/register';
+      matchedLocation == '/register' ||
+      matchedLocation == '/recover';
   final isVerifyRoute = matchedLocation == '/verify-email';
   final isSplash = matchedLocation == '/splash';
 
@@ -212,6 +215,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/register',
       builder: (_, _) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/recover',
+      builder: (_, _) => const RecoverPasswordScreen(),
     ),
     GoRoute(
       path: '/verify-email',

@@ -26,6 +26,9 @@ void main() {
   group('RegisterScreen', () {
     testWidgets('renders form fields, consent checkbox, and register button',
         (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -49,10 +52,8 @@ void main() {
         find.text('I accept the terms and privacy policy (I am 18+)'),
         findsOneWidget,
       );
-      expect(
-        find.text('Already have an account? Login'),
-        findsOneWidget,
-      );
+      expect(find.text('Already have an account?'), findsOneWidget);
+      expect(find.text('Login'), findsOneWidget);
     });
   });
 }

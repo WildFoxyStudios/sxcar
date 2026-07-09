@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
 import '../auth/auth_provider.dart';
 import '../auth/models.dart';
+import '../auth/widgets/auth_shell.dart';
+import '../theme/app_theme.dart';
 import '../utils/email_validator.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -21,15 +23,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   DateTime? _birthDate;
   bool _consentChecked = false;
   bool _isLoading = false;
+  bool _obscure = true;
   String? _error;
 
-  /// 18 years ago today — latest date a user can be born to be an adult.
-  static DateTime get _maxBirthDate =>
-      DateTime(DateTime.now().year - 18, DateTime.now().month, DateTime.now().day);
+  static DateTime get _maxBirthDate => DateTime(
+      DateTime.now().year - 18, DateTime.now().month, DateTime.now().day);
+  static final DateTime _minBirthDate = DateTime(
+      DateTime.now().year - 100, DateTime.now().month, DateTime.now().day);
 
-  /// Reasonable oldest birth date (100 years ago).
-  static final DateTime _minBirthDate =
-      DateTime(DateTime.now().year - 100, DateTime.now().month, DateTime.now().day);
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   bool _isAtLeast18(DateTime birthDate) {
     final now = DateTime.now();
@@ -51,9 +58,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       helpText: l10n.register_dob_picker_help,
       fieldLabelText: l10n.register_dob_picker_field_label,
     );
-    if (picked != null) {
-      setState(() => _birthDate = picked);
-    }
+    if (picked != null && mounted) setState(() => _birthDate = picked);
   }
 
   Future<void> _submit() async {
@@ -110,118 +115,111 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.register_title)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+    final dobText = _birthDate == null
+        ? ''
+        : '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}';
+    return Form(
+      key: _formKey,
+      child: AuthShell(
+        subtitle: l10n.register_subtitle,
+        onBack: _isLoading ? null : () => context.go('/login'),
+        children: [
+          TextFormField(
+            controller: _emailController,
+            decoration: authInput(
+                label: l10n.register_email_label, icon: Icons.mail_outline),
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            textInputAction: TextInputAction.next,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return l10n.register_email_empty_error;
+              }
+              if (!validateEmail(email: value.trim())) {
+                return l10n.register_email_invalid_error;
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 14),
+          TextFormField(
+            controller: _passwordController,
+            decoration: authInput(
+              label: l10n.register_password_label,
+              icon: Icons.lock_outline,
+              suffix: IconButton(
+                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility,
+                    size: 20, color: VibraTheme.kTextSecondary),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+            ),
+            obscureText: _obscure,
+            autofillHints: const [AutofillHints.newPassword],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return l10n.register_password_empty_error;
+              }
+              if (value.length < 8) {
+                return l10n.register_password_min_length_error;
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 14),
+          InkWell(
+            onTap: _pickDate,
+            borderRadius: BorderRadius.circular(14),
+            child: InputDecorator(
+              decoration: authInput(
+                label: l10n.register_dob_label,
+                hint: l10n.register_dob_hint,
+                icon: Icons.cake_outlined,
+                suffix: const Icon(Icons.calendar_today,
+                    size: 18, color: VibraTheme.kTextSecondary),
+              ),
+              child: Text(
+                dobText.isEmpty ? l10n.register_dob_hint : dobText,
+                style: TextStyle(
+                  color: dobText.isEmpty
+                      ? VibraTheme.kTextSecondary
+                      : VibraTheme.kText,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l10n.register_consent_label,
+                style: const TextStyle(
+                    fontSize: 13, color: VibraTheme.kTextSecondary)),
+            value: _consentChecked,
+            activeColor: VibraTheme.kBrandPrimary,
+            checkColor: Colors.black,
+            onChanged: (v) => setState(() => _consentChecked = v ?? false),
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+          if (_error != null) AuthErrorText(_error!),
+          const SizedBox(height: 16),
+          AuthPrimaryButton(
+            label: l10n.register_button,
+            loading: _isLoading,
+            onPressed: _isLoading ? null : _submit,
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: l10n.register_email_label,
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return l10n.register_email_empty_error;
-                  }
-                  if (!validateEmail(email: value.trim())) {
-                    return l10n.register_email_invalid_error;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: l10n.register_password_label,
-                  border: const OutlineInputBorder(),
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return l10n.register_password_empty_error;
-                  }
-                  if (value.length < 8) {
-                    return l10n.register_password_min_length_error;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              GestureDetector(
-                onTap: _pickDate,
-                child: AbsorbPointer(
-                  child: TextFormField(
-                    decoration: InputDecoration(
-                      labelText: l10n.register_dob_label,
-                      hintText: l10n.register_dob_hint,
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: _pickDate,
-                      ),
-                    ),
-                    controller: TextEditingController(
-                      text: _birthDate == null
-                          ? ''
-                          : '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}',
-                    ),
-                    validator: (_) {
-                      if (_birthDate == null) return l10n.register_dob_empty_error;
-                      if (!_isAtLeast18(_birthDate!)) {
-                        return l10n.register_age_gate;
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              CheckboxListTile(
-                title: Text(
-                  l10n.register_consent_label,
-                  style: const TextStyle(fontSize: 14),
-                ),
-                value: _consentChecked,
-                onChanged: (v) => setState(() => _consentChecked = v ?? false),
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _error!,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ],
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _isLoading ? null : _submit,
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(l10n.register_button),
-                ),
-              ),
-              const SizedBox(height: 16),
+              Text(l10n.register_have_account,
+                  style: const TextStyle(color: VibraTheme.kTextSecondary)),
               TextButton(
                 onPressed: _isLoading ? null : () => context.go('/login'),
                 child: Text(l10n.register_login_link),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

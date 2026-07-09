@@ -1086,7 +1086,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get login_google_button => 'Sign in with Google';
 
   @override
-  String get login_register_link => 'Don\'t have an account? Register';
+  String get login_subtitle => 'Connect with people nearby';
+
+  @override
+  String get login_forgot_password => 'Forgot your password?';
+
+  @override
+  String get login_no_account => 'No account?';
+
+  @override
+  String get login_register_link => 'Sign up';
+
+  @override
+  String get register_subtitle => 'Create your account in a moment';
+
+  @override
+  String get register_have_account => 'Already have an account?';
+
+  @override
+  String get recover_title => 'Recover password';
+
+  @override
+  String get recover_subtitle => 'We\'ll send a code to your email';
+
+  @override
+  String get recover_send_code => 'Send code';
+
+  @override
+  String get recover_code_label => '6-digit code';
+
+  @override
+  String get recover_new_password_label => 'New password';
+
+  @override
+  String get recover_reset_button => 'Change password';
+
+  @override
+  String get recover_code_sent => 'If the email exists, we\'ve sent a code.';
+
+  @override
+  String get recover_success => 'Password changed. Please sign in.';
+
+  @override
+  String get recover_error =>
+      'Couldn\'t complete. Check the code and try again.';
+
+  @override
+  String get recover_code_empty => 'Enter the code';
 
   @override
   String get login_error_google => 'Google Sign-In failed. Please try again.';
@@ -1152,7 +1198,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get register_error_network => 'Registration failed. Please try again.';
 
   @override
-  String get register_login_link => 'Already have an account? Login';
+  String get register_login_link => 'Login';
 
   @override
   String get profile_title_self => 'My Profile';

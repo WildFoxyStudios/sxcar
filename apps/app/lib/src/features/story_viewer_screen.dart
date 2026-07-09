@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:video_player/video_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_provider.dart';
@@ -28,7 +28,6 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
   Timer? _timer;
   double _progress = 0.0;
   bool _paused = false;
-  final AudioPlayer _audioPlayer = AudioPlayer();
 
   List<StoryGroup> get _groups => widget.groups;
   StoryGroup get _currentGroup => _groups[_groupIndex];
@@ -46,7 +45,6 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
   @override
   void dispose() {
     _timer?.cancel();
-    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -416,8 +414,9 @@ class _VideoStory extends StatefulWidget {
 }
 
 class _VideoStoryState extends State<_VideoStory> {
-  final AudioPlayer _player = AudioPlayer();
+  VideoPlayerController? _controller;
   bool _loaded = false;
+  bool _failed = false;
 
   @override
   void initState() {
@@ -428,48 +427,44 @@ class _VideoStoryState extends State<_VideoStory> {
   Future<void> _initVideo() async {
     final url =
         'https://api.turnend.win/media/get-url?key=${widget.mediaKey}&kind=story';
-    await _player.setSource(UrlSource(url));
-    await _player.resume();
-    if (!mounted) return;
-    setState(() => _loaded = true);
+    final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+    _controller = controller;
+    try {
+      await controller.initialize();
+      await controller.setLooping(false);
+      await controller.play();
+      if (!mounted) return;
+      setState(() => _loaded = true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _failed = true);
+    }
   }
 
   @override
   void dispose() {
-    _player.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_loaded) {
+    if (_failed) {
+      return const Center(
+        child: Icon(Icons.videocam_off, color: Colors.white54, size: 64),
+      );
+    }
+    final controller = _controller;
+    if (!_loaded || controller == null || !controller.value.isInitialized) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.white),
       );
     }
-    // Video uses same image URL approach since we use NetworkImage
-    // The backend serves the video via presigned URL
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Placeholder thumbnail - we just show a play button overlay
-        Container(color: Colors.black),
-        // Audio-only playback for now (video playback would need a video player)
-        Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.play_circle_outline,
-                  color: Colors.white54, size: 64),
-              const SizedBox(height: 8),
-              Text(
-                'Video',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-              ),
-            ],
-          ),
-        ),
-      ],
+    return Center(
+      child: AspectRatio(
+        aspectRatio: controller.value.aspectRatio,
+        child: VideoPlayer(controller),
+      ),
     );
   }
 }

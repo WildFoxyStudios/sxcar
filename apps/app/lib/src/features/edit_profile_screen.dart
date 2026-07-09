@@ -1038,7 +1038,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       children: [
         // Section label
         Text(
-          'FOTOS',
+          l10n?.fotosSectionHeader ?? 'FOTOS',
           style: const TextStyle(
             color: VibraTheme.kTextSecondary,
             fontSize: 12,

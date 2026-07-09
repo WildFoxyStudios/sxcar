@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../auth/models.dart';
+import '../../l10n/gen/app_localizations.dart';
 
 class VerifyEmailScreen extends ConsumerStatefulWidget {
   const VerifyEmailScreen({super.key});
@@ -26,9 +27,10 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   }
 
   Future<void> _verify() async {
+    final l10n = AppLocalizations.of(context)!;
     final code = _codeController.text.trim();
     if (code.isEmpty || code.length != 6) {
-      setState(() => _error = 'Please enter a 6-digit code');
+      setState(() => _error = l10n.errorCodigo6Digitos);
       return;
     }
 
@@ -43,7 +45,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
-      setState(() => _error = 'Verification failed. Please try again.');
+      setState(() => _error = l10n.verificacionFallida);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -65,17 +67,17 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Verification code sent to your email')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.codigoEnviado)),
       );
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() {
         _error = e.response?.data?['message'] as String? ??
-            'Failed to resend code. Please try again.';
+            AppLocalizations.of(context)!.errorReenviarCodigo;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'Failed to resend code. Please try again.');
+      setState(() => _error = AppLocalizations.of(context)!.errorReenviarCodigo);
     } finally {
       if (mounted) setState(() => _isResending = false);
     }
@@ -83,25 +85,26 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: VibraTheme.kBg,
-      appBar: AppBar(title: const Text('Verify Email')),
+      appBar: AppBar(title: Text(l10n.verificarEmail)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'Enter the 6-digit verification code sent to your email',
+            Text(
+              l10n.verificarEmailInstrucciones,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 24),
             TextField(
               controller: _codeController,
-              decoration: const InputDecoration(
-                labelText: 'Verification Code',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.codigoVerificacion,
+                border: const OutlineInputBorder(),
                 hintText: '123456',
               ),
               keyboardType: TextInputType.number,
@@ -125,7 +128,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Verify'),
+                    : Text(l10n.verificar),
               ),
             ),
             const SizedBox(height: 16),
@@ -137,7 +140,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Resend Code'),
+                  : Text(l10n.reenviarCodigo),
             ),
           ],
         ),

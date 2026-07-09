@@ -456,10 +456,11 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     }
     if (existingBoost != null) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Boost activo · ${existingBoost.minutesRemaining}m restantes',
+              l10n.you_boost_active(existingBoost.minutesRemaining),
             ),
           ),
         );
@@ -470,9 +471,10 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       await ref.read(boostServiceProvider).activate();
       ref.invalidate(activeBoostProvider);
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Boost activado por 30 min!'),
+          SnackBar(
+            content: Text(l10n.you_boosted_snackbar),
             backgroundColor: VibraTheme.kAccentPulse,
           ),
         );
@@ -480,8 +482,9 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     } catch (_) {
       debugPrint('[NavegarScreen] error: activating boost');
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Boost activado')),
+          SnackBar(content: Text(l10n.you_boosted_snackbar)),
         );
       }
     }
@@ -774,7 +777,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
               final group = groups[index - 1];
               return _StoryAvatar(
                 avatarKey: group.avatarKey,
-                displayName: group.displayName ?? 'Usuario',
+                displayName: group.displayName ?? AppLocalizations.of(context)!.usuarioFallback,
                 hasUnviewed: !group.allViewed,
                 onTap: () {
                   Navigator.of(context).push(
@@ -958,19 +961,19 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
               borderRadius: const BorderRadius.all(Radius.circular(999)),
               border: Border.all(color: VibraTheme.kAccentPulse, width: 1),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Boost',
-                  style: TextStyle(
+                  AppLocalizations.of(context)!.boost,
+                  style: const TextStyle(
                     color: VibraTheme.kAccentPulse,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                   ),
                 ),
-                SizedBox(width: 4),
-                Icon(Icons.bolt, color: VibraTheme.kAccentPulse, size: 18),
+                const SizedBox(width: 4),
+                const Icon(Icons.bolt, color: VibraTheme.kAccentPulse, size: 18),
               ],
             ),
           ),
@@ -987,19 +990,19 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
               borderRadius: const BorderRadius.all(Radius.circular(999)),
               border: Border.all(color: VibraTheme.kAccentGlow, width: 1),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Right Now',
-                  style: TextStyle(
+                  AppLocalizations.of(context)!.right_now_title,
+                  style: const TextStyle(
                     color: VibraTheme.kAccentGlow,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                   ),
                 ),
-                SizedBox(width: 4),
-                Icon(Icons.water_drop, color: VibraTheme.kAccentGlow, size: 18),
+                const SizedBox(width: 4),
+                const Icon(Icons.water_drop, color: VibraTheme.kAccentGlow, size: 18),
               ],
             ),
           ),
@@ -1011,6 +1014,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   // ── State helpers ──────────────────────────────────────────────────────────
 
   Widget _buildErrorState(ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -1032,7 +1036,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Failed to load nearby users',
+              l10n.navegarFailedToLoad,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: VibraTheme.kTextPrimary,
               ),
@@ -1041,7 +1045,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _refresh,
-              child: const Text('Retry'),
+              child: Text(l10n.reintentar),
             ),
           ],
         ),
@@ -1050,6 +1054,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   }
 
   Widget _buildEmptyState(ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -1071,7 +1076,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'No one nearby yet',
+              l10n.navegarNoOneNearby,
               style: theme.textTheme.titleLarge?.copyWith(
                 color: VibraTheme.kTextPrimary,
                 fontWeight: FontWeight.bold,
@@ -1079,7 +1084,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Amplía tu radio o ajusta los filtros',
+              l10n.navegarExpandRadius,
               style: VibraTheme.bodySecondary,
               textAlign: TextAlign.center,
             ),
@@ -1090,6 +1095,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   }
 
   Widget _buildLocationBanner() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       color: VibraTheme.kSurface,
@@ -1102,10 +1108,10 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             size: 20,
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Enable location to see people nearby',
-              style: TextStyle(color: VibraTheme.kTextPrimary, fontSize: 13),
+              l10n.navegarEnableLocation,
+              style: const TextStyle(color: VibraTheme.kTextPrimary, fontSize: 13),
             ),
           ),
           TextButton(
@@ -1114,7 +1120,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
               foregroundColor: VibraTheme.kAccent,
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
-            child: const Text('Open Settings'),
+            child: Text(l10n.abrirAjustes),
           ),
         ],
       ),
@@ -1216,7 +1222,9 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
+        builder: (ctx, setSheetState) {
+          final l10n = AppLocalizations.of(context)!;
+          return Padding(
           padding: EdgeInsets.only(
             left: 24,
             right: 24,
@@ -1229,7 +1237,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Filters',
+                  l10n.filtros,
                   style: Theme.of(context)
                       .textTheme
                       .titleLarge
@@ -1239,7 +1247,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
 
                 // Distance slider
                 Text(
-                  'Distance: ${localDistanceKm.round()} km',
+                  l10n.filterDistanceLabel(localDistanceKm.round()),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 Slider(
@@ -1257,7 +1265,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
 
                 // Age range slider
                 Text(
-                  'Age Range: ${localAge.start.round()} - ${localAge.end.round()}',
+                  l10n.filterAgeRange(localAge.start.round(), localAge.end.round()),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 RangeSlider(
@@ -1275,7 +1283,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 const SizedBox(height: 12),
 
                 // Tribe multi-select
-                Text('Tribe', style: Theme.of(context).textTheme.bodyMedium),
+                Text(l10n.filterTribeLabel, style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 Wrap(
                   spacing: 6,
@@ -1306,7 +1314,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 const SizedBox(height: 12),
 
                 // Body type dropdown
-                Text('Body Type',
+                Text(l10n.editProfileFieldBodyType,
                     style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 DropdownButtonFormField<String>(
@@ -1318,7 +1326,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
-                  hint: const Text('Any'),
+                  hint: Text(l10n.filterAny),
                   items: _bodyTypes
                       .map((bt) =>
                           DropdownMenuItem(value: bt, child: Text(bt)))
@@ -1328,7 +1336,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 const SizedBox(height: 12),
 
                 // Looking for dropdown
-                Text('Looking For',
+                Text(l10n.editProfileFieldLookingFor,
                     style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 DropdownButtonFormField<String>(
@@ -1340,7 +1348,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
-                  hint: const Text('Any'),
+                  hint: Text(l10n.filterAny),
                   items: _lookingForOptions
                       .map((lf) =>
                           DropdownMenuItem(value: lf, child: Text(lf)))
@@ -1351,17 +1359,17 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 const SizedBox(height: 12),
 
                 // Search text field
-                Text('Search',
+                Text(l10n.filterSearchLabel,
                     style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 TextField(
                   controller: searchController,
-                  decoration: const InputDecoration(
-                    hintText: 'Name, bio...',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: l10n.filterSearchHint,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                     contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                   onChanged: (v) {},
                 ),
@@ -1382,7 +1390,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                             searchController.clear();
                           });
                         },
-                        child: const Text('Reset'),
+                        child: Text(l10n.filterReset),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1401,7 +1409,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                           });
                           Navigator.pop(ctx);
                         },
-                        child: const Text('Apply'),
+                        child: Text(l10n.filterApply),
                       ),
                     ),
                   ],
@@ -1409,7 +1417,8 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
               ],
             ),
           ),
-        ),
+        );
+        },
       ),
     );
   }
@@ -1632,7 +1641,7 @@ class _StoryAvatar extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              displayName ?? (isAddButton ? 'You' : ''),
+              displayName ?? (isAddButton ? AppLocalizations.of(context)!.tuLabel : ''),
               style: const TextStyle(
                 color: VibraTheme.kTextSecondary,
                 fontSize: 11,

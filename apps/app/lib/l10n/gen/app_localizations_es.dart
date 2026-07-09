@@ -1876,4 +1876,206 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get screenshotAlertBanner => 'Alguien hizo una captura de este chat';
+
+  @override
+  String get navegarFailedToLoad => 'Error al cargar usuarios cercanos';
+
+  @override
+  String get navegarNoOneNearby => 'Nadie cerca todavía';
+
+  @override
+  String get navegarExpandRadius => 'Amplía tu radio o ajusta los filtros';
+
+  @override
+  String get navegarEnableLocation =>
+      'Activa la ubicación para ver personas cercanas';
+
+  @override
+  String get abrirAjustes => 'Abrir ajustes';
+
+  @override
+  String filterDistanceLabel(int km) {
+    return 'Distancia: $km km';
+  }
+
+  @override
+  String filterAgeRange(int min, int max) {
+    return 'Rango de edad: $min - $max';
+  }
+
+  @override
+  String get filterTribeLabel => 'Tribu';
+
+  @override
+  String get filterAny => 'Cualquiera';
+
+  @override
+  String get filterSearchLabel => 'Buscar';
+
+  @override
+  String get filterSearchHint => 'Nombre, bio...';
+
+  @override
+  String get filterReset => 'Restablecer';
+
+  @override
+  String get filterApply => 'Aplicar';
+
+  @override
+  String get usuarioFallback => 'Usuario';
+
+  @override
+  String get tuLabel => 'Tú';
+
+  @override
+  String get eliminarHistoria => 'Eliminar historia';
+
+  @override
+  String get estaSeguro => '¿Estás seguro?';
+
+  @override
+  String get tapEnviado => '¡Tap enviado!';
+
+  @override
+  String tapFallido(String error) {
+    return 'Error al enviar tap: $error';
+  }
+
+  @override
+  String accionFallida(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get reportarEsteUsuario => 'Reportar a este usuario';
+
+  @override
+  String get reporteEnviado => 'Reporte enviado. Gracias.';
+
+  @override
+  String get reporteFallido => 'Error al enviar el reporte';
+
+  @override
+  String chatInicioFallido(String error) {
+    return 'Error al iniciar chat: $error';
+  }
+
+  @override
+  String get verificadoBadge => 'Verificado';
+
+  @override
+  String get pronounsTooltip => 'Pronombres';
+
+  @override
+  String get hivTooltip => 'Estado de VIH';
+
+  @override
+  String get redesSocialesHeader => 'REDES SOCIALES';
+
+  @override
+  String profileAge(int age) {
+    return '$age años';
+  }
+
+  @override
+  String get usuarioDesbloqueado => 'Usuario desbloqueado';
+
+  @override
+  String get noHayUsuariosBloqueados => 'No hay usuarios bloqueados';
+
+  @override
+  String get desbloquear => 'Desbloquear';
+
+  @override
+  String get usuarioDesconocido => 'Usuario desconocido';
+
+  @override
+  String errorGenerico(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get errorCargandoNotificaciones => 'Error cargando notificaciones';
+
+  @override
+  String get exporteDatosCompleto =>
+      'Exportación completada. Revisa tu correo.';
+
+  @override
+  String exporteFallido(String error) {
+    return 'Error al exportar: $error';
+  }
+
+  @override
+  String eliminarFallido(String error) {
+    return 'Error al eliminar: $error';
+  }
+
+  @override
+  String get consentDialogBody =>
+      'Aceptaste los Términos de servicio y la Política de privacidad durante el registro. Tus datos se procesan de acuerdo con el RGPD. Puedes solicitar una exportación completa de datos o la eliminación de la cuenta en cualquier momento.';
+
+  @override
+  String get verificarEmail => 'Verificar correo';
+
+  @override
+  String get verificarEmailInstrucciones =>
+      'Introduce el código de verificación de 6 dígitos enviado a tu correo';
+
+  @override
+  String get codigoVerificacion => 'Código de verificación';
+
+  @override
+  String get errorCodigo6Digitos =>
+      'Por favor introduce un código de 6 dígitos';
+
+  @override
+  String get verificacionFallida => 'Verificación fallida. Inténtalo de nuevo.';
+
+  @override
+  String get codigoEnviado => 'Código de verificación enviado a tu correo';
+
+  @override
+  String get verificar => 'Verificar';
+
+  @override
+  String get reenviarCodigo => 'Reenviar código';
+
+  @override
+  String get errorReenviarCodigo =>
+      'Error al reenviar el código. Inténtalo de nuevo.';
+
+  @override
+  String errorAnadirMiembro(String error) {
+    return 'Error al añadir miembro: $error';
+  }
+
+  @override
+  String errorEliminarMiembro(String error) {
+    return 'Error al eliminar miembro: $error';
+  }
+
+  @override
+  String get groupNameHint => 'p. ej. Amigos del gym';
+
+  @override
+  String get nuevoViaje => 'Nuevo viaje';
+
+  @override
+  String get tripFechaLabel => 'Fecha (ej. Mar 2024)';
+
+  @override
+  String get tripFechaRequerida => 'Fecha requerida';
+
+  @override
+  String get tripLocalizacion => 'Localización';
+
+  @override
+  String get tripLocalizacionRequerida => 'Localización requerida';
+
+  @override
+  String get tripNotas => 'Notas (opcional)';
+
+  @override
+  String get fotosSectionHeader => 'FOTOS';
 }

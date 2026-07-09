@@ -1862,4 +1862,203 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get screenshotAlertBanner => 'Someone screenshotted this chat';
+
+  @override
+  String get navegarFailedToLoad => 'Failed to load nearby users';
+
+  @override
+  String get navegarNoOneNearby => 'No one nearby yet';
+
+  @override
+  String get navegarExpandRadius =>
+      'Try expanding your radius or adjusting filters';
+
+  @override
+  String get navegarEnableLocation => 'Enable location to see people nearby';
+
+  @override
+  String get abrirAjustes => 'Open Settings';
+
+  @override
+  String filterDistanceLabel(int km) {
+    return 'Distance: $km km';
+  }
+
+  @override
+  String filterAgeRange(int min, int max) {
+    return 'Age Range: $min - $max';
+  }
+
+  @override
+  String get filterTribeLabel => 'Tribe';
+
+  @override
+  String get filterAny => 'Any';
+
+  @override
+  String get filterSearchLabel => 'Search';
+
+  @override
+  String get filterSearchHint => 'Name, bio...';
+
+  @override
+  String get filterReset => 'Reset';
+
+  @override
+  String get filterApply => 'Apply';
+
+  @override
+  String get usuarioFallback => 'User';
+
+  @override
+  String get tuLabel => 'You';
+
+  @override
+  String get eliminarHistoria => 'Delete story';
+
+  @override
+  String get estaSeguro => 'Are you sure?';
+
+  @override
+  String get tapEnviado => 'Tap sent!';
+
+  @override
+  String tapFallido(String error) {
+    return 'Failed to send tap: $error';
+  }
+
+  @override
+  String accionFallida(String error) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String get reportarEsteUsuario => 'Report this user';
+
+  @override
+  String get reporteEnviado => 'Report submitted. Thank you.';
+
+  @override
+  String get reporteFallido => 'Failed to submit report';
+
+  @override
+  String chatInicioFallido(String error) {
+    return 'Failed to start chat: $error';
+  }
+
+  @override
+  String get verificadoBadge => 'Verified';
+
+  @override
+  String get pronounsTooltip => 'Pronouns';
+
+  @override
+  String get hivTooltip => 'HIV Status';
+
+  @override
+  String get redesSocialesHeader => 'SOCIAL MEDIA';
+
+  @override
+  String profileAge(int age) {
+    return '$age yrs';
+  }
+
+  @override
+  String get usuarioDesbloqueado => 'User unblocked';
+
+  @override
+  String get noHayUsuariosBloqueados => 'No blocked users';
+
+  @override
+  String get desbloquear => 'Unblock';
+
+  @override
+  String get usuarioDesconocido => 'Unknown user';
+
+  @override
+  String errorGenerico(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get errorCargandoNotificaciones => 'Error loading notifications';
+
+  @override
+  String get exporteDatosCompleto => 'Data export complete. Check your email.';
+
+  @override
+  String exporteFallido(String error) {
+    return 'Export failed: $error';
+  }
+
+  @override
+  String eliminarFallido(String error) {
+    return 'Delete failed: $error';
+  }
+
+  @override
+  String get consentDialogBody =>
+      'You accepted the Terms of Service and Privacy Policy during registration. Your data is processed in accordance with GDPR. You can request a full data export or account deletion at any time.';
+
+  @override
+  String get verificarEmail => 'Verify Email';
+
+  @override
+  String get verificarEmailInstrucciones =>
+      'Enter the 6-digit verification code sent to your email';
+
+  @override
+  String get codigoVerificacion => 'Verification Code';
+
+  @override
+  String get errorCodigo6Digitos => 'Please enter a 6-digit code';
+
+  @override
+  String get verificacionFallida => 'Verification failed. Please try again.';
+
+  @override
+  String get codigoEnviado => 'Verification code sent to your email';
+
+  @override
+  String get verificar => 'Verify';
+
+  @override
+  String get reenviarCodigo => 'Resend Code';
+
+  @override
+  String get errorReenviarCodigo => 'Failed to resend code. Please try again.';
+
+  @override
+  String errorAnadirMiembro(String error) {
+    return 'Error adding member: $error';
+  }
+
+  @override
+  String errorEliminarMiembro(String error) {
+    return 'Error removing member: $error';
+  }
+
+  @override
+  String get groupNameHint => 'e.g. Gym friends';
+
+  @override
+  String get nuevoViaje => 'New trip';
+
+  @override
+  String get tripFechaLabel => 'Date (e.g. Mar 2024)';
+
+  @override
+  String get tripFechaRequerida => 'Date required';
+
+  @override
+  String get tripLocalizacion => 'Location';
+
+  @override
+  String get tripLocalizacionRequerida => 'Location required';
+
+  @override
+  String get tripNotas => 'Notes (optional)';
+
+  @override
+  String get fotosSectionHeader => 'PHOTOS';
 }

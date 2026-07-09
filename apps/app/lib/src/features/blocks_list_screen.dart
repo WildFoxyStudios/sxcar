@@ -69,12 +69,12 @@ class _BlocksListScreenState extends ConsumerState<BlocksListScreen> {
       if (!mounted) return;
       setState(() => _blocks.removeWhere((b) => b['user_id'] == userId));
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User unblocked')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.usuarioDesbloqueado)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorGenerico(e.toString()))),
       );
     }
   }
@@ -94,6 +94,7 @@ class _BlocksListScreenState extends ConsumerState<BlocksListScreen> {
   }
 
   Widget _buildBody() {
+    final l10n = AppLocalizations.of(context)!;
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -104,7 +105,7 @@ class _BlocksListScreenState extends ConsumerState<BlocksListScreen> {
           children: [
             Text(_error!, style: const TextStyle(color: VibraTheme.kError)),
             const SizedBox(height: 12),
-            TextButton(onPressed: _load, child: const Text('Reintentar')),
+            TextButton(onPressed: _load, child: Text(l10n.reintentar)),
           ],
         ),
       );
@@ -128,7 +129,7 @@ class _BlocksListScreenState extends ConsumerState<BlocksListScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                'No hay usuarios bloqueados',
+                l10n.noHayUsuariosBloqueados,
                 style: const TextStyle(
                   color: VibraTheme.kTextPrimary,
                   fontWeight: FontWeight.w700,
@@ -146,7 +147,7 @@ class _BlocksListScreenState extends ConsumerState<BlocksListScreen> {
       itemBuilder: (_, i) {
         final user = _blocks[i];
         final displayName =
-            user['display_name'] as String? ?? 'Unknown user';
+            user['display_name'] as String? ?? l10n.usuarioDesconocido;
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -171,9 +172,9 @@ class _BlocksListScreenState extends ConsumerState<BlocksListScreen> {
                   final uid = user['user_id'] as String?;
                   if (uid != null) _unblock(uid);
                 },
-                child: const Text(
-                  'Desbloquear',
-                  style: TextStyle(color: VibraTheme.kBrandPrimary),
+                child: Text(
+                  l10n.desbloquear,
+                  style: const TextStyle(color: VibraTheme.kBrandPrimary),
                 ),
               ),
             ],

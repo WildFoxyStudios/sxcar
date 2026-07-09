@@ -1200,5 +1200,149 @@
   "@verifyProfileMenuItem": { "description": "Drawer menu item label for the profile verification screen" },
 
   "screenshotAlertBanner": "Someone screenshotted this chat",
-  "@screenshotAlertBanner": { "description": "Banner shown in chat when another member took a screenshot" }
+  "@screenshotAlertBanner": { "description": "Banner shown in chat when another member took a screenshot" },
+
+  "navegarFailedToLoad": "Failed to load nearby users",
+  "navegarNoOneNearby": "No one nearby yet",
+  "navegarExpandRadius": "Try expanding your radius or adjusting filters",
+  "navegarEnableLocation": "Enable location to see people nearby",
+  "abrirAjustes": "Open Settings",
+
+  "filterDistanceLabel": "Distance: {km} km",
+  "@filterDistanceLabel": {
+    "description": "Filter sheet distance slider label showing current km value",
+    "placeholders": {
+      "km": { "type": "int", "example": "10" }
+    }
+  },
+
+  "filterAgeRange": "Age Range: {min} - {max}",
+  "@filterAgeRange": {
+    "description": "Filter sheet age range slider label",
+    "placeholders": {
+      "min": { "type": "int", "example": "18" },
+      "max": { "type": "int", "example": "45" }
+    }
+  },
+
+  "filterTribeLabel": "Tribe",
+  "filterAny": "Any",
+  "filterSearchLabel": "Search",
+  "filterSearchHint": "Name, bio...",
+  "filterReset": "Reset",
+  "filterApply": "Apply",
+  "usuarioFallback": "User",
+  "tuLabel": "You",
+  "eliminarHistoria": "Delete story",
+  "estaSeguro": "Are you sure?",
+  "tapEnviado": "Tap sent!",
+
+  "tapFallido": "Failed to send tap: {error}",
+  "@tapFallido": {
+    "description": "Snackbar shown when sending a tap fails on profile detail",
+    "placeholders": {
+      "error": { "type": "String", "example": "Network error" }
+    }
+  },
+
+  "accionFallida": "Failed: {error}",
+  "@accionFallida": {
+    "description": "Generic action-failed snackbar (e.g. favorite toggle error)",
+    "placeholders": {
+      "error": { "type": "String", "example": "Network error" }
+    }
+  },
+
+  "reportarEsteUsuario": "Report this user",
+  "reporteEnviado": "Report submitted. Thank you.",
+  "reporteFallido": "Failed to submit report",
+
+  "chatInicioFallido": "Failed to start chat: {error}",
+  "@chatInicioFallido": {
+    "description": "Profile detail snackbar when starting a chat fails",
+    "placeholders": {
+      "error": { "type": "String", "example": "Network error" }
+    }
+  },
+
+  "verificadoBadge": "Verified",
+  "pronounsTooltip": "Pronouns",
+  "hivTooltip": "HIV Status",
+  "redesSocialesHeader": "SOCIAL MEDIA",
+
+  "profileAge": "{age} yrs",
+  "@profileAge": {
+    "description": "Profile detail age display (e.g. '35 yrs')",
+    "placeholders": {
+      "age": { "type": "int", "example": "35" }
+    }
+  },
+
+  "usuarioDesbloqueado": "User unblocked",
+  "noHayUsuariosBloqueados": "No blocked users",
+  "desbloquear": "Unblock",
+  "usuarioDesconocido": "Unknown user",
+
+  "errorGenerico": "Error: {error}",
+  "@errorGenerico": {
+    "description": "Generic error snackbar with an error message",
+    "placeholders": {
+      "error": { "type": "String", "example": "500" }
+    }
+  },
+
+  "errorCargandoNotificaciones": "Error loading notifications",
+  "exporteDatosCompleto": "Data export complete. Check your email.",
+
+  "exporteFallido": "Export failed: {error}",
+  "@exporteFallido": {
+    "description": "Settings screen error snackbar when data export fails",
+    "placeholders": {
+      "error": { "type": "String", "example": "Network error" }
+    }
+  },
+
+  "eliminarFallido": "Delete failed: {error}",
+  "@eliminarFallido": {
+    "description": "Settings screen error snackbar when account deletion fails",
+    "placeholders": {
+      "error": { "type": "String", "example": "Network error" }
+    }
+  },
+
+  "consentDialogBody": "You accepted the Terms of Service and Privacy Policy during registration. Your data is processed in accordance with GDPR. You can request a full data export or account deletion at any time.",
+  "verificarEmail": "Verify Email",
+  "verificarEmailInstrucciones": "Enter the 6-digit verification code sent to your email",
+  "codigoVerificacion": "Verification Code",
+  "errorCodigo6Digitos": "Please enter a 6-digit code",
+  "verificacionFallida": "Verification failed. Please try again.",
+  "codigoEnviado": "Verification code sent to your email",
+  "verificar": "Verify",
+  "reenviarCodigo": "Resend Code",
+  "errorReenviarCodigo": "Failed to resend code. Please try again.",
+
+  "errorAnadirMiembro": "Error adding member: {error}",
+  "@errorAnadirMiembro": {
+    "description": "Group info screen snackbar when adding a member fails",
+    "placeholders": {
+      "error": { "type": "String", "example": "Network error" }
+    }
+  },
+
+  "errorEliminarMiembro": "Error removing member: {error}",
+  "@errorEliminarMiembro": {
+    "description": "Group info screen snackbar when removing a member fails",
+    "placeholders": {
+      "error": { "type": "String", "example": "Network error" }
+    }
+  },
+
+  "groupNameHint": "e.g. Gym friends",
+  "nuevoViaje": "New trip",
+  "tripFechaLabel": "Date (e.g. Mar 2024)",
+  "tripFechaRequerida": "Date required",
+  "tripLocalizacion": "Location",
+  "tripLocalizacionRequerida": "Location required",
+  "tripNotas": "Notes (optional)",
+  "fotosSectionHeader": "PHOTOS"
 }

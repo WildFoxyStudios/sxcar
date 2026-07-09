@@ -477,7 +477,7 @@ class _BoostRowState extends ConsumerState<_BoostRow> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Boost activo · ${existingBoost.minutesRemaining}m restantes',
+            AppLocalizations.of(context)!.you_boost_active(existingBoost.minutesRemaining),
           ),
         ),
       );
@@ -491,8 +491,8 @@ class _BoostRowState extends ConsumerState<_BoostRow> {
       if (mounted) {
         Navigator.of(context).pop(); // close drawer
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Boost activado por 30 min!'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.you_boosted_snackbar),
             backgroundColor: VibraTheme.kAccentPulse,
           ),
         );
@@ -502,7 +502,7 @@ class _BoostRowState extends ConsumerState<_BoostRow> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'Error: ${e.response?.statusCode ?? e.message}'),
+                AppLocalizations.of(context)!.errorGenerico('${e.response?.statusCode ?? e.message}')),
             backgroundColor: VibraTheme.kError,
           ),
         );
@@ -511,7 +511,7 @@ class _BoostRowState extends ConsumerState<_BoostRow> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text(AppLocalizations.of(context)!.errorGenerico(e.toString())),
             backgroundColor: VibraTheme.kError,
           ),
         );
@@ -530,11 +530,12 @@ class _BoostRowState extends ConsumerState<_BoostRow> {
       activeBoost = activeAsync.value;
     }
     // Build label using Dart flow analysis (avoids null-assertion lint).
+    final l10n = AppLocalizations.of(context)!;
     final String boostLabel;
     if (activeBoost != null) {
-      boostLabel = 'Boost · ${activeBoost.minutesRemaining}m';
+      boostLabel = l10n.you_boost_active(activeBoost.minutesRemaining);
     } else {
-      boostLabel = 'Boost';
+      boostLabel = l10n.boost;
     }
 
     return _DrawerListTile(

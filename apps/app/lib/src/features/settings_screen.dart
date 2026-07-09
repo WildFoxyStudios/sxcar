@@ -93,7 +93,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (!mounted) return;
       setState(() {
         _notifLoading = false;
-        _notifError = 'Error cargando notificaciones';
+        _notifError = 'error'; // localized at display time
       });
     }
   }
@@ -294,7 +294,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  Text(_notifError!,
+                  Text(l10n.errorCargandoNotificaciones,
                       style: const TextStyle(color: VibraTheme.kError)),
                   TextButton(
                     onPressed: _loadNotificationPreferences,
@@ -393,11 +393,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: VibraTheme.kSurface,
         title: Text(l10n.preferenciasConsentimiento),
-        content: const Text(
-          'You accepted the Terms of Service and Privacy Policy during '
-          'registration. Your data is processed in accordance with GDPR. '
-          'You can request a full data export or account deletion at any time.',
-          style: TextStyle(color: VibraTheme.kTextSecondary),
+        content: Text(
+          l10n.consentDialogBody,
+          style: const TextStyle(color: VibraTheme.kTextSecondary),
         ),
         actions: [
           TextButton(
@@ -411,17 +409,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _downloadData(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
     try {
       await ref.read(dioProvider).post('/me/export-data');
       if (!context.mounted) return;
       messenger.showSnackBar(SnackBar(
-        content: Text('Data export complete. Check your email.'),
+        content: Text(l10n.exporteDatosCompleto),
         backgroundColor: VibraTheme.kSuccess,
       ));
     } catch (e) {
       if (!context.mounted) return;
       messenger.showSnackBar(SnackBar(
-        content: Text('Export failed: $e'),
+        content: Text(l10n.exporteFallido(e.toString())),
         backgroundColor: VibraTheme.kBadgeRed,
       ));
     }
@@ -460,7 +459,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Delete failed: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.eliminarFallido(e.toString()))),
         );
       }
     }

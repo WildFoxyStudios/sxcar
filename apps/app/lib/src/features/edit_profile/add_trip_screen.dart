@@ -74,7 +74,7 @@ class _AddTripScreenState extends State<AddTripScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Text(
-                  'Añade tus viajes recientes',
+                  l10n.editProfilePlaceholderTrips,
                   textAlign: TextAlign.center,
                   style: VibraTheme.bodySecondary,
                 ),
@@ -134,10 +134,11 @@ class _TripFormSheetState extends State<_TripFormSheet> {
   }
 
   void _save() {
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
-      _dateError = _dateCtrl.text.trim().isEmpty ? 'Fecha requerida' : null;
+      _dateError = _dateCtrl.text.trim().isEmpty ? l10n.tripFechaRequerida : null;
       _locationError =
-          _locationCtrl.text.trim().isEmpty ? 'Localización requerida' : null;
+          _locationCtrl.text.trim().isEmpty ? l10n.tripLocalizacionRequerida : null;
     });
     if (_dateError != null || _locationError != null) return;
 
@@ -150,6 +151,7 @@ class _TripFormSheetState extends State<_TripFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -162,8 +164,8 @@ class _TripFormSheetState extends State<_TripFormSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Nuevo viaje',
-                style: TextStyle(
+            Text(l10n.nuevoViaje,
+                style: const TextStyle(
                   color: VibraTheme.kTextPrimary,
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -172,7 +174,7 @@ class _TripFormSheetState extends State<_TripFormSheet> {
             TextField(
               controller: _dateCtrl,
               decoration: InputDecoration(
-                labelText: 'Fecha (ej. Mar 2024)',
+                labelText: l10n.tripFechaLabel,
                 errorText: _dateError,
               ),
             ),
@@ -180,7 +182,7 @@ class _TripFormSheetState extends State<_TripFormSheet> {
             TextField(
               controller: _locationCtrl,
               decoration: InputDecoration(
-                labelText: 'Localización',
+                labelText: l10n.tripLocalizacion,
                 errorText: _locationError,
               ),
             ),
@@ -188,12 +190,12 @@ class _TripFormSheetState extends State<_TripFormSheet> {
             TextField(
               controller: _notesCtrl,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Notas (opcional)',
+              decoration: InputDecoration(
+                labelText: l10n.tripNotas,
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: _save, child: const Text('Guardar')),
+            ElevatedButton(onPressed: _save, child: Text(l10n.guardar)),
           ],
         ),
       ),

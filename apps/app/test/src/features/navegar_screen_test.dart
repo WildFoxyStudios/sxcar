@@ -285,7 +285,7 @@ void main() {
           _wrap(const NavegarScreen(), dio));
       await tester.pumpAndSettle();
 
-      expect(find.text('No one nearby yet'), findsOneWidget);
+      expect(find.text('Nadie cerca todavía'), findsOneWidget);
     });
 
     testWidgets('shows error state on failure', (tester) async {
@@ -295,8 +295,8 @@ void main() {
           _wrap(const NavegarScreen(), dio));
       await tester.pumpAndSettle();
 
-      expect(find.text('Failed to load nearby users'), findsOneWidget);
-      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text('Error al cargar usuarios cercanos'), findsOneWidget);
+      expect(find.text('Reintentar'), findsOneWidget);
     });
 
     testWidgets('"En línea" chip re-queries with online_only=true',
@@ -328,7 +328,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-          find.text('Enable location to see people nearby'), findsOneWidget);
+          find.text('Activa la ubicación para ver personas cercanas'), findsOneWidget);
     });
 
     testWidgets('tapping the Filtros chip opens the filter sheet',

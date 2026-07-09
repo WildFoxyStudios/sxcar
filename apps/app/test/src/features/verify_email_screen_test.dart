@@ -1,5 +1,6 @@
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/features/verify_email_screen.dart';
+import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,7 +16,11 @@ void main() {
               () => _EmailUnverifiedNotifier(),
             ),
           ],
-          child: const MaterialApp(home: VerifyEmailScreen()),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const VerifyEmailScreen(),
+          ),
         ),
       );
 

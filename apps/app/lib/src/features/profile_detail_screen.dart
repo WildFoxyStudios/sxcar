@@ -151,14 +151,16 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
         'tap_type': 'wave',
       });
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tap sent!')),
+          SnackBar(content: Text(l10n.tapEnviado)),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send tap: $e')),
+          SnackBar(content: Text(l10n.tapFallido(e.toString()))),
         );
       }
     }
@@ -175,8 +177,9 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
       if (mounted) setState(() => _isFavorited = !_isFavorited);
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e')),
+          SnackBar(content: Text(l10n.accionFallida(e.toString()))),
         );
       }
     }
@@ -184,34 +187,38 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
 
   Future<void> _showReportSheet() async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final reason = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: VibraTheme.kSurface,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Report this user',
-                style: TextStyle(
-                  color: VibraTheme.kTextPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  l10n.reportarEsteUsuario,
+                  style: const TextStyle(
+                    color: VibraTheme.kTextPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-            for (final r in kReportReasons)
-              ListTile(
-                title: Text(r,
-                    style:
-                        const TextStyle(color: VibraTheme.kTextPrimary)),
-                onTap: () => Navigator.of(ctx).pop(r),
-              ),
-          ],
-        ),
-      ),
+              for (final r in kReportReasons)
+                ListTile(
+                  title: Text(r,
+                      style:
+                          const TextStyle(color: VibraTheme.kTextPrimary)),
+                  onTap: () => Navigator.of(ctx).pop(r),
+                ),
+            ],
+          ),
+        );
+      },
     );
     if (reason == null) return;
     try {
@@ -221,11 +228,11 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
             reason: reason,
           );
       messenger.showSnackBar(
-        const SnackBar(content: Text('Report submitted. Thank you.')),
+        SnackBar(content: Text(l10n.reporteEnviado)),
       );
     } catch (_) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Failed to submit report')),
+        SnackBar(content: Text(l10n.reporteFallido)),
       );
     }
   }
@@ -240,7 +247,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to start chat: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.chatInicioFallido(e.toString()))),
       );
     }
   }
@@ -306,7 +313,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _loadProfile,
-                  child: const Text('Retry'),
+                  child: Text(AppLocalizations.of(context)!.reintentar),
                 ),
               ],
             ),
@@ -472,15 +479,15 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                                 color: VibraTheme.kBrandPrimary,
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.verified,
+                                  const Icon(Icons.verified,
                                       color: Colors.black, size: 14),
-                                  SizedBox(width: 4),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    'Verified',
-                                    style: TextStyle(
+                                    AppLocalizations.of(context)!.verificadoBadge,
+                                    style: const TextStyle(
                                       color: Colors.black,
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -535,7 +542,10 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                             p.showAge) ...[
                           const SizedBox(height: 2),
                           Text(
-                            _ageFromBirthdate(p.birthdate!),
+                            () {
+                              final age = _ageFromBirthdate(p.birthdate!);
+                              return age != null ? l10n.profileAge(age) : '';
+                            }(),
                             style: const TextStyle(
                               color: VibraTheme.kTextSecondary,
                               fontSize: 14,
@@ -586,7 +596,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
 
                         // ── REDES SOCIALES (gated by show_social_links) ────
                         const SizedBox(height: 20),
-                        _buildSocialSection(_details, p),
+                        _buildSocialSection(context, _details, p),
 
                         // ── SALUD ───────────────────────────────────────────
                         if (_hasHealthData()) ...[
@@ -747,7 +757,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     // Pronouns with (i) tooltip
     if (pronouns != null && pronouns.isNotEmpty) {
       rows.add(_statRowWithTooltip(
-          Icons.person_outline, pronouns, 'Pronombres / Pronouns'));
+          Icons.person_outline, pronouns, AppLocalizations.of(context)!.pronounsTooltip));
     }
 
     // Position (role) — Fix 5: dynamic directional icon
@@ -909,7 +919,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
       rows.add(_statRowWithTooltip(
         Icons.health_and_safety_outlined,
         hivStatus,
-        'Estado de VIH',
+        AppLocalizations.of(context)!.hivTooltip,
       ));
     }
     final lastTestedAt = (h['last_tested_at'] as String?)?.toString();
@@ -1178,7 +1188,7 @@ class _PresenceBadge extends ConsumerWidget {
 
 /// Computes the age string in Spanish ("N años") from an ISO-8601 birthdate.
 /// Returns an empty string if the input cannot be parsed.
-String _ageFromBirthdate(String isoDate) {
+int? _ageFromBirthdate(String isoDate) {
   try {
     final dob = DateTime.parse(isoDate);
     final now = DateTime.now();
@@ -1187,15 +1197,15 @@ String _ageFromBirthdate(String isoDate) {
         (now.month == dob.month && now.day < dob.day)) {
       age--;
     }
-    return '$age años';
+    return age;
   } catch (_) {
-    return '';
+    return null;
   }
 }
 
 /// Renders the REDES SOCIALES section. Honors the `show_social_links` privacy
 /// flag and gracefully hides itself when there are no entries to show.
-Widget _buildSocialSection(Map<String, dynamic> details, UserProfile p) {
+Widget _buildSocialSection(BuildContext context, Map<String, dynamic> details, UserProfile p) {
   // show_social_links gate (defaults true; honors backend).
   if (!p.showSocialLinks) return const SizedBox.shrink();
 
@@ -1207,11 +1217,12 @@ Widget _buildSocialSection(Map<String, dynamic> details, UserProfile p) {
       .toList();
   if (entries.isEmpty) return const SizedBox.shrink();
 
+  final l10n = AppLocalizations.of(context)!;
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        'REDES SOCIALES',
+        l10n.redesSocialesHeader,
         style: const TextStyle(
           color: VibraTheme.kTextSecondary,
           fontSize: 13,

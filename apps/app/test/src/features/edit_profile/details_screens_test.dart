@@ -20,7 +20,7 @@ void main() {
         tester,
         AddTripScreen(current: const [], onChanged: (_) {}),
       );
-      expect(find.textContaining('Añade tus viajes'), findsOneWidget);
+      expect(find.textContaining('Add recent trips'), findsOneWidget);
     });
 
     testWidgets('renders existing trips + add FAB', (tester) async {

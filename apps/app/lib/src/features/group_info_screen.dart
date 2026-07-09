@@ -63,7 +63,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding member: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorAnadirMiembro(e.toString()))),
       );
     }
   }
@@ -76,7 +76,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error removing member: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorEliminarMiembro(e.toString()))),
       );
     }
   }
@@ -152,13 +152,13 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                                 style: const TextStyle(
                                     color: VibraTheme.kTextPrimary,
                                     fontSize: 14),
-                                decoration: const InputDecoration(
-                                  hintText: 'user_id (UUID)',
-                                  hintStyle: TextStyle(
+                                decoration: InputDecoration(
+                                  hintText: AppLocalizations.of(context)!.userIdHint,
+                                  hintStyle: const TextStyle(
                                       color: VibraTheme.kTextMuted,
                                       fontSize: 14),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
+                                  contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 16, vertical: 12),
                                 ),
                               ),
@@ -216,7 +216,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                               ),
                             ),
                             subtitle: Text(
-                              isMe ? 'You' : userId,
+                              isMe ? l10n.tuLabel : userId,
                               style: const TextStyle(
                                 color: VibraTheme.kTextSecondary,
                                 fontSize: 12,

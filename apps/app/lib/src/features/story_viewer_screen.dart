@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../../l10n/gen/app_localizations.dart';
 import 'story_service.dart';
 
 // Base URL for all media endpoints — keeps the domain in one place.
@@ -211,7 +212,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              group.displayName ?? 'Usuario',
+                              group.displayName ?? AppLocalizations.of(context)!.usuarioFallback,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -268,23 +269,23 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                 color: VibraTheme.kSurface,
                 onSelected: (value) async {
                   if (value == 'delete') {
+                    final l10n = AppLocalizations.of(context)!;
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
                         backgroundColor: VibraTheme.kSurface,
-                        title:
-                            const Text('Delete story', style: TextStyle(color: Colors.white)),
-                        content: const Text(
-                            'Are you sure?', style: TextStyle(color: Colors.white70)),
+                        title: Text(l10n.eliminarHistoria, style: const TextStyle(color: Colors.white)),
+                        content: Text(
+                            l10n.estaSeguro, style: const TextStyle(color: Colors.white70)),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(ctx).pop(false),
-                            child: const Text('Cancel'),
+                            child: Text(l10n.cancelar),
                           ),
                           TextButton(
                             onPressed: () => Navigator.of(ctx).pop(true),
-                            child: const Text('Delete',
-                                style: TextStyle(color: VibraTheme.kError)),
+                            child: Text(l10n.eliminar,
+                                style: const TextStyle(color: VibraTheme.kError)),
                           ),
                         ],
                       ),
@@ -302,12 +303,12 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                   final isOwnStory = userId == _currentStory.userId;
                   return [
                     if (isOwnStory)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: ListTile(
-                          leading: Icon(Icons.delete, color: VibraTheme.kError, size: 20),
-                          title: Text('Delete story',
-                              style: TextStyle(color: VibraTheme.kError)),
+                          leading: const Icon(Icons.delete, color: VibraTheme.kError, size: 20),
+                          title: Text(AppLocalizations.of(context)!.eliminarHistoria,
+                              style: const TextStyle(color: VibraTheme.kError)),
                           dense: true,
                           contentPadding: EdgeInsets.zero,
                         ),

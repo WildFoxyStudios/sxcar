@@ -375,7 +375,7 @@ class _ViewsListTab extends ConsumerWidget {
                     : null,
               ),
               title: Text(
-                v.displayName ?? 'Usuario',
+                v.displayName ?? l10n.usuarioFallback,
                 style: const TextStyle(color: Colors.white),
               ),
               subtitle: Text(
@@ -471,7 +471,7 @@ class _TapsListTab extends StatelessWidget {
                     : null,
               ),
               title: Text(
-                t.senderDisplayName ?? 'Usuario',
+                t.senderDisplayName ?? l10n.usuarioFallback,
                 style: const TextStyle(color: Colors.white),
               ),
               subtitle: Text(

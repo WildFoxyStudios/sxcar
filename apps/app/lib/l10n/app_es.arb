@@ -1508,5 +1508,235 @@
   "@verifyProfileMenuItem": { "description": "Drawer menu item label for the profile verification screen" },
 
   "screenshotAlertBanner": "Alguien hizo una captura de este chat",
-  "@screenshotAlertBanner": { "description": "Banner shown in chat when another member took a screenshot" }
+  "@screenshotAlertBanner": { "description": "Banner shown in chat when another member took a screenshot" },
+
+  "navegarFailedToLoad": "Error al cargar usuarios cercanos",
+  "@navegarFailedToLoad": { "description": "Navegar screen error state when nearby user load fails" },
+
+  "navegarNoOneNearby": "Nadie cerca todavía",
+  "@navegarNoOneNearby": { "description": "Navegar screen empty state title when no nearby users" },
+
+  "navegarExpandRadius": "Amplía tu radio o ajusta los filtros",
+  "@navegarExpandRadius": { "description": "Navegar screen empty state subtitle suggesting broader filters" },
+
+  "navegarEnableLocation": "Activa la ubicación para ver personas cercanas",
+  "@navegarEnableLocation": { "description": "Navegar location-denied banner message" },
+
+  "abrirAjustes": "Abrir ajustes",
+  "@abrirAjustes": { "description": "Button to open system app settings (e.g. from location-denied banner)" },
+
+  "filterDistanceLabel": "Distancia: {km} km",
+  "@filterDistanceLabel": {
+    "description": "Filter sheet distance slider label showing current km value",
+    "placeholders": {
+      "km": { "type": "int", "example": "10" }
+    }
+  },
+
+  "filterAgeRange": "Rango de edad: {min} - {max}",
+  "@filterAgeRange": {
+    "description": "Filter sheet age range slider label",
+    "placeholders": {
+      "min": { "type": "int", "example": "18" },
+      "max": { "type": "int", "example": "45" }
+    }
+  },
+
+  "filterTribeLabel": "Tribu",
+  "@filterTribeLabel": { "description": "Filter sheet section label for tribe selection" },
+
+  "filterAny": "Cualquiera",
+  "@filterAny": { "description": "Dropdown hint when no filter value is selected (Any)" },
+
+  "filterSearchLabel": "Buscar",
+  "@filterSearchLabel": { "description": "Filter sheet section label for text search" },
+
+  "filterSearchHint": "Nombre, bio...",
+  "@filterSearchHint": { "description": "Filter sheet text search field hint" },
+
+  "filterReset": "Restablecer",
+  "@filterReset": { "description": "Filter sheet Reset button label" },
+
+  "filterApply": "Aplicar",
+  "@filterApply": { "description": "Filter sheet Apply button label" },
+
+  "usuarioFallback": "Usuario",
+  "@usuarioFallback": { "description": "Fallback display name when a user has no name set" },
+
+  "tuLabel": "Tú",
+  "@tuLabel": { "description": "Label for the current user (e.g. own story avatar, group member)" },
+
+  "eliminarHistoria": "Eliminar historia",
+  "@eliminarHistoria": { "description": "Story viewer delete story dialog title and popup menu item" },
+
+  "estaSeguro": "¿Estás seguro?",
+  "@estaSeguro": { "description": "Generic confirmation dialog body asking if the user is sure" },
+
+  "tapEnviado": "¡Tap enviado!",
+  "@tapEnviado": { "description": "Snackbar shown after successfully sending a tap on profile detail" },
+
+  "tapFallido": "Error al enviar tap: {error}",
+  "@tapFallido": {
+    "description": "Snackbar shown when sending a tap fails on profile detail",
+    "placeholders": {
+      "error": { "type": "String", "example": "Error de red" }
+    }
+  },
+
+  "accionFallida": "Error: {error}",
+  "@accionFallida": {
+    "description": "Generic action-failed snackbar (e.g. favorite toggle error)",
+    "placeholders": {
+      "error": { "type": "String", "example": "Error de red" }
+    }
+  },
+
+  "reportarEsteUsuario": "Reportar a este usuario",
+  "@reportarEsteUsuario": { "description": "Profile detail report sheet title" },
+
+  "reporteEnviado": "Reporte enviado. Gracias.",
+  "@reporteEnviado": { "description": "Profile detail snackbar after successfully submitting a report" },
+
+  "reporteFallido": "Error al enviar el reporte",
+  "@reporteFallido": { "description": "Profile detail snackbar when report submission fails" },
+
+  "chatInicioFallido": "Error al iniciar chat: {error}",
+  "@chatInicioFallido": {
+    "description": "Profile detail snackbar when starting a chat fails",
+    "placeholders": {
+      "error": { "type": "String", "example": "Error de red" }
+    }
+  },
+
+  "verificadoBadge": "Verificado",
+  "@verificadoBadge": { "description": "Badge text shown on a verified profile photo" },
+
+  "pronounsTooltip": "Pronombres",
+  "@pronounsTooltip": { "description": "Tooltip for the pronouns stat row in profile detail" },
+
+  "hivTooltip": "Estado de VIH",
+  "@hivTooltip": { "description": "Tooltip for the HIV status stat row in profile detail (health section)" },
+
+  "redesSocialesHeader": "REDES SOCIALES",
+  "@redesSocialesHeader": { "description": "Profile detail social section header label (all caps)" },
+
+  "profileAge": "{age} años",
+  "@profileAge": {
+    "description": "Profile detail age display (e.g. '35 años')",
+    "placeholders": {
+      "age": { "type": "int", "example": "35" }
+    }
+  },
+
+  "usuarioDesbloqueado": "Usuario desbloqueado",
+  "@usuarioDesbloqueado": { "description": "Snackbar shown after successfully unblocking a user in blocks list" },
+
+  "noHayUsuariosBloqueados": "No hay usuarios bloqueados",
+  "@noHayUsuariosBloqueados": { "description": "Blocks list empty state message" },
+
+  "desbloquear": "Desbloquear",
+  "@desbloquear": { "description": "Button label to unblock a user in the blocks list" },
+
+  "usuarioDesconocido": "Usuario desconocido",
+  "@usuarioDesconocido": { "description": "Fallback display name for a blocked user with no name" },
+
+  "errorGenerico": "Error: {error}",
+  "@errorGenerico": {
+    "description": "Generic error snackbar with an error message",
+    "placeholders": {
+      "error": { "type": "String", "example": "500" }
+    }
+  },
+
+  "errorCargandoNotificaciones": "Error cargando notificaciones",
+  "@errorCargandoNotificaciones": { "description": "Settings screen error when notification preferences fail to load" },
+
+  "exporteDatosCompleto": "Exportación completada. Revisa tu correo.",
+  "@exporteDatosCompleto": { "description": "Settings screen success snackbar after data export is requested" },
+
+  "exporteFallido": "Error al exportar: {error}",
+  "@exporteFallido": {
+    "description": "Settings screen error snackbar when data export fails",
+    "placeholders": {
+      "error": { "type": "String", "example": "Error de red" }
+    }
+  },
+
+  "eliminarFallido": "Error al eliminar: {error}",
+  "@eliminarFallido": {
+    "description": "Settings screen error snackbar when account deletion fails",
+    "placeholders": {
+      "error": { "type": "String", "example": "Error de red" }
+    }
+  },
+
+  "consentDialogBody": "Aceptaste los Términos de servicio y la Política de privacidad durante el registro. Tus datos se procesan de acuerdo con el RGPD. Puedes solicitar una exportación completa de datos o la eliminación de la cuenta en cualquier momento.",
+  "@consentDialogBody": { "description": "Settings screen consent preferences dialog body text" },
+
+  "verificarEmail": "Verificar correo",
+  "@verificarEmail": { "description": "Verify email screen AppBar title" },
+
+  "verificarEmailInstrucciones": "Introduce el código de verificación de 6 dígitos enviado a tu correo",
+  "@verificarEmailInstrucciones": { "description": "Verify email screen instructional text shown above the code field" },
+
+  "codigoVerificacion": "Código de verificación",
+  "@codigoVerificacion": { "description": "Verify email screen text field label" },
+
+  "errorCodigo6Digitos": "Por favor introduce un código de 6 dígitos",
+  "@errorCodigo6Digitos": { "description": "Verify email screen validation error when code is not 6 digits" },
+
+  "verificacionFallida": "Verificación fallida. Inténtalo de nuevo.",
+  "@verificacionFallida": { "description": "Verify email screen error when verification API call fails" },
+
+  "codigoEnviado": "Código de verificación enviado a tu correo",
+  "@codigoEnviado": { "description": "Verify email screen snackbar after successfully resending the code" },
+
+  "verificar": "Verificar",
+  "@verificar": { "description": "Verify email screen submit button label" },
+
+  "reenviarCodigo": "Reenviar código",
+  "@reenviarCodigo": { "description": "Verify email screen button to resend the verification code" },
+
+  "errorReenviarCodigo": "Error al reenviar el código. Inténtalo de nuevo.",
+  "@errorReenviarCodigo": { "description": "Verify email screen error when resending the code fails" },
+
+  "errorAnadirMiembro": "Error al añadir miembro: {error}",
+  "@errorAnadirMiembro": {
+    "description": "Group info screen snackbar when adding a member fails",
+    "placeholders": {
+      "error": { "type": "String", "example": "Error de red" }
+    }
+  },
+
+  "errorEliminarMiembro": "Error al eliminar miembro: {error}",
+  "@errorEliminarMiembro": {
+    "description": "Group info screen snackbar when removing a member fails",
+    "placeholders": {
+      "error": { "type": "String", "example": "Error de red" }
+    }
+  },
+
+  "groupNameHint": "p. ej. Amigos del gym",
+  "@groupNameHint": { "description": "Create group screen group name text field hint" },
+
+  "nuevoViaje": "Nuevo viaje",
+  "@nuevoViaje": { "description": "Add trip sheet title" },
+
+  "tripFechaLabel": "Fecha (ej. Mar 2024)",
+  "@tripFechaLabel": { "description": "Add trip form date text field label" },
+
+  "tripFechaRequerida": "Fecha requerida",
+  "@tripFechaRequerida": { "description": "Add trip form validation error when date is empty" },
+
+  "tripLocalizacion": "Localización",
+  "@tripLocalizacion": { "description": "Add trip form location text field label" },
+
+  "tripLocalizacionRequerida": "Localización requerida",
+  "@tripLocalizacionRequerida": { "description": "Add trip form validation error when location is empty" },
+
+  "tripNotas": "Notas (opcional)",
+  "@tripNotas": { "description": "Add trip form notes text field label" },
+
+  "fotosSectionHeader": "FOTOS",
+  "@fotosSectionHeader": { "description": "Edit profile screen photos section header label" }
 }

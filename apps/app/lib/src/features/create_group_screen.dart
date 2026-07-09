@@ -69,7 +69,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorGenerico(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _creating = false);
@@ -111,13 +111,13 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                 controller: _nameController,
                 style: const TextStyle(
                     color: VibraTheme.kTextPrimary, fontSize: 14),
-                decoration: const InputDecoration(
-                  hintText: 'e.g. Amigos del gym',
-                  hintStyle: TextStyle(
+                decoration: InputDecoration(
+                  hintText: l10n.groupNameHint,
+                  hintStyle: const TextStyle(
                       color: VibraTheme.kTextMuted, fontSize: 14),
                   border: InputBorder.none,
                   contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
             ),
@@ -147,13 +147,13 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                       controller: _memberIdController,
                       style: const TextStyle(
                           color: VibraTheme.kTextPrimary, fontSize: 14),
-                      decoration: const InputDecoration(
-                        hintText: 'user_id (UUID)',
-                        hintStyle: TextStyle(
+                      decoration: InputDecoration(
+                        hintText: l10n.userIdHint,
+                        hintStyle: const TextStyle(
                             color: VibraTheme.kTextMuted, fontSize: 14),
                         border: InputBorder.none,
                         contentPadding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
                   ),

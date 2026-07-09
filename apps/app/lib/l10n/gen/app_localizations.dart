@@ -3607,6 +3607,354 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Alguien hizo una captura de este chat'**
   String get screenshotAlertBanner;
+
+  /// Navegar screen error state when nearby user load fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al cargar usuarios cercanos'**
+  String get navegarFailedToLoad;
+
+  /// Navegar screen empty state title when no nearby users
+  ///
+  /// In es, this message translates to:
+  /// **'Nadie cerca todavía'**
+  String get navegarNoOneNearby;
+
+  /// Navegar screen empty state subtitle suggesting broader filters
+  ///
+  /// In es, this message translates to:
+  /// **'Amplía tu radio o ajusta los filtros'**
+  String get navegarExpandRadius;
+
+  /// Navegar location-denied banner message
+  ///
+  /// In es, this message translates to:
+  /// **'Activa la ubicación para ver personas cercanas'**
+  String get navegarEnableLocation;
+
+  /// Button to open system app settings (e.g. from location-denied banner)
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir ajustes'**
+  String get abrirAjustes;
+
+  /// Filter sheet distance slider label showing current km value
+  ///
+  /// In es, this message translates to:
+  /// **'Distancia: {km} km'**
+  String filterDistanceLabel(int km);
+
+  /// Filter sheet age range slider label
+  ///
+  /// In es, this message translates to:
+  /// **'Rango de edad: {min} - {max}'**
+  String filterAgeRange(int min, int max);
+
+  /// Filter sheet section label for tribe selection
+  ///
+  /// In es, this message translates to:
+  /// **'Tribu'**
+  String get filterTribeLabel;
+
+  /// Dropdown hint when no filter value is selected (Any)
+  ///
+  /// In es, this message translates to:
+  /// **'Cualquiera'**
+  String get filterAny;
+
+  /// Filter sheet section label for text search
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar'**
+  String get filterSearchLabel;
+
+  /// Filter sheet text search field hint
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre, bio...'**
+  String get filterSearchHint;
+
+  /// Filter sheet Reset button label
+  ///
+  /// In es, this message translates to:
+  /// **'Restablecer'**
+  String get filterReset;
+
+  /// Filter sheet Apply button label
+  ///
+  /// In es, this message translates to:
+  /// **'Aplicar'**
+  String get filterApply;
+
+  /// Fallback display name when a user has no name set
+  ///
+  /// In es, this message translates to:
+  /// **'Usuario'**
+  String get usuarioFallback;
+
+  /// Label for the current user (e.g. own story avatar, group member)
+  ///
+  /// In es, this message translates to:
+  /// **'Tú'**
+  String get tuLabel;
+
+  /// Story viewer delete story dialog title and popup menu item
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar historia'**
+  String get eliminarHistoria;
+
+  /// Generic confirmation dialog body asking if the user is sure
+  ///
+  /// In es, this message translates to:
+  /// **'¿Estás seguro?'**
+  String get estaSeguro;
+
+  /// Snackbar shown after successfully sending a tap on profile detail
+  ///
+  /// In es, this message translates to:
+  /// **'¡Tap enviado!'**
+  String get tapEnviado;
+
+  /// Snackbar shown when sending a tap fails on profile detail
+  ///
+  /// In es, this message translates to:
+  /// **'Error al enviar tap: {error}'**
+  String tapFallido(String error);
+
+  /// Generic action-failed snackbar (e.g. favorite toggle error)
+  ///
+  /// In es, this message translates to:
+  /// **'Error: {error}'**
+  String accionFallida(String error);
+
+  /// Profile detail report sheet title
+  ///
+  /// In es, this message translates to:
+  /// **'Reportar a este usuario'**
+  String get reportarEsteUsuario;
+
+  /// Profile detail snackbar after successfully submitting a report
+  ///
+  /// In es, this message translates to:
+  /// **'Reporte enviado. Gracias.'**
+  String get reporteEnviado;
+
+  /// Profile detail snackbar when report submission fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al enviar el reporte'**
+  String get reporteFallido;
+
+  /// Profile detail snackbar when starting a chat fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al iniciar chat: {error}'**
+  String chatInicioFallido(String error);
+
+  /// Badge text shown on a verified profile photo
+  ///
+  /// In es, this message translates to:
+  /// **'Verificado'**
+  String get verificadoBadge;
+
+  /// Tooltip for the pronouns stat row in profile detail
+  ///
+  /// In es, this message translates to:
+  /// **'Pronombres'**
+  String get pronounsTooltip;
+
+  /// Tooltip for the HIV status stat row in profile detail (health section)
+  ///
+  /// In es, this message translates to:
+  /// **'Estado de VIH'**
+  String get hivTooltip;
+
+  /// Profile detail social section header label (all caps)
+  ///
+  /// In es, this message translates to:
+  /// **'REDES SOCIALES'**
+  String get redesSocialesHeader;
+
+  /// Profile detail age display (e.g. '35 años')
+  ///
+  /// In es, this message translates to:
+  /// **'{age} años'**
+  String profileAge(int age);
+
+  /// Snackbar shown after successfully unblocking a user in blocks list
+  ///
+  /// In es, this message translates to:
+  /// **'Usuario desbloqueado'**
+  String get usuarioDesbloqueado;
+
+  /// Blocks list empty state message
+  ///
+  /// In es, this message translates to:
+  /// **'No hay usuarios bloqueados'**
+  String get noHayUsuariosBloqueados;
+
+  /// Button label to unblock a user in the blocks list
+  ///
+  /// In es, this message translates to:
+  /// **'Desbloquear'**
+  String get desbloquear;
+
+  /// Fallback display name for a blocked user with no name
+  ///
+  /// In es, this message translates to:
+  /// **'Usuario desconocido'**
+  String get usuarioDesconocido;
+
+  /// Generic error snackbar with an error message
+  ///
+  /// In es, this message translates to:
+  /// **'Error: {error}'**
+  String errorGenerico(String error);
+
+  /// Settings screen error when notification preferences fail to load
+  ///
+  /// In es, this message translates to:
+  /// **'Error cargando notificaciones'**
+  String get errorCargandoNotificaciones;
+
+  /// Settings screen success snackbar after data export is requested
+  ///
+  /// In es, this message translates to:
+  /// **'Exportación completada. Revisa tu correo.'**
+  String get exporteDatosCompleto;
+
+  /// Settings screen error snackbar when data export fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al exportar: {error}'**
+  String exporteFallido(String error);
+
+  /// Settings screen error snackbar when account deletion fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al eliminar: {error}'**
+  String eliminarFallido(String error);
+
+  /// Settings screen consent preferences dialog body text
+  ///
+  /// In es, this message translates to:
+  /// **'Aceptaste los Términos de servicio y la Política de privacidad durante el registro. Tus datos se procesan de acuerdo con el RGPD. Puedes solicitar una exportación completa de datos o la eliminación de la cuenta en cualquier momento.'**
+  String get consentDialogBody;
+
+  /// Verify email screen AppBar title
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar correo'**
+  String get verificarEmail;
+
+  /// Verify email screen instructional text shown above the code field
+  ///
+  /// In es, this message translates to:
+  /// **'Introduce el código de verificación de 6 dígitos enviado a tu correo'**
+  String get verificarEmailInstrucciones;
+
+  /// Verify email screen text field label
+  ///
+  /// In es, this message translates to:
+  /// **'Código de verificación'**
+  String get codigoVerificacion;
+
+  /// Verify email screen validation error when code is not 6 digits
+  ///
+  /// In es, this message translates to:
+  /// **'Por favor introduce un código de 6 dígitos'**
+  String get errorCodigo6Digitos;
+
+  /// Verify email screen error when verification API call fails
+  ///
+  /// In es, this message translates to:
+  /// **'Verificación fallida. Inténtalo de nuevo.'**
+  String get verificacionFallida;
+
+  /// Verify email screen snackbar after successfully resending the code
+  ///
+  /// In es, this message translates to:
+  /// **'Código de verificación enviado a tu correo'**
+  String get codigoEnviado;
+
+  /// Verify email screen submit button label
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar'**
+  String get verificar;
+
+  /// Verify email screen button to resend the verification code
+  ///
+  /// In es, this message translates to:
+  /// **'Reenviar código'**
+  String get reenviarCodigo;
+
+  /// Verify email screen error when resending the code fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al reenviar el código. Inténtalo de nuevo.'**
+  String get errorReenviarCodigo;
+
+  /// Group info screen snackbar when adding a member fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al añadir miembro: {error}'**
+  String errorAnadirMiembro(String error);
+
+  /// Group info screen snackbar when removing a member fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al eliminar miembro: {error}'**
+  String errorEliminarMiembro(String error);
+
+  /// Create group screen group name text field hint
+  ///
+  /// In es, this message translates to:
+  /// **'p. ej. Amigos del gym'**
+  String get groupNameHint;
+
+  /// Add trip sheet title
+  ///
+  /// In es, this message translates to:
+  /// **'Nuevo viaje'**
+  String get nuevoViaje;
+
+  /// Add trip form date text field label
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha (ej. Mar 2024)'**
+  String get tripFechaLabel;
+
+  /// Add trip form validation error when date is empty
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha requerida'**
+  String get tripFechaRequerida;
+
+  /// Add trip form location text field label
+  ///
+  /// In es, this message translates to:
+  /// **'Localización'**
+  String get tripLocalizacion;
+
+  /// Add trip form validation error when location is empty
+  ///
+  /// In es, this message translates to:
+  /// **'Localización requerida'**
+  String get tripLocalizacionRequerida;
+
+  /// Add trip form notes text field label
+  ///
+  /// In es, this message translates to:
+  /// **'Notas (opcional)'**
+  String get tripNotas;
+
+  /// Edit profile screen photos section header label
+  ///
+  /// In es, this message translates to:
+  /// **'FOTOS'**
+  String get fotosSectionHeader;
 }
 
 class _AppLocalizationsDelegate

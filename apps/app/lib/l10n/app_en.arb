@@ -1165,5 +1165,8 @@
   "@verifySubmitError": { "description": "Snackbar error message when the verification upload or submit fails" },
 
   "verifyProfileMenuItem": "Verify profile",
-  "@verifyProfileMenuItem": { "description": "Drawer menu item label for the profile verification screen" }
+  "@verifyProfileMenuItem": { "description": "Drawer menu item label for the profile verification screen" },
+
+  "screenshotAlertBanner": "Someone screenshotted this chat",
+  "@screenshotAlertBanner": { "description": "Banner shown in chat when another member took a screenshot" }
 }

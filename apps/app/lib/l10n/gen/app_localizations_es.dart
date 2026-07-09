@@ -1821,4 +1821,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get verifyProfileMenuItem => 'Verificar perfil';
+
+  @override
+  String get screenshotAlertBanner => 'Alguien hizo una captura de este chat';
 }

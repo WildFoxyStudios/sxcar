@@ -3,10 +3,21 @@ import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/chat/chat_service.dart';
 import 'package:app/src/chat/models.dart';
 import 'package:app/src/features/chat_screen.dart';
+import 'package:app/src/screenshots/screenshots_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// A no-op [ScreenshotsService] for tests — returns empty immediately
+/// so no pending Dio timers are created.
+class _FakeScreenshotsService extends ScreenshotsService {
+  _FakeScreenshotsService() : super(Dio());
+  @override
+  Future<void> report(String conversationId) async {}
+  @override
+  Future<List<ScreenshotAlert>> list() async => const [];
+}
 
 /// A controllable fake [ChatService] whose async methods are gated by
 /// [Completer]s, so the test can dispose the widget between the call and
@@ -68,6 +79,8 @@ Widget _wrap(Widget child, _FakeChatService fake) {
     overrides: [
       authStateProvider.overrideWith(() => _AuthedNotifier()),
       chatServiceProvider.overrideWithValue(fake),
+      screenshotsServiceProvider
+          .overrideWithValue(_FakeScreenshotsService()),
     ],
     child: MaterialApp(home: child),
   );
@@ -78,6 +91,8 @@ Widget _emptyAfterDispose(_FakeChatService fake) {
     overrides: [
       authStateProvider.overrideWith(() => _AuthedNotifier()),
       chatServiceProvider.overrideWithValue(fake),
+      screenshotsServiceProvider
+          .overrideWithValue(_FakeScreenshotsService()),
     ],
     child: const MaterialApp(home: SizedBox.shrink()),
   );

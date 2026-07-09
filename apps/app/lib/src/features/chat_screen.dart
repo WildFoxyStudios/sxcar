@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
+import 'package:screenshot_callback/screenshot_callback.dart';
 import '../auth/auth_provider.dart';
 import '../chat/chat_service.dart';
 import '../chat/models.dart';
@@ -13,6 +14,7 @@ import '../media/media_service.dart';
 import '../nsfw/nsfw_service.dart';
 import '../calls/call_service.dart';
 import '../calls/call_screen.dart';
+import '../screenshots/screenshots_service.dart';
 import '../theme/app_theme.dart';
 import '../../l10n/gen/app_localizations.dart';
 
@@ -61,11 +63,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _isRecording = false;
   String? _recordingFilePath;
 
+  // Screenshot detection & alert state
+  ScreenshotCallback? _screenshotCallback;
+  bool _showScreenshotBanner = false;
+
   @override
   void initState() {
     super.initState();
     _loadMessages();
     _connectWebSocket();
+    _initScreenshotDetection();
+    _loadScreenshotAlerts();
   }
 
   @override
@@ -74,7 +82,49 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _peerTypingTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();
+    _screenshotCallback?.dispose();
     super.dispose();
+  }
+
+  /// Starts listening for screenshots taken by the current user.
+  ///
+  /// On detection, reports it to the server via POST /screenshots (fire-and-
+  /// forget). Failures are silently swallowed — screenshot reporting must never
+  /// crash the chat.
+  ///
+  /// NOTE: Detection is best-effort. On Android it relies on a FileObserver on
+  /// the Screenshots folder (OEM-dependent). On iOS the system notifies *after*
+  /// the capture. No pre-capture hook exists on either platform.
+  void _initScreenshotDetection() {
+    try {
+      final callback = ScreenshotCallback();
+      callback.addListener(() {
+        // Fire-and-forget: never let this await block or throw to the UI.
+        ref
+            .read(screenshotsServiceProvider)
+            .report(widget.conversationId)
+            .catchError((_) {});
+      });
+      _screenshotCallback = callback;
+    } catch (_) {
+      // Platform channel not available (e.g., in tests). Ignore gracefully.
+    }
+  }
+
+  /// Fetches incoming screenshot alerts on open and shows a banner if any
+  /// alert targets this conversation.
+  Future<void> _loadScreenshotAlerts() async {
+    try {
+      final alerts = await ref.read(screenshotsServiceProvider).list();
+      if (!mounted) return;
+      final hasAlert =
+          alerts.any((a) => a.conversationId == widget.conversationId);
+      if (hasAlert) {
+        setState(() => _showScreenshotBanner = true);
+      }
+    } catch (_) {
+      // Do not surface errors — screenshot alerts are informational only.
+    }
   }
 
   void _connectWebSocket() {
@@ -475,6 +525,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       body: Column(
         children: [
+          // ── Screenshot alert banner ───────────────────────────────────────
+          if (_showScreenshotBanner)
+            _ScreenshotAlertBanner(
+              onDismiss: () =>
+                  setState(() => _showScreenshotBanner = false),
+            ),
+
           // ── Message list ─────────────────────────────────────────────────
           Expanded(
             child: _loading
@@ -1530,6 +1587,53 @@ class _PhotoSendSheetState extends State<_PhotoSendSheet> {
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(_viewOnce),
             child: Text(l10n?.chatSend ?? 'Send'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Full-screen photo viewer
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Screenshot alert banner
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A subtle dismissible banner shown at the top of the chat when another
+/// participant took a screenshot.
+class _ScreenshotAlertBanner extends StatelessWidget {
+  final VoidCallback onDismiss;
+
+  const _ScreenshotAlertBanner({required this.onDismiss});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      width: double.infinity,
+      color: VibraTheme.kSurface,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded,
+              color: Colors.amber, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l10n?.screenshotAlertBanner ?? 'Someone screenshotted this chat',
+              style: const TextStyle(
+                color: VibraTheme.kTextSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onDismiss,
+            child: const Icon(Icons.close,
+                color: VibraTheme.kTextMuted, size: 16),
           ),
         ],
       ),

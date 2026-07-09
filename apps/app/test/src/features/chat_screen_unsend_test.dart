@@ -4,12 +4,21 @@ import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/chat/chat_service.dart';
 import 'package:app/src/chat/models.dart';
 import 'package:app/src/features/chat_screen.dart';
+import 'package:app/src/screenshots/screenshots_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
+
+class _FakeScreenshotsService extends ScreenshotsService {
+  _FakeScreenshotsService() : super(Dio());
+  @override
+  Future<void> report(String conversationId) async {}
+  @override
+  Future<List<ScreenshotAlert>> list() async => const [];
+}
 
 // ---------------------------------------------------------------------------
 // Fake ChatService — controllable WS stream + seeded messages.
@@ -83,6 +92,8 @@ Widget _wrap(Widget child, _FakeChatService fake) {
     overrides: [
       authStateProvider.overrideWith(() => _AuthedNotifier()),
       chatServiceProvider.overrideWithValue(fake),
+      screenshotsServiceProvider
+          .overrideWithValue(_FakeScreenshotsService()),
     ],
     child: MaterialApp(
       localizationsDelegates: const [

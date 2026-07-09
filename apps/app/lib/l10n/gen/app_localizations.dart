@@ -3499,6 +3499,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Verificar perfil'**
   String get verifyProfileMenuItem;
+
+  /// Banner shown in chat when another member took a screenshot
+  ///
+  /// In es, this message translates to:
+  /// **'Alguien hizo una captura de este chat'**
+  String get screenshotAlertBanner;
 }
 
 class _AppLocalizationsDelegate

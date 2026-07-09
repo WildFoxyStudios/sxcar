@@ -1807,4 +1807,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get verifyProfileMenuItem => 'Verify profile';
+
+  @override
+  String get screenshotAlertBanner => 'Someone screenshotted this chat';
 }

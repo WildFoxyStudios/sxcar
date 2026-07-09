@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, user_id, conversation_id, reported_at\n           FROM screenshot_alerts\n           WHERE user_id = $1\n           ORDER BY reported_at DESC",
+  "query": "SELECT sa.id, sa.user_id, sa.conversation_id, sa.reported_at\n           FROM screenshot_alerts sa\n           JOIN conversation_members cm\n             ON cm.conversation_id = sa.conversation_id\n            AND cm.user_id = $1\n           WHERE sa.user_id <> $1\n           ORDER BY sa.reported_at DESC",
   "describe": {
     "columns": [
       {
@@ -36,5 +36,5 @@
       false
     ]
   },
-  "hash": "1b613a9a80906442a759a7b467b8fbbb677757b862bb528e9ee19991d8e3b38a"
+  "hash": "b51cd667244018bcf2e73886f2a951c1fbd17cac5f50d6ba9979ef1ee33bd25c"
 }

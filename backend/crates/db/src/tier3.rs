@@ -176,12 +176,18 @@ pub async fn list_screenshot_alerts(
     pool: &Pool,
     user_id: Uuid,
 ) -> anyhow::Result<Vec<AlertRow>> {
+    // Return alerts for conversations the caller is a member of that were
+    // taken by SOMEONE ELSE — i.e. the victim sees "someone screenshotted
+    // our chat", not their own screenshots. AlertRow.user_id is the actor.
     let rows = sqlx::query_as!(
         AlertRow,
-        r#"SELECT id, user_id, conversation_id, reported_at
-           FROM screenshot_alerts
-           WHERE user_id = $1
-           ORDER BY reported_at DESC"#,
+        r#"SELECT sa.id, sa.user_id, sa.conversation_id, sa.reported_at
+           FROM screenshot_alerts sa
+           JOIN conversation_members cm
+             ON cm.conversation_id = sa.conversation_id
+            AND cm.user_id = $1
+           WHERE sa.user_id <> $1
+           ORDER BY sa.reported_at DESC"#,
         user_id
     )
     .fetch_all(pool)

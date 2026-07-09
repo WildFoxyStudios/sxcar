@@ -130,6 +130,28 @@ pub async fn revenuecat_webhook(
         return (StatusCode::OK, Json(json!({"ok": true}))).into_response();
     }
 
+    // ── Idempotency: dedup by RevenueCat event id ───────────────────────────
+    // RC redelivers the same event on retries. If we've already fully processed
+    // this event id, ack 200 without re-running grant/revoke side effects. The
+    // event is marked processed only AFTER successful handling (see end), so a
+    // failed delivery (500) can still be retried and reprocessed.
+    let event_id = event["id"].as_str().unwrap_or("").to_string();
+    if !event_id.is_empty() {
+        let already: bool = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM processed_webhook_events
+                           WHERE provider = 'revenuecat' AND event_id = $1)",
+        )
+        .bind(&event_id)
+        .fetch_one(&state.pool)
+        .await
+        .unwrap_or(false);
+        if already {
+            tracing::info!(event_id, event_type, "RevenueCat webhook: duplicate event; acking");
+            return (StatusCode::OK, Json(json!({"ok": true, "duplicate": true})))
+                .into_response();
+        }
+    }
+
     let app_user_id_str = event["app_user_id"].as_str().unwrap_or("");
     let product_id = event["product_id"].as_str().unwrap_or("");
     let expiration_at_ms = event["expiration_at_ms"].as_i64();
@@ -258,6 +280,20 @@ pub async fn revenuecat_webhook(
     } else {
         // Unknown / unhandled event type — ack so RC doesn't retry forever.
         tracing::info!(event_type, "RevenueCat webhook: unhandled event type; ignoring");
+    }
+
+    // Mark processed only after successful handling, so failures can retry.
+    if !event_id.is_empty() {
+        if let Err(e) = sqlx::query(
+            "INSERT INTO processed_webhook_events (provider, event_id)
+             VALUES ('revenuecat', $1) ON CONFLICT DO NOTHING",
+        )
+        .bind(&event_id)
+        .execute(&state.pool)
+        .await
+        {
+            tracing::warn!(event_id, error = %e, "webhook: failed to record processed event id");
+        }
     }
 
     (StatusCode::OK, Json(json!({"ok": true}))).into_response()

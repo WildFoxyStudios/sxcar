@@ -280,7 +280,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                           TextButton(
                             onPressed: () => Navigator.of(ctx).pop(true),
                             child: const Text('Delete',
-                                style: TextStyle(color: Colors.red)),
+                                style: TextStyle(color: VibraTheme.kError)),
                           ),
                         ],
                       ),
@@ -301,9 +301,9 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                       const PopupMenuItem(
                         value: 'delete',
                         child: ListTile(
-                          leading: Icon(Icons.delete, color: Colors.red, size: 20),
+                          leading: Icon(Icons.delete, color: VibraTheme.kError, size: 20),
                           title: Text('Delete story',
-                              style: TextStyle(color: Colors.red)),
+                              style: TextStyle(color: VibraTheme.kError)),
                           dense: true,
                           contentPadding: EdgeInsets.zero,
                         ),

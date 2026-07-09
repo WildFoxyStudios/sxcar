@@ -282,7 +282,7 @@ class _ErrorPanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const Icon(Icons.error_outline, size: 48, color: VibraTheme.kError),
             const SizedBox(height: 16),
             const Text(
               'Error loading verification status',

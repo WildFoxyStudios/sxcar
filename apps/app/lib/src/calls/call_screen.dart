@@ -359,7 +359,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   _ActionButton(
                     icon: _muted ? Icons.mic_off : Icons.mic,
                     color:
-                        _muted ? Colors.redAccent : Colors.white.withValues(alpha: 0.8),
+                        _muted ? VibraTheme.kError : Colors.white.withValues(alpha: 0.8),
                     label: _muted ? (l10n?.callUnmute ?? 'Unmute') : (l10n?.callMute ?? 'Mute'),
                     size: 20,
                     onTap: _toggleMute,

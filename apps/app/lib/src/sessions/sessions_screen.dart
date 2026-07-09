@@ -20,7 +20,7 @@ class SessionsScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const Icon(Icons.error_outline, size: 48, color: VibraTheme.kError),
               const SizedBox(height: 12),
               const Text('Failed to load sessions'),
               const SizedBox(height: 12),

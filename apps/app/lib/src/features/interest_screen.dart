@@ -300,7 +300,7 @@ class _ViewsListTab extends ConsumerWidget {
           children: [
             Text(
               l10n.errorCargandoVistas,
-              style: const TextStyle(color: Colors.red),
+              style: const TextStyle(color: VibraTheme.kError),
             ),
             const SizedBox(height: 12),
             TextButton(
@@ -395,7 +395,7 @@ class _TapsListTab extends StatelessWidget {
               children: [
                 Text(
                   l10n.errorCargandoTaps,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: VibraTheme.kError),
                 ),
                 const SizedBox(height: 12),
                 TextButton(

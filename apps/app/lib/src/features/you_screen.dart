@@ -133,7 +133,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${l10n.deleteAccountError}: ${e.response?.statusCode ?? e.message}'),
-          backgroundColor: Colors.red,
+          backgroundColor: VibraTheme.kError,
         ),
       );
     } catch (e) {
@@ -141,7 +141,7 @@ class _YouScreenState extends ConsumerState<YouScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${l10n.deleteAccountError}: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: VibraTheme.kError,
         ),
       );
     }
@@ -190,13 +190,13 @@ class _YouScreenState extends ConsumerState<YouScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const Icon(Icons.error_outline, size: 48, color: VibraTheme.kError),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
                 l10n.you_profile_load_error(_errorDetail!),
-                style: TextStyle(color: Colors.red.shade300, fontSize: 14),
+                style: TextStyle(color: VibraTheme.kError, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -501,7 +501,7 @@ class _BoostButtonState extends ConsumerState<_BoostButton> {
           SnackBar(
             content: Text(l10n.you_boost_failed(
                 '${e.response?.statusCode ?? e.message}')),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kError,
           ),
         );
       }
@@ -510,7 +510,7 @@ class _BoostButtonState extends ConsumerState<_BoostButton> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.you_boost_failed('$e')),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kError,
           ),
         );
       }

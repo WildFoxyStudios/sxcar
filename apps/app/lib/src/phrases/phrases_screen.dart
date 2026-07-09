@@ -84,7 +84,7 @@ class PhrasesScreen extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Failed to add: $e'),
-                      backgroundColor: Colors.red,
+                      backgroundColor: VibraTheme.kError,
                     ),
                   );
                 }
@@ -120,7 +120,7 @@ class _PhrasesList extends ConsumerWidget {
           key: ValueKey(phrase.id),
           direction: DismissDirection.endToStart,
           background: Container(
-            color: Colors.red,
+            color: VibraTheme.kError,
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 24),
             child: const Icon(Icons.delete, color: Colors.white),
@@ -140,7 +140,7 @@ class _PhrasesList extends ConsumerWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Failed to delete: $e'),
-                    backgroundColor: Colors.red,
+                    backgroundColor: VibraTheme.kError,
                   ),
                 );
                 // Restore item by re-invalidating.
@@ -194,7 +194,7 @@ class _PhrasesList extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to reorder: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kError,
           ),
         );
       }
@@ -246,14 +246,14 @@ class _ErrorView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 48),
+          const Icon(Icons.error_outline, color: VibraTheme.kError, size: 48),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.redAccent),
+              style: const TextStyle(color: VibraTheme.kError),
             ),
           ),
           const SizedBox(height: 12),

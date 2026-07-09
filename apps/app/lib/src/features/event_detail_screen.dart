@@ -220,13 +220,13 @@ class _DetailContent extends ConsumerWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () => _deleteEvent(context, ref),
-                icon: const Icon(Icons.delete, color: Colors.red),
+                icon: const Icon(Icons.delete, color: VibraTheme.kError),
                 label: Text(
                   l10n.events_cancel,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: VibraTheme.kError),
                 ),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
+                  side: const BorderSide(color: VibraTheme.kError),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
@@ -282,7 +282,7 @@ class _DetailContent extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l10n.events_cancel_yes,
-                style: const TextStyle(color: Colors.red)),
+                style: const TextStyle(color: VibraTheme.kError)),
           ),
         ],
       ),
@@ -387,7 +387,7 @@ class _DetailError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const Icon(Icons.error_outline, size: 48, color: VibraTheme.kError),
             const SizedBox(height: 16),
             Text(
               message,

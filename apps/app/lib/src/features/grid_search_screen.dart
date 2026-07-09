@@ -194,7 +194,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
             l10n?.travelPassFailedToSet(e.toString()) ??
                 'Failed to set travel pass: $e',
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: VibraTheme.kError,
         ),
       );
     }
@@ -227,7 +227,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           content: Text(
             l10n?.travelPassFailedToCancel ?? 'Failed to cancel travel pass',
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: VibraTheme.kError,
         ),
       );
     }
@@ -471,7 +471,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
               outerMessenger.showSnackBar(
                 SnackBar(
                   content: Text(l10n.roamFailedToSet(e.toString())),
-                  backgroundColor: Colors.red,
+                  backgroundColor: VibraTheme.kError,
                 ),
               );
             }
@@ -508,7 +508,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
               outerMessenger.showSnackBar(
                 SnackBar(
                   content: Text(l10n.roamFailedGeneric(e.toString())),
-                  backgroundColor: Colors.red,
+                  backgroundColor: VibraTheme.kError,
                 ),
               );
             }
@@ -1006,7 +1006,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const Icon(Icons.error_outline, size: 48, color: VibraTheme.kError),
                   const SizedBox(height: 16),
                   Text(
                     l10n.gridFailedToLoad,
@@ -1291,7 +1291,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.roamFailedToAddPlace(e.toString())),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kError,
           ),
         );
       }
@@ -1350,7 +1350,7 @@ class _RoamBottomSheetState extends ConsumerState<_RoamBottomSheet> {
                   padding: const EdgeInsets.all(16),
                   child: Text(
                     'Failed to load places: $e',
-                    style: const TextStyle(color: Colors.redAccent),
+                    style: const TextStyle(color: VibraTheme.kError),
                   ),
                 ),
                 data: (places) {

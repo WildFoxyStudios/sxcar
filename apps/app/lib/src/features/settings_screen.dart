@@ -151,7 +151,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(height: 1, color: VibraTheme.kDivider, indent: 16, endIndent: 16),
           SettingRow(
             icon: Icons.delete_forever,
-            iconColor: Colors.red,
+            iconColor: VibraTheme.kError,
             title: l10n.eliminarCuenta,
             onTap: _confirmDeleteAccount,
           ),
@@ -289,7 +289,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Column(
                 children: [
                   Text(_notifError!,
-                      style: const TextStyle(color: Colors.red)),
+                      style: const TextStyle(color: VibraTheme.kError)),
                   TextButton(
                     onPressed: _loadNotificationPreferences,
                     child: Text(l10n.reintentar),
@@ -355,7 +355,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextButton(
               onPressed: _logout,
-              child: Text(l10n.cerrarSesion, style: const TextStyle(color: Colors.red)),
+              child: Text(l10n.cerrarSesion, style: const TextStyle(color: VibraTheme.kError)),
             ),
           ),
           const SizedBox(height: 32),
@@ -440,7 +440,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.eliminar, style: const TextStyle(color: Colors.red)),
+            child: Text(l10n.eliminar, style: const TextStyle(color: VibraTheme.kError)),
           ),
         ],
       ),

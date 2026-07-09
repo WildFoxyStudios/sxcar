@@ -1,3 +1,4 @@
+import '../theme/app_theme.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -149,7 +150,7 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
           SnackBar(
             content: Text(l10n.album_add_error(
                 '${e.response?.statusCode ?? e.message}')),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kError,
           ),
         );
       }
@@ -159,7 +160,7 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.album_add_error('$e')),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kError,
           ),
         );
       }
@@ -221,7 +222,7 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const Icon(Icons.error_outline, size: 48, color: VibraTheme.kError),
             const SizedBox(height: 16),
             Text(errorText, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 16),

@@ -135,7 +135,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
         messenger.showSnackBar(
           SnackBar(
             content: Text('${l10n.shopPurchaseError}: ${e.message ?? e.code}'),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kError,
           ),
         );
       }
@@ -144,7 +144,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text('${l10n.shopPurchaseError}: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: VibraTheme.kError,
         ),
       );
     }

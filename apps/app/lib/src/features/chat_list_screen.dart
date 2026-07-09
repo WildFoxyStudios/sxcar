@@ -417,7 +417,7 @@ class _ErrorRetry extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(message, style: const TextStyle(color: Colors.red)),
+          Text(message, style: const TextStyle(color: VibraTheme.kError)),
           const SizedBox(height: 12),
           if (onRetry != null)
             TextButton(

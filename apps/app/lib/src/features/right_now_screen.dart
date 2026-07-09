@@ -165,7 +165,7 @@ class _RightNowFeed extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const Icon(Icons.error_outline, size: 48, color: VibraTheme.kError),
             const SizedBox(height: 12),
             Text(
               l10n.right_now_error,

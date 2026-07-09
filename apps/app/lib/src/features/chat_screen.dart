@@ -353,7 +353,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           content: Text(
             l10n?.chatNsfwContent ?? 'This image appears to violate our content guidelines.',
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: VibraTheme.kError,
         ),
       );
       return;
@@ -720,7 +720,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 width: 12,
                 height: 12,
                 decoration: const BoxDecoration(
-                  color: Colors.red,
+                  color: VibraTheme.kError,
                   shape: BoxShape.circle,
                 ),
               ),

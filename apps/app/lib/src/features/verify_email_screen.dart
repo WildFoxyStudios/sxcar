@@ -1,3 +1,4 @@
+import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -81,7 +82,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
               const SizedBox(height: 16),
               Text(
                 _error!,
-                style: const TextStyle(color: Colors.red),
+                style: const TextStyle(color: VibraTheme.kError),
               ),
             ],
             const SizedBox(height: 24),

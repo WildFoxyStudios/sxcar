@@ -503,7 +503,7 @@ class _BoostRowState extends ConsumerState<_BoostRow> {
           SnackBar(
             content: Text(
                 'Error: ${e.response?.statusCode ?? e.message}'),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kError,
           ),
         );
       }
@@ -512,7 +512,7 @@ class _BoostRowState extends ConsumerState<_BoostRow> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kError,
           ),
         );
       }

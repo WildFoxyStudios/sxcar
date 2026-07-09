@@ -171,7 +171,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${l10n.albumFailedToCreateSimple}: ${e.response?.statusCode ?? e.message}'),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kError,
           ),
         );
       }
@@ -180,7 +180,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.albumFailedToCreateSimple),
-            backgroundColor: Colors.red,
+            backgroundColor: VibraTheme.kError,
           ),
         );
       }
@@ -266,7 +266,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
         SnackBar(
           content: Text(
               '${l10n.errorAlCompartir}: ${e.response?.statusCode ?? e.message}'),
-          backgroundColor: Colors.red,
+          backgroundColor: VibraTheme.kError,
         ),
       );
     }
@@ -303,7 +303,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
         SnackBar(
           content: Text(
               '${l10n.errorAlEliminar}: ${e.response?.statusCode ?? e.message}'),
-          backgroundColor: Colors.red,
+          backgroundColor: VibraTheme.kError,
         ),
       );
     }
@@ -418,7 +418,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const Icon(Icons.error_outline, size: 48, color: VibraTheme.kError),
                 const SizedBox(height: 16),
                 Text(_error!, style: const TextStyle(color: Colors.white)),
                 const SizedBox(height: 16),

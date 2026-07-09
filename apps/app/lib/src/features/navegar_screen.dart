@@ -1168,7 +1168,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(l10n.travelPassFailedToCancel),
-                    backgroundColor: Colors.red,
+                    backgroundColor: VibraTheme.kError,
                   ),
                 );
               });

@@ -95,7 +95,7 @@ class _BlocksListScreenState extends ConsumerState<BlocksListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_error!, style: const TextStyle(color: Colors.red)),
+            Text(_error!, style: const TextStyle(color: VibraTheme.kError)),
             const SizedBox(height: 12),
             TextButton(onPressed: _load, child: const Text('Reintentar')),
           ],

@@ -52,7 +52,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
             style: const TextStyle(color: VibraTheme.kTextSecondary)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancelar)),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.pinRemoveConfirm, style: const TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.pinRemoveConfirm, style: const TextStyle(color: VibraTheme.kError))),
         ],
       ),
     );
@@ -165,8 +165,8 @@ class _PinScreenState extends ConsumerState<PinScreen> {
                       Expanded(
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red,
-                            side: const BorderSide(color: Colors.red),
+                            foregroundColor: VibraTheme.kError,
+                            side: const BorderSide(color: VibraTheme.kError),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                           onPressed: _removePin,

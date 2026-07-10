@@ -158,6 +158,16 @@ String? appRedirect({
     return '/onboarding';
   }
 
+  // Onboarding just finished (or was already complete): leave the wizard and
+  // go to the home grid. Without this, completing the last card marks the
+  // state done but the user stays stranded on /onboarding (the guard above
+  // only redirects TO /onboarding, never away from it).
+  if (status == AuthStatus.authenticated &&
+      matchedLocation == '/onboarding' &&
+      onboardingCompleted) {
+    return '/navegar';
+  }
+
   if (status == AuthStatus.authenticated && (isAuthRoute || isSplash)) {
     return '/navegar';
   }

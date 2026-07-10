@@ -34,6 +34,7 @@ class OnboardingWizardScreen extends StatefulWidget {
 class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
   late PageController _controller;
   int _index = 0;
+  bool _finished = false;
 
   @override
   void initState() {
@@ -51,6 +52,17 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> {
 
   void _onChange() {
     if (!mounted) return;
+    // The server flips onboarding_completed as soon as the 4 required cards
+    // are done (profile_photo, display_name, age, gender_position). Whenever
+    // that happens — whether the user tapped "next" or "skip" on the current
+    // card — finish the wizard: mark the client state so the router redirect
+    // sends us to /navegar. This is the single root path for completion, so
+    // skip (which never called onComplete before) now leaves the wizard too.
+    if (!_finished && widget.provider.state?.onboardingCompleted == true) {
+      _finished = true;
+      widget.onCompleted?.call();
+      return;
+    }
     // A per-card skip removes that optional card from the refreshed list, so
     // the list can shrink under us. If the current index now points past the
     // end (e.g. the last card was skipped), clamp it and move the controller

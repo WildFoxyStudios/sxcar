@@ -189,7 +189,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/splash',
       builder: (_, _) => const Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: VibraTheme.kBg,
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -436,24 +436,7 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/tienda',
-              builder: (context, _) => Scaffold(
-                backgroundColor: VibraTheme.kBg,
-                appBar: AppBar(
-                  backgroundColor: VibraTheme.kBg,
-                  title: Text(
-                    AppLocalizations.of(context)?.tienda ?? 'Tienda',
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                body: Center(
-                  child: Text(
-                    AppLocalizations.of(context)?.tienda ?? 'Tienda',
-                    style: const TextStyle(
-                        color: VibraTheme.kTextSecondary, fontSize: 18),
-                  ),
-                ),
-              ),
+              builder: (context, _) => const ShopScreen(),
             ),
           ],
         ),
@@ -488,7 +471,6 @@ class MainShell extends ConsumerWidget {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: (index) => navigationShell.goBranch(index),
-        backgroundColor: const Color(0xFF0D0D0D),
         selectedItemColor: VibraTheme.kBrandPrimary,
         unselectedItemColor: const Color(0xFF777777),
         type: BottomNavigationBarType.fixed,

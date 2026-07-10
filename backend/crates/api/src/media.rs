@@ -485,7 +485,13 @@ pub async fn get_url(
             PUBLIC_PRESIGN_EXPIRY
         }
         "album" => {
-            // Owner OR shared-with-caller (non-revoked, non-expired share).
+            // Owner OR shared-with-caller (non-revoked, non-expired share)
+            // OR a chat media message (voice/photo) in a conversation the
+            // caller belongs to. Voice messages are stored at album/<uid>/...
+            // keys in the private bucket but are NOT inserted into `photos`,
+            // so without this branch their presign would 403 and recipients
+            // could never play them. Membership (sender + recipient) is the
+            // correct access boundary.
             let allowed: bool = sqlx::query_scalar::<_, bool>(
                 r#"SELECT EXISTS(
                        SELECT 1 FROM photos p
@@ -502,6 +508,13 @@ pub async fn get_url(
                                    AND (s.expires_at IS NULL OR s.expires_at > now())
                              )
                          )
+                   )
+                   OR EXISTS(
+                       SELECT 1
+                       FROM messages m
+                       JOIN conversation_members cm ON cm.conversation_id = m.conversation_id
+                       WHERE m.media_key = $1
+                         AND cm.user_id = $2
                    )"#,
             )
             .bind(&q.key)

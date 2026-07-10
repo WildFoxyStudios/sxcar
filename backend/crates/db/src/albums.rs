@@ -141,6 +141,35 @@ pub async fn get_album(pool: &Pool, id: Uuid) -> anyhow::Result<Option<AlbumRow>
     Ok(row)
 }
 
+/// Returns true if the user may VIEW the album: either they own it, or there is
+/// a non-revoked, non-expired share granting them access. Read/view path only —
+/// mutation endpoints must still enforce owner-only checks separately.
+pub async fn has_album_access(
+    pool: &Pool,
+    album_id: Uuid,
+    user_id: Uuid,
+) -> anyhow::Result<bool> {
+    let allowed: bool = sqlx::query_scalar(
+        r#"
+        SELECT EXISTS (
+            SELECT 1 FROM albums a
+            WHERE a.id = $1 AND a.owner_id = $2
+        ) OR EXISTS (
+            SELECT 1 FROM album_shares s
+            WHERE s.album_id = $1
+              AND s.shared_with_user_id = $2
+              AND s.revoked_at IS NULL
+              AND (s.expires_at IS NULL OR s.expires_at > now())
+        )
+        "#,
+    )
+    .bind(album_id)
+    .bind(user_id)
+    .fetch_one(pool)
+    .await?;
+    Ok(allowed)
+}
+
 /// Get all photos in an album, ordered by position.
 pub async fn get_album_photos(pool: &Pool, album_id: Uuid) -> anyhow::Result<Vec<PhotoRow>> {
     let rows = sqlx::query_as::<_, PhotoRow>(

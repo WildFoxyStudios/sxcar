@@ -110,27 +110,38 @@ pub async fn refresh(
     Json(req): Json<RefreshReq>,
 ) -> Result<Json<TokenPair>, StatusCode> {
     let th = auth::tokens::hash_token(&req.refresh);
-    let row = db::users::find_refresh_token(&state.pool, &th)
+    // Bug 2 (P2): rotación ATÓMICA. Un único UPDATE ... RETURNING revoca-y-reclama
+    // el token, de modo que dos peticiones concurrentes con el mismo refresh no
+    // puedan pasar ambas el chequeo (evita double-spend / reuse race).
+    let user_id = match db::users::revoke_and_claim_refresh(&state.pool, &th)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .ok_or(StatusCode::UNAUTHORIZED)?;
-    if row.revoked || row.expired {
-        return Err(StatusCode::UNAUTHORIZED);
-    }
-    // P0-1: valida que la cuenta siga activa antes de rotar/emitir tokens.
+    {
+        db::users::RefreshClaim::Claimed { user_id, expired } => {
+            if expired {
+                return Err(StatusCode::UNAUTHORIZED);
+            }
+            user_id
+        }
+        // Reuse detectado: el token ya estaba revocado. Revoca toda la familia
+        // del usuario (defensa ante robo de refresh token) y rechaza.
+        db::users::RefreshClaim::AlreadyRevoked { user_id } => {
+            let _ = db::users::revoke_all_refresh(&state.pool, user_id).await;
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+        db::users::RefreshClaim::NotFound => return Err(StatusCode::UNAUTHORIZED),
+    };
+    // P0-1: valida que la cuenta siga activa antes de emitir tokens nuevos.
     // Un usuario baneado/suspendido/borrado no debe poder refrescar su sesión.
-    let status = db::users::user_status(&state.pool, row.user_id)
+    // El token viejo ya quedó revocado atómicamente arriba.
+    let status = db::users::user_status(&state.pool, user_id)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
         .ok_or(StatusCode::UNAUTHORIZED)?;
     if status != "active" {
         return Err(StatusCode::FORBIDDEN);
     }
-    // rotación: revoca el viejo, emite par nuevo
-    db::users::revoke_refresh_token(&state.pool, &th)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let pair = issue_pair(&state, row.user_id).await?;
+    let pair = issue_pair(&state, user_id).await?;
     Ok(Json(pair))
 }
 
@@ -240,7 +251,11 @@ pub async fn reset_password(
     State(state): State<AppState>,
     Json(req): Json<ResetReq>,
 ) -> Result<StatusCode, StatusCode> {
-    if req.new_password.len() < 8 {
+    // Bug 1 (P1): reset debe exigir la MISMA fortaleza que register.
+    // Antes solo comprobaba `len() < 8`, permitiendo passwords más débiles
+    // que las aceptadas en el alta. Usa la misma validación (`valid_password`)
+    // y el mismo status (400) que `register`.
+    if !valid_password(&req.new_password) {
         return Err(StatusCode::BAD_REQUEST);
     }
     let u = db::users::find_user_by_email(&state.pool, &req.email)

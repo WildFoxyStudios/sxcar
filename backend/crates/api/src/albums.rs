@@ -221,9 +221,17 @@ pub async fn get(
         })?
         .ok_or(StatusCode::NOT_FOUND)?;
 
-    // Only owner or shared user can see
+    // Owner OR a user the album was shared with (non-revoked, non-expired) may view.
     if row.owner_id != user_id {
-        return Err(StatusCode::FORBIDDEN);
+        let allowed = db::albums::has_album_access(&state.pool, album_id, user_id)
+            .await
+            .map_err(|e| {
+                tracing::error!("has_album_access error: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+        if !allowed {
+            return Err(StatusCode::FORBIDDEN);
+        }
     }
 
     let photos = db::albums::get_album_photos(&state.pool, album_id)

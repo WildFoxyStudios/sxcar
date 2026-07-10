@@ -195,6 +195,60 @@ pub async fn find_refresh_token(
     }))
 }
 
+/// Resultado de intentar reclamar (revocar-y-quedarse) un refresh token de
+/// forma atómica para la rotación.
+pub enum RefreshClaim {
+    /// El token se reclamó con éxito en esta operación (era válido y no
+    /// revocado). Se devuelve el `user_id` y si estaba expirado.
+    Claimed { user_id: uuid::Uuid, expired: bool },
+    /// El token existe pero YA estaba revocado (reuse/double-spend detectado).
+    /// Se devuelve el `user_id` para poder revocar toda la familia.
+    AlreadyRevoked { user_id: uuid::Uuid },
+    /// El token no existe.
+    NotFound,
+}
+
+/// Bug 2 (P2): rotación atómica del refresh token.
+///
+/// Ejecuta un único `UPDATE ... WHERE revoked_at IS NULL RETURNING` de modo que
+/// dos peticiones concurrentes con el mismo token NO puedan pasar ambas el
+/// chequeo (evita double-spend / reuse race). Si el UPDATE no afecta filas,
+/// se hace un SELECT para distinguir entre "ya revocado" (reuse) y "no existe".
+///
+/// Runtime query (`sqlx::query`), no macro, intencionalmente.
+pub async fn revoke_and_claim_refresh(
+    pool: &Pool,
+    token_hash: &str,
+) -> anyhow::Result<RefreshClaim> {
+    // Reclamo atómico: solo una petición puede pasar de revoked_at NULL -> now().
+    let claimed = sqlx::query_as::<_, (uuid::Uuid, bool)>(
+        r#"UPDATE refresh_tokens
+           SET revoked_at = now()
+           WHERE token_hash = $1 AND revoked_at IS NULL
+           RETURNING user_id, (expires_at < now()) AS expired"#,
+    )
+    .bind(token_hash)
+    .fetch_optional(pool)
+    .await?;
+
+    if let Some((user_id, expired)) = claimed {
+        return Ok(RefreshClaim::Claimed { user_id, expired });
+    }
+
+    // No se reclamó: o no existe, o ya estaba revocado (reuse).
+    let existing = sqlx::query_scalar::<_, uuid::Uuid>(
+        "SELECT user_id FROM refresh_tokens WHERE token_hash = $1",
+    )
+    .bind(token_hash)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(match existing {
+        Some(user_id) => RefreshClaim::AlreadyRevoked { user_id },
+        None => RefreshClaim::NotFound,
+    })
+}
+
 pub async fn revoke_refresh_token(pool: &Pool, token_hash: &str) -> anyhow::Result<()> {
     sqlx::query!(
         "UPDATE refresh_tokens SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL",
@@ -235,6 +289,16 @@ pub async fn issue_auth_code(
 }
 
 /// Marca consumido el código válido (no usado, no expirado) más reciente. Devuelve true si lo encontró.
+///
+/// Bug 3 (P1) — mitigación de fuerza bruta de códigos de 6 dígitos.
+/// La tabla `auth_codes` (migración 0010) NO tiene columna de intentos, y no
+/// debemos inventar una migración aquí. Mitigación que encaja en el esquema
+/// actual: si el código presentado es INCORRECTO, se invalidan (consumed_at)
+/// todos los códigos vigentes de ese (user, kind). Así cada código emitido es
+/// de un solo intento ("single-guess"): tras un fallo el usuario debe solicitar
+/// uno nuevo, reduciendo la probabilidad de adivinar de ~n/1e6 a 1/1e6 por
+/// código. La invalidación se hace en un único statement condicional para no
+/// borrar el código en el camino feliz (acierto).
 pub async fn consume_auth_code(
     pool: &Pool,
     user_id: uuid::Uuid,
@@ -255,7 +319,21 @@ pub async fn consume_auth_code(
     )
     .execute(pool)
     .await?;
-    Ok(res.rows_affected() == 1)
+    if res.rows_affected() == 1 {
+        return Ok(true);
+    }
+    // Fallo: invalida TODOS los códigos vigentes de este (user, kind) para que
+    // el intento haya sido de una sola oportunidad. Runtime query (no macro).
+    sqlx::query(
+        r#"UPDATE auth_codes SET consumed_at = now()
+           WHERE user_id = $1 AND kind = $2
+             AND consumed_at IS NULL AND expires_at > now()"#,
+    )
+    .bind(user_id)
+    .bind(kind)
+    .execute(pool)
+    .await?;
+    Ok(false)
 }
 
 /// Devuelve el `status` de un usuario (active, banned, suspended, deleted,

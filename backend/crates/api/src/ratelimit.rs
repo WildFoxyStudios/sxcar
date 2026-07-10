@@ -159,13 +159,46 @@ pub async fn auth_limiter(
     req: axum::extract::Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
-    let ip = req
-        .extensions()
-        .get::<ConnectInfo<SocketAddr>>()
-        .map(|ci| ci.0.ip());
-    match ip {
-        Some(ip) if !state.limiter.check(ip).await => Err(StatusCode::TOO_MANY_REQUESTS),
-        _ => Ok(next.run(req).await),
+    // Derive the real client IP. This service is only reachable via the trusted
+    // Cloudflare Tunnel (cloudflared -> 127.0.0.1:8081), so the raw socket peer
+    // is ALWAYS the local tunnel connection and must NOT be used as the bucket
+    // key (it collapses every internet client into one global bucket). Instead
+    // we trust the IP headers Cloudflare sets on the edge. These headers are
+    // attacker-spoofable in general, but here traffic can only arrive via the
+    // trusted tunnel, so trusting `CF-Connecting-IP` is correct for this deployment.
+    let client_ip: Option<IpAddr> = req
+        .headers()
+        .get("cf-connecting-ip")
+        .and_then(|v| v.to_str().ok())
+        .map(str::trim)
+        // Fall back to the first hop in X-Forwarded-For (the original client).
+        .or_else(|| {
+            req.headers()
+                .get("x-forwarded-for")
+                .and_then(|v| v.to_str().ok())
+                .and_then(|s| s.split(',').next())
+                .map(str::trim)
+        })
+        .and_then(|s| s.parse::<IpAddr>().ok())
+        // Only fall back to the socket peer if neither header is present.
+        .or_else(|| {
+            req.extensions()
+                .get::<ConnectInfo<SocketAddr>>()
+                .map(|ci| ci.0.ip())
+        });
+
+    // In production every request arrives via the Cloudflare Tunnel with
+    // `CF-Connecting-IP` set, so `client_ip` is the real per-client address and
+    // each client gets its own bucket. Local / test (oneshot, no ConnectInfo) /
+    // health traffic without any IP falls back to a fixed loopback bucket: it is
+    // still throttled (all such callers share one key), but never wrongly
+    // refused. This keeps the per-client limiting fix without failing closed on
+    // legitimate infra requests.
+    let ip = client_ip.unwrap_or(IpAddr::V4(std::net::Ipv4Addr::LOCALHOST));
+    if state.limiter.check(ip).await {
+        Ok(next.run(req).await)
+    } else {
+        Err(StatusCode::TOO_MANY_REQUESTS)
     }
 }
 

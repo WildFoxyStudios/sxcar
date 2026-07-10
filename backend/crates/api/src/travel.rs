@@ -50,6 +50,17 @@ pub async fn set_travel(
     AuthUser(user_id): AuthUser,
     Json(body): Json<SetTravelRequest>,
 ) -> Result<Json<Value>, StatusCode> {
+    // Validate coordinates before any DB write: reject NaN/Infinity and
+    // out-of-range values so they can't later feed ST_MakePoint in
+    // grid/discover (which would produce garbage distances or PostGIS 500s).
+    if !body.lat.is_finite()
+        || !body.lon.is_finite()
+        || !(-90.0..=90.0).contains(&body.lat)
+        || !(-180.0..=180.0).contains(&body.lon)
+    {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
     let hours = if body.expires_in_hours <= 0.0 {
         MAX_TRAVEL_HOURS
     } else if body.expires_in_hours > MAX_TRAVEL_HOURS {
@@ -61,21 +72,9 @@ pub async fn set_travel(
     let expires_at = OffsetDateTime::now_utc()
         + time::Duration::seconds((hours * 3600.0) as i64);
 
-    // Run ALTER TABLE IF NOT EXISTS defensively (idempotent after first call).
-    sqlx::query(
-        "ALTER TABLE users
-         ADD COLUMN IF NOT EXISTS travel_lat DOUBLE PRECISION NULL,
-         ADD COLUMN IF NOT EXISTS travel_lon DOUBLE PRECISION NULL,
-         ADD COLUMN IF NOT EXISTS travel_city_name TEXT NULL,
-         ADD COLUMN IF NOT EXISTS travel_expires_at TIMESTAMPTZ NULL",
-    )
-    .execute(&state.pool)
-    .await
-    .map_err(|e| {
-        tracing::error!("travel ALTER TABLE error: {e}");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
-
+    // Travel Pass columns are provisioned by migration (see
+    // 0040_travel_pass.sql / 0047_travel_columns_idempotent.sql), so no
+    // per-request ALTER TABLE is needed here.
     sqlx::query(
         "UPDATE users
          SET travel_lat = $1,

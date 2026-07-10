@@ -268,7 +268,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
               padding: const EdgeInsets.all(16),
               child: SizedBox(
                 width: double.infinity,
-                child: YellowPillButton(
+                child: PrimaryPillButton(
                   label: l10n.desbloquearSinLimites,
                   onPressed: () => context.push('/tienda'),
                 ),

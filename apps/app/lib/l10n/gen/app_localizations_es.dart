@@ -2078,4 +2078,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get fotosSectionHeader => 'FOTOS';
+
+  @override
+  String get capturePhoto => 'Foto';
+
+  @override
+  String get captureVideo => 'Vídeo';
 }

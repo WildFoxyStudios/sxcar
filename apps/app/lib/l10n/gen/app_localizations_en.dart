@@ -2061,4 +2061,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fotosSectionHeader => 'PHOTOS';
+
+  @override
+  String get capturePhoto => 'Photo';
+
+  @override
+  String get captureVideo => 'Video';
 }

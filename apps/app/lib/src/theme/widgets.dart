@@ -4,22 +4,22 @@ import 'package:app/l10n/gen/app_localizations.dart';
 import 'app_theme.dart';
 
 // ────────────────────────────────────────────────────────────────────────────
-// YellowPillButton
-// Full-width 56 dp pill, kBrandPrimary background, black bold text.
+// PrimaryPillButton
+// Full-width 56 dp pill, kBrandPrimary (teal) background, black bold text.
 // ────────────────────────────────────────────────────────────────────────────
 
-/// Full-width primary CTA with kBrandPrimary background.
+/// Full-width primary CTA with kBrandPrimary (teal) background.
 ///
 /// - Height: 56 dp
 /// - Shape: rounded-full (radius 28)
 /// - Label: 18 sp, w700, black
 /// - Disabled: 40 % opacity
-class YellowPillButton extends StatelessWidget {
+class PrimaryPillButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final bool enabled;
 
-  const YellowPillButton({
+  const PrimaryPillButton({
     super.key,
     required this.label,
     this.onPressed,
@@ -557,7 +557,7 @@ class PlanDurationCard extends StatelessWidget {
 
 // ────────────────────────────────────────────────────────────────────────────
 // NUEVOBadge
-// Small yellow rounded badge with the localized "NUEVO" label, indicating
+// Small teal rounded badge with the localized "NUEVO" label, indicating
 // that a user account is < 7 days old (or, in the .small variant, that the
 // tile they're shown on is for a recent account).
 //

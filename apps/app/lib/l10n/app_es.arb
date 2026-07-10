@@ -1738,5 +1738,10 @@
   "@tripNotas": { "description": "Add trip form notes text field label" },
 
   "fotosSectionHeader": "FOTOS",
-  "@fotosSectionHeader": { "description": "Edit profile screen photos section header label" }
+  "@fotosSectionHeader": { "description": "Edit profile screen photos section header label" },
+
+  "capturePhoto": "Foto",
+  "@capturePhoto": { "description": "Create-story capture button label for taking a photo" },
+  "captureVideo": "Vídeo",
+  "@captureVideo": { "description": "Create-story capture button label for recording a video" }
 }

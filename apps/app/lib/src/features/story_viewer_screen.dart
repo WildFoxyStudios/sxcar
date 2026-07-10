@@ -86,13 +86,52 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
     });
   }
 
+  /// Minimum sensible duration for any story segment — guards against
+  /// zero/very-short video durations that would otherwise flash past.
+  static const Duration _kMinDuration = Duration(seconds: 3);
+
   Duration _getStoryDuration() {
     if (_currentStory.mediaType == 'video') {
-      // Use a default 15s for video (actual duration would come from metadata)
+      // Fallback while the real video duration hasn't been reported yet
+      // (or on error). `_onVideoDurationLoaded` recalibrates the timer once
+      // the controller finishes initializing.
       return const Duration(seconds: 15);
     }
     // Photo: 5 seconds
     return const Duration(seconds: 5);
+  }
+
+  /// Called by `_VideoStory` once its controller has finished initializing.
+  /// If the user is still on the story that reported the duration, restart
+  /// the progress timer so the bar tracks the real video length instead of
+  /// the flat 15s fallback.
+  void _onVideoDurationLoaded(Duration duration) {
+    if (_currentStory.mediaType != 'video') return;
+    final clamped =
+        duration < _kMinDuration ? _kMinDuration : duration;
+    _startProgressWith(clamped);
+  }
+
+  /// Same as `_startProgress` but with an explicit duration, used once the
+  /// real video length is known.
+  void _startProgressWith(Duration duration) {
+    _timer?.cancel();
+    _progress = 0.0;
+
+    const interval = Duration(milliseconds: 50);
+    final steps = duration.inMilliseconds / 50;
+    if (steps <= 0) return;
+    final increment = 1.0 / steps;
+
+    _timer = Timer.periodic(interval, (timer) {
+      if (_paused) return;
+      setState(() {
+        _progress += increment;
+      });
+      if (_progress >= 1.0) {
+        _advanceToNext();
+      }
+    });
   }
 
   void _advanceToNext() {
@@ -170,7 +209,10 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
             // Media content
             Positioned.fill(
               child: story.mediaType == 'video'
-                  ? _VideoStory(mediaKey: story.mediaKey)
+                  ? _VideoStory(
+                      mediaKey: story.mediaKey,
+                      onLoaded: _onVideoDurationLoaded,
+                    )
                   : _PhotoStory(mediaKey: story.mediaKey),
             ),
 
@@ -412,7 +454,15 @@ class _PhotoStory extends StatelessWidget {
 class _VideoStory extends StatefulWidget {
   final String mediaKey;
 
-  const _VideoStory({required this.mediaKey});
+  /// Invoked once the underlying video controller has finished
+  /// initializing, carrying the real media duration. The parent uses it to
+  /// recalibrate the story progress timer.
+  final ValueChanged<Duration>? onLoaded;
+
+  const _VideoStory({
+    required this.mediaKey,
+    this.onLoaded,
+  });
 
   @override
   State<_VideoStory> createState() => _VideoStoryState();
@@ -440,9 +490,16 @@ class _VideoStoryState extends State<_VideoStory> {
       await controller.play();
       if (!mounted) return;
       setState(() => _loaded = true);
+      // Report the real duration to the parent so the progress bar can be
+      // recalibrated. Read from the controller value for accuracy.
+      final dur = controller.value.duration;
+      if (dur > Duration.zero) {
+        widget.onLoaded?.call(dur);
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _failed = true);
+      // On error the parent keeps the 15s fallback — no callback fired.
     }
   }
 

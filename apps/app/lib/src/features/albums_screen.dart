@@ -674,7 +674,7 @@ class _ShareAlbumSheetState extends State<_ShareAlbumSheet> {
             ),
           ),
           const SizedBox(height: 16),
-          YellowPillButton(
+          PrimaryPillButton(
             label: l10n.compartirAlbum,
             onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
           ),

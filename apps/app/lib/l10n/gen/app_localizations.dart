@@ -3955,6 +3955,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'FOTOS'**
   String get fotosSectionHeader;
+
+  /// Create-story capture button label for taking a photo
+  ///
+  /// In es, this message translates to:
+  /// **'Foto'**
+  String get capturePhoto;
+
+  /// Create-story capture button label for recording a video
+  ///
+  /// In es, this message translates to:
+  /// **'Vídeo'**
+  String get captureVideo;
 }
 
 class _AppLocalizationsDelegate

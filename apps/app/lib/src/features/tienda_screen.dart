@@ -321,7 +321,7 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
           style: const TextStyle(color: Colors.white70, fontSize: 13),
         ),
         const SizedBox(height: 12),
-        YellowPillButton(
+        PrimaryPillButton(
           label: l10n.continuar,
           enabled: activeSub == null && !_purchasing,
           onPressed: _purchasing

@@ -157,13 +157,13 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
             children: [
               _CaptureButton(
                 icon: Icons.camera_alt,
-                label: loc.tapToView,
+                label: loc.capturePhoto,
                 onTap: () => _pickMedia(ImageSource.camera),
               ),
               const SizedBox(width: 32),
               _CaptureButton(
                 icon: Icons.videocam,
-                label: loc.tapToView,
+                label: loc.captureVideo,
                 onTap: () => _pickMedia(ImageSource.camera, video: true),
               ),
             ],

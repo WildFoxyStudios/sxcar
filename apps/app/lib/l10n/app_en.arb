@@ -1344,5 +1344,9 @@
   "tripLocalizacion": "Location",
   "tripLocalizacionRequerida": "Location required",
   "tripNotas": "Notes (optional)",
-  "fotosSectionHeader": "PHOTOS"
+  "fotosSectionHeader": "PHOTOS",
+  "capturePhoto": "Photo",
+  "@capturePhoto": { "description": "Create-story capture button label for taking a photo" },
+  "captureVideo": "Video",
+  "@captureVideo": { "description": "Create-story capture button label for recording a video" }
 }

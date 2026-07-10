@@ -35,14 +35,14 @@ Widget _wrap(Widget child) {
 }
 
 // ---------------------------------------------------------------------------
-// YellowPillButton
+// PrimaryPillButton
 // ---------------------------------------------------------------------------
 
 void main() {
-  group('YellowPillButton', () {
+  group('PrimaryPillButton', () {
     testWidgets('renders with correct label', (tester) async {
       await tester.pumpWidget(_wrap(
-        YellowPillButton(label: 'Continuar', onPressed: () {}),
+        PrimaryPillButton(label: 'Continuar', onPressed: () {}),
       ));
 
       expect(find.text('Continuar'), findsOneWidget);
@@ -50,7 +50,7 @@ void main() {
 
     testWidgets('fills available width (SizedBox.expand)', (tester) async {
       await tester.pumpWidget(_wrap(
-        YellowPillButton(label: 'OK', onPressed: () {}),
+        PrimaryPillButton(label: 'OK', onPressed: () {}),
       ));
 
       // SizedBox with width: double.infinity + bounded parent → fills row
@@ -61,7 +61,7 @@ void main() {
     testWidgets('calls onPressed when tapped', (tester) async {
       var pressed = false;
       await tester.pumpWidget(_wrap(
-        YellowPillButton(label: 'Tap me', onPressed: () => pressed = true),
+        PrimaryPillButton(label: 'Tap me', onPressed: () => pressed = true),
       ));
 
       await tester.tap(find.text('Tap me'));
@@ -73,7 +73,7 @@ void main() {
     testWidgets('does not call onPressed when disabled', (tester) async {
       var pressed = false;
       await tester.pumpWidget(_wrap(
-        YellowPillButton(
+        PrimaryPillButton(
           label: 'Disabled',
           onPressed: () => pressed = true,
           enabled: false,
@@ -88,7 +88,7 @@ void main() {
 
     testWidgets('applies reduced opacity when disabled', (tester) async {
       await tester.pumpWidget(_wrap(
-        YellowPillButton(
+        PrimaryPillButton(
           label: 'Disabled',
           onPressed: () {},
           enabled: false,

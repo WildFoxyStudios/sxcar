@@ -13,17 +13,18 @@
 //! Grant events  → upsert active subscription:
 //!   INITIAL_PURCHASE, RENEWAL, PRODUCT_CHANGE, UNCANCELLATION, NON_RENEWING_PURCHASE
 //!
-//! Revoke events → downgrade subscription:
-//!   CANCELLATION → status='cancelled' (access ends immediately in our model)
-//!   EXPIRATION   → status='expired'
+//! Revoke events → adjust subscription:
+//!   CANCELLATION → no-op for access (auto-renew turned off; the user has still
+//!                  paid through `expires_at`; RC will send EXPIRATION at period end)
+//!   EXPIRATION   → status='expired' (access genuinely ends now)
 //!
 //! Intentionally ignored (always 200 so RC stops retrying):
 //!   TEST, unknown user UUID, unmappable plan, any other event type.
 //!
 //! # Plan-code mapping
-//! The RC entitlement identifier must be `vibra_plus` or `unlimited`
-//! (configure these exactly in the RC dashboard). Fallback: product_id containing
-//! "plus" → vibra_plus, "unlimited" → unlimited.
+//! The RC entitlement identifier (or product_id) must EXACTLY equal `vibra_plus`
+//! or `unlimited` (configure these exactly in the RC dashboard). No substring
+//! matching — anything that doesn't match exactly is treated as unmappable.
 
 use axum::{
     extract::State,
@@ -36,7 +37,7 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::billing::subscriptions::{grant_revenuecat_subscription, revoke_revenuecat_subscription};
-use crate::premium::{clear_subscription_tier, set_subscription_tier};
+use crate::premium::resolve_subscription_tier;
 use crate::AppState;
 
 const GRANT_EVENTS: &[&str] = &[
@@ -69,21 +70,21 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 
 /// Map RC entitlement_ids / product_id to a known plan_code.
 ///
-/// Priority: exact match in entitlement_ids → product_id substring match.
+/// EXACT matching only — an entitlement id or the product_id must equal one of
+/// `KNOWN_PLAN_CODES` verbatim. We deliberately do NOT do substring matching:
+/// a product id merely *containing* "plus" (e.g. `some_plus_bundle`) must not be
+/// silently granted `vibra_plus`. If nothing matches exactly, return None so the
+/// caller treats the event as an unmappable plan and grants no tier.
 fn map_plan_code<'a>(entitlement_ids: &[String], product_id: &str) -> Option<&'a str> {
-    // 1. Exact entitlement match.
+    // 1. Exact entitlement id match.
     for eid in entitlement_ids {
-        if KNOWN_PLAN_CODES.contains(&eid.as_str()) {
-            return KNOWN_PLAN_CODES.iter().find(|&&c| c == eid.as_str()).copied();
+        if let Some(code) = KNOWN_PLAN_CODES.iter().find(|&&c| c == eid.as_str()) {
+            return Some(code);
         }
     }
-    // 2. product_id substring fallback.
-    let pid = product_id.to_ascii_lowercase();
-    if pid.contains("unlimited") {
-        return Some("unlimited");
-    }
-    if pid.contains("plus") || pid.contains("vibra_plus") {
-        return Some("vibra_plus");
+    // 2. Exact product_id match (some RC configs put the plan code in product_id).
+    if let Some(code) = KNOWN_PLAN_CODES.iter().find(|&&c| c == product_id) {
+        return Some(code);
     }
     None
 }
@@ -247,36 +248,41 @@ pub async fn revenuecat_webhook(
             )
                 .into_response();
         }
-        // Update subscription_tier on the users table.
-        if let Err(e) = set_subscription_tier(&state.pool, user_id, plan_code).await {
+        // Recompute users.subscription_tier from the user's active subscriptions.
+        // We do NOT write the event's plan tier directly — that would let a lower
+        // grant (e.g. vibra_plus) clobber an existing higher tier (unlimited), and
+        // would trust spoofed downgrade events. resolve_subscription_tier picks the
+        // best remaining active tier (now including the row just granted above).
+        if let Err(e) = resolve_subscription_tier(&state.pool, user_id).await {
             tracing::warn!(%user_id, plan_code, error = %e, "Failed to update subscription_tier");
         }
         tracing::info!(%user_id, plan_code, event_type, "RevenueCat: subscription granted");
     } else if REVOKE_EVENTS.contains(&event_type.as_str()) {
-        // CANCELLATION → 'cancelled' (access ends immediately; RC will send EXPIRATION later).
-        // EXPIRATION   → 'expired'.
-        let new_status = if event_type == "CANCELLATION" {
-            "cancelled"
+        // CANCELLATION means the user turned auto-renew OFF — they have still paid
+        // through `expires_at`, so we must NOT drop entitlement now. Treat it as a
+        // no-op for access; RC will send EXPIRATION at period end (or we downgrade
+        // lazily once expires_at passes). Only EXPIRATION actually ends access here.
+        if event_type == "CANCELLATION" {
+            tracing::info!(%user_id, plan_code, "RevenueCat: CANCELLATION (auto-renew off); keeping access until expiry");
         } else {
-            "expired"
-        };
-
-        if let Err(e) =
-            revoke_revenuecat_subscription(&state.pool, user_id, plan_code, new_status).await
-        {
-            tracing::error!(%user_id, plan_code, error = %e, "RevenueCat revoke DB error");
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "db_error"})),
-            )
-                .into_response();
+            // EXPIRATION → mark the active RC row expired; access genuinely ends now.
+            if let Err(e) =
+                revoke_revenuecat_subscription(&state.pool, user_id, plan_code, "expired").await
+            {
+                tracing::error!(%user_id, plan_code, error = %e, "RevenueCat revoke DB error");
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error": "db_error"})),
+                )
+                    .into_response();
+            }
+            // Recompute the tier from whatever active subscriptions remain (may keep
+            // a higher tier if the user still holds one; else falls back to free).
+            if let Err(e) = resolve_subscription_tier(&state.pool, user_id).await {
+                tracing::warn!(%user_id, error = %e, "Failed to resolve subscription_tier");
+            }
+            tracing::info!(%user_id, plan_code, event_type, "RevenueCat: subscription expired");
         }
-        // Reset subscription_tier back to free when all active subscriptions are gone.
-        // We check if any active subscription remains; if not, downgrade to free.
-        if let Err(e) = clear_subscription_tier(&state.pool, user_id).await {
-            tracing::warn!(%user_id, error = %e, "Failed to clear subscription_tier");
-        }
-        tracing::info!(%user_id, plan_code, event_type, new_status, "RevenueCat: subscription revoked");
     } else {
         // Unknown / unhandled event type — ack so RC doesn't retry forever.
         tracing::info!(event_type, "RevenueCat webhook: unhandled event type; ignoring");

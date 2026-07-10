@@ -78,13 +78,17 @@ pub async fn nearby(
         }
     };
 
+    // P2: clamp the client-supplied limit so a caller can't request an
+    // unbounded page size.
+    let limit = params.limit.clamp(1, 200);
+
     let users = db::geo::find_nearby_users(
         &state.pool,
         lon,
         lat,
         params.radius_m,
         current_user_id,
-        params.limit,
+        limit,
         params.min_age,
         params.max_age,
         params.tribe.as_deref(),

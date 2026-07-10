@@ -78,6 +78,12 @@ fn user_id_from_token(token: &str) -> uuid::Uuid {
         .unwrap_or(uuid::Uuid::nil())
 }
 
+/// Build a story media_key owned by the token's user, matching the
+/// `story/<user_id>/...` prefix the handler now enforces.
+fn story_key(token: &str, name: &str) -> String {
+    format!("story/{}/{}", user_id_from_token(token), name)
+}
+
 async fn post_auth(
     app: &axum::Router,
     uri: &str,
@@ -175,7 +181,7 @@ async fn create_story_returns_201() {
         "/stories",
         &token,
         serde_json::json!({
-            "media_key": "story/uuid/test.jpg",
+            "media_key": story_key(&token, "test.jpg"),
             "media_type": "photo",
         }),
     )
@@ -194,7 +200,7 @@ async fn create_story_with_caption() {
         "/stories",
         &token,
         serde_json::json!({
-            "media_key": "story/uuid/test.jpg",
+            "media_key": story_key(&token, "test.jpg"),
             "media_type": "photo",
             "caption": "Hello stories!",
         }),
@@ -214,7 +220,7 @@ async fn create_story_rejects_invalid_media_type() {
         "/stories",
         &token,
         serde_json::json!({
-            "media_key": "story/uuid/test.jpg",
+            "media_key": story_key(&token, "test.jpg"),
             "media_type": "document",
         }),
     )
@@ -252,7 +258,7 @@ async fn list_stories_returns_only_active() {
         "/stories",
         &token,
         serde_json::json!({
-            "media_key": "story/uuid/active.jpg",
+            "media_key": story_key(&token, "active.jpg"),
             "media_type": "photo",
         }),
     )
@@ -296,7 +302,7 @@ async fn delete_own_story_returns_204() {
         "/stories",
         &token,
         serde_json::json!({
-            "media_key": "story/uuid/to-delete.jpg",
+            "media_key": story_key(&token, "to-delete.jpg"),
             "media_type": "photo",
         }),
     )
@@ -328,7 +334,7 @@ async fn delete_other_users_story_returns_404() {
         "/stories",
         &token1,
         serde_json::json!({
-            "media_key": "story/uuid/other.jpg",
+            "media_key": story_key(&token1, "other.jpg"),
             "media_type": "photo",
         }),
     )
@@ -352,7 +358,7 @@ async fn view_story_returns_200() {
         "/stories",
         &token1,
         serde_json::json!({
-            "media_key": "story/uuid/view-test.jpg",
+            "media_key": story_key(&token1, "view-test.jpg"),
             "media_type": "photo",
         }),
     )
@@ -380,7 +386,7 @@ async fn view_story_viewing_own_returns_200_noop() {
         "/stories",
         &token,
         serde_json::json!({
-            "media_key": "story/uuid/own-view.jpg",
+            "media_key": story_key(&token, "own-view.jpg"),
             "media_type": "photo",
         }),
     )
@@ -478,7 +484,7 @@ async fn grouped_response_includes_own_stories() {
         "/stories",
         &token,
         serde_json::json!({
-            "media_key": "story/uuid/group-test.jpg",
+            "media_key": story_key(&token, "group-test.jpg"),
             "media_type": "photo",
         }),
     )

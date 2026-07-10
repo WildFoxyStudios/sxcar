@@ -19,6 +19,9 @@ pub async fn upsert_location(pool: &Pool, user_id: uuid::Uuid, lon: f64, lat: f6
 #[derive(Debug, FromRow, serde::Serialize)]
 pub struct NearbyUserRow {
     pub id: uuid::Uuid,
+    // Kept in the struct/SELECT so sqlx FromRow still maps the column, but never
+    // serialized to clients (P0-1: userbase email leak in grid + discover).
+    #[serde(skip_serializing)]
     pub email: String,
     pub display_name: Option<String>,
     pub bio: Option<String>,

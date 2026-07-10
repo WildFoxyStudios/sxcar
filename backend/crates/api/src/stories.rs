@@ -83,6 +83,17 @@ pub async fn create_story(
         return Err(StatusCode::BAD_REQUEST);
     }
 
+    // SECURITY (P1): `media_key` is stored verbatim and later handed to
+    // `get_url` (kind=story) for presigning. Story upload keys are minted by
+    // `POST /media/upload-url` (kind=story) as `story/<owner-user-id>/<uuid>.<ext>`.
+    // Require the caller's id in the owner position so an attacker can't publish
+    // a story that points at another user's / arbitrary R2 object. Also reject
+    // path traversal.
+    let owned_prefix = format!("story/{user_id}/");
+    if req.media_key.contains("..") || !req.media_key.starts_with(&owned_prefix) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
     let id = db::stories::create_story(
         &state.pool,
         user_id,

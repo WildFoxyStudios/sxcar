@@ -258,6 +258,18 @@ pub async fn consume_auth_code(
     Ok(res.rows_affected() == 1)
 }
 
+/// Devuelve el `status` de un usuario (active, banned, suspended, deleted,
+/// shadowbanned) o `None` si el usuario no existe. Consulta ligera usada en el
+/// hot path de auth (extractor / refresh / oauth) para bloquear cuentas no
+/// activas. Usa `query_scalar` runtime (no macro) intencionalmente.
+pub async fn user_status(pool: &Pool, id: uuid::Uuid) -> anyhow::Result<Option<String>> {
+    let s = sqlx::query_scalar::<_, String>("SELECT status FROM users WHERE id = $1")
+        .bind(id)
+        .fetch_optional(pool)
+        .await?;
+    Ok(s)
+}
+
 pub async fn password_hash_for(pool: &Pool, id: uuid::Uuid) -> anyhow::Result<Option<String>> {
     let h = sqlx::query_scalar!("SELECT password_hash FROM users WHERE id = $1", id)
         .fetch_optional(pool)
@@ -534,6 +546,14 @@ pub async fn anonymize_user(pool: &Pool, user_id: uuid::Uuid) -> anyhow::Result<
     )
     .execute(pool)
     .await?;
+
+    // P0-3: elimina las identidades OAuth para que el `sub` de Google/Apple ya
+    // no pueda resolver esta cuenta muerta (evita "resurrección" vía OAuth login).
+    // Runtime query (no macro) intencionalmente.
+    sqlx::query("DELETE FROM auth_identities WHERE user_id = $1")
+        .bind(user_id)
+        .execute(pool)
+        .await?;
 
     Ok(deletion_date)
 }

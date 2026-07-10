@@ -9,7 +9,8 @@
 //! - `GET /me/premium` — returns current tier + resolved feature flags
 //!
 //! The tier is stored in `users.subscription_tier`. RevenueCat webhook events
-//! update it via [`set_subscription_tier`] / [`clear_subscription_tier`].
+//! update it via [`resolve_subscription_tier`], which recomputes the tier from the
+//! user's currently-active subscriptions (never trusting a single event's plan).
 
 use axum::{extract::State, Json};
 use serde::Serialize;
@@ -105,35 +106,20 @@ pub struct PremiumStatus {
 
 // ─── Helpers (used by webhook handler) ────────────────────────────────────────
 
-/// Set (or upgrade) a user's subscription tier.
+/// Resolve and persist a user's subscription tier from their active subscriptions.
 ///
-/// Called by the RevenueCat webhook on grant events.
-/// Maps `plan_code` → tier: `vibra_plus` → `xtra`, `unlimited` → `unlimited`.
-pub async fn set_subscription_tier(
-    pool: &sqlx::PgPool,
-    user_id: Uuid,
-    plan_code: &str,
-) -> Result<(), sqlx::Error> {
-    let tier = match plan_code {
-        "vibra_plus" => "xtra",
-        "unlimited" => "unlimited",
-        _ => "free",
-    };
-    sqlx::query("UPDATE users SET subscription_tier = $1 WHERE id = $2")
-        .bind(tier)
-        .bind(user_id)
-        .execute(pool)
-        .await?;
-    Ok(())
-}
-
-/// Resolve the best tier from remaining active subscriptions.
+/// Called by the RevenueCat webhook on BOTH grant and revoke events. This is the
+/// single source of truth for `users.subscription_tier`: it never trusts the tier
+/// implied by an individual event's plan_code (which would allow a lower-tier grant
+/// to clobber/downgrade an existing higher tier, or a spoofed event to downgrade).
 ///
-/// Called by the RevenueCat webhook on cancellation/expiration.
-/// If the user still has an active subscription (e.g. `unlimited` when
-/// `vibra_plus` was revoked), the tier is set to the highest remaining.
-/// Falls back to `free` when no active subscriptions remain.
-pub async fn clear_subscription_tier(
+/// Instead it selects the BEST currently-active, non-expired subscription for the
+/// user (priority: `unlimited` > `vibra_plus` > free) and writes the corresponding
+/// tier. Falls back to `free` when no active subscriptions remain.
+///
+/// Callers must have already upserted/expired the relevant `subscriptions` row for
+/// the current event before invoking this, so the query sees up-to-date state.
+pub async fn resolve_subscription_tier(
     pool: &sqlx::PgPool,
     user_id: Uuid,
 ) -> Result<(), sqlx::Error> {
@@ -246,13 +232,12 @@ mod tests {
     }
 
     #[test]
-    fn set_subscription_tier_maps_correctly() {
-        // Just test the mapping logic (no pool).
-        // set_subscription_tier is tested via integration tests.
-        assert_eq!(
-            features_for_tier("xtra").read_receipts,
-            features_for_tier("vibra_plus") // same map used in set_subscription_tier
-                .read_receipts
-        );
+    fn resolve_subscription_tier_maps_correctly() {
+        // Tier resolution (resolve_subscription_tier) maps plan_code → tier the same
+        // way features_for_tier does. vibra_plus is an unknown *feature* key, so it
+        // resolves to free defaults; the DB query maps it to "xtra" before this point.
+        // This just asserts the feature map is stable for the known tiers.
+        assert!(features_for_tier("xtra").read_receipts);
+        assert!(!features_for_tier("free").read_receipts);
     }
 }

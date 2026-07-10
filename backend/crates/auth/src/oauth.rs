@@ -143,10 +143,21 @@ async fn verify_google_token(token: &str, client_id: &str) -> Result<OAuthIdenti
     let sub = payload["sub"]
         .as_str()
         .ok_or(AuthError::OAuth("no sub".into()))?;
-    // Skip aud check — Firebase Auth Google Sign-In uses auto-generated
-    // OAuth clients whose IDs differ from our configured OAUTH_GOOGLE_CLIENT_ID.
-    // Google's tokeninfo endpoint already validates the token is genuine.
-    let _ = client_id;
+    // P0-2: valida el `aud` del token contra el/los client_id configurados.
+    // tokeninfo confirma que el token es genuino de Google, pero SIN comprobar
+    // `aud` cualquier id_token de Google (emitido para OTRA app) sería aceptado.
+    // `client_id` puede contener una allow-list separada por comas para soportar
+    // los OAuth clients auto-generados de Firebase (Android/iOS/web).
+    let aud = payload["aud"]
+        .as_str()
+        .ok_or(AuthError::OAuth("no aud".into()))?;
+    let allowed = client_id
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    if !allowed.clone().any(|c| c == aud) {
+        return Err(AuthError::OAuth("aud mismatch".into()));
+    }
     Ok(OAuthIdentity {
         provider_uid: sub.into(),
         email: Some(email.into()),

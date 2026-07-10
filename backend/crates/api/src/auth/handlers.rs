@@ -96,6 +96,11 @@ pub async fn login(
     {
         return Err(StatusCode::UNAUTHORIZED);
     }
+    // P0-1: rechaza cuentas no activas (banned/suspended/deleted/shadowbanned).
+    // `status == "deleted"` cubre el soft-delete (deleted_at IS NOT NULL).
+    if user.status != "active" {
+        return Err(StatusCode::FORBIDDEN);
+    }
     let pair = issue_pair(&state, user.id).await?;
     Ok(Json(pair))
 }
@@ -111,6 +116,15 @@ pub async fn refresh(
         .ok_or(StatusCode::UNAUTHORIZED)?;
     if row.revoked || row.expired {
         return Err(StatusCode::UNAUTHORIZED);
+    }
+    // P0-1: valida que la cuenta siga activa antes de rotar/emitir tokens.
+    // Un usuario baneado/suspendido/borrado no debe poder refrescar su sesión.
+    let status = db::users::user_status(&state.pool, row.user_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::UNAUTHORIZED)?;
+    if status != "active" {
+        return Err(StatusCode::FORBIDDEN);
     }
     // rotación: revoca el viejo, emite par nuevo
     db::users::revoke_refresh_token(&state.pool, &th)
@@ -328,7 +342,19 @@ pub async fn oauth(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     {
-        Some(uid) => uid,
+        Some(uid) => {
+            // P0-3: una identidad OAuth existente puede apuntar a una cuenta
+            // baneada/suspendida/borrada. Rechaza si no está activa para que no
+            // se pueda "resucitar" una cuenta muerta vía OAuth.
+            let status = db::users::user_status(&state.pool, uid)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+                .ok_or(StatusCode::UNAUTHORIZED)?;
+            if status != "active" {
+                return Err(StatusCode::FORBIDDEN);
+            }
+            uid
+        }
         None => {
             // email del proveedor (o sintético) — único
             let email = id

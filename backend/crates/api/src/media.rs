@@ -20,6 +20,13 @@ pub mod renditions;
 
 type HmacSha256 = Hmac<Sha256>;
 
+/// Presign lifetime for PRIVATE media (album, verification): 1 hour. Short so a
+/// leaked URL is only briefly usable. Public profile/story photos keep a longer
+/// TTL because their URLs are handed out widely and cached by clients.
+const PRIVATE_PRESIGN_EXPIRY: u32 = 3600;
+/// Presign lifetime for public media (profile/story) served via `get_url`.
+const PUBLIC_PRESIGN_EXPIRY: u32 = 3600;
+
 /// Config de R2 leída del entorno. `None` si faltan credenciales.
 #[derive(Clone)]
 pub struct R2Config {
@@ -226,6 +233,17 @@ pub async fn create_photo(
         _ => return Err(StatusCode::BAD_REQUEST),
     };
 
+    // SECURITY (P0-2): the caller supplies `r2_key` and we presign a GET/PUT on
+    // it below. Without an ownership check, an attacker could pass any user's
+    // key (`profile/<victim>/...`, `album/<victim>/...`, `verification/<victim>/...`)
+    // and have us fetch it / write a `.blur.jpg` sibling next to it. All keys
+    // created via `upload_url` are `<kind>/<owner-user-id>/<uuid>.<ext>`, so
+    // require the caller's id in the owner position. Also reject path traversal.
+    let owned_prefix = format!("{kind}/{user_id}/");
+    if req.r2_key.contains("..") || !req.r2_key.starts_with(&owned_prefix) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
     let now = OffsetDateTime::now_utc();
 
     // 1. Download original from R2 via presigned GET URL
@@ -401,7 +419,7 @@ pub struct GetUrlRes {
 /// R2 credentials are absent.
 pub async fn get_url(
     State(state): State<AppState>,
-    _user: AuthUser,
+    AuthUser(user_id): AuthUser,
     Query(q): Query<GetUrlQuery>,
 ) -> Result<Json<GetUrlRes>, StatusCode> {
     // Validate the request before requiring R2 config, so bad input is 400
@@ -412,6 +430,134 @@ pub async fn get_url(
     if q.key.is_empty() || q.key.contains("..") {
         return Err(StatusCode::BAD_REQUEST);
     }
+    // Require R2 config up front so environments without credentials (dev/CI)
+    // return 503 before we spend a DB round-trip on the access check.
+    if state.r2.is_none() {
+        return Err(StatusCode::SERVICE_UNAVAILABLE);
+    }
+
+    // SECURITY (P0-1): `get_url` presigns a GET for an arbitrary caller-supplied
+    // key. Without an access check any authenticated user could read ANY object
+    // (private albums, ID-verification documents, other users' media). Keys are
+    // structured `<kind>/<owner-user-id>/<uuid>.<ext>` and are NOT secret, so
+    // we must authorize per kind:
+    //
+    //   * verification → OWNER-ONLY. Sensitive ID docs; nobody else may read
+    //     them. Gate by key prefix `verification/<caller>/`.
+    //   * profile      → PUBLIC-BY-DESIGN but must be a real photo. Clients call
+    //     this with other users' avatar keys (grid, story author avatars), so a
+    //     prefix match would break it. Gate by DB: the key must exist in
+    //     `photos.r2_key`.
+    //   * album        → PRIVATE. Allowed if the caller OWNS the photo, or the
+    //     photo is in an album shared (non-revoked, non-expired) with the
+    //     caller. Gate by DB lookup over photos/album_photos/album_shares.
+    //   * story        → semi-public to connected users. The key must exist in
+    //     `stories.media_key` AND belong to the caller or a connected user
+    //     (same visibility rule as the stories feed). Gate by DB.
+    // Run the per-kind access check. The check touches only `state.pool`, so it
+    // does not borrow the R2 config; `expiry` is the presign TTL for this kind.
+    let expiry: u32 = match q.kind.as_str() {
+        "verification" => {
+            // OWNER-ONLY: sensitive ID docs. Prefix-gate to the caller's path.
+            let owned_prefix = format!("verification/{user_id}/");
+            if !q.key.starts_with(&owned_prefix) {
+                return Err(StatusCode::FORBIDDEN);
+            }
+            PRIVATE_PRESIGN_EXPIRY
+        }
+        "profile" => {
+            // Profile photos are public; only require the key to be a genuine
+            // photo we minted (prevents presigning arbitrary objects in the
+            // public bucket that were never real profile photos).
+            let exists: bool = sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM photos WHERE r2_key = $1)",
+            )
+            .bind(&q.key)
+            .fetch_one(&state.pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("get_url profile lookup failed: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+            if !exists {
+                return Err(StatusCode::FORBIDDEN);
+            }
+            PUBLIC_PRESIGN_EXPIRY
+        }
+        "album" => {
+            // Owner OR shared-with-caller (non-revoked, non-expired share).
+            let allowed: bool = sqlx::query_scalar::<_, bool>(
+                r#"SELECT EXISTS(
+                       SELECT 1 FROM photos p
+                       WHERE p.r2_key = $1
+                         AND (
+                             p.user_id = $2
+                             OR EXISTS(
+                                 SELECT 1
+                                 FROM album_photos ap
+                                 JOIN album_shares s ON s.album_id = ap.album_id
+                                 WHERE ap.photo_id = p.id
+                                   AND s.shared_with_user_id = $2
+                                   AND s.revoked_at IS NULL
+                                   AND (s.expires_at IS NULL OR s.expires_at > now())
+                             )
+                         )
+                   )"#,
+            )
+            .bind(&q.key)
+            .bind(user_id)
+            .fetch_one(&state.pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("get_url album access lookup failed: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+            if !allowed {
+                return Err(StatusCode::FORBIDDEN);
+            }
+            PRIVATE_PRESIGN_EXPIRY
+        }
+        // "story"
+        _ => {
+            // The key must belong to a real story owned by the caller or by a
+            // user connected to the caller (shares a conversation, not blocked).
+            let allowed: bool = sqlx::query_scalar::<_, bool>(
+                r#"SELECT EXISTS(
+                       SELECT 1 FROM stories st
+                       WHERE st.media_key = $1
+                         AND (
+                             st.user_id = $2
+                             OR st.user_id IN (
+                                 SELECT DISTINCT cm2.user_id
+                                 FROM conversation_members cm1
+                                 JOIN conversation_members cm2
+                                   ON cm2.conversation_id = cm1.conversation_id
+                                 WHERE cm1.user_id = $2
+                                   AND cm2.user_id != $2
+                                   AND cm2.user_id NOT IN (
+                                       SELECT target_id FROM blocks WHERE user_id = $2
+                                       UNION
+                                       SELECT user_id FROM blocks WHERE target_id = $2
+                                   )
+                             )
+                         )
+                   )"#,
+            )
+            .bind(&q.key)
+            .bind(user_id)
+            .fetch_one(&state.pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("get_url story access lookup failed: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+            if !allowed {
+                return Err(StatusCode::FORBIDDEN);
+            }
+            PUBLIC_PRESIGN_EXPIRY
+        }
+    };
+
     let cfg = state.r2.as_ref().ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
     let bucket = match q.kind.as_str() {
         "profile" => &cfg.bucket_media,
@@ -420,7 +566,7 @@ pub async fn get_url(
         _ => &cfg.bucket_verification,
     };
     let now = OffsetDateTime::now_utc();
-    let url = presign(cfg, "GET", bucket, &q.key, 3600, now);
+    let url = presign(cfg, "GET", bucket, &q.key, expiry, now);
     Ok(Json(GetUrlRes { get_url: url }))
 }
 

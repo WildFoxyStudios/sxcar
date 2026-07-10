@@ -59,6 +59,10 @@ pub async fn list(
         }
     };
 
+    // P2: clamp the client-supplied limit so a caller can't request an
+    // unbounded page size.
+    let limit = params.limit.clamp(1, 200);
+
     let rows = sqlx::query_as::<_, db::geo::NearbyUserRow>(
         r#"
         SELECT u.id, u.email::text AS email,
@@ -87,7 +91,7 @@ pub async fn list(
     .bind(lat)
     .bind(params.radius_m)
     .bind(current_user_id)
-    .bind(params.limit)
+    .bind(limit)
     .fetch_all(&state.pool)
     .await
     .map_err(|e| {

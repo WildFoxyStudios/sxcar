@@ -38,6 +38,17 @@ impl FromRequestParts<AppState> for AuthUser {
             .sub
             .parse::<uuid::Uuid>()
             .map_err(|_| StatusCode::UNAUTHORIZED)?;
+        // P0-1: este extractor corre en cada request autenticada. Un access token
+        // puede seguir siendo válido criptográficamente aunque la cuenta haya sido
+        // baneada/suspendida/borrada tras la emisión. Verifica el status con una
+        // consulta barata (runtime) y rechaza si no está activa.
+        let status = db::users::user_status(&state.pool, id)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+            .ok_or(StatusCode::UNAUTHORIZED)?;
+        if status != "active" {
+            return Err(StatusCode::FORBIDDEN);
+        }
         Ok(AuthUser(id))
     }
 }

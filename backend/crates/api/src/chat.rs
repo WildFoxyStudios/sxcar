@@ -52,9 +52,51 @@ async fn handle_socket(socket: WebSocket, state: AppState, user_id: Uuid) {
     // Subscribe to broadcast channel
     let mut rx = state.chat_broker.subscribe().await;
 
-    // Spawn a task to forward broadcast messages to this client
+    // Clone what the send_task needs so we don't split-move `state`.
+    let send_pool = state.pool.clone();
+
+    // Spawn a task to forward broadcast messages to this client. The broker
+    // publishes ALL frames to a single global channel, so we MUST filter per
+    // connection: only forward a frame if THIS user is a member of the frame's
+    // conversation. Fail CLOSED — drop any frame without a parseable
+    // `conversation_id` so cross-conversation data can never leak.
     let send_task = tokio::spawn(async move {
+        // Per-connection membership cache: conversation_id -> is member?
+        let mut member_cache: std::collections::HashMap<Uuid, bool> =
+            std::collections::HashMap::new();
+
         while let Some(msg) = rx.next().await {
+            // Parse the frame and extract its conversation_id. Fail closed:
+            // any frame we can't attribute to a conversation is dropped.
+            let conv_id = serde_json::from_str::<serde_json::Value>(&msg)
+                .ok()
+                .and_then(|v| {
+                    v.get("conversation_id")
+                        .and_then(|c| c.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                });
+
+            let conv_id = match conv_id {
+                Some(id) => id,
+                None => continue, // no/invalid conversation_id → drop
+            };
+
+            // Membership lookup with per-connection caching.
+            let is_member = match member_cache.get(&conv_id) {
+                Some(&m) => m,
+                None => {
+                    let m = db::chat::is_member(&send_pool, conv_id, user_id)
+                        .await
+                        .unwrap_or(false);
+                    member_cache.insert(conv_id, m);
+                    m
+                }
+            };
+
+            if !is_member {
+                continue; // not a member of this conversation → drop
+            }
+
             if sender.send(Message::Text(msg)).await.is_err() {
                 break;
             }
@@ -110,6 +152,11 @@ async fn handle_incoming(
             text,
         } => {
             let conversation_id: Uuid = conversation_id.parse()?;
+            // Membership check — never insert/broadcast for a conversation the
+            // sender doesn't belong to.
+            if !db::chat::is_member(&state.pool, conversation_id, sender_id).await? {
+                return Ok(());
+            }
             let row = db::chat::insert_message(
                 &state.pool,
                 conversation_id,
@@ -145,6 +192,11 @@ async fn handle_incoming(
             let _ = state.chat_broker.publish("chat", &payload);
         }
         IncomingMessage::Typing { conversation_id } => {
+            // Don't broadcast typing for a conversation the sender isn't in.
+            let conv_uuid: Uuid = conversation_id.parse()?;
+            if !db::chat::is_member(&state.pool, conv_uuid, sender_id).await? {
+                return Ok(());
+            }
             let typing = serde_json::json!({
                 "type": "typing",
                 "conversation_id": conversation_id,
@@ -281,6 +333,15 @@ pub async fn create_conversation(
         return Err(StatusCode::BAD_REQUEST);
     }
 
+    // Block enforcement: refuse to open a conversation if either party has
+    // blocked the other. `is_blocked` is symmetric.
+    if db::social::is_blocked(&state.pool, user_id, req.participant_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
     let conversation_id = db::chat::create_conversation(&state.pool, user_id, req.participant_id)
         .await
         .map_err(|e| {
@@ -361,6 +422,33 @@ pub async fn send_message(
 
     if !is_member {
         return Err(StatusCode::FORBIDDEN);
+    }
+
+    // Block enforcement for 1:1 conversations: if the other party has blocked
+    // the sender (or vice-versa), refuse the message. Groups (is_group=true)
+    // are exempt from this pairwise check. Runtime query (fail closed on error).
+    let other_id: Option<Uuid> = sqlx::query_scalar(
+        r#"SELECT cm.user_id
+           FROM conversation_members cm
+           JOIN conversations c ON c.id = cm.conversation_id
+           WHERE cm.conversation_id = $1
+             AND cm.user_id <> $2
+             AND c.is_group = false
+           LIMIT 1"#,
+    )
+    .bind(conversation_id)
+    .bind(user_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    if let Some(other) = other_id {
+        if db::social::is_blocked(&state.pool, user_id, other)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        {
+            return Err(StatusCode::FORBIDDEN);
+        }
     }
 
     let kind = match classify_kind(&req) {
@@ -709,9 +797,11 @@ pub async fn put_reaction(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    // Broadcast reaction event over WebSocket
+    // Broadcast reaction event over WebSocket. Include conversation_id so the
+    // per-connection recipient filter can route it (frames without it are dropped).
     let payload = serde_json::json!({
         "type": "reaction",
+        "conversation_id": conv_id.to_string(),
         "message_id": message_id.to_string(),
         "user_id": user_id.to_string(),
         "emoji": emoji,
@@ -756,9 +846,11 @@ pub async fn delete_reaction(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    // Broadcast reaction-removed event over WebSocket (emoji = null means removed)
+    // Broadcast reaction-removed event over WebSocket (emoji = null means removed).
+    // Include conversation_id so the per-connection recipient filter can route it.
     let payload = serde_json::json!({
         "type": "reaction",
+        "conversation_id": conv_id.to_string(),
         "message_id": message_id.to_string(),
         "user_id": user_id.to_string(),
         "emoji": serde_json::Value::Null,

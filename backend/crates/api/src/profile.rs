@@ -89,6 +89,10 @@ fn user_full_to_json(
 
     if apply_privacy_filter {
         let obj = user.as_object_mut().unwrap();
+        // P0-2: the public path must never expose the owner's email or
+        // verification state — those are owner-only fields.
+        obj.remove("email");
+        obj.remove("email_verified");
         // show_age (pre-existente desde migración 0003, no estaba cableado
         // todavía — se enchufa aquí junto con las nuevas flags T4.2):
         if !u.show_age { obj.remove("birthdate"); }
@@ -97,6 +101,15 @@ fn user_full_to_json(
         if !u.show_position { obj.remove("position"); }
         if !u.show_ethnicity { obj.remove("ethnicity"); }
         if !u.show_relationship_status { obj.remove("relationship_status"); }
+        // P0-2: `details` holds many public keys (position, height_cm, trips,
+        // vaccines, practices, …) PLUS a `social` sub-object with social links.
+        // Only the `social` sub-key is gated by show_social_links, so strip
+        // just that key rather than the whole `details` blob.
+        if !u.show_social_links {
+            if let Some(details) = obj.get_mut("details").and_then(|d| d.as_object_mut()) {
+                details.remove("social");
+            }
+        }
     }
 
     user
@@ -403,10 +416,24 @@ pub async fn update_own(
 ///
 /// GET /profile/:id
 pub async fn get_by_id(
-    AuthUser(_current_user_id): AuthUser,
+    AuthUser(current_user_id): AuthUser,
     State(state): State<AppState>,
     Path(user_id): Path<uuid::Uuid>,
 ) -> Result<Json<Value>, StatusCode> {
+    // P0-4: unlike grid/discover, this handler never checked blocks. A user who
+    // blocked (or was blocked by) the target could still read their full
+    // profile. `is_blocked` checks both directions in a single query — treat a
+    // block in either direction as "not found" so no existence is leaked.
+    if db::social::is_blocked(&state.pool, current_user_id, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("is_blocked error: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+    {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
     let user = db::users::find_user_full(&state.pool, user_id)
         .await
         .map_err(|e| {

@@ -3967,6 +3967,162 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Vídeo'**
   String get captureVideo;
+
+  /// Register screen confirm-password field label
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma tu contraseña'**
+  String get registerConfirmPassword;
+
+  /// Register screen validator error when confirm password differs
+  ///
+  /// In es, this message translates to:
+  /// **'Las contraseñas no coinciden'**
+  String get registerPasswordMismatch;
+
+  /// Edit profile discard-unsaved-changes dialog title
+  ///
+  /// In es, this message translates to:
+  /// **'¿Descartar cambios?'**
+  String get discardChangesTitle;
+
+  /// Edit profile discard-unsaved-changes dialog body
+  ///
+  /// In es, this message translates to:
+  /// **'Tienes cambios sin guardar. ¿Seguro que quieres salir?'**
+  String get discardChangesBody;
+
+  /// Edit profile discard-unsaved-changes dialog confirm button
+  ///
+  /// In es, this message translates to:
+  /// **'Descartar'**
+  String get discardVerb;
+
+  /// Chat list empty state when there are no conversations
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay conversaciones'**
+  String get noConversationsYet;
+
+  /// Tienda feature list subtitle for unlimited_chats
+  ///
+  /// In es, this message translates to:
+  /// **'Match sin espera'**
+  String get tiendaFeatureUnlimitedChatsSubtitle;
+
+  /// Tienda feature list title for no_ads
+  ///
+  /// In es, this message translates to:
+  /// **'Sin anuncios'**
+  String get tiendaFeatureNoAdsTitle;
+
+  /// Tienda feature list subtitle for no_ads
+  ///
+  /// In es, this message translates to:
+  /// **'Interfaz limpia'**
+  String get tiendaFeatureNoAdsSubtitle;
+
+  /// Tienda feature list subtitle for see_who_viewed
+  ///
+  /// In es, this message translates to:
+  /// **'Lista completa'**
+  String get tiendaFeatureSeeWhoViewedSubtitle;
+
+  /// Tienda feature list subtitle for incognito_mode
+  ///
+  /// In es, this message translates to:
+  /// **'Navega sin aparecer'**
+  String get tiendaFeatureIncognitoSubtitle;
+
+  /// Tienda feature list title for boost_discount
+  ///
+  /// In es, this message translates to:
+  /// **'Boost descuento'**
+  String get tiendaFeatureBoostDiscountTitle;
+
+  /// Tienda feature list subtitle for boost_discount
+  ///
+  /// In es, this message translates to:
+  /// **'Más visibilidad por menos'**
+  String get tiendaFeatureBoostDiscountSubtitle;
+
+  /// Tienda feature list subtitle for unlimited_profiles
+  ///
+  /// In es, this message translates to:
+  /// **'Sin restricciones'**
+  String get tiendaFeatureUnlimitedProfilesSubtitle;
+
+  /// Tienda screen empty state when no tiered plans are returned
+  ///
+  /// In es, this message translates to:
+  /// **'No hay planes disponibles'**
+  String get tiendaNoPlansAvailable;
+
+  /// Tienda screen error state message when plans fail to load
+  ///
+  /// In es, this message translates to:
+  /// **'Error cargando planes'**
+  String get tiendaLoadError;
+
+  /// Tienda screen empty state when a plan has no prices
+  ///
+  /// In es, this message translates to:
+  /// **'Sin precios disponibles'**
+  String get tiendaNoPricesAvailable;
+
+  /// Tienda screen retry button on error/empty states
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get tiendaRetry;
+
+  /// Tienda screen snackbar when the user cancels the RC purchase flow
+  ///
+  /// In es, this message translates to:
+  /// **'Compra cancelada'**
+  String get tiendaPurchaseCancelled;
+
+  /// Tienda screen generic purchase error snackbar
+  ///
+  /// In es, this message translates to:
+  /// **'Error: {error}'**
+  String tiendaPurchaseError(String error);
+
+  /// Albums screen error state message when album list fails to load
+  ///
+  /// In es, this message translates to:
+  /// **'Error al cargar álbumes: {error}'**
+  String albumsLoadError(String error);
+
+  /// Events create sheet snackbar when GPS location is unavailable
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación no disponible. Activa el acceso a la ubicación e inténtalo de nuevo.'**
+  String get eventsLocationUnavailable;
+
+  /// Shop screen retry button on error state
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get shopRetry;
+
+  /// Shop product card badge label for boost-type products
+  ///
+  /// In es, this message translates to:
+  /// **'BOOST'**
+  String get shopBadgeBoost;
+
+  /// Shop product card badge label for highlight-type products
+  ///
+  /// In es, this message translates to:
+  /// **'HIGHLIGHT'**
+  String get shopBadgeHighlight;
+
+  /// Shop product card badge label for tribe-slot products
+  ///
+  /// In es, this message translates to:
+  /// **'TRIBE'**
+  String get shopBadgeTribe;
 }
 
 class _AppLocalizationsDelegate

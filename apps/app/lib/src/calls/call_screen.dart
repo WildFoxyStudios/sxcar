@@ -190,7 +190,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   /// Incoming call screen with Accept / Reject.
   Widget _buildIncomingScreen(AppLocalizations? l10n) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: VibraTheme.kBg,
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -214,7 +214,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             Text(
               widget.incomingCall?.callerName ?? 'Caller',
               style: const TextStyle(
-                color: Colors.white,
+                color: VibraTheme.kText,
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
               ),
@@ -395,7 +395,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   /// Call ended screen shown briefly before popping.
   Widget _buildEndedScreen(AppLocalizations? l10n) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: VibraTheme.kBg,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

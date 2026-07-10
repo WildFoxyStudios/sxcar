@@ -1743,5 +1743,71 @@
   "capturePhoto": "Foto",
   "@capturePhoto": { "description": "Create-story capture button label for taking a photo" },
   "captureVideo": "Vídeo",
-  "@captureVideo": { "description": "Create-story capture button label for recording a video" }
+  "@captureVideo": { "description": "Create-story capture button label for recording a video" },
+  "registerConfirmPassword": "Confirma tu contraseña",
+  "@registerConfirmPassword": { "description": "Register screen confirm-password field label" },
+  "registerPasswordMismatch": "Las contraseñas no coinciden",
+  "@registerPasswordMismatch": { "description": "Register screen validator error when confirm password differs" },
+  "discardChangesTitle": "¿Descartar cambios?",
+  "@discardChangesTitle": { "description": "Edit profile discard-unsaved-changes dialog title" },
+  "discardChangesBody": "Tienes cambios sin guardar. ¿Seguro que quieres salir?",
+  "@discardChangesBody": { "description": "Edit profile discard-unsaved-changes dialog body" },
+  "discardVerb": "Descartar",
+  "@discardVerb": { "description": "Edit profile discard-unsaved-changes dialog confirm button" },
+  "noConversationsYet": "Aún no hay conversaciones",
+  "@noConversationsYet": { "description": "Chat list empty state when there are no conversations" },
+
+  "tiendaFeatureUnlimitedChatsSubtitle": "Match sin espera",
+  "@tiendaFeatureUnlimitedChatsSubtitle": { "description": "Tienda feature list subtitle for unlimited_chats" },
+  "tiendaFeatureNoAdsTitle": "Sin anuncios",
+  "@tiendaFeatureNoAdsTitle": { "description": "Tienda feature list title for no_ads" },
+  "tiendaFeatureNoAdsSubtitle": "Interfaz limpia",
+  "@tiendaFeatureNoAdsSubtitle": { "description": "Tienda feature list subtitle for no_ads" },
+  "tiendaFeatureSeeWhoViewedSubtitle": "Lista completa",
+  "@tiendaFeatureSeeWhoViewedSubtitle": { "description": "Tienda feature list subtitle for see_who_viewed" },
+  "tiendaFeatureIncognitoSubtitle": "Navega sin aparecer",
+  "@tiendaFeatureIncognitoSubtitle": { "description": "Tienda feature list subtitle for incognito_mode" },
+  "tiendaFeatureBoostDiscountTitle": "Boost descuento",
+  "@tiendaFeatureBoostDiscountTitle": { "description": "Tienda feature list title for boost_discount" },
+  "tiendaFeatureBoostDiscountSubtitle": "Más visibilidad por menos",
+  "@tiendaFeatureBoostDiscountSubtitle": { "description": "Tienda feature list subtitle for boost_discount" },
+  "tiendaFeatureUnlimitedProfilesSubtitle": "Sin restricciones",
+  "@tiendaFeatureUnlimitedProfilesSubtitle": { "description": "Tienda feature list subtitle for unlimited_profiles" },
+  "tiendaNoPlansAvailable": "No hay planes disponibles",
+  "@tiendaNoPlansAvailable": { "description": "Tienda screen empty state when no tiered plans are returned" },
+  "tiendaLoadError": "Error cargando planes",
+  "@tiendaLoadError": { "description": "Tienda screen error state message when plans fail to load" },
+  "tiendaNoPricesAvailable": "Sin precios disponibles",
+  "@tiendaNoPricesAvailable": { "description": "Tienda screen empty state when a plan has no prices" },
+  "tiendaRetry": "Reintentar",
+  "@tiendaRetry": { "description": "Tienda screen retry button on error/empty states" },
+  "tiendaPurchaseCancelled": "Compra cancelada",
+  "@tiendaPurchaseCancelled": { "description": "Tienda screen snackbar when the user cancels the RC purchase flow" },
+  "tiendaPurchaseError": "Error: {error}",
+  "@tiendaPurchaseError": {
+    "description": "Tienda screen generic purchase error snackbar",
+    "placeholders": {
+      "error": { "type": "String", "example": "Error de red" }
+    }
+  },
+
+  "albumsLoadError": "Error al cargar álbumes: {error}",
+  "@albumsLoadError": {
+    "description": "Albums screen error state message when album list fails to load",
+    "placeholders": {
+      "error": { "type": "String", "example": "500" }
+    }
+  },
+
+  "eventsLocationUnavailable": "Ubicación no disponible. Activa el acceso a la ubicación e inténtalo de nuevo.",
+  "@eventsLocationUnavailable": { "description": "Events create sheet snackbar when GPS location is unavailable" },
+
+  "shopRetry": "Reintentar",
+  "@shopRetry": { "description": "Shop screen retry button on error state" },
+  "shopBadgeBoost": "BOOST",
+  "@shopBadgeBoost": { "description": "Shop product card badge label for boost-type products" },
+  "shopBadgeHighlight": "HIGHLIGHT",
+  "@shopBadgeHighlight": { "description": "Shop product card badge label for highlight-type products" },
+  "shopBadgeTribe": "TRIBE",
+  "@shopBadgeTribe": { "description": "Shop product card badge label for tribe-slot products" }
 }

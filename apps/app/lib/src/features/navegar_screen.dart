@@ -658,7 +658,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                       child: Text(
                         initials,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: VibraTheme.kText,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -675,7 +675,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                           color: VibraTheme.kOnline,
                           shape: BoxShape.circle,
                           border:
-                              Border.all(color: Colors.black, width: 1.5),
+                              Border.all(color: VibraTheme.kBg, width: 1.5),
                         ),
                       ),
                     ),
@@ -908,13 +908,13 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             Text(
               l10n.verMasPerfiles,
               style: const TextStyle(
-                color: Colors.white,
+                color: VibraTheme.kText,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
             ),
             const Spacer(),
-            const Icon(Icons.arrow_forward, color: Colors.white),
+            const Icon(Icons.arrow_forward, color: VibraTheme.kText),
           ],
         ),
       ),
@@ -1128,7 +1128,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 Text(
                   l10n.travelPassBanner(cityLabel),
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: VibraTheme.kText,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1483,7 +1483,7 @@ class _UserCard extends ConsumerWidget {
                     child: Text(
                       user.displayName ?? user.email,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: VibraTheme.kText,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         shadows: [
@@ -1687,7 +1687,7 @@ class _DiscoverCard extends ConsumerWidget {
               child: Text(
                 user.displayName ?? user.email,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: VibraTheme.kText,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),

@@ -70,7 +70,7 @@ class SecurityScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                Text(title, style: const TextStyle(color: VibraTheme.kText, fontWeight: FontWeight.w700, fontSize: 15)),
                 const SizedBox(height: 6),
                 Text(body, style: const TextStyle(color: VibraTheme.kTextSecondary, fontSize: 13, height: 1.4)),
               ],

@@ -347,14 +347,14 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                   elevation: 0,
                   surfaceTintColor: Colors.transparent,
                   leading: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: const Icon(Icons.arrow_back, color: VibraTheme.kText),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   actions: [
                     IconButton(
                       icon: const Icon(
                         Icons.flag_outlined,
-                        color: Colors.white,
+                        color: VibraTheme.kText,
                       ),
                       onPressed: _showReportSheet,
                     ),
@@ -362,7 +362,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                       icon: Icon(
                         _isFavorited ? Icons.star : Icons.star_border,
                         color:
-                            _isFavorited ? VibraTheme.kBrandPrimary : Colors.white,
+                            _isFavorited ? VibraTheme.kBrandPrimary : VibraTheme.kText,
                       ),
                       onPressed: _toggleFavorite,
                     ),
@@ -384,7 +384,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                       Text(
                         p.displayName ?? p.email,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: VibraTheme.kText,
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
                         ),
@@ -456,8 +456,8 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                                           vertical: 2),
                                       decoration: BoxDecoration(
                                         color: active
-                                            ? Colors.white
-                                            : Colors.white38,
+                                            ? VibraTheme.kText
+                                            : VibraTheme.kTextTertiary,
                                         borderRadius:
                                             BorderRadius.circular(3),
                                       ),
@@ -994,7 +994,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                   child: Text(
                     user.displayName ?? user.email,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: VibraTheme.kText,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       shadows: [

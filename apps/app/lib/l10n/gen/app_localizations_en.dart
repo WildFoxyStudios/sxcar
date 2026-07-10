@@ -2067,4 +2067,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get captureVideo => 'Video';
+
+  @override
+  String get registerConfirmPassword => 'Confirm Password';
+
+  @override
+  String get registerPasswordMismatch => 'Passwords don\'t match';
+
+  @override
+  String get discardChangesTitle => 'Discard changes?';
+
+  @override
+  String get discardChangesBody =>
+      'You have unsaved changes. Are you sure you want to leave?';
+
+  @override
+  String get discardVerb => 'Discard';
+
+  @override
+  String get noConversationsYet => 'No conversations yet';
+
+  @override
+  String get tiendaFeatureUnlimitedChatsSubtitle => 'Match without waiting';
+
+  @override
+  String get tiendaFeatureNoAdsTitle => 'No ads';
+
+  @override
+  String get tiendaFeatureNoAdsSubtitle => 'Clean interface';
+
+  @override
+  String get tiendaFeatureSeeWhoViewedSubtitle => 'Full list';
+
+  @override
+  String get tiendaFeatureIncognitoSubtitle => 'Browse without being seen';
+
+  @override
+  String get tiendaFeatureBoostDiscountTitle => 'Boost discount';
+
+  @override
+  String get tiendaFeatureBoostDiscountSubtitle => 'More visibility for less';
+
+  @override
+  String get tiendaFeatureUnlimitedProfilesSubtitle => 'No restrictions';
+
+  @override
+  String get tiendaNoPlansAvailable => 'No plans available';
+
+  @override
+  String get tiendaLoadError => 'Error loading plans';
+
+  @override
+  String get tiendaNoPricesAvailable => 'No prices available';
+
+  @override
+  String get tiendaRetry => 'Retry';
+
+  @override
+  String get tiendaPurchaseCancelled => 'Purchase cancelled';
+
+  @override
+  String tiendaPurchaseError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String albumsLoadError(String error) {
+    return 'Failed to load albums: $error';
+  }
+
+  @override
+  String get eventsLocationUnavailable =>
+      'Location unavailable. Please enable location access and try again.';
+
+  @override
+  String get shopRetry => 'Retry';
+
+  @override
+  String get shopBadgeBoost => 'BOOST';
+
+  @override
+  String get shopBadgeHighlight => 'HIGHLIGHT';
+
+  @override
+  String get shopBadgeTribe => 'TRIBE';
 }

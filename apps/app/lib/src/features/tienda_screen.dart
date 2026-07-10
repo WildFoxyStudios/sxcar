@@ -11,34 +11,33 @@ import '../premium/premium_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
 
-/// Map of feature key → (title, subtitle). Title is localized via
-/// [AppLocalizations]; subtitle is a hardcoded Spanish string for now
-/// (acceptable per task brief).
+/// Map of feature key → (title, subtitle), both localized via
+/// [AppLocalizations].
 final Map<String, ({String Function(AppLocalizations) title, String Function(AppLocalizations) subtitle})>
     _featureCopy = {
   'unlimited_chats': (
     title: (l) => l.chatIlimitados,
-    subtitle: (_) => 'Match sin espera',
+    subtitle: (l) => l.tiendaFeatureUnlimitedChatsSubtitle,
   ),
   'no_ads': (
-    title: (_) => 'Sin anuncios',
-    subtitle: (_) => 'Interfaz limpia',
+    title: (l) => l.tiendaFeatureNoAdsTitle,
+    subtitle: (l) => l.tiendaFeatureNoAdsSubtitle,
   ),
   'see_who_viewed': (
     title: (l) => l.quienMeHaVisto,
-    subtitle: (_) => 'Lista completa',
+    subtitle: (l) => l.tiendaFeatureSeeWhoViewedSubtitle,
   ),
   'incognito_mode': (
     title: (l) => l.navegarIncognito,
-    subtitle: (_) => 'Navega sin aparecer',
+    subtitle: (l) => l.tiendaFeatureIncognitoSubtitle,
   ),
   'boost_discount': (
-    title: (_) => 'Boost descuento',
-    subtitle: (_) => 'Más visibilidad por menos',
+    title: (l) => l.tiendaFeatureBoostDiscountTitle,
+    subtitle: (l) => l.tiendaFeatureBoostDiscountSubtitle,
   ),
   'unlimited_profiles': (
     title: (l) => l.perfilesIlimitados,
-    subtitle: (_) => 'Sin restricciones',
+    subtitle: (l) => l.tiendaFeatureUnlimitedProfilesSubtitle,
   ),
 };
 
@@ -101,10 +100,10 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
       ..sort((a, b) => a.tier.compareTo(b.tier));
 
     if (tiered.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'No hay planes disponibles',
-          style: TextStyle(color: Colors.white),
+          l10n.tiendaNoPlansAvailable,
+          style: const TextStyle(color: Colors.white),
         ),
       );
     }
@@ -391,7 +390,7 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
     } on DioException catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('Error: ${e.response?.statusCode ?? e.type}')),
+        SnackBar(content: Text(l10n.tiendaPurchaseError('${e.response?.statusCode ?? e.type}'))),
       );
     } on PlatformException catch (e) {
       // RC purchase failure (including user cancellation).
@@ -400,15 +399,15 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
         SnackBar(
           content: Text(
             e.code == 'purchaseCancelledError'
-                ? 'Compra cancelada'
-                : 'Error: ${e.message ?? e.code}',
+                ? l10n.tiendaPurchaseCancelled
+                : l10n.tiendaPurchaseError(e.message ?? e.code),
           ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text(l10n.tiendaPurchaseError('$e'))),
       );
     } finally {
       if (mounted) setState(() => _purchasing = false);
@@ -422,14 +421,15 @@ class _ErrorRetry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Error cargando planes',
-              style: TextStyle(color: Colors.white)),
+          Text(l10n.tiendaLoadError,
+              style: const TextStyle(color: Colors.white)),
           const SizedBox(height: 12),
-          ElevatedButton(onPressed: onRetry, child: const Text('Reintentar')),
+          ElevatedButton(onPressed: onRetry, child: Text(l10n.tiendaRetry)),
         ],
       ),
     );
@@ -442,14 +442,15 @@ class _NoPricesState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Sin precios disponibles',
-              style: TextStyle(color: Colors.white)),
+          Text(l10n.tiendaNoPricesAvailable,
+              style: const TextStyle(color: Colors.white)),
           const SizedBox(height: 12),
-          ElevatedButton(onPressed: onRetry, child: const Text('Reintentar')),
+          ElevatedButton(onPressed: onRetry, child: Text(l10n.tiendaRetry)),
         ],
       ),
     );

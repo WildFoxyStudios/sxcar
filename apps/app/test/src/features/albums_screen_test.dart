@@ -309,8 +309,8 @@ void main() {
       final errorDio = Dio()..httpClientAdapter = _ErrorMockAdapter();
       final l10n = await _pumpScreen(tester, errorDio);
 
-      // Should show error message and retry button.
-      expect(find.textContaining('Failed to load albums'), findsOneWidget);
+      // Should show error message and retry button. Screen runs in 'es' locale.
+      expect(find.textContaining('Error al cargar álbumes'), findsOneWidget);
       expect(find.text(l10n.reintentar), findsOneWidget);
     });
 

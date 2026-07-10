@@ -89,7 +89,7 @@ void main() {
       await tester.tap(find.text('Register'));
       await tester.pump();
 
-      expect(find.text('Passwords do not match'), findsOneWidget);
+      expect(find.text('Passwords don\'t match'), findsOneWidget);
     });
   });
 }

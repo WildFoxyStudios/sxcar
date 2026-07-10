@@ -558,13 +558,13 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.search, color: Colors.white, size: 22),
+              const Icon(Icons.search, color: VibraTheme.kText, size: 22),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
                   controller: _searchController,
                   autofocus: true,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  style: const TextStyle(color: VibraTheme.kText, fontSize: 16),
                   decoration: InputDecoration(
                     isDense: true,
                     border: InputBorder.none,
@@ -601,7 +601,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
           IconButton(
             icon: Icon(
               Icons.explore_outlined,
-              color: _isRoam ? VibraTheme.kBrandPrimary : Colors.white,
+              color: _isRoam ? VibraTheme.kBrandPrimary : VibraTheme.kText,
             ),
             tooltip: l10n.roamTooltip,
             onPressed: () {
@@ -651,7 +651,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
       child: TextField(
         controller: _cityController,
         focusNode: _cityFocus,
-        style: const TextStyle(color: Colors.white, fontSize: 15),
+        style: const TextStyle(color: VibraTheme.kText, fontSize: 15),
         decoration: InputDecoration(
           hintText: l10n.exploreSearchHint,
           hintStyle: const TextStyle(color: VibraTheme.kTextSecondary),
@@ -923,7 +923,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                 Text(
                   l10n.travelPassBanner(cityLabel),
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: VibraTheme.kText,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -974,7 +974,7 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
                 tribe,
                 style: TextStyle(
                   fontSize: 13,
-                  color: selected ? Colors.black : Colors.white,
+                  color: selected ? Colors.black : VibraTheme.kText,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
@@ -1166,7 +1166,7 @@ class _ExploreUserCard extends StatelessWidget {
                   Text(
                     user.displayName ?? user.email,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: VibraTheme.kText,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       shadows: [

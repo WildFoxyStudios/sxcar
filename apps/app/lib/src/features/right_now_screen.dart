@@ -23,7 +23,7 @@ class RightNowScreen extends ConsumerWidget {
         title: Text(
           l10n.right_now_title,
           style: const TextStyle(
-            color: Colors.white,
+            color: VibraTheme.kText,
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
@@ -87,7 +87,7 @@ class _PostSheetBodyState extends State<_PostSheetBody> {
           Text(
             l10n.right_now_post,
             style: const TextStyle(
-              color: Colors.white,
+              color: VibraTheme.kText,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -97,7 +97,7 @@ class _PostSheetBodyState extends State<_PostSheetBody> {
             controller: _controller,
             autofocus: true,
             maxLength: 140,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: VibraTheme.kText),
             decoration: InputDecoration(
               hintText: l10n.right_now_hint,
               hintStyle: const TextStyle(color: VibraTheme.kTextSecondary),
@@ -114,7 +114,7 @@ class _PostSheetBodyState extends State<_PostSheetBody> {
               DropdownButton<int>(
                 value: _minutes,
                 dropdownColor: VibraTheme.kSurface,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: VibraTheme.kText),
                 items: [
                   DropdownMenuItem(
                       value: 30,
@@ -188,7 +188,7 @@ class _RightNowFeed extends ConsumerWidget {
             const SizedBox(height: 12),
             Text(
               l10n.right_now_error,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: VibraTheme.kText),
             ),
             const SizedBox(height: 12),
             FilledButton(
@@ -210,7 +210,7 @@ class _RightNowFeed extends ConsumerWidget {
                 Text(
                   l10n.right_now_empty_title,
                   style: const TextStyle(
-                      color: Colors.white,
+                      color: VibraTheme.kText,
                       fontSize: 18,
                       fontWeight: FontWeight.bold),
                 ),
@@ -296,7 +296,7 @@ class _RightNowCard extends StatelessWidget {
           Expanded(
             child: Text(
               intent.body,
-              style: const TextStyle(color: Colors.white, fontSize: 15),
+              style: const TextStyle(color: VibraTheme.kText, fontSize: 15),
             ),
           ),
           if (isMine && onDelete != null)

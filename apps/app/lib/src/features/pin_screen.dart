@@ -49,7 +49,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: VibraTheme.kSurface,
-        title: Text(l10n.pinRemoveTitle, style: const TextStyle(color: Colors.white)),
+        title: Text(l10n.pinRemoveTitle, style: const TextStyle(color: VibraTheme.kText)),
         content: Text(l10n.pinRemoveBody,
             style: const TextStyle(color: VibraTheme.kTextSecondary)),
         actions: [
@@ -96,7 +96,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
                 Text(
                   enabled ? l10n.pinChangeYourPin : l10n.pinSetAPin,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: VibraTheme.kText,
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                   ),
@@ -120,7 +120,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
                     LengthLimitingTextInputFormatter(4),
                   ],
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: VibraTheme.kText,
                     fontSize: 24,
                     letterSpacing: 8,
                   ),

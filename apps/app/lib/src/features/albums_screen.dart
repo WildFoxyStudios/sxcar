@@ -83,13 +83,13 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _error = 'Failed to load albums: ${e.response?.statusCode ?? e.message}';
+        _error = '${e.response?.statusCode ?? e.message}';
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _error = 'Failed to load albums: $e';
+        _error = '$e';
       });
     }
   }
@@ -325,7 +325,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
               children: [
                 const Icon(Icons.error_outline, size: 48, color: VibraTheme.kError),
                 const SizedBox(height: 16),
-                Text(_error!, style: const TextStyle(color: Colors.white)),
+                Text(l10n.albumsLoadError(_error!), style: const TextStyle(color: Colors.white)),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: _loadAlbums,

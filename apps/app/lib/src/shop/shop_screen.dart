@@ -209,6 +209,7 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
@@ -235,7 +236,7 @@ class _ProductCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    _badgeLabel(product.productType),
+                    _badgeLabel(l10n, product.productType),
                     style: const TextStyle(
                       color: Colors.black,
                       fontSize: 10,
@@ -301,14 +302,14 @@ class _ProductCard extends StatelessWidget {
     }
   }
 
-  String _badgeLabel(String type) {
+  String _badgeLabel(AppLocalizations l10n, String type) {
     switch (type) {
       case 'boost':
-        return 'BOOST';
+        return l10n.shopBadgeBoost;
       case 'highlight':
-        return 'HIGHLIGHT';
+        return l10n.shopBadgeHighlight;
       case 'tribe_slot':
-        return 'TRIBE';
+        return l10n.shopBadgeTribe;
       default:
         return type.toUpperCase();
     }
@@ -327,6 +328,7 @@ class _ErrorRetry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -338,7 +340,7 @@ class _ErrorRetry extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: VibraTheme.kBrandPrimary,
             ),
-            child: const Text('Retry', style: TextStyle(color: Colors.black)),
+            child: Text(l10n.shopRetry, style: const TextStyle(color: Colors.black)),
           ),
         ],
       ),

@@ -2084,4 +2084,88 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get captureVideo => 'Vídeo';
+
+  @override
+  String get registerConfirmPassword => 'Confirma tu contraseña';
+
+  @override
+  String get registerPasswordMismatch => 'Las contraseñas no coinciden';
+
+  @override
+  String get discardChangesTitle => '¿Descartar cambios?';
+
+  @override
+  String get discardChangesBody =>
+      'Tienes cambios sin guardar. ¿Seguro que quieres salir?';
+
+  @override
+  String get discardVerb => 'Descartar';
+
+  @override
+  String get noConversationsYet => 'Aún no hay conversaciones';
+
+  @override
+  String get tiendaFeatureUnlimitedChatsSubtitle => 'Match sin espera';
+
+  @override
+  String get tiendaFeatureNoAdsTitle => 'Sin anuncios';
+
+  @override
+  String get tiendaFeatureNoAdsSubtitle => 'Interfaz limpia';
+
+  @override
+  String get tiendaFeatureSeeWhoViewedSubtitle => 'Lista completa';
+
+  @override
+  String get tiendaFeatureIncognitoSubtitle => 'Navega sin aparecer';
+
+  @override
+  String get tiendaFeatureBoostDiscountTitle => 'Boost descuento';
+
+  @override
+  String get tiendaFeatureBoostDiscountSubtitle => 'Más visibilidad por menos';
+
+  @override
+  String get tiendaFeatureUnlimitedProfilesSubtitle => 'Sin restricciones';
+
+  @override
+  String get tiendaNoPlansAvailable => 'No hay planes disponibles';
+
+  @override
+  String get tiendaLoadError => 'Error cargando planes';
+
+  @override
+  String get tiendaNoPricesAvailable => 'Sin precios disponibles';
+
+  @override
+  String get tiendaRetry => 'Reintentar';
+
+  @override
+  String get tiendaPurchaseCancelled => 'Compra cancelada';
+
+  @override
+  String tiendaPurchaseError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String albumsLoadError(String error) {
+    return 'Error al cargar álbumes: $error';
+  }
+
+  @override
+  String get eventsLocationUnavailable =>
+      'Ubicación no disponible. Activa el acceso a la ubicación e inténtalo de nuevo.';
+
+  @override
+  String get shopRetry => 'Reintentar';
+
+  @override
+  String get shopBadgeBoost => 'BOOST';
+
+  @override
+  String get shopBadgeHighlight => 'HIGHLIGHT';
+
+  @override
+  String get shopBadgeTribe => 'TRIBE';
 }

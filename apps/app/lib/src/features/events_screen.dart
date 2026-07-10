@@ -392,7 +392,7 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
       if (position == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location unavailable. Please enable location access and try again.')),
+            SnackBar(content: Text(l10n.eventsLocationUnavailable)),
           );
           setState(() => _loading = false);
         }

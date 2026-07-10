@@ -171,8 +171,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           TextFormField(
             controller: _confirmPasswordController,
             decoration: authInput(
-              // TODO(l10n): no existing confirm-password key in app_en.arb
-              label: 'Confirm Password',
+              label: l10n.registerConfirmPassword,
               icon: Icons.lock_outline,
               suffix: IconButton(
                 icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility,
@@ -188,8 +187,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 return l10n.register_password_empty_error;
               }
               if (value.trim() != _passwordController.text.trim()) {
-                // TODO(l10n): no existing mismatch key in app_en.arb
-                return 'Passwords do not match';
+                return l10n.registerPasswordMismatch;
               }
               return null;
             },

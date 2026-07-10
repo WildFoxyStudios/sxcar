@@ -218,11 +218,7 @@ class _BandejaTabState extends ConsumerState<_BandejaTab> {
               if (conversations.isEmpty) {
                 return Center(
                   child: Text(
-                    // TODO(l10n): add a dedicated "no conversations yet" key.
-                    // noGroupsYet is wrong (it's about circles); this is the
-                    // least-wrong existing positive-prompt key for an empty
-                    // inbox.
-                    l10n.chatearMasLugarenos,
+                    l10n.noConversationsYet,
                     style: const TextStyle(color: VibraTheme.kTextSecondary),
                   ),
                 );

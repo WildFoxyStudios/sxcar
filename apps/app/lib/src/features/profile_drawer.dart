@@ -99,14 +99,14 @@ class ProfileDrawer extends ConsumerWidget {
                             loading: () => const Text(
                               '...',
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: VibraTheme.kText,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 16),
                             ),
                             error: (_, _) => const Text(
                               '...',
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: VibraTheme.kText,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 16),
                             ),
@@ -117,7 +117,7 @@ class ProfileDrawer extends ConsumerWidget {
                               return Text(
                                 name,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: VibraTheme.kText,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 16,
                                 ),
@@ -220,7 +220,7 @@ class ProfileDrawer extends ConsumerWidget {
                             child: Text(
                               '${activeSub.planName} — ${l10n.planActivo}',
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: VibraTheme.kText,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
                               ),
@@ -301,7 +301,7 @@ class ProfileDrawer extends ConsumerWidget {
                     content: Text(
                       l10n.verPlanes,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: VibraTheme.kText,
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
                       ),
@@ -579,7 +579,7 @@ class _DrawerListTile extends StatelessWidget {
       title: Text(
         label,
         style: const TextStyle(
-            color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+            color: VibraTheme.kText, fontSize: 16, fontWeight: FontWeight.w500),
       ),
       trailing: trailing,
       onTap: onTap,

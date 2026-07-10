@@ -499,9 +499,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        // TODO(l10n): no existing discard-changes key in app_en.arb
-        title: const Text('Discard changes?'),
-        content: const Text(
+        title: Text(l10n?.discardChangesTitle ?? 'Discard changes?'),
+        content: Text(l10n?.discardChangesBody ??
             'You have unsaved changes. Are you sure you want to leave?'),
         actions: [
           TextButton(
@@ -510,8 +509,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            // TODO(l10n): no existing discard verb key in app_en.arb
-            child: const Text('Discard'),
+            child: Text(l10n?.discardVerb ?? 'Discard'),
           ),
         ],
       ),

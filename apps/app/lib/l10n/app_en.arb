@@ -1348,5 +1348,71 @@
   "capturePhoto": "Photo",
   "@capturePhoto": { "description": "Create-story capture button label for taking a photo" },
   "captureVideo": "Video",
-  "@captureVideo": { "description": "Create-story capture button label for recording a video" }
+  "@captureVideo": { "description": "Create-story capture button label for recording a video" },
+  "registerConfirmPassword": "Confirm Password",
+  "@registerConfirmPassword": { "description": "Register screen confirm-password field label" },
+  "registerPasswordMismatch": "Passwords don't match",
+  "@registerPasswordMismatch": { "description": "Register screen validator error when confirm password differs" },
+  "discardChangesTitle": "Discard changes?",
+  "@discardChangesTitle": { "description": "Edit profile discard-unsaved-changes dialog title" },
+  "discardChangesBody": "You have unsaved changes. Are you sure you want to leave?",
+  "@discardChangesBody": { "description": "Edit profile discard-unsaved-changes dialog body" },
+  "discardVerb": "Discard",
+  "@discardVerb": { "description": "Edit profile discard-unsaved-changes dialog confirm button" },
+  "noConversationsYet": "No conversations yet",
+  "@noConversationsYet": { "description": "Chat list empty state when there are no conversations" },
+
+  "tiendaFeatureUnlimitedChatsSubtitle": "Match without waiting",
+  "@tiendaFeatureUnlimitedChatsSubtitle": { "description": "Tienda feature list subtitle for unlimited_chats" },
+  "tiendaFeatureNoAdsTitle": "No ads",
+  "@tiendaFeatureNoAdsTitle": { "description": "Tienda feature list title for no_ads" },
+  "tiendaFeatureNoAdsSubtitle": "Clean interface",
+  "@tiendaFeatureNoAdsSubtitle": { "description": "Tienda feature list subtitle for no_ads" },
+  "tiendaFeatureSeeWhoViewedSubtitle": "Full list",
+  "@tiendaFeatureSeeWhoViewedSubtitle": { "description": "Tienda feature list subtitle for see_who_viewed" },
+  "tiendaFeatureIncognitoSubtitle": "Browse without being seen",
+  "@tiendaFeatureIncognitoSubtitle": { "description": "Tienda feature list subtitle for incognito_mode" },
+  "tiendaFeatureBoostDiscountTitle": "Boost discount",
+  "@tiendaFeatureBoostDiscountTitle": { "description": "Tienda feature list title for boost_discount" },
+  "tiendaFeatureBoostDiscountSubtitle": "More visibility for less",
+  "@tiendaFeatureBoostDiscountSubtitle": { "description": "Tienda feature list subtitle for boost_discount" },
+  "tiendaFeatureUnlimitedProfilesSubtitle": "No restrictions",
+  "@tiendaFeatureUnlimitedProfilesSubtitle": { "description": "Tienda feature list subtitle for unlimited_profiles" },
+  "tiendaNoPlansAvailable": "No plans available",
+  "@tiendaNoPlansAvailable": { "description": "Tienda screen empty state when no tiered plans are returned" },
+  "tiendaLoadError": "Error loading plans",
+  "@tiendaLoadError": { "description": "Tienda screen error state message when plans fail to load" },
+  "tiendaNoPricesAvailable": "No prices available",
+  "@tiendaNoPricesAvailable": { "description": "Tienda screen empty state when a plan has no prices" },
+  "tiendaRetry": "Retry",
+  "@tiendaRetry": { "description": "Tienda screen retry button on error/empty states" },
+  "tiendaPurchaseCancelled": "Purchase cancelled",
+  "@tiendaPurchaseCancelled": { "description": "Tienda screen snackbar when the user cancels the RC purchase flow" },
+  "tiendaPurchaseError": "Error: {error}",
+  "@tiendaPurchaseError": {
+    "description": "Tienda screen generic purchase error snackbar",
+    "placeholders": {
+      "error": { "type": "String", "example": "Network error" }
+    }
+  },
+
+  "albumsLoadError": "Failed to load albums: {error}",
+  "@albumsLoadError": {
+    "description": "Albums screen error state message when album list fails to load",
+    "placeholders": {
+      "error": { "type": "String", "example": "500" }
+    }
+  },
+
+  "eventsLocationUnavailable": "Location unavailable. Please enable location access and try again.",
+  "@eventsLocationUnavailable": { "description": "Events create sheet snackbar when GPS location is unavailable" },
+
+  "shopRetry": "Retry",
+  "@shopRetry": { "description": "Shop screen retry button on error state" },
+  "shopBadgeBoost": "BOOST",
+  "@shopBadgeBoost": { "description": "Shop product card badge label for boost-type products" },
+  "shopBadgeHighlight": "HIGHLIGHT",
+  "@shopBadgeHighlight": { "description": "Shop product card badge label for highlight-type products" },
+  "shopBadgeTribe": "TRIBE",
+  "@shopBadgeTribe": { "description": "Shop product card badge label for tribe-slot products" }
 }

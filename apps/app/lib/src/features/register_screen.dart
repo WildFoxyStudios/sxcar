@@ -20,6 +20,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   DateTime? _birthDate;
   bool _consentChecked = false;
   bool _isLoading = false;
@@ -35,6 +36,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -161,6 +163,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               }
               if (value.length < 8) {
                 return l10n.register_password_min_length_error;
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 14),
+          TextFormField(
+            controller: _confirmPasswordController,
+            decoration: authInput(
+              // TODO(l10n): no existing confirm-password key in app_en.arb
+              label: 'Confirm Password',
+              icon: Icons.lock_outline,
+              suffix: IconButton(
+                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility,
+                    size: 20, color: VibraTheme.kTextSecondary),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+            ),
+            obscureText: _obscure,
+            autofillHints: const [AutofillHints.newPassword],
+            textInputAction: TextInputAction.done,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return l10n.register_password_empty_error;
+              }
+              if (value.trim() != _passwordController.text.trim()) {
+                // TODO(l10n): no existing mismatch key in app_en.arb
+                return 'Passwords do not match';
               }
               return null;
             },

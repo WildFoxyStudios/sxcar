@@ -109,7 +109,9 @@ void main() {
       expect(find.text('versatile'), findsOneWidget);
       expect(find.text('latino'), findsOneWidget);
       expect(find.text('he/him'), findsOneWidget);
-      expect(find.text('1995-06-15'), findsOneWidget);
+      // Birthdate is shown as the computed age (1995-06-15 -> 31 yrs), not the
+      // raw ISO string.
+      expect(find.text('31 yrs'), findsOneWidget);
 
       // Verify chip arrays (use skipOffstage: false for off-screen items)
       expect(find.text('Tribes'), findsOneWidget);

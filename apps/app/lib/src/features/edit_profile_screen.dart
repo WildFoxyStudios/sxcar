@@ -470,15 +470,53 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n?.editProfileTitle ?? 'Edit Profile')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _buildError()
-              : _buildForm(),
-      bottomNavigationBar: _buildSaveBar(),
+    final isDirty = ref.watch(profileEditProvider.select((s) => s.isDirty));
+    return PopScope(
+      canPop: !isDirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldDiscard = await _confirmDiscard();
+        if (shouldDiscard) {
+          ref.read(profileEditProvider.notifier).resetDraft();
+          if (context.mounted) Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n?.editProfileTitle ?? 'Edit Profile')),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _buildError()
+                : _buildForm(),
+        bottomNavigationBar: _buildSaveBar(),
+      ),
     );
+  }
+
+  /// Confirm dialog shown when the user tries to leave with unsaved edits.
+  Future<bool> _confirmDiscard() async {
+    final l10n = AppLocalizations.of(context);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        // TODO(l10n): no existing discard-changes key in app_en.arb
+        title: const Text('Discard changes?'),
+        content: const Text(
+            'You have unsaved changes. Are you sure you want to leave?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n?.cancelar ?? 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            // TODO(l10n): no existing discard verb key in app_en.arb
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   Widget _buildError() {

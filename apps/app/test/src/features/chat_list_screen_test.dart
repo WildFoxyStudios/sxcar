@@ -122,7 +122,7 @@ void main() {
       expect(find.text('2'), findsOneWidget);
     });
 
-    testWidgets('filter chips row renders No leído + En línea',
+    testWidgets('filter chips row renders the No leído chip',
         (tester) async {
       final dio = Dio();
       dio.options.baseUrl = 'http://test';
@@ -130,11 +130,13 @@ void main() {
 
       final l10n = await _pumpAndL10n(tester, dio);
 
-      // Both filter chip labels are present (resolved through l10n)
+      // Only the "No leído" (unread) filter chip is rendered. The "En línea"
+      // chip was removed: the Conversation model exposes no presence/online
+      // flag, so an online filter would have been purely visual (filtered
+      // nothing). One working filter chip > two fake ones.
       expect(find.text(l10n.noLeido), findsOneWidget);
-      expect(find.text(l10n.enLineaFiltro), findsOneWidget);
-      // At least one FilterChipPill rendered
-      expect(find.byType(FilterChipPill), findsNWidgets(2));
+      expect(find.text(l10n.enLineaFiltro), findsNothing);
+      expect(find.byType(FilterChipPill), findsOneWidget);
     });
 
     testWidgets('Álbumes tab shows empty state when no shared albums',

@@ -47,6 +47,7 @@ void main() {
       expect(find.text('Register'), findsWidgets);
       expect(find.text('Email'), findsOneWidget);
       expect(find.text('Password (min 8 characters)'), findsOneWidget);
+      expect(find.text('Confirm Password'), findsOneWidget);
       expect(find.text('Date of Birth'), findsOneWidget);
       expect(
         find.text('I accept the terms and privacy policy (I am 18+)'),
@@ -54,6 +55,41 @@ void main() {
       );
       expect(find.text('Already have an account?'), findsOneWidget);
       expect(find.text('Login'), findsOneWidget);
+    });
+
+    testWidgets('confirm password field rejects mismatched input',
+        (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith(
+              () => _UnauthenticatedNotifier(),
+            ),
+          ],
+          child: _wrap(
+            child: const RegisterScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Enter mismatched passwords and tap Register to trigger validation.
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Password (min 8 characters)'),
+        'password1',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Confirm Password'),
+        'password2',
+      );
+      await tester.tap(find.text('Register'));
+      await tester.pump();
+
+      expect(find.text('Passwords do not match'), findsOneWidget);
     });
   });
 }

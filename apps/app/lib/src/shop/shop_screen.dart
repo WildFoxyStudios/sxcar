@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../billing/revenuecat_providers.dart';
 import '../premium/premium_service.dart';
@@ -20,6 +21,30 @@ class ShopScreen extends ConsumerStatefulWidget {
 
 class _ShopScreenState extends ConsumerState<ShopScreen> {
   bool _purchasing = false;
+
+  /// Real RevenueCat packages keyed by `Package.identifier` (the revenuecatId),
+  /// fetched once at render so each card can show the store-localized price
+  /// instead of the fabricated backend `priceUsd`. Empty until loaded; cards
+  /// fall back to `priceUsd` when no match is available.
+  Map<String, Package> _packagesById = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOfferings();
+  }
+
+  Future<void> _loadOfferings() async {
+    final rcSvc = ref.read(revenueCatServiceProvider);
+    final offerings = await rcSvc.getOfferings();
+    final current = offerings?.current;
+    if (current == null) return;
+    if (!mounted) return;
+    final map = {
+      for (final p in current.availablePackages) p.identifier: p,
+    };
+    setState(() => _packagesById = map);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,10 +87,15 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
         mainAxisSpacing: 12,
       ),
       itemCount: products.length,
-      itemBuilder: (_, index) => _ProductCard(
-        product: products[index],
-        onTap: _purchasing ? null : () => _purchase(context, products[index]),
-      ),
+      itemBuilder: (_, index) {
+        final product = products[index];
+        return _ProductCard(
+          product: product,
+          priceString:
+              _packagesById[product.revenuecatId]?.storeProduct.priceString,
+          onTap: _purchasing ? null : () => _purchase(context, product),
+        );
+      },
     );
   }
 
@@ -165,9 +195,17 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
 
 class _ProductCard extends StatelessWidget {
   final ShopProduct product;
+  /// Real RevenueCat price (already localized + formatted by the stores), or
+  /// null when no RC package matched — in which case the card falls back to the
+  /// static backend `priceUsd`.
+  final String? priceString;
   final VoidCallback? onTap;
 
-  const _ProductCard({required this.product, required this.onTap});
+  const _ProductCard({
+    required this.product,
+    required this.onTap,
+    this.priceString,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -230,9 +268,12 @@ class _ProductCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 const SizedBox(height: 8),
-                // Price
+                // Price — prefer the real RevenueCat store price (localized
+                // and formatted by the stores) so users see what they'll
+                // actually be charged; fall back to the static catalog price.
                 Text(
-                  '\$${product.priceUsd.toStringAsFixed(2)}',
+                  priceString ??
+                      '\$${product.priceUsd.toStringAsFixed(2)}',
                   style: const TextStyle(
                     color: VibraTheme.kBrandPrimary,
                     fontSize: 18,

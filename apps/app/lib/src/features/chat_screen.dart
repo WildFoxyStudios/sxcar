@@ -149,8 +149,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (type == 'message') {
         final message = Message.fromWebSocketJson(json);
         if (message.conversationId == widget.conversationId) {
+          final myId = ref.read(authStateProvider).userId;
           setState(() {
-            _messages.add(message);
+            // If this is the server echo of my own just-sent message, replace
+            // the matching optimistic bubble (id='') instead of appending a
+            // duplicate. Match on sender + body + createdAt proximity so we
+            // don't clobber a peer's coincidentally-identical message.
+            final isOwnEcho = message.senderId == myId;
+            final replaced =
+                isOwnEcho ? _replaceOptimistic(message) : false;
+            if (!replaced) {
+              _messages.add(message);
+            }
           });
           _scrollToBottom();
           // I'm viewing this conversation → mark the incoming message read.
@@ -224,6 +234,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         }
       }
     });
+  }
+
+  /// If [serverEcho] matches a pending optimistic bubble (id='') from me,
+  /// replace it in-place with the server-confirmed message and return true.
+  /// Matching: same kind + body/mediaKey; only considers bubbles whose id is
+  /// empty. Returns false if no optimistic bubble matched (caller appends).
+  bool _replaceOptimistic(Message serverEcho) {
+    final idx = _messages.indexWhere(
+      (m) =>
+          m.id.isEmpty &&
+          m.kind == serverEcho.kind &&
+          (m.body ?? '') == (serverEcho.body ?? '') &&
+          (m.mediaKey ?? '') == (serverEcho.mediaKey ?? ''),
+    );
+    if (idx == -1) return false;
+    _messages[idx] = serverEcho;
+    return true;
   }
 
   Future<void> _loadMessages() async {
@@ -305,15 +332,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     _textController.clear();
 
-    // Optimistic message
+    // Optimistic message. `createdAt` doubles as a stable client-side identity
+    // token for this send attempt (used to locate the bubble on failure for the
+    // tap-to-retry affordance, and to de-duplicate when the WS echoes our own
+    // message back with a real server id).
     final authState = ref.read(authStateProvider);
+    final createdAt = DateTime.now().toIso8601String();
     final optimistic = Message(
       id: '',
       conversationId: widget.conversationId,
       senderId: authState.userId ?? '',
       kind: 'text',
       body: text,
-      createdAt: DateTime.now().toIso8601String(),
+      createdAt: createdAt,
     );
 
     setState(() {
@@ -321,12 +352,66 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
     _scrollToBottom();
 
+    await _attemptSend(text, createdAt);
+  }
+
+  /// Sends a text message and, on failure, marks the optimistic bubble
+  /// (identified by [createdAt]) as failed so it renders a tap-to-retry
+  /// affordance. On success the WS echo replaces the optimistic bubble (see
+  /// the `message` branch of [_connectWebSocket]).
+  Future<void> _attemptSend(String text, String createdAt) async {
     try {
       final chatService = ref.read(chatServiceProvider);
       await chatService.sendMessage(widget.conversationId, text);
     } catch (_) {
-      // Message will be replaced when WS broadcasts it back
+      // Send failed: mark the optimistic bubble as failed so the user sees an
+      // error + tap-to-retry, instead of a silently "sent" bubble forever.
+      if (!mounted) return;
+      final idx = _messages.indexWhere(
+        (m) => m.id.isEmpty && m.createdAt == createdAt,
+      );
+      if (idx != -1) {
+        setState(() {
+          _messages[idx] = _messages[idx].copyWith(
+            sendFailedAt: DateTime.now(),
+          );
+        });
+      }
     }
+  }
+
+  /// Retries sending a previously-failed optimistic text message.
+  void _retrySend(Message failed) {
+    final text = failed.body ?? '';
+    if (text.isEmpty) return;
+    final createdAt = failed.createdAt;
+    // Clear the failed flag immediately so the error affordance disappears
+    // while the retry is in flight.
+    setState(() {
+      final idx = _messages.indexWhere(
+        (m) => m.id.isEmpty && m.createdAt == createdAt,
+      );
+      if (idx != -1) {
+        // Rebuild without the failure flag (copyWith can't clear a nullable
+        // override back to null, so construct fresh).
+        final m = _messages[idx];
+        _messages[idx] = Message(
+          id: m.id,
+          conversationId: m.conversationId,
+          senderId: m.senderId,
+          kind: m.kind,
+          body: m.body,
+          createdAt: m.createdAt,
+          mediaKey: m.mediaKey,
+          mediaType: m.mediaType,
+          readAt: m.readAt,
+          ephemeralViewedAt: m.ephemeralViewedAt,
+          unsentAt: m.unsentAt,
+          reactions: m.reactions,
+        );
+      }
+    });
+    _attemptSend(text, createdAt);
   }
 
   /// Pick a photo from the gallery, show a preview sheet, then upload and send.
@@ -569,6 +654,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                     isGroup: widget.isGroup,
                                     senderDisplayName:
                                         _senderNames[message.senderId],
+                                    onRetry: (isMe && message.sendFailedAt != null)
+                                        ? () => _retrySend(message)
+                                        : null,
                                   ),
                                 ],
                               );
@@ -836,12 +924,16 @@ class _MessageBubble extends ConsumerStatefulWidget {
   final bool isMe;
   final String? senderDisplayName;
   final bool isGroup;
+  /// Tap handler for a failed-to-send optimistic bubble. Non-null only when
+  /// the caller wants a tap-to-retry affordance (own message + sendFailedAt).
+  final VoidCallback? onRetry;
 
   const _MessageBubble({
     required this.message,
     required this.isMe,
     this.senderDisplayName,
     this.isGroup = false,
+    this.onRetry,
   });
 
   @override
@@ -861,6 +953,9 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
   Duration _audioDuration = Duration.zero;
   Duration _audioPosition = Duration.zero;
   String? _audioUrl;
+  /// True when the presigned-URL fetch (or player setup) failed — the bubble
+  /// renders an error state and disables playback.
+  bool _audioLoadFailed = false;
   StreamSubscription? _playerStateSub;
   StreamSubscription? _playerPositionSub;
 
@@ -888,9 +983,20 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
   Future<void> _initAudio() async {
     final key = widget.message.mediaKey ?? '';
     try {
-      final url = await ref.read(chatServiceProvider).getMediaUrl(key, kind: 'album');
+      // Voice messages are uploaded with kind='album' (see ChatService
+      // .sendVoiceMessage → MediaService.getUploadUrl(kind: 'album')), so we
+      // request the presigned GET with the same kind. The backend get_url
+      // only accepts profile|album|verification|story — there is no dedicated
+      // audio/chat kind, and 'album' is the only one that routes to the
+      // private bucket where these objects live.
+      final url = await ref
+          .read(chatServiceProvider)
+          .getMediaUrl(key, kind: 'album');
       if (!mounted) return;
-      setState(() => _audioUrl = url);
+      setState(() {
+        _audioUrl = url;
+        _audioLoadFailed = false;
+      });
 
       // Listen for state changes
       _playerStateSub = _audioPlayer.onPlayerStateChanged.listen((state) {
@@ -910,16 +1016,28 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
         setState(() => _audioDuration = dur);
       }
     } catch (_) {
-      // Audio URL fetch failed — bubble will show broken state
+      // Audio URL fetch / player setup failed — surface a real error state
+      // instead of leaving the bubble stuck at "00:00" with a dead play button.
+      if (!mounted) return;
+      setState(() => _audioLoadFailed = true);
     }
   }
 
   Future<void> _togglePlayback() async {
-    if (_audioUrl == null) return;
-    if (_isPlaying) {
-      await _audioPlayer.pause();
-    } else {
-      await _audioPlayer.play(UrlSource(_audioUrl!));
+    // No-op when the audio failed to load — the play button is disabled in
+    // [_buildVoiceBubble], but guard here too in case of a stale tap.
+    if (_audioUrl == null || _audioLoadFailed) return;
+    try {
+      if (_isPlaying) {
+        await _audioPlayer.pause();
+      } else {
+        await _audioPlayer.play(UrlSource(_audioUrl!));
+      }
+    } catch (_) {
+      // Playback error after a successful URL fetch — treat as load failure so
+      // the bubble shows the error state rather than silently doing nothing.
+      if (!mounted) return;
+      setState(() => _audioLoadFailed = true);
     }
   }
 
@@ -982,6 +1100,8 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
         bubble = _buildTextBubble(isMe);
     }
 
+    final bool failed = message.sendFailedAt != null && widget.onRetry != null;
+
     return Column(
       crossAxisAlignment:
           isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -1005,9 +1125,29 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
           child: bubble,
         ),
         if (message.reactions.isNotEmpty) _buildReactionChips(context, isMe),
+        if (failed)
+          // Tap-to-retry affordance for a failed optimistic send. Icon-only
+          // (no new .arb key) reusing the existing error styling.
+          Padding(
+            padding: const EdgeInsets.only(right: 14, top: 2),
+            child: GestureDetector(
+              onTap: widget.onRetry,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.error_outline,
+                      color: VibraTheme.kError, size: 14),
+                  SizedBox(width: 3),
+                  Icon(Icons.refresh,
+                      color: VibraTheme.kError, size: 13),
+                ],
+              ),
+            ),
+          ),
         // Read receipt on my own messages: single check = sent, double
-        // accent check = read by the recipient.
-        if (isMe && !widget.isGroup)
+        // accent check = read by the recipient. Suppressed when the send
+        // failed (a failed message was never delivered).
+        if (isMe && !widget.isGroup && !failed)
           Padding(
             padding: const EdgeInsets.only(right: 16, top: 2),
             child: Icon(
@@ -1112,9 +1252,78 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
 
   Widget _buildVoiceBubble(bool isMe) {
     final l10n = AppLocalizations.of(context);
-    final displayDuration = _audioDuration > Duration.zero
-        ? _formatDuration(_audioDuration)
-        : _formatDuration(_audioPosition);
+    final bool loading = _audioUrl == null && !_audioLoadFailed;
+
+    // Play/pause button. Disabled (no onTap, muted color) while the URL is
+    // still loading or after a load failure so the user gets a clear signal
+    // instead of a dead button that silently does nothing.
+    final Widget playButton = Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: _audioLoadFailed
+            ? VibraTheme.kSurface
+            : (isMe
+                ? VibraTheme.kAccent
+                : VibraTheme.kAccent.withValues(alpha: 0.8)),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        _audioLoadFailed
+            ? Icons.error_outline
+            : (_isPlaying ? Icons.pause : Icons.play_arrow),
+        color: _audioLoadFailed ? VibraTheme.kError : Colors.white,
+        size: 20,
+      ),
+    );
+
+    // Right-side label + duration. Shows an error hint when the audio failed
+    // to load (no new .arb key — icon-only affordance + existing error color).
+    final Widget label = _audioLoadFailed
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n?.chatVoiceMessage ?? 'Voice message',
+                style: TextStyle(
+                  color: isMe ? VibraTheme.kAccent : VibraTheme.kTextPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(Icons.error_outline,
+                  color: VibraTheme.kError, size: 14),
+            ],
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n?.chatVoiceMessage ?? 'Voice message',
+                style: TextStyle(
+                  color: isMe ? VibraTheme.kAccent : VibraTheme.kTextPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                loading
+                    ? '--:--'
+                    : (_audioDuration > Duration.zero
+                        ? _formatDuration(_audioDuration)
+                        : _formatDuration(_audioPosition)),
+                style: TextStyle(
+                  color: isMe
+                      ? VibraTheme.kAccent.withValues(alpha: 0.7)
+                      : VibraTheme.kTextSecondary,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          );
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -1141,50 +1350,13 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Play / pause button
+            // Play / pause button — only interactive once the URL is loaded.
             GestureDetector(
-              onTap: _togglePlayback,
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: isMe
-                      ? VibraTheme.kAccent
-                      : VibraTheme.kAccent.withValues(alpha: 0.8),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
+              onTap: (_audioLoadFailed || loading) ? null : _togglePlayback,
+              child: playButton,
             ),
             const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  l10n?.chatVoiceMessage ?? 'Voice message',
-                  style: TextStyle(
-                    color: isMe ? VibraTheme.kAccent : VibraTheme.kTextPrimary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  displayDuration,
-                  style: TextStyle(
-                    color: isMe
-                        ? VibraTheme.kAccent.withValues(alpha: 0.7)
-                        : VibraTheme.kTextSecondary,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
+            label,
           ],
         ),
       ),

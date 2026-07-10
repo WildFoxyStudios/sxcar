@@ -89,6 +89,12 @@ class Message {
   /// Null if the message is still active.
   final String? unsentAt;
 
+  /// CLIENT-ONLY flag: set on an optimistic message when its HTTP/WS send
+  /// failed, so the bubble can render a tap-to-retry affordance. Never
+  /// populated from server JSON (server messages are always "sent"). Null
+  /// for successfully sent or server-echoed messages.
+  final DateTime? sendFailedAt;
+
   /// Reactions from other users on this message (or empty if none).
   ///
   /// Each reaction is a [MessageReaction] with userId + emoji. The server
@@ -107,6 +113,7 @@ class Message {
     this.readAt,
     this.ephemeralViewedAt,
     this.unsentAt,
+    this.sendFailedAt,
     this.reactions = const [],
   });
 
@@ -155,12 +162,19 @@ class Message {
   }
 
   /// Create a copy with optional field overrides.
+  ///
+  /// [sendFailedAt] is nullable-on-purpose: pass `null` to keep any existing
+  /// value, or a [DateTime] to mark/clear the failed state. (To *clear* a
+  /// failure on retry, construct a fresh [Message] rather than relying on
+  /// copyWith, since null here means "unchanged".)
   Message copyWith({
+    String? id,
     List<MessageReaction>? reactions,
     String? unsentAt,
+    DateTime? sendFailedAt,
   }) {
     return Message(
-      id: id,
+      id: id ?? this.id,
       conversationId: conversationId,
       senderId: senderId,
       kind: kind,
@@ -171,6 +185,7 @@ class Message {
       readAt: readAt,
       ephemeralViewedAt: ephemeralViewedAt,
       unsentAt: unsentAt ?? this.unsentAt,
+      sendFailedAt: sendFailedAt ?? this.sendFailedAt,
       reactions: reactions ?? this.reactions,
     );
   }

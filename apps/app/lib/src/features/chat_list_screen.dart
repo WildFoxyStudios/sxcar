@@ -113,10 +113,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          _BandejaTab(),
-          CirclesScreen(),
-          _AlbumsTab(),
+        children: [
+          _BandejaTab(
+            onGoToAlbums: () => _tabController.animateTo(2),
+          ),
+          const CirclesScreen(),
+          const _AlbumsTab(),
         ],
       ),
       floatingActionButton: const _BoostFab(),
@@ -129,7 +131,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
 // ---------------------------------------------------------------------------
 
 class _BandejaTab extends ConsumerStatefulWidget {
-  const _BandejaTab();
+  /// Switches the parent screen to the Álbumes tab when the album-update
+  /// banner is tapped.
+  final VoidCallback onGoToAlbums;
+
+  const _BandejaTab({required this.onGoToAlbums});
 
   @override
   ConsumerState<_BandejaTab> createState() => _BandejaTabState();
@@ -137,6 +143,12 @@ class _BandejaTab extends ConsumerStatefulWidget {
 
 class _BandejaTabState extends ConsumerState<_BandejaTab> {
   late Future<List<Conversation>> _conversationsFuture;
+
+  /// Unread-only filter, hoisted here so it actually drives the rendered list.
+  ///
+  /// The previous _FilterChipsRow held this state internally and never
+  /// plumbed it into the FutureBuilder, so the chip was visual-only.
+  bool _soloNoLeido = false;
 
   @override
   void initState() {
@@ -152,19 +164,36 @@ class _BandejaTabState extends ConsumerState<_BandejaTab> {
     return Column(
       children: [
         // Album-update banner above chips — only when there are shared albums.
+        //
+        // SharedAlbum has no "updated since last seen" field, so the count is
+        // the total shared-album count (the banner label already reads
+        // "album(s) updated", the closest honest existing l10n). Tapping it
+        // switches to the Álbumes tab where the carousel lives.
         sharedAlbumsAsync.when(
           data: (albums) => AlbumUpdateBanner(
             count: albums.length,
-            onTap: () {
-              // Album carousel is in the Álbumes tab — no scroll needed here.
-            },
+            onTap: widget.onGoToAlbums,
           ),
           loading: () => const SizedBox.shrink(),
           error: (_, _) => const SizedBox.shrink(),
         ),
 
-        // Filter chips row (No leído / En línea)
-        const _FilterChipsRow(),
+        // Unread filter chip. The "En línea" chip was removed: Conversation
+        // exposes no online/presence flag, so filtering by it would have been
+        // a no-op (or would require fabricating data).
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              FilterChipPill(
+                label: l10n.noLeido,
+                icon: Icons.circle,
+                active: _soloNoLeido,
+                onTap: () => setState(() => _soloNoLeido = !_soloNoLeido),
+              ),
+            ],
+          ),
+        ),
 
         const Divider(height: 1, color: VibraTheme.kDivider),
 
@@ -180,12 +209,20 @@ class _BandejaTabState extends ConsumerState<_BandejaTab> {
                 return _ErrorRetry(
                     message: l10n.errorCargandoConversaciones);
               }
-              final conversations = snapshot.data ?? const [];
+              var conversations = snapshot.data ?? const [];
+              if (_soloNoLeido) {
+                conversations = conversations
+                    .where((c) => c.unreadCount > 0)
+                    .toList(growable: false);
+              }
               if (conversations.isEmpty) {
                 return Center(
                   child: Text(
-                    // TODO(l10n): add a dedicated "no conversations yet" key
-                    l10n.noGroupsYet,
+                    // TODO(l10n): add a dedicated "no conversations yet" key.
+                    // noGroupsYet is wrong (it's about circles); this is the
+                    // least-wrong existing positive-prompt key for an empty
+                    // inbox.
+                    l10n.chatearMasLugarenos,
                     style: const TextStyle(color: VibraTheme.kTextSecondary),
                   ),
                 );
@@ -200,43 +237,6 @@ class _BandejaTabState extends ConsumerState<_BandejaTab> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _FilterChipsRow extends StatefulWidget {
-  const _FilterChipsRow();
-
-  @override
-  State<_FilterChipsRow> createState() => _FilterChipsRowState();
-}
-
-class _FilterChipsRowState extends State<_FilterChipsRow> {
-  bool _noLeido = false;
-  bool _enLinea = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          FilterChipPill(
-            label: l10n.noLeido,
-            icon: Icons.circle,
-            active: _noLeido,
-            onTap: () => setState(() => _noLeido = !_noLeido),
-          ),
-          const SizedBox(width: 8),
-          FilterChipPill(
-            label: l10n.enLineaFiltro,
-            icon: Icons.fiber_manual_record,
-            active: _enLinea,
-            onTap: () => setState(() => _enLinea = !_enLinea),
-          ),
-        ],
-      ),
     );
   }
 }

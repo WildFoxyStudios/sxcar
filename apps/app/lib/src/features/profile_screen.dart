@@ -227,6 +227,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     context.push('/edit-profile');
   }
 
+  /// Mirrors you_screen.dart's age calculation: parses a `yyyy-MM-dd`
+  /// birthdate and returns the integer age, or null if unparseable.
+  int? _calculateAge(String? birthdate) {
+    if (birthdate == null) return null;
+    try {
+      final parts = birthdate.split('-');
+      if (parts.length != 3) return null;
+      final year = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+      final day = int.parse(parts[2]);
+      final now = DateTime.now();
+      var age = now.year - year;
+      if (now.month < month || (now.month == month && now.day < day)) {
+        age--;
+      }
+      return age;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Returns the localized age string (e.g. "35 yrs") for a birthdate, or
+  /// null if the birthdate is missing/unparseable.
+  String? _ageDisplay(String? birthdate, AppLocalizations l10n) {
+    final age = _calculateAge(birthdate);
+    return age != null ? l10n.profileAge(age) : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -323,17 +351,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
         const Divider(),
 
-        // Stats section
+        // Stats section. When viewing ANOTHER user's profile, suppress each
+        // row whose `show*` privacy flag is false. For the OWN profile show
+        // everything so the user can review their data.
+        if (isOwn || p.showAge)
+          _buildStatRow(
+            theme,
+            l10n.profile_birthdate_label,
+            _ageDisplay(p.birthdate, l10n),
+          ),
         _buildStatRow(theme, l10n.profile_height_label, p.heightCm != null ? l10n.profile_height_value(p.heightCm.toString()) : null),
         _buildStatRow(theme, l10n.profile_weight_label, p.weightKg != null ? l10n.profile_weight_value(p.weightKg.toString()) : null),
         _buildStatRow(theme, l10n.profile_body_type_label, p.bodyType),
-        _buildStatRow(theme, l10n.profile_relationship_label, p.relationshipStatus),
-        _buildStatRow(theme, l10n.profile_position_label, p.position),
-        _buildStatRow(theme, l10n.profile_ethnicity_label, p.ethnicity),
+        if (isOwn || p.showRelationshipStatus)
+          _buildStatRow(theme, l10n.profile_relationship_label, p.relationshipStatus),
+        if (isOwn || p.showPosition)
+          _buildStatRow(theme, l10n.profile_position_label, p.position),
+        if (isOwn || p.showEthnicity)
+          _buildStatRow(theme, l10n.profile_ethnicity_label, p.ethnicity),
         _buildStatRow(theme, l10n.profile_pronouns_label, p.pronouns),
-        _buildStatRow(theme, l10n.profile_birthdate_label, p.birthdate),
 
-        if (p.tribes.isNotEmpty) ...[
+        if ((isOwn || p.showTribes) && p.tribes.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(l10n.profile_tribes_header, style: theme.textTheme.titleSmall),
           const SizedBox(height: 4),

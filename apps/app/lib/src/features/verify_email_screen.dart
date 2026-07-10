@@ -146,6 +146,20 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
                     )
                   : Text(l10n.reenviarCodigo),
             ),
+            const SizedBox(height: 8),
+            // Escape hatch: if the verification email never arrives (wrong
+            // address, lost inbox), the router otherwise traps emailUnverified
+            // users on this screen forever. Letting them sign out drops to
+            // unauthenticated → router sends to /login.
+            TextButton(
+              onPressed: (_isLoading || _isResending)
+                  ? null
+                  : () => ref.read(authStateProvider.notifier).logout(),
+              child: Text(
+                l10n.cerrarSesion,
+                style: const TextStyle(color: VibraTheme.kTextSecondary),
+              ),
+            ),
           ],
         ),
       ),

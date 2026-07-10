@@ -554,9 +554,6 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                           ),
                         ],
 
-                        // Quick stats row (position | height | weight | bodyType)
-                        _QuickStatsRow(profile: p, details: _details),
-
                         // ── ACERCA DE MÍ ────────────────────────────────────
                         if (p.bio != null && p.bio!.isNotEmpty) ...[
                           const SizedBox(height: 20),
@@ -1056,74 +1053,6 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
 }
 
 // ── Supporting widgets ────────────────────────────────────────────────────────
-
-/// Quick stats row: position icon | height | weight | bodyType, kTextTertiary.
-class _QuickStatsRow extends StatelessWidget {
-  final UserProfile profile;
-  final Map<String, dynamic> details;
-
-  const _QuickStatsRow({required this.profile, required this.details});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = profile;
-    // Fix 4: details override with profile fallback
-    final position = (details['position'] as String?) ?? p.position;
-    final heightCm = (details['height_cm'] as int?) ?? p.heightCm;
-    final weightKg = (details['weight_kg'] as int?) ?? p.weightKg;
-    final bodyType = (details['body_type'] as String?) ?? p.bodyType;
-
-    final parts = <Widget>[];
-
-    if (position != null && position.isNotEmpty) {
-      parts.add(Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Fix 5: dynamic directional role icon
-          Icon(_roleIconFor(position),
-              size: 14, color: VibraTheme.kTextTertiary),
-          const SizedBox(width: 2),
-          Text(
-            position,
-            style: const TextStyle(
-              color: VibraTheme.kTextTertiary,
-              fontSize: 15,
-            ),
-          ),
-        ],
-      ));
-    }
-
-    final hwbParts = <String>[];
-    if (heightCm != null) hwbParts.add('$heightCm cm');
-    if (weightKg != null) hwbParts.add('$weightKg kg');
-    if (bodyType != null && bodyType.isNotEmpty) {
-      hwbParts.add(bodyType);
-    }
-    if (hwbParts.isNotEmpty) {
-      if (parts.isNotEmpty) {
-        parts.add(const Text(
-          ' | ',
-          style: TextStyle(color: VibraTheme.kTextTertiary, fontSize: 15),
-        ));
-      }
-      parts.add(Text(
-        hwbParts.join(' | '),
-        style: const TextStyle(
-          color: VibraTheme.kTextTertiary,
-          fontSize: 15,
-        ),
-      ));
-    }
-
-    if (parts.isEmpty) return const SizedBox.shrink();
-
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: parts,
-    );
-  }
-}
 
 /// Maps a role/position string to a directional icon.
 /// bottom/pasivo/receptive → arrow_downward; top/activo → arrow_upward;

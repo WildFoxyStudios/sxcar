@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:video_player/video_player.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'story_service.dart';
@@ -178,11 +179,10 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Preview
+        // Preview — real inline video playback (not a static icon) so the
+        // user sees exactly what they're about to share.
         _isVideo
-            ? Center(
-                child: Icon(Icons.play_circle_outline,
-                    color: Colors.white54, size: 64))
+            ? _VideoFilePreview(path: _mediaFile!.path)
             : Image.file(
                 File(_mediaFile!.path),
                 fit: BoxFit.contain,
@@ -215,6 +215,70 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Inline looping preview of a locally-picked video file, shown on the
+/// create-story review screen before upload.
+class _VideoFilePreview extends StatefulWidget {
+  final String path;
+  const _VideoFilePreview({required this.path});
+
+  @override
+  State<_VideoFilePreview> createState() => _VideoFilePreviewState();
+}
+
+class _VideoFilePreviewState extends State<_VideoFilePreview> {
+  VideoPlayerController? _controller;
+  bool _ready = false;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    final controller = VideoPlayerController.file(File(widget.path));
+    _controller = controller;
+    try {
+      await controller.initialize();
+      await controller.setLooping(true);
+      await controller.play();
+      if (!mounted) return;
+      setState(() => _ready = true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _failed = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_failed) {
+      return const Center(
+        child: Icon(Icons.videocam_off, color: Colors.white54, size: 64),
+      );
+    }
+    final controller = _controller;
+    if (!_ready || controller == null || !controller.value.isInitialized) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+    return Center(
+      child: AspectRatio(
+        aspectRatio: controller.value.aspectRatio,
+        child: VideoPlayer(controller),
+      ),
     );
   }
 }

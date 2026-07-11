@@ -6,9 +6,10 @@ import '../theme/app_theme.dart';
 
 /// Lets the user pick which app icon to display.
 ///
-/// This is a UI-only screen — the actual iOS / Android asset swap is out of
-/// scope. Picking "Default" or "Discreet" toggles the [discreetIconProvider]
-/// which is read by T2.7's settings screen.
+/// Picking "Default" or "Discreet" toggles [discreetIconProvider], which
+/// persists the choice AND performs the real Android launcher swap via the
+/// native activity-alias MethodChannel (`com.proyectox.app/icon`). iOS
+/// alternate icons would need a Mac build + asset-catalog config (not wired).
 class DiscreetIconPickerScreen extends ConsumerStatefulWidget {
   const DiscreetIconPickerScreen({super.key});
 

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Discreet alternate app icon: a neutral "weather" droplet on a dark tile,
+     so the app is not identifiable from the home screen. Vector so no
+     per-density PNG assets are needed. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#1C2530"
+        android:pathData="M0,0h108v108h-108z" />
+    <path
+        android:fillColor="#8FA6BF"
+        android:pathData="M54,28 C54,28 36,52 36,66 a18,18 0 1,0 36,0 C72,52 54,28 54,28 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,64 a6,6 0 0,0 6,6 a3,3 0 0,1 0,6 a12,12 0 0,1 -12,-12 a3,3 0 0,1 6,0 Z" />
+</vector>

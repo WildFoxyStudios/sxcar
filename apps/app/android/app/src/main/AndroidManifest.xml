@@ -70,11 +70,9 @@
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme"/>
 
-            <!-- Main launcher -->
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
+            <!-- NOTE: the MAIN/LAUNCHER entry lives on the activity-aliases
+                 below (default + discreet) so the launcher icon can be swapped
+                 at runtime. This activity keeps only the deep-link filters. -->
 
             <!-- Deep links (App Links) -->
             <intent-filter android:autoVerify="true">
@@ -95,6 +93,37 @@
                 <data android:scheme="vibra"/>
             </intent-filter>
         </activity>
+
+        <!-- Default (visible) launcher icon — enabled by default. -->
+        <activity-alias
+            android:name=".DefaultAlias"
+            android:targetActivity=".MainActivity"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="Vibra"
+            android:roundIcon="@mipmap/ic_launcher">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Discreet launcher icon — disabled by default; toggled on at runtime
+             via the com.proyectox.app/icon MethodChannel. Neutral name + icon
+             so the app is not identifiable on the home screen. -->
+        <activity-alias
+            android:name=".DiscreetAlias"
+            android:targetActivity=".MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_discreet"
+            android:label="Weather">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
 
         <!-- File provider for camera photos -->
         <provider

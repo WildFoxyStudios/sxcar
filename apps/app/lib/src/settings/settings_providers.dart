@@ -1,8 +1,12 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _secureStorage = FlutterSecureStorage();
+
+/// Platform channel for swapping the Android launcher icon (activity-alias).
+const _iconChannel = MethodChannel('com.proyectox.app/icon');
 
 // ────────────────────────────────────────────────────────────────────────────
 // unitsProvider
@@ -61,6 +65,15 @@ class DiscreetIconNotifier extends Notifier<bool> {
     state = v;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kDiscreetIconKey, v);
+    // Actually swap the launcher icon via the native activity-alias toggle.
+    // Best-effort: the preference is saved even if the platform call fails
+    // (e.g. iOS without alternate icons configured).
+    try {
+      await _iconChannel.invokeMethod('setDiscreetIcon', v);
+    } catch (_) {
+      // Best-effort: icon swap unsupported on this platform/build, or no
+      // native handler (e.g. in tests). The preference is already saved.
+    }
   }
 }
 

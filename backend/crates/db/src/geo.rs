@@ -111,6 +111,7 @@ pub async fn find_nearby_users(
     radius_m: f64,
     current_user_id: uuid::Uuid,
     limit: i64,
+    offset: i64,
     min_age: Option<i32>,
     max_age: Option<i32>,
     tribe: Option<&str>,
@@ -166,6 +167,7 @@ pub async fn find_nearby_users(
               WHERE cm_self.user_id = $4 AND cm_other.user_id = u.id))
         ORDER BY distance_m ASC
         LIMIT $5
+        OFFSET $18
         "#,
     )
     .bind(lon)
@@ -185,6 +187,7 @@ pub async fn find_nearby_users(
     .bind(photos_only)
     .bind(position)
     .bind(not_chatted)
+    .bind(offset)
     .fetch_all(pool)
     .await?;
     Ok(rows)

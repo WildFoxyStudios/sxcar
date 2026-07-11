@@ -16,6 +16,9 @@ pub struct NearbyQuery {
     pub radius_m: f64,
     #[serde(default = "default_limit")]
     pub limit: i64,
+    /// Pagination offset (for infinite scroll). Defaults to 0.
+    #[serde(default)]
+    pub offset: i64,
     pub min_age: Option<i32>,
     pub max_age: Option<i32>,
     pub tribe: Option<String>,
@@ -98,6 +101,7 @@ pub async fn nearby(
         params.radius_m,
         current_user_id,
         limit,
+        params.offset.max(0),
         params.min_age,
         params.max_age,
         params.tribe.as_deref(),

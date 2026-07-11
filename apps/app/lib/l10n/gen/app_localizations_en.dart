@@ -673,6 +673,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatUnsentMessage => '[Message unsent]';
 
   @override
+  String get chatTranslate => 'Translate';
+
+  @override
+  String get chatShowOriginal => 'Show original';
+
+  @override
+  String get chatTranslating => 'Translating…';
+
+  @override
+  String get chatTranslated => 'Translated';
+
+  @override
+  String get chatTranslateFailed => 'Translation failed';
+
+  @override
   String get chatVoiceMessage => 'Voice message';
 
   @override

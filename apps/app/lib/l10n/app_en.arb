@@ -249,6 +249,21 @@
   "chatUnsentMessage": "[Message unsent]",
   "@chatUnsentMessage": { "description": "Placeholder shown in place of an unsent message" },
 
+  "chatTranslate": "Translate",
+  "@chatTranslate": { "description": "Action to translate a received chat message" },
+
+  "chatShowOriginal": "Show original",
+  "@chatShowOriginal": { "description": "Action to revert a translated message to its original text" },
+
+  "chatTranslating": "Translating…",
+  "@chatTranslating": { "description": "Shown while a message translation is in progress" },
+
+  "chatTranslated": "Translated",
+  "@chatTranslated": { "description": "Label above the translated text of a message" },
+
+  "chatTranslateFailed": "Translation failed",
+  "@chatTranslateFailed": { "description": "Snackbar shown when on-device translation fails" },
+
   "chatVoiceMessage": "Voice message",
   "@chatVoiceMessage": { "description": "Label for voice message audio bubble" },
 

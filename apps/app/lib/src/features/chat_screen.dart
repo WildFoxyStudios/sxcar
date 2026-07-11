@@ -10,6 +10,7 @@ import 'package:screenshot_callback/screenshot_callback.dart';
 import '../auth/auth_provider.dart';
 import '../chat/chat_service.dart';
 import '../chat/models.dart';
+import '../chat/translation_service.dart';
 import '../chat/unread_count_provider.dart';
 import '../media/media_service.dart';
 import '../nsfw/nsfw_service.dart';
@@ -979,6 +980,10 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
   /// Whether the current user viewed the ephemeral photo in this session.
   bool _locallyViewed = false;
 
+  /// On-device translation of the message body (null until requested).
+  String? _translatedText;
+  bool _translating = false;
+
   /// Cached presigned-URL future for photo bubbles (set once in initState).
   Future<String>? _urlFuture;
 
@@ -1168,6 +1173,7 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
           onLongPress: () => _showActionPicker(context, ref),
           child: bubble,
         ),
+        if (_translating || _translatedText != null) _buildTranslation(isMe),
         if (message.reactions.isNotEmpty) _buildReactionChips(context, isMe),
         if (failed)
           // Tap-to-retry affordance for a failed optimistic send. Icon-only
@@ -1577,7 +1583,93 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
     );
   }
 
-  // ── Action picker (reactions + unsend) ─────────────────────────────────────
+  // ── On-device translation ──────────────────────────────────────────────────
+
+  /// Translate this message's body into the device locale (on-device, free).
+  Future<void> _translate() async {
+    final body = widget.message.body ?? '';
+    if (body.trim().isEmpty) return;
+    setState(() => _translating = true);
+    final targetBcp = Localizations.localeOf(context).languageCode;
+    final l10n = AppLocalizations.of(context);
+    try {
+      final result = await ref
+          .read(translationServiceProvider)
+          .translate(body, targetBcp: targetBcp);
+      if (!mounted) return;
+      setState(() {
+        _translatedText = result;
+        _translating = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _translating = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n?.chatTranslateFailed ?? 'Translation failed')),
+      );
+    }
+  }
+
+  Widget _buildTranslation(bool isMe) {
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      margin: EdgeInsets.only(
+        left: isMe ? 40 : 14,
+        right: isMe ? 14 : 40,
+        top: 2,
+        bottom: 2,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: VibraTheme.kSurfaceElevated.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: VibraTheme.kDivider.withValues(alpha: 0.3)),
+      ),
+      child: _translating
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l10n?.chatTranslating ?? 'Translating…',
+                  style: const TextStyle(
+                    color: VibraTheme.kTextSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment:
+                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n?.chatTranslated ?? 'Translated',
+                  style: const TextStyle(
+                    color: VibraTheme.kTextTertiary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _translatedText ?? '',
+                  style: const TextStyle(
+                    color: VibraTheme.kTextPrimary,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  // ── Action picker (reactions + unsend + translate) ──────────────────────────
 
   static const _kReactionEmojis = ['❤️', '😂', '👍', '😮', '😢', '🔥'];
 
@@ -1629,6 +1721,36 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
                   );
                 }).toList(),
               ),
+              // Translate option — any text message with a body.
+              if ((message.body ?? '').trim().isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Divider(color: VibraTheme.kDivider),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      if (_translatedText != null) {
+                        setState(() => _translatedText = null); // show original
+                      } else {
+                        _translate();
+                      }
+                    },
+                    icon: const Icon(Icons.translate,
+                        color: VibraTheme.kAccent, size: 20),
+                    label: Text(
+                      _translatedText != null
+                          ? (AppLocalizations.of(context)?.chatShowOriginal ??
+                              'Show original')
+                          : (AppLocalizations.of(context)?.chatTranslate ??
+                              'Translate'),
+                      style: const TextStyle(color: VibraTheme.kAccent),
+                    ),
+                  ),
+                ),
+              ],
               // Unsend option for own messages (only if not already unsent)
               if (isMe && message.unsentAt == null) ...[
                 const Padding(

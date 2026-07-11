@@ -1388,6 +1388,36 @@ abstract class AppLocalizations {
   /// **'[Mensaje anulado]'**
   String get chatUnsentMessage;
 
+  /// Action to translate a received chat message
+  ///
+  /// In es, this message translates to:
+  /// **'Traducir'**
+  String get chatTranslate;
+
+  /// Action to revert a translated message to its original text
+  ///
+  /// In es, this message translates to:
+  /// **'Ver original'**
+  String get chatShowOriginal;
+
+  /// Shown while a message translation is in progress
+  ///
+  /// In es, this message translates to:
+  /// **'Traduciendo…'**
+  String get chatTranslating;
+
+  /// Label above the translated text of a message
+  ///
+  /// In es, this message translates to:
+  /// **'Traducido'**
+  String get chatTranslated;
+
+  /// Snackbar shown when on-device translation fails
+  ///
+  /// In es, this message translates to:
+  /// **'Error al traducir'**
+  String get chatTranslateFailed;
+
   /// Label for voice message audio bubble
   ///
   /// In es, this message translates to:

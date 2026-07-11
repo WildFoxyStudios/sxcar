@@ -674,6 +674,21 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatUnsentMessage => '[Mensaje anulado]';
 
   @override
+  String get chatTranslate => 'Traducir';
+
+  @override
+  String get chatShowOriginal => 'Ver original';
+
+  @override
+  String get chatTranslating => 'Traduciendo…';
+
+  @override
+  String get chatTranslated => 'Traducido';
+
+  @override
+  String get chatTranslateFailed => 'Error al traducir';
+
+  @override
   String get chatVoiceMessage => 'Mensaje de voz';
 
   @override

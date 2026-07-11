@@ -64,6 +64,9 @@ dependencies:
   flutter_webrtc: ^1.5.2
   screenshot_callback: ^3.0.1
   video_player: ^2.11.1
+  # On-device (free, offline) chat translation — source detection + translate.
+  google_mlkit_translation: ^0.13.0
+  google_mlkit_language_id: ^0.13.0
 
 dev_dependencies:
   flutter_test:

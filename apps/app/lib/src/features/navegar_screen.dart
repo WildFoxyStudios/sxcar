@@ -108,7 +108,28 @@ class NavegarScreen extends ConsumerStatefulWidget {
 }
 
 class _NavegarScreenState extends ConsumerState<NavegarScreen> {
-  late Future<List<NearbyUser>> _nearbyUsersFuture;
+  // ── Pagination state (replaces the one-shot Future) ───────────────────────
+  /// Users accumulated across all loaded pages.
+  List<NearbyUser> _allUsers = [];
+  /// Offset for the next page request (always == _allUsers.length when loading
+  /// more). Kept as an explicit field for clarity/debuggability.
+  int _currentOffset = 0;
+  /// False once a page returns fewer than the limit (no more to fetch).
+  bool _hasMore = true;
+  /// True while a load-more request is in flight (prevents concurrent fetches).
+  bool _isLoadingMore = false;
+  /// True during the very first page load (drives the shimmer placeholder).
+  bool _isLoadingFirst = true;
+  /// Populated when the initial load fails (drives the error state).
+  String? _error;
+
+  /// Page size for /grid/nearby. A page returning fewer than this sets
+  /// `_hasMore = false`.
+  static const int _pageLimit = 50;
+
+  /// Controls the CustomScrollView; fires _loadMore near the bottom.
+  final ScrollController _scrollController = ScrollController();
+
   Future<List<NearbyUser>>? _discoverUsersFuture;
 
   // ── Filter state (kept from original CascadeScreen) ────────────────────────
@@ -150,7 +171,8 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   @override
   void initState() {
     super.initState();
-    _nearbyUsersFuture = _initAndFetch();
+    _scrollController.addListener(_onScroll);
+    _loadFirst(); // replaces _nearbyUsersFuture = _initAndFetch();
     _discoverUsersFuture = _initAndFetchDiscover();
     _loadFilterOptions();
     _loadTravelPass();
@@ -158,8 +180,20 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _filterSearchController.dispose();
     super.dispose();
+  }
+
+  /// Scroll listener: triggers `_loadMore()` when the user gets within 300px
+  /// of the bottom. `_loadMore` is a no-op when already loading or exhausted.
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels > position.maxScrollExtent - 300) {
+      _loadMore();
+    }
   }
 
   /// Load the current active travel pass from the server.
@@ -171,36 +205,115 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       if (!mounted) return;
       setState(() {
         _travelPass = tp;
-        if (tp != null) {
-          // Re-fetch with travel pass coordinates
-          _nearbyUsersFuture = _fetchNearbyUsers(
-            overrideLat: tp.lat,
-            overrideLon: tp.lon,
-          );
-          _discoverUsersFuture = _fetchDiscoverUsers(
-            overrideLat: tp.lat,
-            overrideLon: tp.lon,
-          );
-        }
       });
+      if (tp != null) {
+        // Re-fetch with travel pass coordinates (full reset of pagination).
+        _loadFirst(overrideLat: tp.lat, overrideLon: tp.lon);
+        _discoverUsersFuture = _fetchDiscoverUsers(
+          overrideLat: tp.lat,
+          overrideLon: tp.lon,
+        );
+      }
     } catch (_) {
       if (!mounted) return;
     }
   }
 
-  /// Waits for auth, fetches GPS, then fetches nearby users.
-  Future<List<NearbyUser>> _initAndFetch() async {
-    await ref.read(authReadyProvider.future);
-    final service = ref.read(locationServiceProvider);
-    final pos = await service.getCurrentPosition() ??
-        await service.getLastKnownPosition();
-    if (mounted) {
+  /// Initial load: resets all pagination state, waits for auth + GPS (unless
+  /// [overrideLat]/[overrideLon] are provided — e.g. by a travel pass), then
+  /// fetches page 0 and populates `_allUsers`. Mirrors the old
+  /// `_initAndFetch()` → `_nearbyUsersFuture` flow.
+  ///
+  /// [refreshPosition] (default true) re-reads GPS before fetching. Set false
+  /// only when the caller already updated `_lastPosition` (e.g. RefreshIndicator).
+  Future<void> _loadFirst({
+    double? overrideLat,
+    double? overrideLon,
+    bool refreshPosition = true,
+  }) async {
+    setState(() {
+      _isLoadingFirst = true;
+      _error = null;
+      _allUsers = [];
+      _currentOffset = 0;
+      _hasMore = true;
+      _isLoadingMore = false;
+    });
+
+    try {
+      await ref.read(authReadyProvider.future);
+      if (overrideLat == null || overrideLon == null) {
+        if (refreshPosition) {
+          final service = ref.read(locationServiceProvider);
+          final pos = await service.getCurrentPosition() ??
+              await service.getLastKnownPosition();
+          if (!mounted) return;
+          setState(() {
+            _lastPosition = pos;
+            _locationDenied = pos == null;
+          });
+        }
+      }
+      final page = await _fetchNearbyUsers(
+        overrideLat: overrideLat,
+        overrideLon: overrideLon,
+        offset: 0,
+      );
+      if (!mounted) return;
       setState(() {
-        _lastPosition = pos;
-        _locationDenied = pos == null;
+        _allUsers = page;
+        _currentOffset = page.length;
+        _hasMore = page.length >= _pageLimit;
+        _isLoadingFirst = false;
+      });
+    } catch (e) {
+      debugPrint('[NavegarScreen] error: initial load failed: $e');
+      if (!mounted) return;
+      setState(() {
+        _error = 'load_failed';
+        _isLoadingFirst = false;
       });
     }
-    return _fetchNearbyUsers();
+  }
+
+  /// Load-more: fetches the next page at `offset = _allUsers.length` and
+  /// appends. No-op when there are no more pages or a load is already in
+  /// flight. Guards every setState with `mounted`.
+  Future<void> _loadMore({
+    double? overrideLat,
+    double? overrideLon,
+  }) async {
+    if (!_hasMore || _isLoadingMore) return;
+    // Need a position to query — if we never got one, nothing to load.
+    final effectiveLat = overrideLat ?? _lastPosition?.latitude;
+    final effectiveLon = overrideLon ?? _lastPosition?.longitude;
+    if (effectiveLat == null || effectiveLon == null) return;
+
+    setState(() => _isLoadingMore = true);
+    try {
+      final page = await _fetchNearbyUsers(
+        overrideLat: overrideLat,
+        overrideLon: overrideLon,
+        offset: _currentOffset,
+      );
+      if (!mounted) return;
+      setState(() {
+        if (page.isEmpty) {
+          _hasMore = false;
+        } else {
+          _allUsers = [..._allUsers, ...page];
+          _currentOffset = _allUsers.length;
+          if (page.length < _pageLimit) _hasMore = false;
+        }
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      debugPrint('[NavegarScreen] error: load-more failed: $e');
+      if (!mounted) return;
+      setState(() => _isLoadingMore = false);
+      // Do not flip _hasMore on transient errors — the user can scroll again
+      // to retry.
+    }
   }
 
   /// Fetches filter options from /meta/filters on startup.
@@ -287,6 +400,7 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   Future<List<NearbyUser>> _fetchNearbyUsers({
     double? overrideLat,
     double? overrideLon,
+    int offset = 0,
   }) async {
     final dio = ref.read(dioProvider);
     final radiusM = (_distanceKm * 1000).round();
@@ -300,8 +414,10 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       'lat': effectiveLat,
       'lon': effectiveLon,
       'radius_m': radiusM,
-      'limit': 50,
+      'limit': _pageLimit,
     };
+    // The backend now supports pagination via `offset` on /grid/nearby.
+    if (offset > 0) queryParams['offset'] = offset;
 
     if (_ageRange.start > 18) queryParams['min_age'] = _ageRange.start.round();
     if (_ageRange.end < 99) queryParams['max_age'] = _ageRange.end.round();
@@ -337,8 +453,8 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   }
 
   void _refresh() {
+    _loadFirst();
     setState(() {
-      _nearbyUsersFuture = _initAndFetch();
       _discoverUsersFuture = _initAndFetchDiscover();
     });
   }
@@ -361,17 +477,17 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   void _toggleFavorites() {
     setState(() {
       _showFavoritesOnly = !_showFavoritesOnly;
-      // T5.9: refetch so the server-side `favorites_only=true` actually runs.
-      // The server returns the already-filtered set — no client-side re-filter.
-      _nearbyUsersFuture = _fetchNearbyUsers();
     });
+    // T5.9: refetch so the server-side `favorites_only=true` actually runs.
+    // The server returns the already-filtered set — no client-side re-filter.
+    _loadFirst(refreshPosition: false);
   }
 
   void _toggleOnlineOnly() {
     setState(() {
       _onlineOnly = !_onlineOnly;
-      _nearbyUsersFuture = _fetchNearbyUsers();
     });
+    _loadFirst(refreshPosition: false);
   }
 
   // T5.9: toggles the heartbeats-based "right now" filter (last_seen_at
@@ -380,24 +496,24 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   void _toggleRightNow() {
     setState(() {
       _rightNow = !_rightNow;
-      _nearbyUsersFuture = _fetchNearbyUsers();
     });
+    _loadFirst(refreshPosition: false);
   }
 
   // G1: toggles the photos-only filter (only users with a profile photo).
   void _togglePhotosOnly() {
     setState(() {
       _photosOnly = !_photosOnly;
-      _nearbyUsersFuture = _fetchNearbyUsers();
     });
+    _loadFirst(refreshPosition: false);
   }
 
   // G1: toggles the not-chatted filter (only users never chatted with).
   void _toggleNotChatted() {
     setState(() {
       _notChatted = !_notChatted;
-      _nearbyUsersFuture = _fetchNearbyUsers();
     });
+    _loadFirst(refreshPosition: false);
   }
 
   // G1: opens the position selector sheet.
@@ -407,16 +523,16 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     if (_position != null) {
       setState(() {
         _position = null;
-        _nearbyUsersFuture = _fetchNearbyUsers();
       });
+      _loadFirst(refreshPosition: false);
       return;
     }
     showPositionSheet(context).then((picked) {
       if (picked != null && mounted) {
         setState(() {
           _position = picked;
-          _nearbyUsersFuture = _fetchNearbyUsers();
         });
+        _loadFirst(refreshPosition: false);
       }
     });
   }
@@ -484,136 +600,176 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             setState(() {
               _lastPosition = pos;
               _locationDenied = pos == null;
-              _nearbyUsersFuture = _fetchNearbyUsers();
-              _discoverUsersFuture = _fetchDiscoverUsers();
             });
+            // Full pagination reset (position was already refreshed above).
+            _loadFirst(refreshPosition: false);
+            _discoverUsersFuture = _fetchDiscoverUsers();
           }
         },
-        child: FutureBuilder<List<NearbyUser>>(
-          future: _nearbyUsersFuture,
-          builder: (context, snapshot) {
-            final isLoading =
-                snapshot.connectionState == ConnectionState.waiting;
-            final hasError = snapshot.hasError;
-            // Favorites are already server-filtered (`favorites_only=true` is
-            // sent in _fetchNearbyUsers). The old client-side favorites
-            // re-filter emptied the grid before the favorites list loaded, so
-            // it's removed — the server response is authoritative.
-            final users = snapshot.data ?? [];
+        child: _buildGrid(l10n, profileAsync, context),
+      ),
+    );
+  }
 
-            return CustomScrollView(
-              slivers: [
-                // ── Header SliverAppBar ──────────────────────────────────
-                _buildSliverAppBar(l10n, profileAsync, context),
+  /// Builds the CustomScrollView from the manual pagination state.
+  /// Replaces the old FutureBuilder — the three branches (loading / error /
+  /// data) now read `_isLoadingFirst`, `_error`, and `_allUsers` directly.
+  Widget _buildGrid(
+    AppLocalizations l10n,
+    AsyncValue<UserProfile?> profileAsync,
+    BuildContext context,
+  ) {
+    final isLoading = _isLoadingFirst;
+    final hasError = _error != null;
+    // Favorites are already server-filtered (`favorites_only=true` is
+    // sent in _fetchNearbyUsers). The old client-side favorites re-filter
+    // emptied the grid before the favorites list loaded, so it's removed —
+    // the server response is authoritative.
+    final users = _allUsers;
 
-                // ── Stories bar (G12) ────────────────────────────────────
-                SliverToBoxAdapter(
-                  child: _buildStoriesBar(context),
-                ),
+    return CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        // ── Header SliverAppBar ──────────────────────────────────
+        _buildSliverAppBar(l10n, profileAsync, context),
 
-                // ── Discover strip (curated profiles, horizontal) ───────
-                SliverToBoxAdapter(
-                  child: _buildDiscoverStrip(context),
-                ),
+        // ── Stories bar (G12) ────────────────────────────────────
+        SliverToBoxAdapter(
+          child: _buildStoriesBar(context),
+        ),
 
-                // ── Location denied banner ───────────────────────────────
-                if (_locationDenied)
-                  SliverToBoxAdapter(child: _buildLocationBanner()),
+        // ── Discover strip (curated profiles, horizontal) ───────
+        SliverToBoxAdapter(
+          child: _buildDiscoverStrip(context),
+        ),
 
-                // ── Travel Pass banner ────────────────────────────────────
-                if (_travelPass != null)
-                  SliverToBoxAdapter(child: _buildTravelPassBanner(l10n)),
+        // ── Location denied banner ───────────────────────────────
+        if (_locationDenied)
+          SliverToBoxAdapter(child: _buildLocationBanner()),
 
-                // ── Filter chips row ─────────────────────────────────────
-                SliverToBoxAdapter(
-                  child: _buildChipsRow(l10n, context),
-                ),
+        // ── Travel Pass banner ────────────────────────────────────
+        if (_travelPass != null)
+          SliverToBoxAdapter(child: _buildTravelPassBanner(l10n)),
 
-                // ── Content: shimmer | error | empty | grid ──────────────
-                if (isLoading)
-                  // Shimmer skeleton as a sliver grid
-                  SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 1.5,
-                      crossAxisSpacing: 1.5,
-                      childAspectRatio: 0.91,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (_, _) => Shimmer.fromColors(
-                        baseColor: VibraTheme.kSurface,
-                        highlightColor: VibraTheme.kSurfaceElevated,
-                        child: Container(color: VibraTheme.kSurface),
-                      ),
-                      childCount: 9,
-                    ),
-                  )
-                else if (hasError)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _buildErrorState(Theme.of(context)),
-                  )
-                else if (users.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _buildEmptyState(Theme.of(context)),
-                  )
-                else ...[
-                  // First 6 users (rows 1–2)
-                  SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 1.5,
-                      crossAxisSpacing: 1.5,
-                      childAspectRatio: 0.91,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (ctx, index) {
-                        final user = users[index];
-                        return _UserCard(
-                          user: user,
-                          onTap: () => ctx.push('/profile/${user.id}'),
-                        );
-                      },
-                      childCount: users.length < 6 ? users.length : 6,
+        // ── Filter chips row ─────────────────────────────────────
+        SliverToBoxAdapter(
+          child: _buildChipsRow(l10n, context),
+        ),
+
+        // ── Content: shimmer | error | empty | grid ──────────────
+        if (isLoading)
+          // Shimmer skeleton as a sliver grid
+          SliverGrid(
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 1.5,
+              crossAxisSpacing: 1.5,
+              childAspectRatio: 0.91,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (_, _) => Shimmer.fromColors(
+                baseColor: VibraTheme.kSurface,
+                highlightColor: VibraTheme.kSurfaceElevated,
+                child: Container(color: VibraTheme.kSurface),
+              ),
+              childCount: 9,
+            ),
+          )
+        else if (hasError)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: _buildErrorState(Theme.of(context)),
+          )
+        else if (users.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: _buildEmptyState(Theme.of(context)),
+          )
+        else ...[
+          // First 6 users (rows 1–2)
+          SliverGrid(
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 1.5,
+              crossAxisSpacing: 1.5,
+              childAspectRatio: 0.91,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (ctx, index) {
+                final user = users[index];
+                return _UserCard(
+                  user: user,
+                  onTap: () => ctx.push('/profile/${user.id}'),
+                );
+              },
+              childCount: users.length < 6 ? users.length : 6,
+            ),
+          ),
+
+          // Upsell band — inserted after row 2
+          if (users.length >= 6)
+            SliverToBoxAdapter(
+              child: _buildUpsellBand(l10n, context),
+            ),
+
+          // Remaining users (row 3+)
+          if (users.length > 6)
+            SliverGrid(
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 1.5,
+                crossAxisSpacing: 1.5,
+                childAspectRatio: 0.91,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (ctx, index) {
+                  final user = users[index + 6];
+                  return _UserCard(
+                    user: user,
+                    onTap: () => ctx.push('/profile/${user.id}'),
+                  );
+                },
+                childCount: users.length - 6,
+              ),
+            ),
+
+          // ── Load-more indicator (bottom of grid) ───────────────
+          if (_isLoadingMore)
+            SliverToBoxAdapter(
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: VibraTheme.kAccent,
                     ),
                   ),
-
-                  // Upsell band — inserted after row 2
-                  if (users.length >= 6)
-                    SliverToBoxAdapter(
-                      child: _buildUpsellBand(l10n, context),
+                ),
+              ),
+            )
+          else if (!_hasMore && users.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Text(
+                    'No more profiles nearby',
+                    style: const TextStyle(
+                      color: VibraTheme.kTextSecondary,
+                      fontSize: 13,
                     ),
-
-                  // Remaining users (row 3+)
-                  if (users.length > 6)
-                    SliverGrid(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 1.5,
-                        crossAxisSpacing: 1.5,
-                        childAspectRatio: 0.91,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (ctx, index) {
-                          final user = users[index + 6];
-                          return _UserCard(
-                            user: user,
-                            onTap: () => ctx.push('/profile/${user.id}'),
-                          );
-                        },
-                        childCount: users.length - 6,
-                      ),
-                    ),
-                ],
-              ],
-            );
-          },
-        ),
-      ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ],
     );
   }
 
@@ -1147,9 +1303,10 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                 if (!mounted) return;
                 setState(() {
                   _travelPass = null;
-                  _nearbyUsersFuture = _fetchNearbyUsers();
-                  _discoverUsersFuture = _fetchDiscoverUsers();
                 });
+                // Travel pass cancelled → fall back to device GPS (full reset).
+                _loadFirst(refreshPosition: true);
+                _discoverUsersFuture = _fetchDiscoverUsers();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(l10n.travelPassCancelled)),
                 );
@@ -1380,8 +1537,9 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
                             _lookingFor = localLookingFor;
                             _distanceKm = localDistanceKm;
                             _searchQuery = searchController.text.trim();
-                            _nearbyUsersFuture = _fetchNearbyUsers();
                           });
+                          // Filter change → fresh paginated query from offset 0.
+                          _loadFirst(refreshPosition: false);
                           Navigator.pop(ctx);
                         },
                         child: Text(l10n.filterApply),

@@ -35,12 +35,14 @@ class PhrasesScreen extends ConsumerWidget {
         // Free users see a locked FAB that routes to the shop.
         feature: PremiumFeature.prioritySupport,
         lockedBuilder: (context, _) => FloatingActionButton.extended(
+          heroTag: 'phrases_fab',
           onPressed: () => context.push('/tienda'),
           backgroundColor: VibraTheme.kBrandPrimary,
           icon: const Icon(Icons.lock_outline),
           label: const Text('Premium'),
         ),
         child: FloatingActionButton.extended(
+          heroTag: 'phrases_fab',
           onPressed: () => _showAddDialog(context, ref),
           icon: const Icon(Icons.add),
           label: const Text('Add'),

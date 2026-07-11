@@ -398,6 +398,7 @@ class _BoostFab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     return FloatingActionButton.extended(
+      heroTag: 'chat_list_fab',
       backgroundColor: VibraTheme.kSurface,
       foregroundColor: VibraTheme.kBrandPrimary,
       onPressed: () async {

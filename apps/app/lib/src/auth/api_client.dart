@@ -30,8 +30,12 @@ class ApiClient {
 Dio createAuthClient(TokenStorage tokenStorage, {void Function()? onSessionExpired}) {
   final dio = Dio(BaseOptions(
     baseUrl: apiUrl,
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+    connectTimeout: const Duration(seconds: 15),
+    // Generous receive window: multi-write endpoints (e.g. PUT /profile) plus a
+    // cold Neon connection can legitimately take >10s. The server-side pool
+    // tuning is the real fix; this is headroom so a slow-but-valid save doesn't
+    // surface as a bogus "connection timeout".
+    receiveTimeout: const Duration(seconds: 30),
     headers: {
       'Content-Type': 'application/json',
     },

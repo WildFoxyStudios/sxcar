@@ -53,6 +53,7 @@ class EventsScreen extends ConsumerWidget {
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'events_fab',
         onPressed: () => _showCreateEventSheet(context, ref),
         backgroundColor: _kEventAccent,
         foregroundColor: Colors.white,

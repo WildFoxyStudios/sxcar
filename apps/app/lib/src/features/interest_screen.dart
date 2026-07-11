@@ -278,6 +278,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'interest_fab',
         backgroundColor: Colors.black,
         foregroundColor: VibraTheme.kBrandPrimary,
         onPressed: () async {

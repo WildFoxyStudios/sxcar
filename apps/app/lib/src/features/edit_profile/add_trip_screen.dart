@@ -101,6 +101,7 @@ class _AddTripScreenState extends State<AddTripScreen> {
               },
             ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'add_trip_fab',
         backgroundColor: VibraTheme.kBrandPrimary,
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add),

@@ -31,6 +31,7 @@ class RightNowScreen extends ConsumerWidget {
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'right_now_fab',
         onPressed: () => _showPostSheet(context, ref),
         backgroundColor: VibraTheme.kAccentGlow,
         foregroundColor: Colors.white,

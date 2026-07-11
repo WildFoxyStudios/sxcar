@@ -193,6 +193,9 @@ void showPremiumComparisonSheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
     backgroundColor: VibraTheme.kSurface,
+    // Content can be taller than the default 9/16 cap on small screens, so let
+    // it grow and scroll instead of overflowing.
+    isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -207,12 +210,23 @@ class _PremiumComparisonSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return ConstrainedBox(
+      // Never taller than 85% of the screen; scroll beyond that.
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: 32 + MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // Handle bar
           Center(
             child: Container(
@@ -297,7 +311,9 @@ class _PremiumComparisonSheet extends StatelessWidget {
               ),
             ),
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

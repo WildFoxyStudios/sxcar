@@ -220,6 +220,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.misShares)),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'albums_fab',
         onPressed: _showCreateDialog,
         child: const Icon(Icons.add),
       ),

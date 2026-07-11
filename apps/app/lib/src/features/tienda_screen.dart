@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../billing/billing_providers.dart';
 import '../billing/models.dart';
@@ -77,6 +78,16 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
         centerTitle: true,
         backgroundColor: VibraTheme.kBg,
         elevation: 0,
+        actions: [
+          TextButton(
+            onPressed: _restorePurchases,
+            child: Text('Restore',
+                style: TextStyle(
+                    color: VibraTheme.kBrandPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600)),
+          ),
+        ],
       ),
       body: plansAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -345,6 +356,27 @@ class _TiendaScreenState extends ConsumerState<TiendaScreen> {
             ? 365
             : 7;
     return l10n.precioContinuar(price.formatted, days);
+  }
+
+  /// Restore previous purchases from RevenueCat (required by App Store / Play).
+  /// In debug builds this is a no-op (purchases go through simulatePurchase).
+  Future<void> _restorePurchases() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      if (!kDebugMode) {
+        await Purchases.restorePurchases();
+        ref.invalidate(customerInfoProvider);
+        ref.invalidate(premiumStatusProvider);
+      }
+      if (mounted) {
+        messenger.showSnackBar(
+            const SnackBar(content: Text('Purchases restored')));
+      }
+    } catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(content: Text('Restore failed: $e')));
+      }
+    }
   }
 
   Future<void> _purchase(

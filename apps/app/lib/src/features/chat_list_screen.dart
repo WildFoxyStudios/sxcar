@@ -400,8 +400,16 @@ class _BoostFab extends ConsumerWidget {
     return FloatingActionButton.extended(
       backgroundColor: VibraTheme.kSurface,
       foregroundColor: VibraTheme.kBrandPrimary,
-      onPressed: () {
-        ref.read(boostServiceProvider).activate();
+      onPressed: () async {
+        try {
+          await ref.read(boostServiceProvider).activate();
+          ref.invalidate(activeBoostProvider);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.you_boosted_snackbar)),
+            );
+          }
+        } catch (_) {}
       },
       icon: const Icon(Icons.bolt),
       label: Text(

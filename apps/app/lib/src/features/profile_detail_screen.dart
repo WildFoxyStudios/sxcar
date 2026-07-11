@@ -187,6 +187,45 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
     }
   }
 
+  Future<void> _blockUser() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: VibraTheme.kSurface,
+        title: const Text('Block user?', style: TextStyle(color: VibraTheme.kText)),
+        content: const Text(
+            'They won\'t be able to see your profile or contact you.',
+            style: TextStyle(color: VibraTheme.kTextSecondary)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(AppLocalizations.of(context)!.cancelar)),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Block',
+                  style: TextStyle(color: VibraTheme.kError))),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(dioProvider).post('/blocks', data: {
+        'target_user_id': widget.userId,
+      });
+      if (mounted) {
+        messenger.showSnackBar(
+            const SnackBar(content: Text('User blocked')));
+        Navigator.of(context).pop();
+      }
+    } catch (_) {
+      if (mounted) {
+        messenger.showSnackBar(
+            const SnackBar(content: Text('Failed to block user')));
+      }
+    }
+  }
+
   Future<void> _showReportSheet() async {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context)!;
@@ -353,6 +392,14 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   actions: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.block,
+                        color: VibraTheme.kError,
+                      ),
+                      tooltip: 'Block',
+                      onPressed: _blockUser,
+                    ),
                     IconButton(
                       icon: const Icon(
                         Icons.flag_outlined,

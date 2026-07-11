@@ -13,18 +13,27 @@ class _ReportsOffset extends Notifier<int> {
   int build() => 0;
   void update(int v) => state = v;
 }
-final _reportsOffsetProvider = NotifierProvider<_ReportsOffset, int>(_ReportsOffset.new);
 
-final reportsProvider = FutureProvider.autoDispose<List<ReportItem>>((ref) async {
+final _reportsOffsetProvider = NotifierProvider<_ReportsOffset, int>(
+  _ReportsOffset.new,
+);
+
+final reportsProvider = FutureProvider.autoDispose<List<ReportItem>>((
+  ref,
+) async {
   final offset = ref.watch(_reportsOffsetProvider);
   final client = ref.read(adminHttpClientProvider);
-  final response = await client.dio.get('/admin/reports', queryParameters: {
-    'status': 'open',
-    'limit':  '$_pageSize',
-    'offset': '$offset',
-  });
+  final response = await client.dio.get(
+    '/admin/reports',
+    queryParameters: {
+      'status': 'open',
+      'limit': '$_pageSize',
+      'offset': '$offset',
+    },
+  );
   final data = response.data as Map<String, dynamic>;
-  final reportsList = (data['reports'] as List<dynamic>?)
+  final reportsList =
+      (data['reports'] as List<dynamic>?)
           ?.map((e) => ReportItem.fromJson(e as Map<String, dynamic>))
           .toList() ??
       [];
@@ -56,15 +65,15 @@ class ReportItem {
 
   factory ReportItem.fromJson(Map<String, dynamic> json) {
     return ReportItem(
-      id:           json['id']             as String? ?? '',
-      reporterId:   json['reporter_id']    as String?,
+      id: json['id'] as String? ?? '',
+      reporterId: json['reporter_id'] as String?,
       targetUserId: json['target_user_id'] as String?,
-      targetKind:   json['target_kind']    as String?,
-      targetId:     json['target_id']      as String?,
-      reason:       json['reason']         as String? ?? '',
-      status:       json['status']         as String? ?? '',
-      createdAt:    json['created_at']     as String? ?? '',
-      resolvedAt:   json['resolved_at']    as String?,
+      targetKind: json['target_kind'] as String?,
+      targetId: json['target_id'] as String?,
+      reason: json['reason'] as String? ?? '',
+      status: json['status'] as String? ?? '',
+      createdAt: json['created_at'] as String? ?? '',
+      resolvedAt: json['resolved_at'] as String?,
     );
   }
 }
@@ -108,7 +117,9 @@ class ReportsScreen extends ConsumerWidget {
                 reportsAsync.maybeWhen(
                   data: (reports) => Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AdminTheme.kRed.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -135,19 +146,23 @@ class ReportsScreen extends ConsumerWidget {
           // ── Queue ────────────────────────────────────────────────────────
           Expanded(
             child: reportsAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline,
-                        size: 40, color: AdminTheme.kRed),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 40,
+                      color: AdminTheme.kRed,
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       'Failed to load reports: $error',
                       style: const TextStyle(
-                          color: AdminTheme.kMuted, fontSize: 14),
+                        color: AdminTheme.kMuted,
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
@@ -166,26 +181,29 @@ class ReportsScreen extends ConsumerWidget {
                               report: reports[i],
                               onResolve: (resolution, action, note) =>
                                   _resolveReport(
-                                context,
-                                ref,
-                                reports[i].id,
-                                resolution,
-                                action,
-                                note,
-                              ),
+                                    context,
+                                    ref,
+                                    reports[i].id,
+                                    resolution,
+                                    action,
+                                    note,
+                                  ),
                               onShowDetail: () =>
                                   _showReportDialog(context, ref, reports[i]),
                             ),
                           ),
                         ),
                         PageControls(
-                          currentPage: ref.watch(_reportsOffsetProvider) ~/ _pageSize,
+                          currentPage:
+                              ref.watch(_reportsOffsetProvider) ~/ _pageSize,
                           totalPages: reports.length < _pageSize
-                              ? ref.watch(_reportsOffsetProvider) ~/ _pageSize + 1
-                              : ref.watch(_reportsOffsetProvider) ~/ _pageSize + 2,
-                          onPageChanged: (page) =>
-                              ref.read(_reportsOffsetProvider.notifier).update(
-                                  page * _pageSize),
+                              ? ref.watch(_reportsOffsetProvider) ~/ _pageSize +
+                                    1
+                              : ref.watch(_reportsOffsetProvider) ~/ _pageSize +
+                                    2,
+                          onPageChanged: (page) => ref
+                              .read(_reportsOffsetProvider.notifier)
+                              .update(page * _pageSize),
                         ),
                       ],
                     ),
@@ -197,7 +215,10 @@ class ReportsScreen extends ConsumerWidget {
   }
 
   void _showReportDialog(
-      BuildContext context, WidgetRef ref, ReportItem report) {
+    BuildContext context,
+    WidgetRef ref,
+    ReportItem report,
+  ) {
     final noteController = TextEditingController();
     String selectedAction = 'warn';
 
@@ -215,22 +236,21 @@ class ReportsScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 _dialogInfo('Reason', report.reason),
                 const SizedBox(height: 4),
-                _dialogInfo('Target',
-                    report.targetUserId ?? 'N/A'),
+                _dialogInfo('Target', report.targetUserId ?? 'N/A'),
                 const SizedBox(height: 4),
                 _dialogInfo('Status', report.status),
                 const Divider(height: 24),
                 DropdownButtonFormField<String>(
-                  value: selectedAction,
+                  initialValue: selectedAction,
                   decoration: const InputDecoration(
                     labelText: 'Action',
                     border: OutlineInputBorder(),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'warn',    child: Text('Warn')),
+                    DropdownMenuItem(value: 'warn', child: Text('Warn')),
                     DropdownMenuItem(value: 'suspend', child: Text('Suspend')),
-                    DropdownMenuItem(value: 'ban',     child: Text('Ban')),
-                    DropdownMenuItem(value: 'clear',   child: Text('Clear')),
+                    DropdownMenuItem(value: 'ban', child: Text('Ban')),
+                    DropdownMenuItem(value: 'clear', child: Text('Clear')),
                   ],
                   onChanged: (v) {
                     if (v != null) {
@@ -258,16 +278,28 @@ class ReportsScreen extends ConsumerWidget {
             TextButton(
               onPressed: () {
                 Navigator.of(ctx).pop();
-                _resolveReport(context, ref, report.id, 'dismissed', 'clear',
-                    noteController.text);
+                _resolveReport(
+                  context,
+                  ref,
+                  report.id,
+                  'dismissed',
+                  'clear',
+                  noteController.text,
+                );
               },
               child: const Text('Dismiss'),
             ),
             FilledButton(
               onPressed: () {
                 Navigator.of(ctx).pop();
-                _resolveReport(context, ref, report.id, 'actioned',
-                    selectedAction, noteController.text);
+                _resolveReport(
+                  context,
+                  ref,
+                  report.id,
+                  'actioned',
+                  selectedAction,
+                  noteController.text,
+                );
               },
               child: const Text('Resolve'),
             ),
@@ -283,13 +315,11 @@ class ReportsScreen extends ConsumerWidget {
         children: [
           TextSpan(
             text: '$label: ',
-            style: const TextStyle(
-                color: AdminTheme.kMuted, fontSize: 13),
+            style: const TextStyle(color: AdminTheme.kMuted, fontSize: 13),
           ),
           TextSpan(
             text: value,
-            style: const TextStyle(
-                color: AdminTheme.kText, fontSize: 13),
+            style: const TextStyle(color: AdminTheme.kText, fontSize: 13),
           ),
         ],
       ),
@@ -306,11 +336,14 @@ class ReportsScreen extends ConsumerWidget {
   ) async {
     try {
       final client = ref.read(adminHttpClientProvider);
-      await client.dio.post('/admin/reports/$reportId/resolve', data: {
-        'resolution': resolution,
-        'action':     action,
-        'note':       note.isEmpty ? null : note,
-      });
+      await client.dio.post(
+        '/admin/reports/$reportId/resolve',
+        data: {
+          'resolution': resolution,
+          'action': action,
+          'note': note.isEmpty ? null : note,
+        },
+      );
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -327,10 +360,7 @@ class ReportsScreen extends ConsumerWidget {
             ? ((e.response!.data as Map)['error'] ?? 'Action failed').toString()
             : 'Action failed. Please try again.';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: AdminTheme.kRed,
-          ),
+          SnackBar(content: Text(msg), backgroundColor: AdminTheme.kRed),
         );
       }
     }
@@ -384,8 +414,8 @@ class _ReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final targetShort = report.targetUserId != null &&
-            report.targetUserId!.length >= 8
+    final targetShort =
+        report.targetUserId != null && report.targetUserId!.length >= 8
         ? '${report.targetUserId!.substring(0, 8)}…'
         : (report.targetUserId ?? 'N/A');
 
@@ -406,11 +436,7 @@ class _ReportCard extends StatelessWidget {
               children: [
                 const Padding(
                   padding: EdgeInsets.only(top: 2, right: 10),
-                  child: Icon(
-                    Icons.flag,
-                    size: 16,
-                    color: AdminTheme.kOrange,
-                  ),
+                  child: Icon(Icons.flag, size: 16, color: AdminTheme.kOrange),
                 ),
                 Expanded(
                   child: Column(
@@ -507,10 +533,14 @@ class _ReportCard extends StatelessWidget {
                 TextButton(
                   style: TextButton.styleFrom(
                     foregroundColor: AdminTheme.kMuted,
-                    textStyle:
-                        const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                   ),
                   onPressed: onShowDetail,
                   child: const Row(
@@ -552,10 +582,10 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (Color fg, String label) = switch (status) {
-      'open'       => (AdminTheme.kOrange, 'Open'),
-      'actioned'   => (AdminTheme.kGreen,  'Actioned'),
-      'dismissed'  => (AdminTheme.kMuted,  'Dismissed'),
-      _            => (AdminTheme.kMuted,  status),
+      'open' => (AdminTheme.kOrange, 'Open'),
+      'actioned' => (AdminTheme.kGreen, 'Actioned'),
+      'dismissed' => (AdminTheme.kMuted, 'Dismissed'),
+      _ => (AdminTheme.kMuted, status),
     };
 
     return Container(
@@ -567,11 +597,7 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: fg,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -600,8 +626,7 @@ class _ActionBtn extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         foregroundColor: fgColor,
         side: BorderSide(color: borderColor),
-        textStyle:
-            const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,

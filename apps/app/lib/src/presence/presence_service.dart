@@ -29,6 +29,16 @@ class PresenceService {
     await _dio.post('/heartbeat');
   }
 
+  /// PUT /privacy/preferences — sync incognito so the backend hides this user
+  /// from other users' grid/discover results (true Grindr incognito, not just
+  /// heartbeat suppression).
+  Future<void> setIncognito(bool value) async {
+    await _dio.put<Map<String, dynamic>>(
+      '/privacy/preferences',
+      data: {'incognito': value},
+    );
+  }
+
   /// GET /users/:id/status — returns the given user's online + last_seen.
   /// On any error, returns an offline status (best-effort, used for UI hints).
   Future<UserStatus> getStatus(String userId) async {

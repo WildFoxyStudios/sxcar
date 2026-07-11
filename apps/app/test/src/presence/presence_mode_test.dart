@@ -1,7 +1,24 @@
 import 'package:app/src/presence/presence_mode_provider.dart';
+import 'package:app/src/presence/presence_service.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// No-op presence service so `setIncognito` doesn't fire a real HTTP call
+/// during these unit tests (the backend sync is best-effort and covered
+/// separately). Only the local state + SharedPreferences behaviour is tested.
+class _NoopPresenceService extends PresenceService {
+  _NoopPresenceService() : super(Dio());
+  @override
+  Future<void> setIncognito(bool value) async {}
+}
+
+ProviderContainer _makeContainer() => ProviderContainer(
+      overrides: [
+        presenceServiceProvider.overrideWithValue(_NoopPresenceService()),
+      ],
+    );
 
 void main() {
   setUp(() {
@@ -10,14 +27,14 @@ void main() {
 
   group('presenceModeProvider', () {
     test('default state is false (online)', () async {
-      final container = ProviderContainer();
+      final container = _makeContainer();
       addTearDown(container.dispose);
 
       expect(container.read(presenceModeProvider), isFalse);
     });
 
     test('setIncognito(true) changes state to true', () async {
-      final container = ProviderContainer();
+      final container = _makeContainer();
       addTearDown(container.dispose);
 
       expect(container.read(presenceModeProvider), isFalse);
@@ -30,7 +47,7 @@ void main() {
     });
 
     test('setIncognito(false) after true reverts to false', () async {
-      final container = ProviderContainer();
+      final container = _makeContainer();
       addTearDown(container.dispose);
 
       await container
@@ -45,7 +62,7 @@ void main() {
     });
 
     test('persists incognito=true to SharedPreferences', () async {
-      final container = ProviderContainer();
+      final container = _makeContainer();
       addTearDown(container.dispose);
 
       await container
@@ -62,7 +79,7 @@ void main() {
         'presence_incognito': true,
       });
 
-      final container = ProviderContainer();
+      final container = _makeContainer();
       addTearDown(container.dispose);
 
       // Initial state is false (default before hydration).

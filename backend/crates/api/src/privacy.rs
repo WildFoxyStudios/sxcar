@@ -20,6 +20,9 @@ pub struct PrivacyPreferences {
     pub screen_keep_unlocked: bool,
     pub visitor_status: i16,
     pub units: i16,
+    /// Incognito / invisible mode — when true the user is hidden from other
+    /// users' grid/discover results (Grindr parity). Premium-gated client-side.
+    pub incognito: bool,
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -31,6 +34,7 @@ pub struct UpdatePrivacyPreferences {
     pub screen_keep_unlocked: Option<bool>,
     pub visitor_status: Option<i16>,
     pub units: Option<i16>,
+    pub incognito: Option<bool>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -66,6 +70,7 @@ fn row_to_prefs(row: sqlx::postgres::PgRow) -> Result<PrivacyPreferences, sqlx::
         screen_keep_unlocked: row.try_get("screen_keep_unlocked")?,
         visitor_status: row.try_get("visitor_status")?,
         units: row.try_get("units")?,
+        incognito: row.try_get("incognito")?,
     })
 }
 
@@ -87,7 +92,7 @@ pub async fn get_preferences(
     let row = sqlx::query(
         r#"SELECT multimedia_show_album_updates, multimedia_show_carousel,
                   chat_mark_chatted, chat_sync,
-                  screen_keep_unlocked, visitor_status, units
+                  screen_keep_unlocked, visitor_status, units, incognito
              FROM profiles WHERE user_id = $1"#,
     )
     .bind(user_id)
@@ -132,8 +137,9 @@ pub async fn update_preferences(
                  chat_sync                    = COALESCE($4, chat_sync),
                  screen_keep_unlocked         = COALESCE($5, screen_keep_unlocked),
                  visitor_status               = COALESCE($6, visitor_status),
-                 units                        = COALESCE($7, units)
-             WHERE user_id = $8"#,
+                 units                        = COALESCE($7, units),
+                 incognito                    = COALESCE($8, incognito)
+             WHERE user_id = $9"#,
     )
     .bind(req.multimedia_show_album_updates)
     .bind(req.multimedia_show_carousel)
@@ -142,6 +148,7 @@ pub async fn update_preferences(
     .bind(req.screen_keep_unlocked)
     .bind(req.visitor_status)
     .bind(req.units)
+    .bind(req.incognito)
     .bind(user_id)
     .execute(&state.pool)
     .await?;
@@ -150,7 +157,7 @@ pub async fn update_preferences(
     let row = sqlx::query(
         r#"SELECT multimedia_show_album_updates, multimedia_show_carousel,
                   chat_mark_chatted, chat_sync,
-                  screen_keep_unlocked, visitor_status, units
+                  screen_keep_unlocked, visitor_status, units, incognito
              FROM profiles WHERE user_id = $1"#,
     )
     .bind(user_id)

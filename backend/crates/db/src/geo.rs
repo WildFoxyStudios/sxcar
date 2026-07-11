@@ -141,6 +141,9 @@ pub async fn find_nearby_users(
         LEFT JOIN favorites f ON f.user_id = $4 AND f.target_id = u.id
         WHERE u.status = 'active'
           AND u.onboarding_completed_at IS NOT NULL
+          -- Incognito users are hidden from everyone else's grid (they can
+          -- still browse). Additive column, defaults false (visible).
+          AND p.incognito = false
           AND ST_DWithin(l.geog, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3::float8)
           AND u.id != $4
           AND u.id NOT IN (SELECT target_id FROM blocks WHERE user_id = $4)

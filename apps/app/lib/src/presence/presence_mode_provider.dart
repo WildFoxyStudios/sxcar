@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'presence_service.dart';
 
 const _kPresenceIncognitoKey = 'presence_incognito';
 
@@ -22,11 +23,19 @@ class PresenceModeNotifier extends Notifier<bool> {
   }
 
   /// Switches between Online (false) and Incognito (true) and persists the
-  /// preference so it survives app restarts.
+  /// preference so it survives app restarts. Also syncs to the backend so the
+  /// user is actually hidden from other users' grid/discover results — local
+  /// state applies immediately; the backend sync is best-effort.
   Future<void> setIncognito(bool value) async {
     state = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kPresenceIncognitoKey, value);
+    try {
+      await ref.read(presenceServiceProvider).setIncognito(value);
+    } catch (_) {
+      // Backend unreachable — local suppression (no heartbeat) still applies;
+      // the flag re-syncs on the next toggle.
+    }
   }
 }
 

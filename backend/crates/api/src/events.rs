@@ -117,6 +117,14 @@ pub async fn list_nearby(
     // an unbounded page size (max 200 events per page).
     let limit = query.limit.clamp(1, 200);
 
+    // SECURITY: reject non-finite or out-of-range coordinates.
+    if !query.lat.is_finite() || !query.lon.is_finite()
+        || !(-90.0..=90.0).contains(&query.lat)
+        || !(-180.0..=180.0).contains(&query.lon)
+    {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
     let rows = db::events::find_nearby_events(
         &state.pool,
         query.lon,

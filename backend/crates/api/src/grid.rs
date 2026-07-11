@@ -78,6 +78,15 @@ pub async fn nearby(
         }
     };
 
+    // SECURITY: reject non-finite or out-of-range coordinates before they
+    // reach PostGIS ST_MakePoint — NaN/Infinity produce garbage or errors.
+    if !lat.is_finite() || !lon.is_finite()
+        || !(-90.0..=90.0).contains(&lat)
+        || !(-180.0..=180.0).contains(&lon)
+    {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
     // P2: clamp the client-supplied limit so a caller can't request an
     // unbounded page size.
     let limit = params.limit.clamp(1, 200);

@@ -166,5 +166,27 @@ pub fn app(pool: Pool, deps: AppDeps) -> Router {
     // Dev seed endpoint (gated by DEV_SEED_ENABLED env var at request time)
     router = router.route("/dev/seed", dev::seed_service());
     // CORS como capa externa: resuelve el preflight OPTIONS antes del rate-limiter.
-    router.layer(cors::cors_layer()).with_state(state)
+    // Security headers: prevent MIME-sniffing and clickjacking on all responses.
+    router
+        .layer(cors::cors_layer())
+        .layer(axum::middleware::from_fn(security_headers_middleware))
+        .with_state(state)
+}
+
+/// Middleware that injects standard security response headers.
+async fn security_headers_middleware(
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    let mut response = next.run(request).await;
+    let headers = response.headers_mut();
+    headers.insert(
+        axum::http::HeaderName::from_static("x-content-type-options"),
+        axum::http::HeaderValue::from_static("nosniff"),
+    );
+    headers.insert(
+        axum::http::HeaderName::from_static("x-frame-options"),
+        axum::http::HeaderValue::from_static("DENY"),
+    );
+    response
 }

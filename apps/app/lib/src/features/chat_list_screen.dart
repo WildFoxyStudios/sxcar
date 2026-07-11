@@ -156,6 +156,16 @@ class _BandejaTabState extends ConsumerState<_BandejaTab> {
     _conversationsFuture = ref.read(chatServiceProvider).listConversations();
   }
 
+  /// Re-fetches conversations and re-assigns [_conversationsFuture] so the
+  /// FutureBuilder rebuilds. Used after returning from a chat (which may have
+  /// marked messages read / sent a new message) and by pull-to-refresh.
+  Future<void> _fetchConversations() {
+    final future =
+        ref.read(chatServiceProvider).listConversations();
+    setState(() => _conversationsFuture = future);
+    return future;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -223,10 +233,14 @@ class _BandejaTabState extends ConsumerState<_BandejaTab> {
                   ),
                 );
               }
-              return ListView.builder(
-                itemCount: conversations.length,
-                itemBuilder: (_, i) => _ConversationTile(
-                  conversation: conversations[i],
+              return RefreshIndicator(
+                onRefresh: () => _fetchConversations(),
+                child: ListView.builder(
+                  itemCount: conversations.length,
+                  itemBuilder: (_, i) => _ConversationTile(
+                    conversation: conversations[i],
+                    onOpened: _fetchConversations,
+                  ),
                 ),
               );
             },
@@ -239,7 +253,8 @@ class _BandejaTabState extends ConsumerState<_BandejaTab> {
 
 class _ConversationTile extends StatelessWidget {
   final Conversation conversation;
-  const _ConversationTile({required this.conversation});
+  final VoidCallback? onOpened;
+  const _ConversationTile({required this.conversation, this.onOpened});
 
   @override
   Widget build(BuildContext context) {
@@ -248,7 +263,11 @@ class _ConversationTile extends StatelessWidget {
     final isGroup = conversation.isGroup;
     final lastMessage = conversation.lastMessagePreview ?? '';
     return InkWell(
-      onTap: () => context.push('/inbox/${conversation.conversationId}', extra: conversation),
+      onTap: () async {
+        await context.push(
+            '/inbox/${conversation.conversationId}', extra: conversation);
+        onOpened?.call();
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(

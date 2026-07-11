@@ -336,6 +336,10 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                       await ref
                           .read(storyServiceProvider)
                           .deleteStory(_currentStory.id);
+                      // Invalidate the stories list so the parent (navegar_screen,
+                      // which watches storiesListProvider) drops the deleted
+                      // story's avatar immediately. Mirrors create_story_screen.
+                      ref.invalidate(storiesListProvider);
                       if (context.mounted) Navigator.of(context).pop();
                     }
                   }

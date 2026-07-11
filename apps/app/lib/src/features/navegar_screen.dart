@@ -138,7 +138,6 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
 
   // ── Travel Pass state ───────────────────────────────────────────────────────
   TravelPass? _travelPass;
-  bool _travelPassLoaded = false;
 
   // ── Filter sheet controller (lifted to avoid leak) ─────────────────────────
   final TextEditingController _filterSearchController = TextEditingController();
@@ -172,7 +171,6 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       if (!mounted) return;
       setState(() {
         _travelPass = tp;
-        _travelPassLoaded = true;
         if (tp != null) {
           // Re-fetch with travel pass coordinates
           _nearbyUsersFuture = _fetchNearbyUsers(
@@ -187,7 +185,6 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _travelPassLoaded = true);
     }
   }
 

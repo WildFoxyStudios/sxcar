@@ -1,6 +1,7 @@
 /// Shared profile option lists used by both the onboarding wizard and
 /// the edit-profile screen. Single source of truth — import this file
 /// instead of defining duplicate lists.
+library;
 
 /// HIV status options.
 const kHivStatusOptions = <String>[

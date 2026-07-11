@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/src/auth/api_client.dart';
-import 'package:app/src/onboarding/models.dart';
 import 'package:app/src/onboarding/onboarding_provider.dart';
 
 class _MockApi extends ApiClient {

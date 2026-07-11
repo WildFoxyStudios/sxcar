@@ -5,11 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/src/auth/api_client.dart';
-import 'package:app/src/onboarding/models.dart';
 import 'package:app/src/onboarding/onboarding_provider.dart';
 import 'package:app/src/onboarding/onboarding_wizard_screen.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 
 class _MockApi extends ApiClient {
   _MockApi() : super(baseUrl: 'http://test');

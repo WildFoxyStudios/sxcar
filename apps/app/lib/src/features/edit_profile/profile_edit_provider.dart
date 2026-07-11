@@ -178,11 +178,8 @@ class ProfileEditNotifier extends Notifier<ProfileEditState> {
       'show_relationship_status': p.showRelationshipStatus,
       'show_social_links': p.showSocialLinks,
     };
-    // Explicit null in 'details' is a 422 validation error on the backend.
-    // Only include it when the value is non-null.
-    if (p.details != null) {
-      body['details'] = p.details;
-    }
+    // p.details is non-nullable, so include it unconditionally.
+    body['details'] = p.details;
     return body;
   }
 

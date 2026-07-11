@@ -10,6 +10,7 @@ import 'package:screenshot_callback/screenshot_callback.dart';
 import '../auth/auth_provider.dart';
 import '../chat/chat_service.dart';
 import '../chat/models.dart';
+import '../chat/unread_count_provider.dart';
 import '../media/media_service.dart';
 import '../nsfw/nsfw_service.dart';
 import '../calls/call_service.dart';
@@ -82,6 +83,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _markRead() async {
     try {
       await ref.read(chatServiceProvider).markRead(widget.conversationId);
+      // The server-side unread count for this conversation is now 0 — refresh
+      // the bottom-nav badge so it doesn't stay stale.
+      ref.invalidate(unreadCountProvider);
     } catch (_) {
       // Read receipts are best-effort.
     }
@@ -216,6 +220,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         final callerId = json['user_id'] as String? ?? '';
         final video = json['video'] as bool? ?? false;
         if (sdp == null) return;
+        // Skip our own outgoing-call echo — the WS relays call_start to every
+        // participant including the caller. Only open the incoming-call UI for
+        // frames originated by someone else (mirrors the typing handler).
+        final myId = ref.read(authStateProvider).userId;
+        if (callerId == myId) return;
         if (mounted) {
           Navigator.of(context).push(
             MaterialPageRoute<void>(

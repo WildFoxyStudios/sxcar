@@ -71,10 +71,9 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
 
   // Travel Pass state
   TravelPass? _travelPass;
-  bool _travelPassLoaded = false;
 
   // Tribe filter chips state
-  Set<String> _selectedTribes = {};
+  final Set<String> _selectedTribes = {};
   List<String> _tribes = _kDefaultTribes;
 
   // City search state
@@ -155,7 +154,6 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
       if (!mounted) return;
       setState(() {
         _travelPass = tp;
-        _travelPassLoaded = true;
         // If travel pass is active, use its location for the grid.
         if (tp != null) {
           _globalUsersFuture = _fetchGlobalUsers(lat: tp.lat, lon: tp.lon);
@@ -163,7 +161,6 @@ class _GridSearchScreenState extends ConsumerState<GridSearchScreen> {
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _travelPassLoaded = true);
     }
   }
 

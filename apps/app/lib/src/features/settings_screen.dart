@@ -450,7 +450,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (confirmed != true) return;
     if (!mounted) return;
     try {
-      await ref.read(dioProvider).delete('/profile');
+      await ref.read(dioProvider).delete('/me');
       if (!mounted) return;
       await ref.read(authStateProvider.notifier).logout();
     } catch (e) {

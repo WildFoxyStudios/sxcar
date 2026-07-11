@@ -8,6 +8,7 @@ import '../chat/chat_service.dart';
 import '../presence/presence_service.dart';
 import '../reports/report_service.dart';
 import '../theme/app_theme.dart';
+import '../taps/taps_count_provider.dart';
 import '../theme/widgets.dart';
 import 'navegar_screen.dart' show NearbyUser;
 import 'profile_screen.dart' show UserProfile;
@@ -30,7 +31,6 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
   bool _isLoading = true;
   String? _error;
   bool _isFavorited = false;
-  bool _isBlocked = false;
   Map<String, dynamic>? _healthData;
   List<NearbyUser> _suggestions = [];
   /// Raw `created_at` timestamps for each suggestion, keyed by user id.
@@ -150,6 +150,8 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
         'to_user_id': widget.userId,
         'tap_type': 'wave',
       });
+      // Refresh the Interest screen taps badge so the count stays live.
+      ref.invalidate(tapsCountProvider);
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(

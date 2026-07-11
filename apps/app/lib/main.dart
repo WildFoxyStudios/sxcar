@@ -39,6 +39,7 @@ import 'src/features/event_detail_screen.dart';
 import 'src/features/events_screen.dart';
 import 'src/features/security_screen.dart';
 import 'src/features/settings_screen.dart';
+import 'src/features/tienda_screen.dart';
 import 'src/features/verification_screen.dart';
 import 'src/phrases/phrases_screen.dart';
 import 'src/sessions/sessions_screen.dart';
@@ -441,12 +442,14 @@ final GoRouter appRouter = GoRouter(
             ),
           ],
         ),
-        // Tab 4: Tienda (shop / plans)
+        // Tab 4: Tienda (subscription plans). Consumables (boosts/highlights)
+        // live at /shop (ShopScreen) — the bottom-nav tab shows the plan picker
+        // so that "go premium / unlock" CTAs that route to /tienda land here.
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/tienda',
-              builder: (context, _) => const ShopScreen(),
+              builder: (context, _) => const TiendaScreen(),
             ),
           ],
         ),

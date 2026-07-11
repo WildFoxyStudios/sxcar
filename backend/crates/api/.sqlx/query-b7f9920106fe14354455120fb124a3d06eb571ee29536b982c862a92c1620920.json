@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        WITH\n          upd_users AS (\n            UPDATE users\n            SET email            = $2,\n                password_hash    = NULL,\n                phone            = NULL,\n                phone_verified   = false,\n                email_verified   = false,\n                status           = 'deleted',\n                deleted_at       = now()\n            WHERE id = $1\n          )\n        UPDATE profiles\n        SET display_name       = NULL,\n            about              = NULL,\n            position           = NULL,\n            body_type          = NULL,\n            height_cm          = NULL,\n            weight_kg          = NULL,\n            relationship_status = NULL,\n            gender_identity    = NULL,\n            pronouns           = NULL,\n            hiv_status         = NULL,\n            last_tested_on     = NULL,\n            prep               = NULL,\n            profile_photo_id   = NULL,\n            profile_photo_key  = NULL,\n            details            = '{}'::jsonb\n        WHERE user_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b7f9920106fe14354455120fb124a3d06eb571ee29536b982c862a92c1620920"
+}

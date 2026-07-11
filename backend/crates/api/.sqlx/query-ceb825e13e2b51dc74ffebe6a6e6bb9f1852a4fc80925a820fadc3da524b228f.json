@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT user_id, display_name, about, gender_identity,\n                  relationship_status, created_at\n           FROM profiles\n           WHERE user_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "about",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "gender_identity",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "relationship_status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "ceb825e13e2b51dc74ffebe6a6e6bb9f1852a4fc80925a820fadc3da524b228f"
+}

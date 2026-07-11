@@ -142,18 +142,49 @@ pub async fn list_stories(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
+    // PERFORMANCE: batch the per-story `has_viewed` + `view_count` lookups
+    // (previously 2 queries × N stories = 2N round-trips) into 2 batched
+    // queries total using ANY($1) + GROUP BY story_id.
+    let story_ids: Vec<Uuid> = rows.iter().map(|r| r.id).collect();
+
+    // 1) which stories the caller has viewed
+    let mut viewed_set: std::collections::HashSet<Uuid> = std::collections::HashSet::new();
+    if !story_ids.is_empty() {
+        let viewed_rows: Vec<(Uuid,)> = sqlx::query_as(
+            r#"SELECT DISTINCT story_id FROM story_views
+               WHERE user_id = $1 AND story_id = ANY($2)"#,
+        )
+        .bind(user_id)
+        .bind(&story_ids)
+        .fetch_all(&state.pool)
+        .await
+        .unwrap_or_default();
+        viewed_set = viewed_rows.into_iter().map(|r| r.0).collect();
+    }
+
+    // 2) view counts per story
+    let mut view_counts: std::collections::HashMap<Uuid, i64> =
+        std::collections::HashMap::new();
+    if !story_ids.is_empty() {
+        let count_rows: Vec<(Uuid, i64)> = sqlx::query_as(
+            r#"SELECT story_id, COUNT(*)::int8 AS cnt FROM story_views
+               WHERE story_id = ANY($1) GROUP BY story_id"#,
+        )
+        .bind(&story_ids)
+        .fetch_all(&state.pool)
+        .await
+        .unwrap_or_default();
+        view_counts = count_rows.into_iter().map(|r| (r.0, r.1)).collect();
+    }
+
     // Build response with viewed status
     let mut user_stories: Vec<StoryJson> = Vec::new();
     let mut last_user_id: Option<Uuid> = None;
     let mut groups: Vec<StoryGroupJson> = Vec::new();
 
     for row in rows {
-        let has_viewed = db::stories::has_viewed(&state.pool, row.id, user_id)
-            .await
-            .unwrap_or(false);
-        let count = db::stories::view_count(&state.pool, row.id)
-            .await
-            .unwrap_or(0);
+        let has_viewed = viewed_set.contains(&row.id);
+        let count = view_counts.get(&row.id).copied().unwrap_or(0);
 
         let sj = StoryJson {
             id: row.id,

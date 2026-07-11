@@ -456,6 +456,13 @@ pub async fn send_message(
         None => return Err(StatusCode::BAD_REQUEST),
     };
 
+    // SECURITY (P1): cap text body at 5000 chars to prevent DoS / abuse.
+    if let Some(ref text) = req.text {
+        if text.len() > 5000 {
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    }
+
     // Reject empty bodies for text/location (media alone is OK).
     if matches!(kind, "text" | "location") {
         let empty = req
@@ -596,7 +603,11 @@ pub async fn list_messages(
         None => None,
     };
 
-    let rows = db::chat::list_messages(&state.pool, conversation_id, before_ts, query.limit)
+    // PERFORMANCE: clamp the client-supplied limit so a caller can't request
+    // an unbounded page size (e.g. ?limit=999999). Default 50, max 100.
+    let limit = query.limit.clamp(1, 100);
+
+    let rows = db::chat::list_messages(&state.pool, conversation_id, before_ts, limit)
         .await
         .map_err(|e| {
             tracing::error!("list_messages error: {e}");

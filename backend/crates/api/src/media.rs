@@ -469,10 +469,15 @@ pub async fn get_url(
             // Profile photos are public; only require the key to be a genuine
             // photo we minted (prevents presigning arbitrary objects in the
             // public bucket that were never real profile photos).
+            // SECURITY (P0): a non-owner caller may only presign photos that
+            // have passed moderation (moderation_status='approved'). The owner
+            // may always see their own pending/rejected photos.
             let exists: bool = sqlx::query_scalar::<_, bool>(
-                "SELECT EXISTS(SELECT 1 FROM photos WHERE r2_key = $1)",
+                "SELECT EXISTS(SELECT 1 FROM photos WHERE r2_key = $1 \
+                 AND (moderation_status = 'approved' OR user_id = $2))",
             )
             .bind(&q.key)
+            .bind(user_id)
             .fetch_one(&state.pool)
             .await
             .map_err(|e| {
@@ -508,6 +513,7 @@ pub async fn get_url(
                                    AND (s.expires_at IS NULL OR s.expires_at > now())
                              )
                          )
+                         AND (p.moderation_status = 'approved' OR p.user_id = $2)
                    )
                    OR EXISTS(
                        SELECT 1

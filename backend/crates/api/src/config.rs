@@ -16,7 +16,21 @@ impl Config {
         let database_url =
             get("DATABASE_URL").ok_or_else(|| anyhow::anyhow!("DATABASE_URL must be set"))?;
         let bind_addr = get("BIND_ADDR").unwrap_or_else(|| "0.0.0.0:8080".to_string());
-        let jwt_secret = get("JWT_SECRET").unwrap_or_else(|| "dev-secret-change-me".to_string());
+        // SECURITY (P0): JWT_SECRET MUST be provided in production. Failing
+        // closed here prevents the server from silently booting with a
+        // publicly-known signing key if the env var is missing. In debug/test
+        // builds we keep the dev default so local workflows and unit tests
+        // don't require it.
+        let jwt_secret = match get("JWT_SECRET") {
+            Some(s) => s,
+            None => {
+                if cfg!(debug_assertions) {
+                    "dev-secret-change-me".to_string()
+                } else {
+                    anyhow::bail!("JWT_SECRET must be set");
+                }
+            }
+        };
         let access_ttl_secs = get("ACCESS_TTL_SECS")
             .and_then(|v| v.parse().ok())
             .unwrap_or(900);

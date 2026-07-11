@@ -1,0 +1,184 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT u.id, u.email::text as \"email!\",\n                  u.email_verified, u.status, u.role, u.created_at,\n                  p.display_name, p.about as \"bio\",\n                  p.birthdate, p.height_cm, p.weight_kg,\n                  p.body_type, p.relationship_status, p.position,\n                  p.ethnicity, p.pronouns, p.profile_photo_id,\n                  p.profile_photo_key,\n                  (SELECT r2_key FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1)\n                    as \"profile_photo_url\",\n                  COALESCE(p.verified, false) as \"verified!\",\n                  COALESCE(p.details, '{}'::jsonb) as \"details!\",\n                  COALESCE(p.show_age, true)                  as \"show_age!\",\n                  COALESCE(p.show_role, true)                as \"show_role!\",\n                  COALESCE(p.show_tribes, true)              as \"show_tribes!\",\n                  COALESCE(p.show_position, true)            as \"show_position!\",\n                  COALESCE(p.show_ethnicity, true)           as \"show_ethnicity!\",\n                  COALESCE(p.show_relationship_status, true) as \"show_relationship_status!\",\n                  COALESCE(p.show_social_links, true)        as \"show_social_links!\"\n           FROM users u\n           LEFT JOIN profiles p ON p.user_id = u.id\n           WHERE u.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "email!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "email_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "role",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "bio",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "birthdate",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 9,
+        "name": "height_cm",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "weight_kg",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "body_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "relationship_status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "position",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "ethnicity",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 15,
+        "name": "pronouns",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 16,
+        "name": "profile_photo_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 17,
+        "name": "profile_photo_key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 18,
+        "name": "profile_photo_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 19,
+        "name": "verified!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 20,
+        "name": "details!",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 21,
+        "name": "show_age!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 22,
+        "name": "show_role!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 23,
+        "name": "show_tribes!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 24,
+        "name": "show_position!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 25,
+        "name": "show_ethnicity!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 26,
+        "name": "show_relationship_status!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 27,
+        "name": "show_social_links!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "89b2c17213e34612b07ee34d2a9654dc2192089baf5c6f18c0b116212d535d3a"
+}

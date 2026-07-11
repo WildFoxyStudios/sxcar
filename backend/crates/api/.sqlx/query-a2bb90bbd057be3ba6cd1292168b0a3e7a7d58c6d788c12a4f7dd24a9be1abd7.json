@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO saved_phrases (user_id, phrase, position)\n           VALUES (\n             $1,\n             $2,\n             COALESCE(\n               (SELECT MAX(position) FROM saved_phrases WHERE user_id = $1),\n               -1\n             ) + 1\n           )\n           RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a2bb90bbd057be3ba6cd1292168b0a3e7a7d58c6d788c12a4f7dd24a9be1abd7"
+}

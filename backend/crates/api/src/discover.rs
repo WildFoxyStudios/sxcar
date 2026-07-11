@@ -67,7 +67,7 @@ pub async fn list(
         r#"
         SELECT u.id, u.email::text AS email,
                p.display_name,
-               p.about AS bio,
+               NULL::text AS bio,
                (SELECT id FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1) AS profile_photo_id,
                p.profile_photo_key,
                (SELECT r2_key FROM photos WHERE user_id = u.id AND is_primary = true LIMIT 1) AS profile_photo_url,
@@ -102,6 +102,34 @@ pub async fn list(
     // Generate presigned photo URLs. Priority:
     // 1. profiles.profile_photo_key (R2 text key from profile edits)
     // 2. photos.r2_key (legacy photos table, stored in profile_photo_url)
+    //
+    // SECURITY (P0): only presign profile photos that have been approved by
+    // moderation. Pending photos must not appear in the discover feed.
+    let candidate_keys: Vec<String> = rows
+        .iter()
+        .filter_map(|u| {
+            u.profile_photo_key.clone().or_else(|| u.profile_photo_url.clone())
+        })
+        .collect();
+    let approved_keys: std::collections::HashSet<String> = if candidate_keys.is_empty() {
+        std::collections::HashSet::new()
+    } else {
+        let fetched: Result<Vec<String>, _> = sqlx::query_scalar(
+            "SELECT DISTINCT r2_key FROM photos \
+             WHERE r2_key = ANY($1) AND moderation_status = 'approved'",
+        )
+        .bind(&candidate_keys)
+        .fetch_all(&state.pool)
+        .await;
+        match fetched {
+            Ok(v) => v.into_iter().collect(),
+            Err(e) => {
+                tracing::error!("approved-photo lookup failed: {e}");
+                std::collections::HashSet::new()
+            }
+        }
+    };
+
     let users_with_photos: Vec<serde_json::Value> = rows
         .iter()
         .map(|u| {
@@ -111,13 +139,17 @@ pub async fn list(
             let r2_key = u.profile_photo_key.as_deref()
                 .or(u.profile_photo_url.as_deref());
             if let Some(key) = r2_key {
-                if let Some(ref r2) = state.r2 {
-                    let now = time::OffsetDateTime::now_utc();
-                    let url = crate::media::presign(
-                        r2, "GET", &r2.bucket_media,
-                        key, 604800, now,
-                    );
-                    j["profile_photo_url"] = serde_json::Value::String(url);
+                if approved_keys.contains(key) {
+                    if let Some(ref r2) = state.r2 {
+                        let now = time::OffsetDateTime::now_utc();
+                        let url = crate::media::presign(
+                            r2, "GET", &r2.bucket_media,
+                            key, 604800, now,
+                        );
+                        j["profile_photo_url"] = serde_json::Value::String(url);
+                    }
+                } else {
+                    j["profile_photo_url"] = serde_json::Value::Null;
                 }
             }
             if j.get("profile_photo_url").is_none() {

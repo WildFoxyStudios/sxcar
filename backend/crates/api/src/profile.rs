@@ -116,23 +116,52 @@ fn user_full_to_json(
 }
 
 /// Load gallery photos for `target_user_id` and convert to presigned-URL JSON items.
+///
+/// SECURITY (P0): when `caller_user_id != target_user_id`, only photos with
+/// `moderation_status = 'approved'` are returned — pending/rejected photos are
+/// hidden from other users. The owner always sees all of their own photos.
 async fn load_photos_json(
     pool: &db::Pool,
     r2: Option<&crate::media::R2Config>,
     target_user_id: uuid::Uuid,
+    caller_user_id: uuid::Uuid,
 ) -> anyhow::Result<Vec<Value>> {
-    let rows = db::photos::list_user_photos(pool, target_user_id).await?;
-    let now = time::OffsetDateTime::now_utc();
-    let items = rows
-        .into_iter()
-        .map(|r| {
-            let url = r2.map(|cfg| {
-                crate::media::presign(cfg, "GET", &cfg.bucket_media, &r.r2_key, 604800, now)
-            });
-            json!({ "id": r.id, "url": url })
-        })
-        .collect();
-    Ok(items)
+    // Owner sees everything; non-owner only sees approved photos.
+    if target_user_id == caller_user_id {
+        let rows = db::photos::list_user_photos(pool, target_user_id).await?;
+        let now = time::OffsetDateTime::now_utc();
+        let items = rows
+            .into_iter()
+            .map(|r| {
+                let url = r2.map(|cfg| {
+                    crate::media::presign(cfg, "GET", &cfg.bucket_media, &r.r2_key, 604800, now)
+                });
+                json!({ "id": r.id, "url": url })
+            })
+            .collect();
+        Ok(items)
+    } else {
+        // Non-owner: runtime query gated on moderation_status = 'approved'.
+        let rows: Vec<(uuid::Uuid, String)> = sqlx::query_as(
+            "SELECT id, r2_key FROM photos \
+             WHERE user_id = $1 AND moderation_status = 'approved' \
+             ORDER BY is_primary DESC, position ASC",
+        )
+        .bind(target_user_id)
+        .fetch_all(pool)
+        .await?;
+        let now = time::OffsetDateTime::now_utc();
+        let items = rows
+            .into_iter()
+            .map(|(id, r2_key)| {
+                let url = r2.map(|cfg| {
+                    crate::media::presign(cfg, "GET", &cfg.bucket_media, &r2_key, 604800, now)
+                });
+                json!({ "id": id, "url": url })
+            })
+            .collect();
+        Ok(items)
+    }
 }
 
 /// Recupera el perfil completo del usuario autenticado.
@@ -178,7 +207,7 @@ pub async fn get_own(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    let photos = load_photos_json(&state.pool, state.r2.as_deref(), user_id)
+    let photos = load_photos_json(&state.pool, state.r2.as_deref(), user_id, user_id)
         .await
         .map_err(|e| {
             tracing::error!("load_photos_json error: {e}");
@@ -232,6 +261,30 @@ pub async fn update_own(
     State(state): State<AppState>,
     Json(body): Json<UpdateProfileReq>,
 ) -> Result<Json<Value>, StatusCode> {
+    // SECURITY (P1): enforce max-length limits on user-provided text to
+    // prevent DoS / data abuse. Returns 422 on violation.
+    if let Some(ref s) = body.display_name {
+        if s.len() > 50 { return Err(StatusCode::UNPROCESSABLE_ENTITY); }
+    }
+    if let Some(ref s) = body.bio {
+        if s.len() > 500 { return Err(StatusCode::UNPROCESSABLE_ENTITY); }
+    }
+    if let Some(ref s) = body.body_type {
+        if s.len() > 30 { return Err(StatusCode::UNPROCESSABLE_ENTITY); }
+    }
+    if let Some(ref s) = body.ethnicity {
+        if s.len() > 50 { return Err(StatusCode::UNPROCESSABLE_ENTITY); }
+    }
+    if let Some(ref s) = body.pronouns {
+        if s.len() > 30 { return Err(StatusCode::UNPROCESSABLE_ENTITY); }
+    }
+    if let Some(ref s) = body.relationship_status {
+        if s.len() > 30 { return Err(StatusCode::UNPROCESSABLE_ENTITY); }
+    }
+    if let Some(ref s) = body.position {
+        if s.len() > 30 { return Err(StatusCode::UNPROCESSABLE_ENTITY); }
+    }
+
     // Parse birthdate string → time::Date
     let birthdate = match &body.birthdate {
         Some(s) => {
@@ -396,7 +449,7 @@ pub async fn update_own(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    let photos = load_photos_json(&state.pool, state.r2.as_deref(), user_id)
+    let photos = load_photos_json(&state.pool, state.r2.as_deref(), user_id, user_id)
         .await
         .map_err(|e| {
             tracing::error!("load_photos_json error: {e}");
@@ -470,7 +523,7 @@ pub async fn get_by_id(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    let photos = load_photos_json(&state.pool, state.r2.as_deref(), user_id)
+    let photos = load_photos_json(&state.pool, state.r2.as_deref(), user_id, current_user_id)
         .await
         .map_err(|e| {
             tracing::error!("load_photos_json error: {e}");

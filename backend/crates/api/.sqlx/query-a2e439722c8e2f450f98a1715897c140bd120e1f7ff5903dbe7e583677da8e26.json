@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO profiles (user_id, display_name, about, birthdate, height_cm, weight_kg,\n                                 body_type, relationship_status, position, ethnicity, pronouns)\n           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n           ON CONFLICT (user_id) DO UPDATE SET\n             display_name         = COALESCE($2, profiles.display_name),\n             about                = COALESCE($3, profiles.about),\n             birthdate            = COALESCE($4, profiles.birthdate),\n             height_cm            = COALESCE($5, profiles.height_cm),\n             weight_kg            = COALESCE($6, profiles.weight_kg),\n             body_type            = COALESCE($7, profiles.body_type),\n             relationship_status  = COALESCE($8, profiles.relationship_status),\n             position             = COALESCE($9, profiles.position),\n             ethnicity            = COALESCE($10, profiles.ethnicity),\n             pronouns             = COALESCE($11, profiles.pronouns)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Date",
+        "Int4",
+        "Int4",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a2e439722c8e2f450f98a1715897c140bd120e1f7ff5903dbe7e583677da8e26"
+}

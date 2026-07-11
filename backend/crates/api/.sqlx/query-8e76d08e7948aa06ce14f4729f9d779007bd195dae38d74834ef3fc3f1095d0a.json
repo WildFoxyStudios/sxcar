@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO entitlements (user_id, feature, enabled)\n           VALUES ($1, $2, true)\n           ON CONFLICT (user_id, feature) DO UPDATE SET enabled = true",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8e76d08e7948aa06ce14f4729f9d779007bd195dae38d74834ef3fc3f1095d0a"
+}

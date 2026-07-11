@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT user_id,\n                  (revoked_at IS NOT NULL) as \"revoked!\",\n                  (expires_at < now()) as \"expired!\"\n           FROM refresh_tokens WHERE token_hash = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "revoked!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "expired!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "70ce3b2cdf058c5b3ee780bc7919af0b520346ba5b98fd41df5693d03bfae7c2"
+}

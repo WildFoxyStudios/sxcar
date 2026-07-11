@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO profiles (user_id, idle_reminder_hours)\n           VALUES ($1, $2)\n           ON CONFLICT (user_id) DO UPDATE SET\n             idle_reminder_hours = EXCLUDED.idle_reminder_hours",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "41629e2e6d019abf6a6fdbf06b27d8a3cd6a4cc03fad0685af38c04d3fdc80b2"
+}

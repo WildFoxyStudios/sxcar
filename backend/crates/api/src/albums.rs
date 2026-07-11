@@ -142,6 +142,15 @@ pub async fn create(
     if req.name.trim().is_empty() {
         return Err(StatusCode::BAD_REQUEST);
     }
+    // SECURITY (P1): enforce max-length limits on user-provided text.
+    if req.name.len() > 100 {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    if let Some(ref desc) = req.description {
+        if desc.len() > 500 {
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    }
     let id = db::albums::create_album(
         &state.pool,
         user_id,
@@ -171,8 +180,19 @@ pub async fn update(
     State(state): State<AppState>,
     Path(album_id): Path<Uuid>,
     Json(req): Json<UpdateAlbumReq>,
-) -> StatusCode {
-    match db::albums::update_album(
+) -> Result<StatusCode, StatusCode> {
+    // SECURITY (P1): enforce max-length limits on user-provided text.
+    if let Some(ref name) = req.name {
+        if name.len() > 100 {
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    }
+    if let Some(ref desc) = req.description {
+        if desc.len() > 500 {
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    }
+    Ok(match db::albums::update_album(
         &state.pool,
         album_id,
         user_id,
@@ -188,7 +208,7 @@ pub async fn update(
             tracing::error!("update_album error: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         }
-    }
+    })
 }
 
 /// DELETE /albums/:id — delete album (cascades album_photos).
@@ -241,8 +261,13 @@ pub async fn get(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
+    // SECURITY (P0): hide non-approved photos from non-owners. The album owner
+    // sees all their photos (pending/rejected included); a share recipient
+    // only sees photos with moderation_status='approved'.
+    let is_owner = row.owner_id == user_id;
     let photos_resp: Vec<AlbumPhotoResponse> = photos
         .into_iter()
+        .filter(|p| is_owner || p.moderation_status == "approved")
         .map(|p| {
             let photo_url = state.r2.as_ref().map(|r2| {
                 crate::media::presign(r2, "GET", &r2.bucket_media, &p.r2_key, 604800, time::OffsetDateTime::now_utc())

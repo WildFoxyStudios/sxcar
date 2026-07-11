@@ -111,6 +111,36 @@ pub async fn nearby(
     // Generate presigned photo URLs. Priority:
     // 1. profiles.profile_photo_key (R2 text key from profile edits)
     // 2. photos.r2_key (legacy photos table, stored in profile_photo_url)
+    //
+    // SECURITY (P0): only presign profile photos that have been approved by
+    // moderation. A pending photo must NOT be visible to other users in the
+    // grid. Collect all candidate keys, bulk-query which are approved, and
+    // null out any that aren't.
+    let candidate_keys: Vec<String> = users
+        .iter()
+        .filter_map(|u| {
+            u.profile_photo_key.clone().or_else(|| u.profile_photo_url.clone())
+        })
+        .collect();
+    let approved_keys: std::collections::HashSet<String> = if candidate_keys.is_empty() {
+        std::collections::HashSet::new()
+    } else {
+        let rows: Result<Vec<String>, _> = sqlx::query_scalar(
+            "SELECT DISTINCT r2_key FROM photos \
+             WHERE r2_key = ANY($1) AND moderation_status = 'approved'",
+        )
+        .bind(&candidate_keys)
+        .fetch_all(&state.pool)
+        .await;
+        match rows {
+            Ok(v) => v.into_iter().collect(),
+            Err(e) => {
+                tracing::error!("approved-photo lookup failed: {e}");
+                std::collections::HashSet::new()
+            }
+        }
+    };
+
     let users_with_photos: Vec<serde_json::Value> = users
         .iter()
         .map(|u| {
@@ -120,13 +150,18 @@ pub async fn nearby(
             let r2_key = u.profile_photo_key.as_deref()
                 .or(u.profile_photo_url.as_deref());
             if let Some(key) = r2_key {
-                if let Some(ref r2) = state.r2 {
-                    let now = time::OffsetDateTime::now_utc();
-                    let url = crate::media::presign(
-                        r2, "GET", &r2.bucket_media,
-                        key, 604800, now,
-                    );
-                    j["profile_photo_url"] = serde_json::Value::String(url);
+                if approved_keys.contains(key) {
+                    if let Some(ref r2) = state.r2 {
+                        let now = time::OffsetDateTime::now_utc();
+                        let url = crate::media::presign(
+                            r2, "GET", &r2.bucket_media,
+                            key, 604800, now,
+                        );
+                        j["profile_photo_url"] = serde_json::Value::String(url);
+                    }
+                } else {
+                    // Not approved (or not found) — do not expose the photo.
+                    j["profile_photo_url"] = serde_json::Value::Null;
                 }
             }
             if j.get("profile_photo_url").is_none() {

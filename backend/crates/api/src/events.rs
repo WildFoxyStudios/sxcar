@@ -113,13 +113,17 @@ pub async fn list_nearby(
     State(state): State<AppState>,
     Query(query): Query<NearbyEventsQuery>,
 ) -> Result<Json<ListEventsResponse>, StatusCode> {
+    // PERFORMANCE: clamp the client-supplied limit so a caller can't request
+    // an unbounded page size (max 200 events per page).
+    let limit = query.limit.clamp(1, 200);
+
     let rows = db::events::find_nearby_events(
         &state.pool,
         query.lon,
         query.lat,
         query.radius_m,
         user_id,
-        query.limit,
+        limit,
     )
     .await
     .map_err(|e| {
@@ -127,13 +131,32 @@ pub async fn list_nearby(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    let mut events = Vec::with_capacity(rows.len());
-    for row in rows {
-        let my_status = db::events::get_attendee_status(&state.pool, row.id, user_id)
-            .await
-            .unwrap_or(None);
-        events.push(EventResponse::from_row(row, my_status));
+    // PERFORMANCE: batch the per-event attendee-status lookup (previously
+    // 1 query × N events = N round-trips) into a single query using
+    // ANY($1) on the caller's id.
+    let event_ids: Vec<Uuid> = rows.iter().map(|r| r.id).collect();
+    let mut status_map: std::collections::HashMap<Uuid, String> =
+        std::collections::HashMap::new();
+    if !event_ids.is_empty() {
+        let status_rows: Vec<(Uuid, String)> = sqlx::query_as(
+            r#"SELECT event_id, status FROM event_attendees
+               WHERE user_id = $1 AND event_id = ANY($2)"#,
+        )
+        .bind(user_id)
+        .bind(&event_ids)
+        .fetch_all(&state.pool)
+        .await
+        .unwrap_or_default();
+        status_map = status_rows.into_iter().map(|r| (r.0, r.1)).collect();
     }
+
+    let events = rows
+        .into_iter()
+        .map(|row| {
+            let my_status = status_map.remove(&row.id);
+            EventResponse::from_row(row, my_status)
+        })
+        .collect();
 
     Ok(Json(ListEventsResponse { events }))
 }
@@ -148,6 +171,18 @@ pub async fn create(
         return Err(StatusCode::BAD_REQUEST);
     }
     if req.location_name.trim().is_empty() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    // SECURITY (P1): enforce max-length limits on user-provided text.
+    if req.title.len() > 200 {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    if let Some(ref desc) = req.description {
+        if desc.len() > 2000 {
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    }
+    if req.location_name.len() > 200 {
         return Err(StatusCode::BAD_REQUEST);
     }
 

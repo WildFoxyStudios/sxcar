@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
 import 'src/auth/api_client.dart';
 import 'src/auth/auth_provider.dart';
+import 'src/settings/settings_providers.dart';
 import 'src/billing/revenuecat_providers.dart';
 import 'src/notifications/push_service.dart';
 import 'src/onboarding/onboarding_provider.dart';
@@ -88,6 +89,7 @@ const Set<String> _knownTopLevelPaths = {
   '/events',
   '/grid-search',
   '/verify-profile',
+  '/pin-entry',
   // Legacy paths kept as redirect routes so old deep links / tests don't break
   '/cascade',
   '/you',
@@ -100,6 +102,30 @@ String _topLevelPath(String fullPath) {
   if (segments.length < 2) return fullPath;
   return '/${segments[1]}';
 }
+
+// ---------------------------------------------------------------------------
+// PIN-lock enforcement flag
+//
+// Mutable top-level state read by [appRedirect]. It is initialised to `true`
+// so that a cold start of the app challenges the user for their PIN (when a
+// PIN is configured). The lifecycle observer in [_VibraAppState] sets it back
+// to `true` every time the app returns to the foreground, and the PIN entry
+// screen ([PinChallengeScreen]) clears it via [clearPinRequirement] once the
+// correct code has been entered. The router is then refreshed so the redirect
+// re-evaluates and drops the user on /navegar.
+// ---------------------------------------------------------------------------
+
+bool _requirePin = true;
+
+/// Called by [PinChallengeScreen] once the correct PIN has been entered.
+/// Clears the gate so the next redirect lets the user through.
+void clearPinRequirement() {
+  _requirePin = false;
+  appRouter.refresh();
+}
+
+/// Whether a registered PIN must be challenged before the app proceeds.
+bool get pinRequirementActive => _requirePin;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -118,6 +144,9 @@ String? appRedirect({
   required String matchedLocation,
   required AuthStatus status,
   bool onboardingCompleted = true,
+  bool pinEnabled = false,
+  String pinCode = '',
+  bool requirePin = false,
 }) {
   // Deep-link / unmatched route guard. GoRouter runs the redirect
   // BEFORE the route table is matched. If the incoming URL does not
@@ -177,6 +206,31 @@ String? appRedirect({
     return '/verify-email';
   }
 
+  // ── PIN lock gate ─────────────────────────────────────────────────────────
+  // Only reached for authenticated + onboarded users (all of the auth/onboarding
+  // /verify-email redirects above have already returned by this point). If the
+  // user has configured a PIN and the lifecycle flag is armed (cold start or
+  // resumed from background), force a challenge. The /pin-entry screen itself
+  // is exempt so we don't loop, and users without a PIN fall straight through.
+  final isPinEntry = matchedLocation == '/pin-entry';
+  if (status == AuthStatus.authenticated &&
+      onboardingCompleted &&
+      pinEnabled &&
+      pinCode.isNotEmpty &&
+      requirePin &&
+      !isPinEntry) {
+    return '/pin-entry';
+  }
+
+  // PIN was just entered correctly (or no PIN configured): if the user is
+  // sitting on the challenge screen somehow, send them home.
+  if (status == AuthStatus.authenticated &&
+      onboardingCompleted &&
+      isPinEntry &&
+      !(pinEnabled && pinCode.isNotEmpty && requirePin)) {
+    return '/navegar';
+  }
+
   return null;
 }
 
@@ -186,13 +240,18 @@ String? appRedirect({
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
   redirect: (context, state) {
-    final authState =
-        ProviderScope.containerOf(context).read(authStateProvider);
+    final container = ProviderScope.containerOf(context);
+    final authState = container.read(authStateProvider);
+    final pinEnabled = container.read(pinEnabledProvider);
+    final pinCode = container.read(pinCodeProvider);
     return appRedirect(
       incomingPath: state.uri.path,
       matchedLocation: state.matchedLocation,
       status: authState.status,
       onboardingCompleted: authState.onboardingCompleted,
+      pinEnabled: pinEnabled,
+      pinCode: pinCode,
+      requirePin: _requirePin,
     );
   },
   routes: [
@@ -296,6 +355,12 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/pin',
       builder: (_, _) => const PinScreen(),
+    ),
+    // PIN challenge — full-screen lock shown at cold start / app resume when a
+    // PIN is configured. Distinct from /settings/pin (management screen).
+    GoRoute(
+      path: '/pin-entry',
+      builder: (_, _) => const PinChallengeScreen(),
     ),
     GoRoute(
       path: '/settings/blocks',
@@ -582,6 +647,12 @@ class _VibraAppState extends ConsumerState<VibraApp>
         ref.read(authStateProvider).status == AuthStatus.authenticated) {
       // Read the provider so the side-effect (POST) actually runs.
       ref.read(heartbeatProvider);
+
+      // Re-arm the PIN lock: any return from background requires the user to
+      // re-enter their PIN (if one is configured). Refreshing the router
+      // triggers appRedirect, which checks _requirePin + pinEnabledProvider.
+      _requirePin = true;
+      appRouter.refresh();
     }
   }
 

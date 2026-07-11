@@ -15,6 +15,7 @@ import '../media/media_service.dart';
 import '../nsfw/nsfw_service.dart';
 import '../calls/call_service.dart';
 import '../calls/call_screen.dart';
+import '../premium/premium_service.dart';
 import '../screenshots/screenshots_service.dart';
 import '../theme/app_theme.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -51,6 +52,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   String? _error;
   StreamSubscription<Map<String, dynamic>>? _wsSubscription;
 
+  /// The chat service, captured once in [initState]. Cached so [dispose] can
+  /// shut the socket down without reading a provider through `ref` — using
+  /// `ref` after the widget is unmounted throws a StateError.
+  late final ChatService _chatService;
+
   // Group chat state
   final Map<String, String> _senderNames = {};
 
@@ -71,6 +77,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _chatService = ref.read(chatServiceProvider);
     _loadMessages();
     _connectWebSocket();
     _initScreenshotDetection();
@@ -93,6 +100,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
+    // Clean shutdown of the WebSocket + cancel any pending reconnect timer.
+    // Without this, the socket's onDone would arm a reconnect that keeps the
+    // ChatService alive in the background after the user has left the screen.
+    _chatService.disconnect();
     _wsSubscription?.cancel();
     _peerTypingTimer?.cancel();
     _textController.dispose();
@@ -617,6 +628,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               );
             },
           ),
+          IconButton(
+            icon:
+                const Icon(Icons.videocam, color: VibraTheme.kAccent, size: 22),
+            tooltip: 'Video call',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => CallScreen(
+                    conversationId: widget.conversationId,
+                    outgoingVideo: true,
+                  ),
+                ),
+              );
+            },
+          ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -1060,6 +1086,15 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
   Widget build(BuildContext context) {
     final message = widget.message;
     final isMe = widget.isMe;
+    // Read-receipt checkmarks are premium-only (PremiumFeatures.readReceipts).
+    // Watching here keeps the bubbles reactive so the checks appear/disappear
+    // immediately after a purchase or tier downgrade.
+    final hasReadReceipts = ref
+            .watch(premiumStatusProvider)
+            .value
+            ?.features
+            .readReceipts ==
+        true;
 
     // If the message was unsent, show a placeholder instead of the original
     // content regardless of kind.
@@ -1155,8 +1190,11 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
           ),
         // Read receipt on my own messages: single check = sent, double
         // accent check = read by the recipient. Suppressed when the send
-        // failed (a failed message was never delivered).
-        if (isMe && !widget.isGroup && !failed)
+        // failed (a failed message was never delivered). Also suppressed for
+        // free users — read receipts are a premium (Xtra+) feature. The
+        // markRead API call still fires (see _markRead) so the server-side
+        // unread count stays accurate; only the UI check is hidden.
+        if (isMe && !widget.isGroup && !failed && hasReadReceipts)
           Padding(
             padding: const EdgeInsets.only(right: 16, top: 2),
             child: Icon(

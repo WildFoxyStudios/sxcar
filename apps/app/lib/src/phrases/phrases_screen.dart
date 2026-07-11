@@ -1,4 +1,7 @@
+import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../premium/premium_gate.dart';
+import '../premium/premium_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'phrases_service.dart';
@@ -25,10 +28,23 @@ class PhrasesScreen extends ConsumerWidget {
             ? const _EmptyView()
             : _PhrasesList(phrases: phrases),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddDialog(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Add'),
+      floatingActionButton: PremiumGate(
+        // Saved phrases is a premium feature. There's no dedicated
+        // `savedPhrases` flag, so we reuse `prioritySupport` (the closest
+        // existing feature key for "saved phrases" per the gating spec).
+        // Free users see a locked FAB that routes to the shop.
+        feature: PremiumFeature.prioritySupport,
+        lockedBuilder: (context, _) => FloatingActionButton.extended(
+          onPressed: () => context.push('/tienda'),
+          backgroundColor: VibraTheme.kBrandPrimary,
+          icon: const Icon(Icons.lock_outline),
+          label: const Text('Premium'),
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showAddDialog(context, ref),
+          icon: const Icon(Icons.add),
+          label: const Text('Add'),
+        ),
       ),
     );
   }

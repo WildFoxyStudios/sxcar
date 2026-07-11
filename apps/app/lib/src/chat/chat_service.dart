@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../auth/auth_provider.dart';
@@ -25,6 +26,27 @@ class ChatService {
 
   /// Stream controller for incoming WebSocket messages.
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
+
+  // ── Reconnect state ──────────────────────────────────────────────────────
+  //
+  // When the WebSocket drops (network blip, server restart) we automatically
+  // retry with exponential backoff: 1s, 2s, 4s, 8s, … capped at 30s. A clean
+  // shutdown via [disconnect] sets [_userDisconnected] so onDone does NOT
+  // schedule a new reconnect.
+
+  /// Pending reconnect timer; null when no reconnect is scheduled.
+  Timer? _reconnectTimer;
+
+  /// True while a reconnect is already pending, so onDone/onError never arm
+  /// more than one timer at a time.
+  bool _isReconnecting = false;
+
+  /// Current backoff delay (doubles on each failed attempt, capped at 30s).
+  Duration _reconnectDelay = const Duration(seconds: 1);
+
+  /// Set by [disconnect] to suppress auto-reconnect on the resulting onDone.
+  /// Cleared again by [connectWebSocket] for a fresh session.
+  bool _userDisconnected = false;
 
   ChatService(this._dio, this._accessToken);
 
@@ -202,12 +224,21 @@ class ChatService {
     final token = _accessToken;
     if (token == null) return;
 
+    // Fresh connect attempt → clear the user-disconnect flag so the new
+    // socket's onDone will be eligible for auto-reconnect.
+    _userDisconnected = false;
+    _isReconnecting = false;
+
     final wsUrl = apiUrl.replaceFirst('https://', 'wss://');
     final uri = Uri.parse('$wsUrl/ws/chat?token=$token');
     _channel = WebSocketChannel.connect(uri);
 
     _subscription = _channel!.stream.listen(
       (data) {
+        // First frame received ⇒ the connection is live. Reset the backoff
+        // so the next drop starts again at 1s instead of the last delay.
+        _resetReconnect();
+
         try {
           final json = jsonDecode(data as String) as Map<String, dynamic>;
           _messageController.add(json);
@@ -216,12 +247,73 @@ class ChatService {
         }
       },
       onError: (error) {
-        // Reconnect logic could be added here
+        debugPrint('[ChatService] WebSocket onError: $error');
+        _scheduleReconnect();
       },
       onDone: () {
-        // Connection closed
+        debugPrint('[ChatService] WebSocket onDone: connection closed');
+        _scheduleReconnect();
       },
     );
+  }
+
+  // ── Reconnect machinery ────────────────────────────────────────────────────
+
+  /// Schedule a reconnect with exponential backoff (1→2→4→8→… capped at 30s).
+  ///
+  /// No-op when the service has been [disconnect]ed by the user (clean
+  /// shutdown) or when a reconnect is already pending.
+  void _scheduleReconnect() {
+    if (_userDisconnected) return;
+    if (_isReconnecting) return;
+
+    _isReconnecting = true;
+    final delay = _reconnectDelay;
+    debugPrint(
+      '[ChatService] scheduling WebSocket reconnect in ${delay.inSeconds}s',
+    );
+
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(delay, () {
+      _isReconnecting = false;
+
+      // The user may have called [disconnect] while the timer was pending.
+      if (_userDisconnected) return;
+
+      // Bump the backoff for the *next* failure (cap at 30s).
+      _reconnectDelay = Duration(
+        seconds: (_reconnectDelay.inSeconds * 2).clamp(1, 30),
+      );
+
+      debugPrint('[ChatService] attempting WebSocket reconnect…');
+      // Tear down the old subscription/channel before opening a new one so
+      // we never leak a half-closed stream listener.
+      _subscription?.cancel();
+      _channel?.sink.close();
+      connectWebSocket();
+    });
+  }
+
+  /// Reset the backoff after a successful (re)connect.
+  void _resetReconnect() {
+    if (_reconnectDelay != const Duration(seconds: 1) || _isReconnecting) {
+      debugPrint('[ChatService] connection live — resetting backoff');
+    }
+    _isReconnecting = false;
+    _reconnectDelay = const Duration(seconds: 1);
+  }
+
+  /// Clean shutdown: cancel the in-flight reconnect timer and mark the
+  /// service as user-disconnected so the socket's onDone does NOT arm a new
+  /// reconnect. Call this when leaving the chat (ChatScreen.dispose).
+  void disconnect() {
+    _userDisconnected = true;
+    _isReconnecting = false;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _subscription?.cancel();
+    _channel?.sink.close();
+    _channel = null;
   }
 
   /// Send a message over the WebSocket (redundant with REST, but available).
@@ -287,7 +379,15 @@ class ChatService {
   }
 
   /// Close the WebSocket connection.
+  ///
+  /// Prefer [disconnect] for a clean shutdown (it also suppresses
+  /// auto-reconnect). This thin wrapper is retained for callers that only
+  /// want to close the socket without touching the reconnect state.
   void disconnectWebSocket() {
+    _userDisconnected = true;
+    _isReconnecting = false;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     _subscription?.cancel();
     _channel?.sink.close();
     _channel = null;
@@ -295,7 +395,7 @@ class ChatService {
 
   /// Dispose resources.
   void dispose() {
-    disconnectWebSocket();
+    disconnect();
     _messageController.close();
   }
 }

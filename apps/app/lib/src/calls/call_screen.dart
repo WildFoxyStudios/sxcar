@@ -16,10 +16,16 @@ class CallScreen extends ConsumerStatefulWidget {
   final String conversationId;
   final IncomingCall? incomingCall;
 
+  /// When true, the outgoing call requests camera (video call). Ignored when
+  /// [incomingCall] is provided (incoming video is read from the signaling
+  /// payload via [IncomingCall.video]).
+  final bool outgoingVideo;
+
   const CallScreen({
     super.key,
     required this.conversationId,
     this.incomingCall,
+    this.outgoingVideo = false,
   });
 
   @override
@@ -92,7 +98,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     } else {
       // Outgoing call.
       try {
-        await callService.startCall(widget.conversationId);
+        await callService.startCall(
+          widget.conversationId,
+          video: widget.outgoingVideo,
+        );
         if (mounted) {
           setState(() => _callState = CallState.calling);
         }

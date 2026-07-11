@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/phrases/phrases_screen.dart';
+import 'package:app/src/premium/premium_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -111,6 +112,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Saved Phrases is gated behind prioritySupport; unlock it so the
+            // real Add FAB (not the locked upsell FAB) is what the tests drive.
+            premiumStatusProvider.overrideWith(
+              (ref) async => const PremiumStatus(
+                tier: 'xtra',
+                features: PremiumFeatures(prioritySupport: true),
+              ),
+            ),
           ],
           child: const MaterialApp(home: PhrasesScreen()),
         ),
@@ -135,6 +144,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Saved Phrases is gated behind prioritySupport; unlock it so the
+            // real Add FAB (not the locked upsell FAB) is what the tests drive.
+            premiumStatusProvider.overrideWith(
+              (ref) async => const PremiumStatus(
+                tier: 'xtra',
+                features: PremiumFeatures(prioritySupport: true),
+              ),
+            ),
           ],
           child: const MaterialApp(home: PhrasesScreen()),
         ),
@@ -155,6 +172,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Saved Phrases is gated behind prioritySupport; unlock it so the
+            // real Add FAB (not the locked upsell FAB) is what the tests drive.
+            premiumStatusProvider.overrideWith(
+              (ref) async => const PremiumStatus(
+                tier: 'xtra',
+                features: PremiumFeatures(prioritySupport: true),
+              ),
+            ),
           ],
           child: const MaterialApp(home: PhrasesScreen()),
         ),
@@ -184,6 +209,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Saved Phrases is gated behind prioritySupport; unlock it so the
+            // real Add FAB (not the locked upsell FAB) is what the tests drive.
+            premiumStatusProvider.overrideWith(
+              (ref) async => const PremiumStatus(
+                tier: 'xtra',
+                features: PremiumFeatures(prioritySupport: true),
+              ),
+            ),
           ],
           child: const MaterialApp(home: PhrasesScreen()),
         ),
@@ -226,6 +259,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Saved Phrases is gated behind prioritySupport; unlock it so the
+            // real Add FAB (not the locked upsell FAB) is what the tests drive.
+            premiumStatusProvider.overrideWith(
+              (ref) async => const PremiumStatus(
+                tier: 'xtra',
+                features: PremiumFeatures(prioritySupport: true),
+              ),
+            ),
           ],
           child: const MaterialApp(home: PhrasesScreen()),
         ),
@@ -256,6 +297,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Saved Phrases is gated behind prioritySupport; unlock it so the
+            // real Add FAB (not the locked upsell FAB) is what the tests drive.
+            premiumStatusProvider.overrideWith(
+              (ref) async => const PremiumStatus(
+                tier: 'xtra',
+                features: PremiumFeatures(prioritySupport: true),
+              ),
+            ),
           ],
           child: const MaterialApp(home: PhrasesScreen()),
         ),
@@ -292,6 +341,14 @@ void main() {
           overrides: [
             authStateProvider.overrideWith(() => _AuthenticatedNotifier()),
             dioProvider.overrideWithValue(dio),
+            // Saved Phrases is gated behind prioritySupport; unlock it so the
+            // real Add FAB (not the locked upsell FAB) is what the tests drive.
+            premiumStatusProvider.overrideWith(
+              (ref) async => const PremiumStatus(
+                tier: 'xtra',
+                features: PremiumFeatures(prioritySupport: true),
+              ),
+            ),
           ],
           child: const MaterialApp(home: PhrasesScreen()),
         ),

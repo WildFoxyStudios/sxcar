@@ -9,6 +9,7 @@ import '../auth/auth_provider.dart';
 import '../boost/boost_service.dart';
 import '../location/location_service.dart';
 import '../presence/presence_service.dart';
+import '../premium/premium_service.dart';
 import '../travel/travel_pass_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/widgets.dart';
@@ -126,6 +127,11 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
   /// Page size for /grid/nearby. A page returning fewer than this sets
   /// `_hasMore = false`.
   static const int _pageLimit = 50;
+
+  /// Maximum profiles shown to free-tier users (display-only cap; the
+  /// backend still returns up to [_pageLimit] per page). Paying users
+  /// (`PremiumFeatures.unlimitedGrid`) see the full list.
+  static const int _kFreeGridCap = 12;
 
   /// Controls the CustomScrollView; fires _loadMore near the bottom.
   final ScrollController _scrollController = ScrollController();
@@ -625,7 +631,19 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
     // sent in _fetchNearbyUsers). The old client-side favorites re-filter
     // emptied the grid before the favorites list loaded, so it's removed —
     // the server response is authoritative.
-    final users = _allUsers;
+    //
+    // Premium grid cap: free users see at most 12 profiles (DISPLAY-only —
+    // the backend still returns up to `_pageLimit` per page). The cap is
+    // driven by `PremiumFeatures.unlimitedGrid`; paying users see everything.
+    final unlimitedGrid = ref
+            .watch(premiumStatusProvider)
+            .value
+            ?.features
+            .unlimitedGrid ==
+        true;
+    final users = unlimitedGrid || _allUsers.length <= _kFreeGridCap
+        ? _allUsers
+        : _allUsers.sublist(0, _kFreeGridCap);
 
     return CustomScrollView(
       controller: _scrollController,
@@ -708,8 +726,9 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             ),
           ),
 
-          // Upsell band — inserted after row 2
-          if (users.length >= 6)
+          // Upsell band — inserted after row 2. Only shown to free users
+          // (paying users have `unlimitedGrid` and no cap to upsell against).
+          if (users.length >= 6 && !unlimitedGrid)
             SliverToBoxAdapter(
               child: _buildUpsellBand(l10n, context),
             ),
@@ -737,7 +756,11 @@ class _NavegarScreenState extends ConsumerState<NavegarScreen> {
             ),
 
           // ── Load-more indicator (bottom of grid) ───────────────
-          if (_isLoadingMore)
+          // Suppressed for free users: the display is capped at
+          // [_kFreeGridCap], so a load-more spinner or "no more" message
+          // would be misleading (more may exist server-side but are hidden
+          // by the cap; the upsell band above communicates that instead).
+          if (_isLoadingMore && unlimitedGrid)
             SliverToBoxAdapter(
               child: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),

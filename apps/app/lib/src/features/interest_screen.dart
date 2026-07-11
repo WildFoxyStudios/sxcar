@@ -6,6 +6,7 @@ import '../auth/auth_provider.dart';
 import '../boost/boost_service.dart';
 import '../billing/billing_providers.dart';
 import '../billing/models.dart';
+import '../premium/premium_service.dart';
 import '../profile_views/viewed_me_provider.dart';
 import '../taps/taps_count_provider.dart';
 import '../theme/app_theme.dart';
@@ -311,11 +312,34 @@ class _InterestScreenState extends ConsumerState<InterestScreen>
 /// user's profile. The list endpoint is `GET /profile/views`; the count
 /// is exposed separately via `profileViewsCountProvider` and rendered in
 /// the TabBar label.
+///
+/// Premium-gated: free users see an upgrade prompt instead of the viewer
+/// list. The feature is gated on tier (`xtra` or `unlimited`) because
+/// `PremiumFeatures` has no dedicated `seeWhoViewed` flag — "see who
+/// viewed me" is an Xtra+ benefit per the Grindr parity spec.
 class _ViewsListTab extends ConsumerWidget {
   const _ViewsListTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final premiumAsync = ref.watch(premiumStatusProvider);
+
+    // While the status is still resolving, show the list optimistically so a
+    // paying user is never nagged with the locked banner on cold load.
+    if (premiumAsync is! AsyncData<PremiumStatus>) {
+      return _buildViewersList(context, ref);
+    }
+
+    final tier = premiumAsync.value.tier;
+    final canSeeViewers = tier == 'xtra' || tier == 'unlimited';
+    if (!canSeeViewers) {
+      return _buildLockedView(context, l10n);
+    }
+    return _buildViewersList(context, ref);
+  }
+
+  Widget _buildViewersList(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final viewersAsync = ref.watch(viewedMeProvider);
     return viewersAsync.when(
@@ -391,9 +415,41 @@ class _ViewsListTab extends ConsumerWidget {
       },
     );
   }
-}
 
-/// "Taps" tab — shows the list of recent taps from other users.
+  /// Upgrade prompt shown to free users on the "Views" tab.
+  Widget _buildLockedView(BuildContext context, AppLocalizations l10n) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.lock_outline,
+              color: VibraTheme.kBrandPrimary,
+              size: 48,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.premiumUpgradePrompt(l10n.views),
+              style: const TextStyle(
+                color: VibraTheme.kBrandPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            PrimaryPillButton(
+              label: l10n.desbloquearSinLimites,
+              onPressed: () => context.push('/tienda'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 ///
 /// The taps are fetched once in `_InterestScreenState.initState` (so the
 /// race-fix `_waitForAuth()` logic runs before the first request), and the

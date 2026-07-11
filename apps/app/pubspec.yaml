@@ -61,7 +61,7 @@ dependencies:
   purchases_flutter: ^10.4.0
   record: ^7.1.0
   audioplayers: ^6.4.0
-  flutter_webrtc: ^0.12.0
+  flutter_webrtc: ^1.5.2
   screenshot_callback: ^3.0.1
   video_player: ^2.11.1
 

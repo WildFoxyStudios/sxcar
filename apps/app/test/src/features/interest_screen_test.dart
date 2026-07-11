@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/features/interest_screen.dart';
+import 'package:app/src/premium/premium_service.dart';
 import 'package:app/l10n/gen/app_localizations.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -165,12 +166,15 @@ Widget _wrap({
   required Widget child,
   required Dio dio,
   AuthNotifier? authNotifier,
+  PremiumStatus? premium,
 }) {
   return ProviderScope(
     overrides: [
       authStateProvider
           .overrideWith(() => authNotifier ?? _AuthenticatedNotifier()),
       dioProvider.overrideWithValue(dio),
+      if (premium != null)
+        premiumStatusProvider.overrideWith((ref) async => premium),
     ],
     child: MaterialApp(
       locale: const Locale('en'),
@@ -194,12 +198,14 @@ Future<AppLocalizations> _pumpAndL10n(
   required Widget child,
   required Dio dio,
   AuthNotifier? authNotifier,
+  PremiumStatus? premium,
 }) async {
   await tester.pumpWidget(
     _wrap(
       child: child,
       dio: dio,
       authNotifier: authNotifier,
+      premium: premium,
     ),
   );
   await tester.pumpAndSettle();
@@ -303,10 +309,13 @@ void main() {
     testWidgets('Views tab shows received viewers', (tester) async {
       final dio = Dio()..httpClientAdapter = _MockTapsAdapter();
 
+      // "See who viewed me" is an Xtra+ benefit; unlock it so the viewer list
+      // renders instead of the free-tier upgrade prompt.
       final l10n = await _pumpAndL10n(
         tester,
         child: const InterestScreen(),
         dio: dio,
+        premium: const PremiumStatus(tier: 'xtra'),
       );
       // Reference l10n so the analyzer does not strip the variable if unused
       // (this test relies on the default Views tab content).

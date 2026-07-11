@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:app/src/auth/auth_provider.dart';
 import 'package:app/src/chat/chat_service.dart';
 import 'package:app/src/chat/models.dart';
+import 'package:app/src/premium/premium_service.dart';
 import 'package:app/src/features/chat_screen.dart';
 import 'package:app/src/screenshots/screenshots_service.dart';
 import 'package:dio/dio.dart';
@@ -83,6 +84,9 @@ Widget _wrap(Widget child, _FakeChatService fake) {
       chatServiceProvider.overrideWithValue(fake),
       screenshotsServiceProvider
           .overrideWithValue(_FakeScreenshotsService()),
+      // Message bubbles watch premiumStatusProvider (read-receipt gating);
+      // override it so no real /me/premium HTTP call leaves a pending timer.
+      premiumStatusProvider.overrideWith((ref) async => const PremiumStatus()),
     ],
     child: MaterialApp(home: child),
   );
@@ -95,6 +99,9 @@ Widget _emptyAfterDispose(_FakeChatService fake) {
       chatServiceProvider.overrideWithValue(fake),
       screenshotsServiceProvider
           .overrideWithValue(_FakeScreenshotsService()),
+      // Message bubbles watch premiumStatusProvider (read-receipt gating);
+      // override it so no real /me/premium HTTP call leaves a pending timer.
+      premiumStatusProvider.overrideWith((ref) async => const PremiumStatus()),
     ],
     child: const MaterialApp(home: SizedBox.shrink()),
   );

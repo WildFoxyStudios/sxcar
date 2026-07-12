@@ -49,9 +49,30 @@ pub async fn register(
     let hash = auth::password::hash_password(&req.password)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let user_id =
-        db::users::create_user_full(&state.pool, &req.email, Some(&hash), Some(dob), true)
+        match db::users::create_user_full(&state.pool, &req.email, Some(&hash), Some(dob), true)
             .await
-            .map_err(|_| StatusCode::CONFLICT)?; // email duplicado → conflicto genérico
+        {
+            Ok(id) => id,
+            Err(e) => {
+                // Only a genuine unique-constraint violation (duplicate email or
+                // phone) is a real "already registered" 409. Any other failure
+                // (DB/connection error) must NOT be masked as a duplicate — that
+                // told users a brand-new email was already taken. Surface 500 and
+                // log the real cause instead.
+                let is_duplicate = e
+                    .downcast_ref::<sqlx::Error>()
+                    .and_then(|se| match se {
+                        sqlx::Error::Database(db_err) => Some(db_err.is_unique_violation()),
+                        _ => None,
+                    })
+                    .unwrap_or(false);
+                if is_duplicate {
+                    return Err(StatusCode::CONFLICT);
+                }
+                tracing::error!("register: create_user_full failed (non-duplicate): {e:?}");
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        };
 
     for kind in req.consents.iter() {
         let _ = db::users::record_consent(&state.pool, user_id, kind, "1.0").await;

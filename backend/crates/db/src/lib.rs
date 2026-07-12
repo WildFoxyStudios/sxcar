@@ -26,13 +26,20 @@ pub mod verification;
 
 /// Crea un pool de conexiones a Postgres.
 ///
-/// Tuned for a remote (Neon) database where each new TCP+TLS+channel-binding
-/// handshake costs ~1s. The big win is `test_before_acquire(false)`: by default
-/// sqlx runs a `SELECT 1` ping on EVERY checkout, which doubles the round-trips
-/// of any multi-query handler (e.g. PUT /profile did ~10 sequential ops, each
-/// paying ping + query → multi-second saves that tripped the client's 10s
-/// timeout). Keeping a warm floor of connections (`min_connections`) avoids
-/// re-establishing TLS on each acquire. All overridable via env for the VPS.
+/// Tuned for a remote, serverless (Neon) database.
+///
+/// Neon closes idle connections and auto-suspends compute, so a pooled
+/// connection can go stale between requests. `test_before_acquire` MUST stay on
+/// (the sqlx default): it pings before handing out a connection and transparently
+/// replaces a dead one, so a stale connection never fails a live request. We
+/// learned this the hard way — turning it OFF made the first request after an
+/// idle period fail intermittently (register then mislabeled it "email already
+/// registered"). The perf that matters comes instead from a warm floor of
+/// connections (`min_connections`, avoids the ~1s TLS+channel-binding handshake
+/// per acquire) plus concurrent round-trips in the hot handlers (see the
+/// `tokio::try_join!` in profile.rs). A short-ish `idle_timeout` recycles
+/// connections before Neon kills them, so most pings hit a live socket.
+/// All sizes overridable via env for the VPS.
 pub async fn connect(database_url: &str) -> anyhow::Result<Pool> {
     fn env_u32(key: &str, default: u32) -> u32 {
         std::env::var(key).ok().and_then(|v| v.parse().ok()).unwrap_or(default)
@@ -43,12 +50,11 @@ pub async fn connect(database_url: &str) -> anyhow::Result<Pool> {
     let pool = PgPoolOptions::new()
         .max_connections(max)
         .min_connections(min)
-        // Skip the per-acquire `SELECT 1` ping — halves round-trips on every
-        // multi-query request. Broken connections surface as a normal query
-        // error and the pool reconnects.
-        .test_before_acquire(false)
-        // Keep connections warm so acquires don't pay the Neon TLS handshake.
-        .idle_timeout(Duration::from_secs(600))
+        // REQUIRED for Neon: ping before acquire so a connection Neon closed
+        // while idle is detected and replaced instead of failing the request.
+        .test_before_acquire(true)
+        // Recycle idle connections before Neon's idle-close so pings rarely fail.
+        .idle_timeout(Duration::from_secs(180))
         .max_lifetime(Duration::from_secs(1800))
         // Fail fast rather than hang if the pool is saturated.
         .acquire_timeout(Duration::from_secs(8))

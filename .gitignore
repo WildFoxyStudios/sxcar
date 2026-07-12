@@ -42,7 +42,7 @@ id_ed25519
 Thumbs.db
 # Config local de herramientas (no es parte de la app)
 .mcp.json
-
+log.txt
 
 # sqlx query cache — committed so offline builds (Docker, CI) compile
 # without a live DB. Regenerate with: cargo sqlx prepare --workspace -- --tests

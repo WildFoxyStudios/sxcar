@@ -338,39 +338,54 @@ pub async fn update_own(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    // Replace junction tables
-    if let Some(tribes) = &body.tribes {
-        db::profiles::replace_profile_tribes(&state.pool, user_id, tribes)
-            .await
-            .map_err(|e| {
-                tracing::error!("replace_profile_tribes error: {e}");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
-    }
-    if let Some(looking_for) = &body.looking_for {
-        db::profiles::replace_profile_looking_for(&state.pool, user_id, looking_for)
-            .await
-            .map_err(|e| {
-                tracing::error!("replace_profile_looking_for error: {e}");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
-    }
-    if let Some(meet_at) = &body.meet_at {
-        db::profiles::replace_profile_meet_at(&state.pool, user_id, meet_at)
-            .await
-            .map_err(|e| {
-                tracing::error!("replace_profile_meet_at error: {e}");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
-    }
-    if let Some(tags) = &body.tags {
-        db::profiles::replace_profile_tags(&state.pool, user_id, tags)
-            .await
-            .map_err(|e| {
-                tracing::error!("replace_profile_tags error: {e}");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
-    }
+    // Replace junction tables. Each targets a different table keyed by user_id,
+    // so the (conditional) replacements are independent → run concurrently.
+    tokio::try_join!(
+        async {
+            if let Some(tribes) = &body.tribes {
+                db::profiles::replace_profile_tribes(&state.pool, user_id, tribes)
+                    .await
+                    .map_err(|e| {
+                        tracing::error!("replace_profile_tribes error: {e}");
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?;
+            }
+            Ok::<(), StatusCode>(())
+        },
+        async {
+            if let Some(looking_for) = &body.looking_for {
+                db::profiles::replace_profile_looking_for(&state.pool, user_id, looking_for)
+                    .await
+                    .map_err(|e| {
+                        tracing::error!("replace_profile_looking_for error: {e}");
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?;
+            }
+            Ok::<(), StatusCode>(())
+        },
+        async {
+            if let Some(meet_at) = &body.meet_at {
+                db::profiles::replace_profile_meet_at(&state.pool, user_id, meet_at)
+                    .await
+                    .map_err(|e| {
+                        tracing::error!("replace_profile_meet_at error: {e}");
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?;
+            }
+            Ok::<(), StatusCode>(())
+        },
+        async {
+            if let Some(tags) = &body.tags {
+                db::profiles::replace_profile_tags(&state.pool, user_id, tags)
+                    .await
+                    .map_err(|e| {
+                        tracing::error!("replace_profile_tags error: {e}");
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?;
+            }
+            Ok::<(), StatusCode>(())
+        },
+    )?;
 
     // Profile photo upload: store the R2 key in profiles.profile_photo_key
     // and also set profiles.profile_photo_url for backwards-compat reads.
@@ -412,49 +427,50 @@ pub async fn update_own(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    // Return updated full profile
-    let user = db::users::find_user_full(&state.pool, user_id)
-        .await
-        .map_err(|e| {
-            tracing::error!("find_user_full error: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?
-        .ok_or(StatusCode::NOT_FOUND)?;
-
-    let tribes = db::profiles::get_profile_tribes(&state.pool, user_id)
-        .await
-        .map_err(|e| {
-            tracing::error!("get_profile_tribes error: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-    let looking_for = db::profiles::get_profile_looking_for(&state.pool, user_id)
-        .await
-        .map_err(|e| {
-            tracing::error!("get_profile_looking_for error: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-    let meet_at = db::profiles::get_profile_meet_at(&state.pool, user_id)
-        .await
-        .map_err(|e| {
-            tracing::error!("get_profile_meet_at error: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-    let tags = db::profiles::get_profile_tags(&state.pool, user_id)
-        .await
-        .map_err(|e| {
-            tracing::error!("get_profile_tags error: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-    let photos = load_photos_json(&state.pool, state.r2.as_deref(), user_id, user_id)
-        .await
-        .map_err(|e| {
-            tracing::error!("load_photos_json error: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    // Return updated full profile. These six reads are independent (different
+    // tables keyed by user_id), so run them concurrently — one round-trip-time
+    // instead of six sequential Neon round-trips.
+    let (user_opt, tribes, looking_for, meet_at, tags, photos) = tokio::try_join!(
+        async {
+            db::users::find_user_full(&state.pool, user_id).await.map_err(|e| {
+                tracing::error!("find_user_full error: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })
+        },
+        async {
+            db::profiles::get_profile_tribes(&state.pool, user_id).await.map_err(|e| {
+                tracing::error!("get_profile_tribes error: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })
+        },
+        async {
+            db::profiles::get_profile_looking_for(&state.pool, user_id).await.map_err(|e| {
+                tracing::error!("get_profile_looking_for error: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })
+        },
+        async {
+            db::profiles::get_profile_meet_at(&state.pool, user_id).await.map_err(|e| {
+                tracing::error!("get_profile_meet_at error: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })
+        },
+        async {
+            db::profiles::get_profile_tags(&state.pool, user_id).await.map_err(|e| {
+                tracing::error!("get_profile_tags error: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })
+        },
+        async {
+            load_photos_json(&state.pool, state.r2.as_deref(), user_id, user_id)
+                .await
+                .map_err(|e| {
+                    tracing::error!("load_photos_json error: {e}");
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })
+        },
+    )?;
+    let user = user_opt.ok_or(StatusCode::NOT_FOUND)?;
 
     Ok(Json(json!({
         "user": user_full_to_json(user, tribes, looking_for, meet_at, tags, photos, state.r2.as_deref(), false)

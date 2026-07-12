@@ -1,14 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nsfw_detector_flutter/nsfw_detector_flutter.dart';
 
-/// Result of an on-device NSFW classification.
-class NsfwResult {
-  final double score;
-  final bool isNsfw;
+import 'nsfw_result.dart';
+// Platform-split backend: native (TFLite/ffi) on mobile/desktop, no-op on web.
+import 'nsfw_backend_native.dart'
+    if (dart.library.html) 'nsfw_backend_web.dart';
 
-  const NsfwResult({required this.score, required this.isNsfw});
-}
+// Re-export so existing consumers keep importing `NsfwResult` from here.
+export 'nsfw_result.dart';
 
 /// Function type used to inject a fake classifier in tests.
 typedef NsfwClassifyFn = Future<NsfwResult> Function(Uint8List bytes);
@@ -19,22 +18,25 @@ final nsfwServiceProvider = Provider<NsfwService>(
   (ref) => NsfwService(),
 );
 
-/// On-device NSFW detection service backed by [nsfw_detector_flutter].
+/// On-device NSFW detection service.
 ///
-/// Uses the Yahoo OpenNSFW TFLite model bundled inside the package (zero
-/// setup, no downloads). All inference runs on-device — no images leave
-/// the device.
+/// On native platforms it uses the Yahoo OpenNSFW TFLite model bundled in
+/// `nsfw_detector_flutter` (zero setup, all inference on-device). On web there
+/// is no on-device model (TFLite needs `dart:ffi`), so detection is skipped and
+/// the app relies on server-side moderation.
 ///
-/// On failure the service **fails open** — it logs and returns safe so
-/// an inference hiccup never blocks a legitimate upload.
+/// On failure the service **fails open** — it logs and returns safe so an
+/// inference hiccup never blocks a legitimate upload.
 class NsfwService {
   final NsfwClassifyFn? _classifyOverride;
+  final NsfwBackend _backend = NsfwBackend();
 
-  bool _initialized = false;
-  NsfwDetector? _detector;
-
-  /// Production constructor — uses [NsfwDetector].
+  /// Production constructor.
   NsfwService() : _classifyOverride = null;
+
+  /// Test constructor — injects a fake classifier.
+  NsfwService.withClassifier(NsfwClassifyFn classify)
+      : _classifyOverride = classify;
 
   /// Returns the [NsfwResult] to use when classification fails.
   /// In release mode, fails CLOSED — blocks uploads.
@@ -47,10 +49,6 @@ class NsfwService {
     // Debug/dev: allow the upload so developers can test without the model.
     return const NsfwResult(score: 0.0, isNsfw: false);
   }
-
-  /// Test constructor — injects a fake classifier.
-  NsfwService.withClassifier(NsfwClassifyFn classify)
-      : _classifyOverride = classify;
 
   // ---------------------------------------------------------------------------
   // Public API
@@ -71,40 +69,19 @@ class NsfwService {
       }
     }
 
-    await _ensureInitialized();
-
-    final detector = _detector;
-    if (detector == null) {
+    try {
+      final result = await _backend.detect(imageBytes);
+      if (result != null) return result;
+      // Model unavailable. On web there is intentionally no local model, so
+      // fail OPEN (server-side moderation handles it) rather than blocking
+      // every web upload. On native, apply the normal fail-open/closed policy.
+      if (kIsWeb) return const NsfwResult(score: 0.0, isNsfw: false);
       debugPrint('[NsfwService] detector not initialised (fail-open)');
       return classifyErrorFallback(isRelease: kReleaseMode);
-    }
-
-    try {
-      final result = await detector.detectNSFWFromBytes(imageBytes);
-      return NsfwResult(
-        score: result?.score ?? 0.0,
-        isNsfw: result?.isNsfw ?? false,
-      );
     } catch (e) {
       // Fail open — an inference error must not block a legitimate upload.
       debugPrint('[NsfwService] classify error (fail-open): $e');
       return classifyErrorFallback(isRelease: kReleaseMode);
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Initialisation (idempotent)
-  // ---------------------------------------------------------------------------
-
-  Future<void> _ensureInitialized() async {
-    if (_initialized) return;
-    try {
-      _detector = await NsfwDetector.load();
-      _initialized = true;
-    } catch (e) {
-      // Fail open on init errors.
-      debugPrint('[NsfwService] initialization failed (fail-open): $e');
-      _initialized = true; // don't retry
     }
   }
 }

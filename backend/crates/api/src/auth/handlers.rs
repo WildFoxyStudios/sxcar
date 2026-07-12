@@ -397,9 +397,26 @@ pub async fn oauth(
                 .email
                 .clone()
                 .unwrap_or_else(|| format!("{}+{}@oauth.local", id.provider_uid, provider));
-            let uid = db::users::create_user_full(&state.pool, &email, None, None, true)
-                .await
-                .map_err(|_| StatusCode::CONFLICT)?;
+            let uid = match db::users::create_user_full(&state.pool, &email, None, None, true).await
+            {
+                Ok(id) => id,
+                Err(e) => {
+                    // Same policy as email/password register: only a real unique
+                    // violation is a 409; other failures are 500 + logged.
+                    let is_duplicate = e
+                        .downcast_ref::<sqlx::Error>()
+                        .and_then(|se| match se {
+                            sqlx::Error::Database(db_err) => Some(db_err.is_unique_violation()),
+                            _ => None,
+                        })
+                        .unwrap_or(false);
+                    if is_duplicate {
+                        return Err(StatusCode::CONFLICT);
+                    }
+                    tracing::error!("oauth: create_user_full failed (non-duplicate): {e:?}");
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
             db::users::add_auth_identity(&state.pool, uid, &provider, &id.provider_uid)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
